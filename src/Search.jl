@@ -6,5 +6,7 @@ include("iterators.jl")
 
 export 
   count_expressions
+  ExpressionIterator
+  ContextFreeIterator
 
 end
