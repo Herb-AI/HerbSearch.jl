@@ -8,5 +8,5 @@ export
   count_expressions,
   ExpressionIterator,
   ContextFreeEnumerator
-  
+
 end
