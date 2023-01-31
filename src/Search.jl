@@ -11,5 +11,6 @@ export
   count_expressions,
   ExpressionIterator,
   ContextFreeEnumerator,
-  search
+  
+  enumerative_search
 end
