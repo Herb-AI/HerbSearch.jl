@@ -23,8 +23,6 @@ end
   @test count_expressions(g1, 1, :Real) == 2
 
   # Expressions: [1, 2, 1 * 1, 1 * 2, 2 * 1, 2 * 2] 
-  # 2 + (2 * 2) 
-  @show g1
   @test count_expressions(g1, 2, :Real) == 6
 end
 

@@ -2,7 +2,7 @@ abstract type ExpressionIterator end
 
 
 """
-		ContextFreeEnumerator(grammar::Grammar, max_depth::Int, sym::Symbol)
+ContextFreeEnumerator(grammar::Grammar, max_depth::Int, sym::Symbol)
 An iterator over all possible expressions of a grammar up to max_depth with start symbol sym.
 Types of search depends on the order of production rules in the given grammar: BFS - terminals come first; DFS: nonterminals come first
 """
@@ -61,7 +61,7 @@ function Base.iterate(iter::ExpressionIterator, state::RuleNode)
 end
 
 """
-    count_expressions(grammar::Grammar, max_depth::Int, sym::Symbol)
+count_expressions(grammar::Grammar, max_depth::Int, sym::Symbol)
 Count the number of possible expressions of a grammar up to max_depth with start symbol sym.
 """
 function count_expressions(grammar::Grammar, max_depth::Int, sym::Symbol)
