@@ -4,7 +4,6 @@ abstract type ExpressionIterator end
 """
 ContextFreeEnumerator(grammar::Grammar, max_depth::Int, sym::Symbol)
 An iterator over all possible expressions of a grammar up to max_depth with start symbol sym.
-Types of search depends on the order of production rules in the given grammar: BFS - terminals come first; DFS: nonterminals come first
 """
 mutable struct ContextFreeEnumerator <: ExpressionIterator
     grammar::ContextFreeGrammar
@@ -124,7 +123,7 @@ function _next_state!(node::RuleNode, grammar::Grammar, max_depth::Int)
 			end
 		
 			return (node, true)
-	    else # not empty
+		else # node is not terminal and already has children
 			# make one change, starting with rightmost child
 			worked = false
 			child_index = length(node.children) + 1

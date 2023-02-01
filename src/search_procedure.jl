@@ -1,10 +1,10 @@
 """
 Searches the grammar up to the provided depth for a program that satisfies problem
 """
-function enumerative_search(g::Grammars.ContextFreeGrammar, problem::Data.Problem, depth::Int) :: Expr
+function enumerative_search(g::Grammars.ContextFreeGrammar, problem::Data.Problem, depth::Int, enumerator=ContextFreeEnumerator) :: Expr
     symboltable :: SymbolTable = Grammars.SymbolTable(g)
 
-    hypotheses = ContextFreeEnumerator(g, depth, :Real)
+    hypotheses = enumerator(g, depth, :Real)
 
     for h :: RuleNode ∈ hypotheses
         # Create expression from rulenode representation of AST
