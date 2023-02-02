@@ -1,12 +1,19 @@
 module Search
 
-using Grammars
+using DataStructures
+using ..Grammars
+using ..Data
+using ..Evaluation
 
 include("iterators.jl")
+include("bfs.jl")
+include("search_procedure.jl")
 
 export 
   count_expressions,
   ExpressionIterator,
-  ContextFreeEnumerator
-
+  ContextFreeEnumerator,
+  ContextFreeBFSEnumerator,
+  
+  enumerative_search
 end
