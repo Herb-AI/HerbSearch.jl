@@ -9,19 +9,10 @@ function enumerative_search(g::Grammars.ContextFreeGrammar, problem::Data.Proble
     for h :: RuleNode ∈ hypotheses
         # Create expression from rulenode representation of AST
         expr = Grammars.rulenode2expr(h, g)
-        falsified = false
-        for ex :: IOExample ∈ problem.examples
-            # Add input variable values to the symbol table
-            symbols = merge(symboltable, ex.in)
-            # Calculate result
-            output = Evaluation.interpret(symbols, expr)
-            # Check if output matches example
-            if output != ex.out
-                falsified = true
-                break
-            end
-        end
-        if !falsified
+
+        # Evaluate examples the examples.
+        #  `evaluate examples` returns as soon as it has found the first example that doesn't work.
+        if Evaluation.evaluate_examples(symboltable, expr, problem.examples)
             return expr
         end
     end
