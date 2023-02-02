@@ -2,14 +2,24 @@
 Enumerates a context-free grammar up to a given depth in a breadth-first order.
 This means that smaller programs are returned before larger programs.
 """
-mutable struct ContextFreeBFSEnumerator <: ExpressionIterator 
+mutable struct ContextFreePriorityEnumerator <: ExpressionIterator 
     grammar::ContextFreeGrammar
     max_depth::Int
+    priority_function::Function
+    expand_function::Function
     sym::Symbol
 end
 
+bfs_priority_function(previous_value::T, tree::RuleNode)::T = previous_value + 1
+bfs_expand_heuristic(rules::Vector{T})::Vector{T} = rules
 
-function Base.iterate(iter::ContextFreeBFSEnumerator)
+
+function ContextFreePriorityEnumerator(grammar::ContextFreeGrammar, max_depth::Int, sym::Symbol)::ContextFreePriorityEnumerator
+    return ContextFreePriorityEnumerator(grammar, max_depth, bfs_priority_function, (node, grammar, max_depth) -> _expand(node, grammar, max_depth, bfs_expand_heuristic), sym)
+end
+
+
+function Base.iterate(iter::ContextFreePriorityEnumerator)
     # Priority queue with number of nodes in the program
     pq :: PriorityQueue{RuleNode, Int} = PriorityQueue()
 
@@ -21,7 +31,7 @@ function Base.iterate(iter::ContextFreeBFSEnumerator)
 end
 
 
-function Base.iterate(iter::ContextFreeBFSEnumerator, pq::DataStructures.PriorityQueue)
+function Base.iterate(iter::ContextFreePriorityEnumerator, pq::DataStructures.PriorityQueue)
     grammar, max_depth, _ = iter.grammar, iter.max_depth, iter.sym
     return _find_next_complete_tree(grammar, max_depth, pq)
 end
@@ -60,7 +70,7 @@ Returns nothing if tree is already complete (contains no holes).
 Returns empty list if the tree is partial (contains holes), 
     but they couldn't be expanded because of the depth limit.
 """
-function _expand(node::RuleNode, grammar::ContextFreeGrammar, max_depth::Int)
+function _expand(node::RuleNode, grammar::ContextFreeGrammar, max_depth::Int, expand_heuristic::Function=bfs_expand_heuristic)
     # Find any hole. Technically, the type of search doesn't matter.
     # We use recursive DFS for memory efficiency, since depth is limited.
     if grammar.isterminal[node.ind]
