@@ -6,7 +6,6 @@ using ..Data
 using ..Evaluation
 
 include("iterators.jl")
-include("bfs.jl")
 include("priority_enumerator.jl")
 include("search_procedure.jl")
 
