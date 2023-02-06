@@ -12,7 +12,7 @@ mutable struct ContextFreePriorityEnumerator <: ExpressionIterator
     sym::Symbol
 end 
 
-bfs_priority_function(caller_scope::Dict{Symbol, Any}) = caller_scope[:priority_value] + 1
+bfs_priority_function(tree::RuleNode, parent_value::Number) = parent_value + 1
 bfs_expand_heuristic(rules) = rules
 
 
@@ -24,8 +24,7 @@ function get_bfs_enumerator(grammar::ContextFreeGrammar, max_depth::Int, sym::Sy
     return ContextFreePriorityEnumerator(grammar, max_depth, bfs_priority_function, expand_function, sym)
 end
 
-dfs_priority_function(caller_scope::Dict{Symbol, Any}) = caller_scope[:priority_value] - 1
-# dfs_priority_function(caller_scope::Dict{Symbol, Any}) = peek(caller_scope[:pq])[2] - 1
+dfs_priority_function(tree::RuleNode, parent_value::Number) = parent_value - 1
 dfs_expand_heuristic(rules) = rules
 
 
@@ -77,7 +76,7 @@ function _find_next_complete_tree(grammar::ContextFreeGrammar, max_depth::Int, p
             # the next tree in the queue.
             for expanded_tree ∈ expanded_trees
                 # Pass the local scope to the function for calculating the priority 
-                enqueue!(pq, expanded_tree, priority_function(Base.@locals))
+                enqueue!(pq, expanded_tree, priority_function(expanded_tree, priority_value))
             end
         end
     end
