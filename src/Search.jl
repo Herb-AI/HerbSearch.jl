@@ -15,5 +15,5 @@ export
   ContextFreeEnumerator,
   ContextFreeBFSEnumerator,
   
-  enumerative_search
+  search
 end

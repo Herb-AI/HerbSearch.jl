@@ -1,7 +1,7 @@
 """
 Searches the grammar up to the provided depth for a program that satisfies problem
 """
-function enumerative_search(g::Grammars.ContextFreeGrammar, problem::Data.Problem, depth::Int, enumerator=ContextFreeEnumerator) :: Expr
+function search(g::Grammars.ContextFreeGrammar, problem::Data.Problem, depth::Int, enumerator=ContextFreeEnumerator) :: Expr
     symboltable :: SymbolTable = Grammars.SymbolTable(g)
 
     hypotheses = enumerator(g, depth, :Real)
