@@ -15,7 +15,7 @@ end
 
 function Base.iterate(iter::ContextFreePriorityEnumerator)
     # Priority queue with number of nodes in the program
-    pq :: PriorityQueue{RuleNode, Any} = PriorityQueue()
+    pq :: PriorityQueue{RuleNode, Union{Real, Tuple{Vararg{Real}}}} = PriorityQueue()
 
     grammar, max_depth, sym = iter.grammar, iter.max_depth, iter.sym
     priority_function, expand_function = iter.priority_function, iter.expand_function

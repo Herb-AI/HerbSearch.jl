@@ -1,4 +1,4 @@
-bfs_priority_function(tree::RuleNode, parent_value::Number) = parent_value + 1
+bfs_priority_function(tree::RuleNode, parent_value::Union{Real, Tuple{Vararg{Real}}}) = parent_value + 1
 bfs_expand_heuristic(rules) = rules
 
 
@@ -10,7 +10,7 @@ function get_bfs_enumerator(grammar::ContextFreeGrammar, max_depth::Int, sym::Sy
     return ContextFreePriorityEnumerator(grammar, max_depth, bfs_priority_function, expand_function, sym)
 end
 
-dfs_priority_function(tree::RuleNode, parent_value::Number) = parent_value - 1
+dfs_priority_function(tree::RuleNode, parent_value::Union{Real, Tuple{Vararg{Real}}}) = parent_value - 1
 dfs_expand_heuristic(rules) = rules
 
 
