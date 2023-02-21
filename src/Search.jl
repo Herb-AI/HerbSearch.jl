@@ -6,15 +6,23 @@ using ..Data
 using ..Evaluation
 
 include("utils.jl")
-include("iterators.jl")
-include("priority_enumerator.jl")
+
+include("cfg_enumerator.jl")
+include("cfg_priority_enumerator.jl")
+
+include("csg_enumerator.jl")
+include("csg_priority_enumerator.jl")
+
 include("search_procedure.jl")
 
 export 
   count_expressions,
   ExpressionIterator,
   ContextFreeEnumerator,
-  ContextFreeBFSEnumerator,
+  ContextFreePriorityEnumerator,
+  
+  ContextSensitiveEnumerator,
+  ContextSensitivePriorityEnumerator,
   
   search,
 
