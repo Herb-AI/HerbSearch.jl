@@ -5,8 +5,9 @@ using ..Grammars
 using ..Data
 using ..Evaluation
 
+include("utils.jl")
 include("iterators.jl")
-include("bfs.jl")
+include("priority_enumerator.jl")
 include("search_procedure.jl")
 
 export 
@@ -15,5 +16,13 @@ export
   ContextFreeEnumerator,
   ContextFreeBFSEnumerator,
   
-  enumerative_search
+  search,
+
+  bfs_expand_heuristic,
+  bfs_priority_function,
+  get_bfs_enumerator,
+
+  dfs_expand_heuristic,
+  dfs_priority_function,
+  get_dfs_enumerator
 end
