@@ -1,24 +1,28 @@
 """
 Reduces the set of possible children of a node using the grammar's constraints
 """
-function propagate_constraints(grammar::ContextSensitiveGrammar, context::GrammarContext, child_rules::Vector{Int})
+function propagate_constraints(
+        grammar::ContextSensitiveGrammar, 
+        context::GrammarContext, 
+        child_rules::Vector{Int}
+    )
     domain = child_rules
 
     for propagator ∈ grammar.constraints
-        domain = Herb.Grammars.propagate(propagator, context, domain)
+        domain = propagate(propagator, context, domain)
     end
 
     return domain
 end
 
-mutable struct ContextSensitiveIterator <: ExpressionIterator
+mutable struct ContextSensitiveEnumerator <: ExpressionIterator
     grammar::ContextSensitiveGrammar
     max_depth::Int
     sym::Symbol
 end
 
 
-function Base.iterate(iter::ContextSensitiveIterator)
+function Base.iterate(iter::ContextSensitiveEnumerator)
     init_node = RuleNode(0)  # needed for propagating constraints on the root node 
     init_context = GrammarContext(init_node)
 
@@ -55,7 +59,7 @@ function Base.iterate(iter::ContextSensitiveIterator)
 end
 
 
-function Base.iterate(iter::ContextSensitiveIterator, state::RuleNode)
+function Base.iterate(iter::ContextSensitiveEnumerator, state::RuleNode)
     grammar, max_depth = iter.grammar, iter.max_depth
     context = GrammarContext(state)
     node, worked = _next_state!(state, grammar, max_depth, context)
