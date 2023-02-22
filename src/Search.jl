@@ -2,6 +2,7 @@ module Search
 
 using DataStructures
 using ..Grammars
+using ..Constraints
 using ..Data
 using ..Evaluation
 
