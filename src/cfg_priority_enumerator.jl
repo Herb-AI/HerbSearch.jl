@@ -20,7 +20,8 @@ function Base.iterate(iter::ContextFreePriorityEnumerator)
     grammar, max_depth, sym = iter.grammar, iter.max_depth, iter.sym
     priority_function, expand_function = iter.priority_function, iter.expand_function
     for r ∈ grammar[sym]
-        enqueue!(pq, RuleNode(r), 1)
+        node = RuleNode(r)
+        enqueue!(pq, node, priority_function(grammar, node, 0))
     end
     return _find_next_complete_tree(grammar, max_depth, priority_function, expand_function, pq)
 end
@@ -52,7 +53,7 @@ function _find_next_complete_tree(grammar::ContextFreeGrammar, max_depth::Int, p
             # the next tree in the queue.
             for expanded_tree ∈ expanded_trees
                 # Pass the local scope to the function for calculating the priority 
-                enqueue!(pq, expanded_tree, priority_function(expanded_tree, priority_value))
+                enqueue!(pq, expanded_tree, priority_function(grammar, expanded_tree, priority_value))
             end
         end
     end
