@@ -33,5 +33,8 @@ export
 
   dfs_expand_heuristic,
   dfs_priority_function,
-  get_dfs_enumerator
+  get_dfs_enumerator,
+
+  most_likely_priority_function,
+  get_most_likely_first_enumerator
 end
