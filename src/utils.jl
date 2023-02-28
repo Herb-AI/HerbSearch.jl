@@ -34,13 +34,13 @@ end
 
 
 
-most_likely_priority_function(g::Grammar, tree::RuleNode, ::Union{Real, Tuple{Vararg{Real}}}) = 1 - rulenode_probability(tree, g)
+most_likely_priority_function(g::Grammar, tree::RuleNode, ::Union{Real, Tuple{Vararg{Real}}}) = -rulenode_log_probability(tree, g)
 
 """
 Returns an enumerator that enumerates expressions in the grammar in decreasing order of probability.
 Only use this function with probabilistic grammars.
 """
 function get_most_likely_first_enumerator(grammar::ContextFreeGrammar, max_depth::Int, sym::Symbol)::ContextFreePriorityEnumerator
-    expand_function(node, grammar, max_depth) = _expand(node, grammar, max_depth, x -> x)
+    expand_function(node, grammar, max_depth) = _expand(node, grammar, max_depth, identity)
     return ContextFreePriorityEnumerator(grammar, max_depth, most_likely_priority_function, expand_function, sym)
 end
