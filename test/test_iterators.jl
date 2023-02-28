@@ -128,6 +128,6 @@
   
     programs = collect(get_most_likely_first_enumerator(g₁, 2, :Real))
     @test length(programs) == count_expressions(g₁, 2, :Real)
-    @test all(map(t -> Grammars.rulenode_probability(t[1], g₁) ≥ Grammars.rulenode_probability(t[2], g₁), zip(programs[begin:end-1], programs[begin+1:end])))
+    @test all(map(t -> Grammars.rulenode_log_probability(t[1], g₁) ≥ Grammars.rulenode_log_probability(t[2], g₁), zip(programs[begin:end-1], programs[begin+1:end])))
   end
 end
