@@ -116,7 +116,7 @@ function _expand(node::RuleNode, grammar::ContextSensitiveGrammar, max_depth::In
         child_type = childtypes[length(node.children) + 1]
         nodes = []
 
-        for rule_index ∈ expand_heuristic(propagate_constraints(grammar, context, grammar[child_type]))
+        for rule_index ∈ expand_heuristic(propagate_constraints(grammar, context, deepcopy(grammar[child_type])))
             # Copy existing children of the current node
             children = deepcopy(node.children)
             # Add the child we are expanding
