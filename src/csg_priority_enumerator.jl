@@ -21,7 +21,7 @@ function Base.iterate(iter::ContextSensitivePriorityEnumerator)
     priority_function, expand_function = iter.priority_function, iter.expand_function
 
     init_node = RuleNode(0)
-    init_context = GrammarContext(init_node)
+    init_context = GrammarContext(init_node, grammar)
 
     rules = [x for x ∈ grammar[sym]]
     rules = propagate_constraints(grammar, init_context, rules)
@@ -48,7 +48,7 @@ Returns nothing if there are no trees left within the depth limit.
 function _find_next_complete_tree(grammar::ContextSensitiveGrammar, max_depth::Int, priority_function::Function, expand_function::Function, pq::PriorityQueue)
     while length(pq) ≠ 0
         (tree, priority_value) = dequeue_pair!(pq)
-        expanded_trees = expand_function(tree, grammar, max_depth - 1, GrammarContext(tree))
+        expanded_trees = expand_function(tree, grammar, max_depth - 1, GrammarContext(tree, grammar))
         if expanded_trees ≡ nothing
             # Current tree is complete, it can be returned
             return (tree, pq)
@@ -88,7 +88,7 @@ function _expand(node::RuleNode, grammar::ContextSensitiveGrammar, max_depth::In
     # This node doesn't have holes, check the children
     if length(childtypes) == length(node.children)
         for (child_index, child) ∈ enumerate(node.children)
-            child_context = GrammarContext(context.originalExpr, deepcopy(context.nodeLocation))
+            child_context = GrammarContext(context.originalExpr, deepcopy(context.nodeLocation), grammar)
             push!(child_context.nodeLocation, child_index)
             expanded_child_trees = _expand(child, grammar, max_depth - 1, child_context, expand_heuristic)
             if expanded_child_trees ≡ nothing

@@ -37,7 +37,7 @@ function Base.iterate(iter::ContextSensitiveEnumerator)
     if isterminal(grammar, node)
         return (deepcopy(node), node)
     else
-        context = GrammarContext(node)
+        context = GrammarContext(node, grammar)
         node, worked = _next_state!(node, grammar, max_depth, context)
         while !worked
             # increment root's rule
@@ -61,13 +61,13 @@ end
 
 function Base.iterate(iter::ContextSensitiveEnumerator, state::RuleNode)
     grammar, max_depth = iter.grammar, iter.max_depth
-    context = GrammarContext(state)
+    context = GrammarContext(state, grammar)
     node, worked = _next_state!(state, grammar, max_depth, context)
     
     while !worked
         # increment root's rule
         init_node = RuleNode(0)  # needed for propagating constraints on the root node 
-        init_context = GrammarContext(init_node)
+        init_context = GrammarContext(init_node, grammar)
 
         rules = [x for x ∈ grammar[iter.sym]]
         rules = propagate_constraints(grammar, init_context, rules)
@@ -76,7 +76,7 @@ function Base.iterate(iter::ContextSensitiveEnumerator, state::RuleNode)
         if i < length(rules)
             node, worked = RuleNode(rules[i+1]), true
             if !isterminal(grammar, node)
-                context = GrammarContext(node)
+                context = GrammarContext(node, grammar)
                 node, worked = _next_state!(node, grammar, max_depth, context)
             end
         else
@@ -115,7 +115,7 @@ function _next_state!(node::RuleNode, grammar::ContextSensitiveGrammar, max_dept
                 i = 0
                 child = RuleNode(0)
 
-                new_context = GrammarContext(context.originalExpr, deepcopy(context.nodeLocation))
+                new_context = GrammarContext(context.originalExpr, deepcopy(context.nodeLocation), grammar)
                 push!(new_context.nodeLocation, child_index)
 
                 child_rules = [x for x in grammar[c]]  # select all applicable rules
@@ -150,7 +150,7 @@ function _next_state!(node::RuleNode, grammar::ContextSensitiveGrammar, max_dept
                 child_index -= 1
                 child = node.children[child_index]
         
-                new_context = GrammarContext(context.originalExpr, deepcopy(context.nodeLocation))
+                new_context = GrammarContext(context.originalExpr, deepcopy(context.nodeLocation), grammar)
                 push!(new_context.nodeLocation, child_index)
 
                 child, child_worked = _next_state!(child, grammar, max_depth-1, new_context)
@@ -190,7 +190,7 @@ function _next_state!(node::RuleNode, grammar::ContextSensitiveGrammar, max_dept
                         i = 0
                         child = RuleNode(0)
 
-                        new_context = GrammarContext(context.originalExpr, deepcopy(context.nodeLocation))
+                        new_context = GrammarContext(context.originalExpr, deepcopy(context.nodeLocation), grammar)
                         push!(new_context.nodeLocation, child_index2)
 
                         child_rules = [x for x in grammar[c]]  # take all applicable rules
