@@ -1,7 +1,7 @@
 """
 Searches the grammar up to the provided depth for a program that satisfies problem
 """
-function search(g::Grammars.Grammar, problem::Data.Problem, depth::Int, enumerator=ExpressionIterator, start::Symbol)::Any
+function search(g::Grammars.Grammar, problem::Data.Problem, depth::Int, start::Symbol, enumerator=ExpressionIterator)::Any
     symboltable :: SymbolTable = Grammars.SymbolTable(g)
 
     hypotheses = enumerator(g, depth, start)
