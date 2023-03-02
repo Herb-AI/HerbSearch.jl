@@ -7,6 +7,7 @@ using ..Evaluation
 
 include("iterators.jl")
 include("bfs.jl")
+include("metropolis_hastings.jl")
 include("search_procedure.jl")
 
 export 
@@ -14,6 +15,6 @@ export
   ExpressionIterator,
   ContextFreeEnumerator,
   ContextFreeBFSEnumerator,
-  
+  MetropolisHastingsEnumerator
   enumerative_search
 end
