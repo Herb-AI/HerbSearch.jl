@@ -27,7 +27,8 @@ function Base.iterate(iter::ContextSensitivePriorityEnumerator)
     rules = propagate_constraints(grammar, init_context, rules)
 
     for r ∈ rules
-        enqueue!(pq, RuleNode(r), 1)
+        node = RuleNode(r)
+        enqueue!(pq, node, priority_function(grammar, node, 0))
     end
     return _find_next_complete_tree(grammar, max_depth, priority_function, expand_function, pq)
 end
@@ -59,7 +60,7 @@ function _find_next_complete_tree(grammar::ContextSensitiveGrammar, max_depth::I
             # the next tree in the queue.
             for expanded_tree ∈ expanded_trees
                 # Pass the local scope to the function for calculating the priority 
-                enqueue!(pq, expanded_tree, priority_function(expanded_tree, priority_value))
+                enqueue!(pq, expanded_tree, priority_function(grammar, expanded_tree, priority_value))
             end
         end
     end

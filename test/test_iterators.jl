@@ -1,4 +1,4 @@
-@testset verbose=true "iterators" begin
+@testset verbose=true "Iterators" begin
   @testset "test count_expressions on single Real grammar" begin
     g1 = @cfgrammar begin
         Real = |(1:9)
@@ -117,5 +117,17 @@
     end
     programs = collect(get_dfs_enumerator(g1, 2, :Real))
     @test length(programs) == count_expressions(g1, 2, :Real)
+  end
+
+  @testset "probabilistic enumerator" begin
+    g₁ = @pcfgrammar begin
+      0.2 : Real = |(0:1)
+      0.5 : Real = Real + Real
+      0.3 : Real = Real * Real 
+    end
+  
+    programs = collect(get_most_likely_first_enumerator(g₁, 2, :Real))
+    @test length(programs) == count_expressions(g₁, 2, :Real)
+    @test all(map(t -> Grammars.rulenode_log_probability(t[1], g₁) ≥ Grammars.rulenode_log_probability(t[2], g₁), zip(programs[begin:end-1], programs[begin+1:end])))
   end
 end
