@@ -2,7 +2,7 @@
 Searches the grammar up to the provided depth for a program that satisfies problem
 """
 function search(g::Grammar, problem::Problem, depth::Int, start::Symbol, enumerator=ExpressionIterator)::Any
-    symboltable :: SymbolTable = Grammars.SymbolTable(g)
+    symboltable :: SymbolTable = SymbolTable(g)
 
     hypotheses = enumerator(g, depth, start)
 
@@ -12,7 +12,7 @@ function search(g::Grammar, problem::Problem, depth::Int, start::Symbol, enumera
 
         # Evaluate examples the examples.
         #  `evaluate examples` returns as soon as it has found the first example that doesn't work.
-        if Evaluation.evaluate_examples(symboltable, expr, problem.examples)
+        if test_examples(symboltable, expr, problem.examples)
             return expr
         end
     end
