@@ -1,4 +1,4 @@
-name = "Search"
+name = "HerbSearch"
 uuid = "3008d8e8-f9aa-438a-92ed-26e9c7b4829f"
 authors = ["Pepijn Klop", "Jaap de Jong <jaapdejong15@gmail.com>"]
 version = "0.1.0"
