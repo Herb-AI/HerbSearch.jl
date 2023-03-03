@@ -11,7 +11,7 @@ function search(g::Grammar, problem::Problem, depth::Int, start::Symbol, enumera
         expr = rulenode2expr(h, g)
 
         # Evaluate examples the examples.
-        #  `evaluate examples` returns as soon as it has found the first example that doesn't work.
+        #  `test_examples` returns as soon as it has found the first example that doesn't work.
         if test_examples(symboltable, expr, problem.examples)
             return expr
         end
