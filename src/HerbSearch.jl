@@ -1,10 +1,10 @@
-module Search
+module HerbSearch
 
 using DataStructures
-using ..Grammars
-using ..Constraints
-using ..Data
-using ..Evaluation
+using ..HerbGrammar
+using ..HerbConstraints
+using ..HerbData
+using ..HerbEvaluation
 
 include("utils.jl")
 
@@ -37,4 +37,4 @@ export
 
   most_likely_priority_function,
   get_most_likely_first_enumerator
-end
+end # module HerbSearch
