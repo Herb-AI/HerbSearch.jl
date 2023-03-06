@@ -90,11 +90,21 @@ function search_best(
         # Create expression from rulenode representation of AST
         expr = rulenode2expr(h, g)
 
-        # Evaluate
-        passing_examples = count(evaluator(symboltable, expr, example.in) == example.out for example ∈ problem.examples)
+        # Evaluate the expression on the examples
+        passing_examples = 0
+        for (j, example) ∈ enumerate(problem.examples)
+            passing_examples += evaluator(symboltable, expr, example.in) == example.out ? 1 : 0
+
+            # Check if we can still improve the best program found so far
+            if passing_examples + length(problem.examples) - j ≤ best_num_passing_examples
+                break
+            end
+        end
+
         if passing_examples == length(problem.examples)
             return expr, 1
         elseif passing_examples > best_num_passing_examples
+            # Update the best found example so far
             best_num_passing_examples = passing_examples
             best_program = expr
         end
