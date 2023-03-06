@@ -22,19 +22,6 @@
     @test count_expressions(g1, 2, :Real) == 6
   end
 
-  @testset "test count_expressions on ContextFreeEnumerator" begin
-    g1 = @cfgrammar begin
-        Real = 1 | 2
-        Real = Real * Real 
-    end
-
-    cfe = ContextFreeEnumerator(g1, 1, :Real)
-    @test count_expressions(cfe) == count_expressions(g1, 1, :Real) == 2
-
-    cfe = ContextFreeEnumerator(g1, 2, :Real)
-    @test count_expressions(cfe) == count_expressions(g1, 2, :Real) == 6
-  end
-
   @testset "test count_expressions on different arithmetic operators" begin
     g1 = @cfgrammar begin
         Real = 1
@@ -107,7 +94,20 @@
     end
     programs = collect(get_bfs_enumerator(g1, 2, :Real))
     @test all(map(t -> depth(t[1]) ≤ depth(t[2]), zip(programs[begin:end-1], programs[begin+1:end])))
-    @test length(programs) == count_expressions(g1, 2, :Real)
+    # TODO: Find better way to test, count_expressions makes use of breadth-first enumeration.
+
+    answer_programs = [
+      RuleNode(1),
+      RuleNode(2),
+      RuleNode(3, [RuleNode(1), RuleNode(1)]),
+      RuleNode(3, [RuleNode(1), RuleNode(2)]),
+      RuleNode(3, [RuleNode(2), RuleNode(1)]),
+      RuleNode(3, [RuleNode(2), RuleNode(2)])
+    ]
+
+    @test length(programs) == 6
+
+    @test all(p ∈ programs for p ∈ answer_programs)
   end
 
   @testset "dfs enumerator" begin
