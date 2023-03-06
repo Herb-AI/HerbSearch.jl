@@ -9,7 +9,7 @@ function propagate_constraints(
     domain = child_rules
 
     for propagator ∈ grammar.constraints
-        domain = propagate(propagator, context, domain)
+        domain = propagate(propagator, grammar, context, domain)
     end
 
     return domain
