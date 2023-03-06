@@ -15,14 +15,12 @@ end
 
 function Base.iterate(iter::ContextFreePriorityEnumerator)
     # Priority queue with number of nodes in the program
-    pq :: PriorityQueue{RuleNode, Union{Real, Tuple{Vararg{Real}}}} = PriorityQueue()
+    pq :: PriorityQueue{AbstractRuleNode, Union{Real, Tuple{Vararg{Real}}}} = PriorityQueue()
 
     grammar, max_depth, sym = iter.grammar, iter.max_depth, iter.sym
     priority_function, expand_function = iter.priority_function, iter.expand_function
-    for r ∈ grammar[sym]
-        node = RuleNode(r)
-        enqueue!(pq, node, priority_function(grammar, node, 0))
-    end
+    node = Hole(get_domain(grammar, sym))
+    enqueue!(pq, node, priority_function(grammar, node, 0))
     return _find_next_complete_tree(grammar, max_depth, priority_function, expand_function, pq)
 end
 
@@ -74,47 +72,43 @@ function _expand(node::RuleNode, grammar::ContextFreeGrammar, max_depth::Int, ex
     # We use recursive DFS for memory efficiency, since depth is limited.
     if grammar.isterminal[node.ind]
         return nothing
-    elseif max_depth ≤ 0
+    end
+    
+    # This node doesn't have holes, check the children
+    for (child_index, child) ∈ enumerate(node.children)
+        expanded_child_trees = _expand(child, grammar, max_depth - 1, expand_heuristic)
+        if expanded_child_trees ≡ nothing
+            # Subtree is already complete
+            continue
+        elseif expanded_child_trees == []
+            # There is a hole can't be expanded further, so we cannot make this 
+            # tree complete anymore. 
+            return []
+        else
+            # Hole was found and expanded
+            nodes = []
+            for expanded_tree ∈ expanded_child_trees
+                # Copy other children of the current node
+                children = deepcopy(node.children)
+                # Update the child we are expanding
+                children[child_index] = expanded_tree
+                push!(nodes, RuleNode(node.ind, children))
+            end
+            return nodes
+        end
+    end
+end
+
+function _expand(node::Hole, grammar::ContextFreeGrammar, max_depth::Int, expand_heuristic::Function=bfs_expand_heuristic)
+    if max_depth < 0
         return []
     end
-
-    childtypes = grammar.childtypes[node.ind]
-    # This node doesn't have holes, check the children
-    if length(childtypes) == length(node.children)
-        for (child_index, child) ∈ enumerate(node.children)
-            expanded_child_trees = _expand(child, grammar, max_depth - 1, expand_heuristic)
-            if expanded_child_trees ≡ nothing
-                # Subtree is already complete
-                continue
-            elseif expanded_child_trees == []
-                # There is a hole can't be expanded further, so we cannot make this 
-                # tree complete anymore. 
-                return []
-            else
-                # Hole was found and expanded
-                nodes = []
-                for expanded_tree ∈ expanded_child_trees
-                    # Copy other children of the current node
-                    children = deepcopy(node.children)
-                    # Update the child we are expanding
-                    children[child_index] = expanded_tree
-                    push!(nodes, RuleNode(node.ind, children))
-                end
-                return nodes
-            end
-
-        end
-    else # This node has an unfilled hole
-        child_type = childtypes[length(node.children) + 1]
-        nodes = []
-        for rule_index ∈ expand_heuristic(grammar[child_type])
-            # Copy existing children of the current node
-            children = deepcopy(node.children)
-            # Add the child we are expanding
-            push!(children, RuleNode(rule_index))
-            push!(nodes, RuleNode(node.ind, children))
-        end
-        return nodes
+    
+    nodes = []
+    for rule_index ∈ expand_heuristic(findall(node.domain))
+        children = [Hole(get_domain(grammar, type)) for type ∈ grammar.childtypes[rule_index]]
+        push!(nodes, RuleNode(rule_index, children))
     end
+    return nodes
 end
 
