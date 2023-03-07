@@ -46,3 +46,8 @@ function get_most_likely_first_enumerator(grammar::ContextFreeGrammar, max_depth
     expand_function(node, grammar, max_depth) = _expand(node, grammar, max_depth, identity)
     return ContextFreePriorityEnumerator(grammar, max_depth, most_likely_priority_function, expand_function, sym)
 end
+
+function get_most_likely_first_enumerator(grammar::ContextSensitiveGrammar, max_depth::Int, sym::Symbol)::ContextSensitivePriorityEnumerator
+    expand_function(node, grammar, max_depth, context) = _expand(node, grammar, max_depth, context, identity)
+    return ContextSensitivePriorityEnumerator(grammar, max_depth, most_likely_priority_function, expand_function, sym)
+end
