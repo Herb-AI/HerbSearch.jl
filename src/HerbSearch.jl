@@ -24,6 +24,7 @@ export
   ContextSensitivePriorityEnumerator,
   
   search,
+  search_best,
 
   bfs_expand_heuristic,
   bfs_priority_function,
