@@ -106,8 +106,7 @@ function _expand(node::Hole, grammar::ContextFreeGrammar, max_depth::Int, expand
     
     nodes = []
     for rule_index ∈ expand_heuristic(findall(node.domain))
-        children = [Hole(get_domain(grammar, type)) for type ∈ grammar.childtypes[rule_index]]
-        push!(nodes, RuleNode(rule_index, children))
+        push!(nodes, RuleNode(rule_index, grammar))
     end
     return nodes
 end
