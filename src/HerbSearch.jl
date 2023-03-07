@@ -8,10 +8,10 @@ using ..HerbEvaluation
 
 include("utils.jl")
 
-include("cfg_enumerator.jl")
+include("expression_iterator.jl")
+include("count_expressions.jl")
 include("cfg_priority_enumerator.jl")
 
-include("csg_enumerator.jl")
 include("csg_priority_enumerator.jl")
 
 include("search_procedure.jl")
@@ -19,10 +19,8 @@ include("search_procedure.jl")
 export 
   count_expressions,
   ExpressionIterator,
-  ContextFreeEnumerator,
   ContextFreePriorityEnumerator,
   
-  ContextSensitiveEnumerator,
   ContextSensitivePriorityEnumerator,
   
   search,
