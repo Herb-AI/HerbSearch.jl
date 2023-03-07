@@ -129,5 +129,51 @@
       @test length(programs) == count_expressions(g₁, 2, :Real)
       @test all(map(t -> rulenode_log_probability(t[1], g₁) ≥ rulenode_log_probability(t[2], g₁), zip(programs[begin:end-1], programs[begin+1:end])))
     end
-  end
+
+    @testset "ComesAfter constraint" begin
+        g₁ = @csgrammar begin
+            Real = |(1:3)
+            Real = Real + Real
+        end
+
+        constraint = ComesAfter(1, [4])
+        addconstraint!(g₁, constraint)
+        programs = collect(get_bfs_enumerator(g₁, 2, :Real))
+        @test RuleNode(1) ∉ programs
+        @test RuleNode(4, [RuleNode(1), RuleNode(1)]) ∈ programs
+    end
+
+    @testset "Ordered constraint" begin
+        g₁ = @csgrammar begin
+            Real = |(1:3)
+            Real = Real + Real
+        end
+        constraint = Ordered([2, 1])
+        addconstraint!(g₁, constraint)
+        programs = collect(get_bfs_enumerator(g₁, 2, :Real))
+
+        @test RuleNode(4, [RuleNode(1), RuleNode(2)]) ∉ programs
+        @test RuleNode(4, [RuleNode(2), RuleNode(1)]) ∈ programs
+
+        @test RuleNode(1) ∉ programs
+        @test RuleNode(2) ∈ programs
+
+    end
+
+    @testset "Forbidden constraint" begin
+        g₁ = @csgrammar begin
+            Real = |(1:3)
+            Real = Real + Real
+        end
+        constraint = Forbidden([4, 1])
+        addconstraint!(g₁, constraint)
+        programs = collect(get_bfs_enumerator(g₁, 2, :Real))
+
+        @test RuleNode(4, [RuleNode(1), RuleNode(2)]) ∉ programs
+        @test RuleNode(4, [RuleNode(2), RuleNode(1)]) ∉ programs
+
+        @test RuleNode(1) ∈ programs
+        @test RuleNode(2) ∈ programs
+    end
+end
   
