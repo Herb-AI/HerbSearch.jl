@@ -42,6 +42,24 @@ end
 
 
 """
+Reduces the set of possible children of a node using the grammar's constraints
+"""
+function propagate_constraints(
+        grammar::ContextSensitiveGrammar, 
+        context::GrammarContext, 
+        child_rules::Vector{Int}
+    )
+    domain = child_rules
+
+    for propagator ∈ grammar.constraints
+        domain = propagate(propagator, grammar, context, domain)
+    end
+
+    return domain
+end
+
+
+"""
 Takes a priority queue and returns the smallest AST from the grammar it can obtain from the
 queue or by (repeatedly) expanding trees that are in the queue.
 Returns nothing if there are no trees left within the depth limit.
