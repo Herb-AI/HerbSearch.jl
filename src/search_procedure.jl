@@ -99,7 +99,7 @@ function search_best(
 
     hypotheses = enumerator(g, max_depth ≡ nothing ? typemax(Int) : max_depth , start)
 
-    best_error = typemax(Real)
+    best_error = typemax(Int)
     best_program = nothing
     for (i, h) ∈ enumerate(hypotheses)
         # Create expression from rulenode representation of AST
@@ -111,7 +111,7 @@ function search_best(
             total_error = error_function(total_error, evaluator(symboltable, expr, example.in), example.out)
 
             # Check if we can still improve the best program found so far
-            if sum_of_error ≥ best_error
+            if total_error ≥ best_error
                 break
             end
         end
