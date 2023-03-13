@@ -1,4 +1,4 @@
-@testset verbose=true "Iterators" begin
+@testset verbose=true "Context-free iterators" begin
   @testset "test count_expressions on single Real grammar" begin
     g1 = @cfgrammar begin
         Real = |(1:9)
@@ -129,4 +129,5 @@
     @test length(programs) == count_expressions(g₁, 2, :Real)
     @test all(map(t -> rulenode_log_probability(t[1], g₁) ≥ rulenode_log_probability(t[2], g₁), zip(programs[begin:end-1], programs[begin+1:end])))
   end
+
 end
