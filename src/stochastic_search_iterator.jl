@@ -11,7 +11,7 @@ Base.@kwdef mutable struct StochasticSearchEnumerator <: ExpressionIterator
     max_depth::Int64 = 5  # maximum depth of the program that is generated
     examples::Vector{Example}
     neighbourhood::Function
-    propose!::Function
+    propose::Function
     accept::Function
     temperature::Function
     cost_function::Function
@@ -47,19 +47,39 @@ function Base.iterate(iter::StochasticSearchEnumerator, current_state::IteratorS
     new_temperature = iter.temperature(current_state.current_temperature)
 
     current_program = current_state.current_program
+    subprogram = get(current_program, neighbourhood_node_location)
     # save copy because propose might change program
     current_cost = calculate_cost(current_program, iter.cost_function, examples, grammar)
     new_program = deepcopy(current_program)
 
+    @info "Start: $(rulenode2expr(current_program, grammar)), subexpr: $(rulenode2expr(subprogram, grammar)), cost: $current_cost"
+
     # propose new programs to consider
-    programs_to_consider = iter.propose!(current_program, neighbourhood_node_location, grammar, iter.max_depth, dict)
-    @info "Cost: $current_cost => $(rulenode2expr(new_program, grammar)) => $(rulenode2expr(programs_to_consider[1], grammar))"
-    for possible_program in programs_to_consider
-        program_cost = calculate_cost(possible_program, iter.cost_function, examples, grammar)
-        if iter.accept(current_cost, program_cost)
-            new_program = possible_program
-            current_cost = program_cost
+    possible_replacements = iter.propose(current_program, neighbourhood_node_location, grammar, iter.max_depth, dict)
+    possible_program = current_program
+    best_replacement = nothing
+    for possible_replacement in possible_replacements
+        # @info "Replacement: $(rulenode2expr(possible_replacement, grammar))"
+        # replace node at node_location with new_random 
+        if neighbourhood_node_location.i == 0
+            possible_program = possible_replacement
+            # @info "Replacing the root entirely"
+        else 
+            # update current_program with the subprogram generated
+            neighbourhood_node_location.parent.children[neighbourhood_node_location.i] = possible_replacement
         end
+        program_cost = calculate_cost(possible_program, iter.cost_function, examples, grammar)
+        # @info "Possible program: $(rulenode2expr(possible_program, grammar)), $(program_cost)"
+        if iter.accept(current_cost, program_cost)
+            new_program = deepcopy(possible_program)
+            current_cost = program_cost
+            best_replacement = deepcopy(possible_replacement)
+        end
+    end
+    if best_replacement !== nothing
+        @info "Best replace: $(rulenode2expr(best_replacement, grammar)) => Cost : $current_cost"
+    else 
+        @info "Can't find better"
     end
     @info "================"
     if current_cost < current_state.best_program_cost

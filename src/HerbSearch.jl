@@ -15,8 +15,14 @@ include("csg_enumerator.jl")
 include("csg_priority_enumerator.jl")
 
 include("stochastic_search_iterator.jl")
-include("metropolis_hastings.jl")
 include("search_procedure.jl")
+include("cost_functions.jl")
+
+include("neighbourhood.jl")
+include("propose.jl")
+include("accept.jl")
+include("temperature.jl")
+include("stochastic_enumerators.jl")
 
 export 
   count_expressions,
@@ -33,9 +39,10 @@ export
   bfs_priority_function,
   get_bfs_enumerator,
   get_mh_enumerator,
+  get_vlsn_enumerator,
   search_it,
   mean_squared_error,
-  wrong_results,
+  accuracy,
 
   dfs_expand_heuristic,
   dfs_priority_function,
