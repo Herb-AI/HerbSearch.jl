@@ -12,16 +12,24 @@ mutable struct ContextSensitivePriorityEnumerator <: ExpressionIterator
     sym::Symbol
 end 
 
+@enum ExpandFailureReason depth_reached=1 already_complete=2
+
+struct PQItem 
+    tree::AbstractRuleNode
+    constraints::Vector{LocalConstraint}
+end
+PQItem(tree::AbstractRuleNode) = PQItem(tree, [])
 
 function Base.iterate(iter::ContextSensitivePriorityEnumerator)
     # Priority queue with number of nodes in the program
-    pq :: PriorityQueue{AbstractRuleNode, Union{Real, Tuple{Vararg{Real}}}} = PriorityQueue()
+    pq :: PriorityQueue{PQItem, Union{Real, Tuple{Vararg{Real}}}} = PriorityQueue()
 
     grammar, max_depth, sym = iter.grammar, iter.max_depth, iter.sym
     priority_function, expand_function = iter.priority_function, iter.expand_function
 
     init_node = Hole(get_domain(grammar, sym))
-    enqueue!(pq, init_node, priority_function(grammar, init_node, 0))
+
+    enqueue!(pq, PQItem(init_node), priority_function(grammar, init_node, 0))
     
     return _find_next_complete_tree(grammar, max_depth, priority_function, expand_function, pq)
 end
@@ -41,14 +49,26 @@ function propagate_constraints(
         grammar::ContextSensitiveGrammar, 
         context::GrammarContext, 
         child_rules::Vector{Int}
-    )
+    )::Tuple
     domain = child_rules
+    new_local_constraints::Vector{LocalConstraint} = []
 
-    for propagator ∈ grammar.constraints
-        domain = propagate(propagator, grammar, context, domain)
+    # Local constraints that are specific to this rulenode
+    for constraint ∈ context.constraints
+        domain, local_constraints = propagate(constraint, grammar, context, domain)
+        domain == [] && return domain, []
+        # TODO: Should we check for duplicates?
+        append!(new_local_constraints, local_constraints)
     end
 
-    return domain
+    # General constraints for the entire grammar
+    for constraint ∈ grammar.constraints
+        domain, local_constraints = propagate(constraint, grammar, context, domain)
+        domain == [] && return domain, []
+        append!(new_local_constraints, local_constraints)
+    end
+
+    return domain, new_local_constraints
 end
 
 
@@ -59,21 +79,28 @@ Returns nothing if there are no trees left within the depth limit.
 """
 function _find_next_complete_tree(grammar::ContextSensitiveGrammar, max_depth::Int, priority_function::Function, expand_function::Function, pq::PriorityQueue)
     while length(pq) ≠ 0
-        (tree, priority_value) = dequeue_pair!(pq)
-        expanded_trees = expand_function(tree, grammar, max_depth - 1, GrammarContext(tree))
-        if expanded_trees ≡ nothing
+        (pqitem, priority_value) = dequeue_pair!(pq)
+        expand_result = expand_function(pqitem.tree, grammar, max_depth - 1, GrammarContext(pqitem.tree, [], pqitem.constraints))
+        if expand_result ≡ already_complete
             # Current tree is complete, it can be returned
-            return (tree, pq)
-        else
+            return (pqitem.tree, pq)
+        elseif expand_result ≡ depth_reached
+            continue
+        elseif expand_result isa Tuple{Vector{AbstractRuleNode}, Vector{LocalConstraint}}
             # Either the current tree can't be expanded due to depth 
             # limit (no expanded trees), or the expansion was successful. 
             # We add the potential expanded trees to the pq and move on to 
             # the next tree in the queue.
-            for expanded_tree ∈ expanded_trees
+            expanded_child_trees, local_constraints = expand_result
+            for expanded_tree ∈ expanded_child_trees
                 # Pass the local scope to the function for calculating the priority 
-                enqueue!(pq, expanded_tree, priority_function(grammar, expanded_tree, priority_value))
+                pqitem = PQItem(expanded_tree, local_constraints)
+                enqueue!(pq, pqitem, priority_function(grammar, expanded_tree, priority_value))
             end
+        else
+            error("Got an invalid response of type $(typeof(expand_result)) from `_expand` function")
         end
+
     end
     return nothing
 end
@@ -87,30 +114,36 @@ Returns nothing if tree is already complete (contains no holes).
 Returns empty list if the tree is partial (contains holes), 
     but they couldn't be expanded because of the depth limit.
 """
-function _expand(node::RuleNode, grammar::ContextSensitiveGrammar, max_depth::Int, context::GrammarContext, expand_heuristic::Function=bfs_expand_heuristic)
+function _expand(
+        node::RuleNode, 
+        grammar::ContextSensitiveGrammar, 
+        max_depth::Int, 
+        context::GrammarContext, 
+        expand_heuristic::Function=bfs_expand_heuristic
+    )::Union{ExpandFailureReason, Tuple{Vector{AbstractRuleNode}, Vector{LocalConstraint}}}
     # Find any hole. Technically, the type of search doesn't matter.
     # We use recursive DFS for memory efficiency, since depth is limited.
     if grammar.isterminal[node.ind]
-        return nothing
+        return already_complete
     elseif max_depth ≤ 0
-        return []
+        return depth_reached
     end
 
-    # This node doesn't have holes, check the children
     for (child_index, child) ∈ enumerate(node.children)
-        child_context = GrammarContext(context.originalExpr, deepcopy(context.nodeLocation))
+        child_context = GrammarContext(context.originalExpr, deepcopy(context.nodeLocation), context.constraints)
         push!(child_context.nodeLocation, child_index)
-        expanded_child_trees = _expand(child, grammar, max_depth - 1, child_context, expand_heuristic)
-        if expanded_child_trees ≡ nothing
+        expand_result = _expand(child, grammar, max_depth - 1, child_context, expand_heuristic)
+        if expand_result ≡ already_complete
             # Subtree is already complete
             continue
-        elseif expanded_child_trees == []
+        elseif expand_result ≡ depth_reached
             # There is a hole that can't be expanded further, so we cannot make this 
             # tree complete anymore. 
-            return []
-        else
+            return depth_reached
+        elseif expand_result isa Tuple{Vector{AbstractRuleNode}, Vector{LocalConstraint}}
             # Hole was found and expanded
-            nodes = []
+            nodes::Vector{AbstractRuleNode} = []
+            expanded_child_trees, local_constraints = expand_result
             for expanded_tree ∈ expanded_child_trees
                 # Copy other children of the current node
                 children = deepcopy(node.children)
@@ -118,21 +151,31 @@ function _expand(node::RuleNode, grammar::ContextSensitiveGrammar, max_depth::In
                 children[child_index] = expanded_tree
                 push!(nodes, RuleNode(node.ind, children))
             end
-            return nodes
+            return nodes, local_constraints
+        else
+            error("Got an invalid response of type $(typeof(expand_result)) from `_expand` function")
         end
-
     end
+    # If we searched the entire tree, and we didn't find a hole we could expand, the tree must be complete.
+    return already_complete
 end
 
-function _expand(node::Hole, grammar::ContextSensitiveGrammar, max_depth::Int, context::GrammarContext, expand_heuristic::Function=bfs_expand_heuristic)
+function _expand(
+        node::Hole, 
+        grammar::ContextSensitiveGrammar, 
+        max_depth::Int, 
+        context::GrammarContext, 
+        expand_heuristic::Function=bfs_expand_heuristic
+    )::Union{ExpandFailureReason, Tuple{Vector{AbstractRuleNode}, Vector{LocalConstraint}}}
     if max_depth < 0
-        return []
+        return depth_reached
     end
 
-    nodes = []
-    for rule_index ∈ expand_heuristic(propagate_constraints(grammar, context, findall(node.domain)))
+    nodes::Vector{AbstractRuleNode} = []
+    domain, new_constraints::Vector{LocalConstraint} = propagate_constraints(grammar, context, findall(node.domain))
+    for rule_index ∈ expand_heuristic(domain)
         push!(nodes, RuleNode(rule_index, grammar))
     end
-    return nodes
+    return nodes, new_constraints
 end
 
