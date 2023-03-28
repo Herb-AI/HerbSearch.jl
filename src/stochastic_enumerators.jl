@@ -25,3 +25,17 @@ function get_vlsn_enumerator(grammar, examples, max_depth, start_symbol, cost_fu
         start_symbol = start_symbol,
     )
 end
+
+function get_sa_enumerator(grammar, examples, max_depth, start_symbol, cost_function)
+    return StochasticSearchEnumerator(
+        grammar = grammar,
+        examples = examples,
+        max_depth = max_depth,
+        neighbourhood = constructNeighbourhoodRuleSubset,
+        propose = random_fill_propose,
+        temperature = decreasing_temperature,
+        accept = probabilistic_accept_with_temperature,
+        cost_function = cost_function,
+        start_symbol = start_symbol,
+    )
+end

@@ -35,7 +35,7 @@ function Base.iterate(iter::StochasticSearchEnumerator)
     current_cost = calculate_cost(node, iter.cost_function, iter.examples, iter.grammar)
 
     # TODO change current best cost
-    return (node, IteratorState(current_program = node, current_temperature = 1, best_program = node,best_program_cost=current_cost))
+    return (node, IteratorState(current_program = node, current_temperature = 50, best_program = node,best_program_cost=current_cost))
 end
 
 
@@ -58,6 +58,7 @@ function Base.iterate(iter::StochasticSearchEnumerator, current_state::IteratorS
     possible_replacements = iter.propose(current_program, neighbourhood_node_location, grammar, iter.max_depth, dict)
     possible_program = current_program
     best_replacement = nothing
+    # @info "Possible replacements size: $(length(possible_replacements))"
     for possible_replacement in possible_replacements
         # @info "Replacement: $(rulenode2expr(possible_replacement, grammar))"
         # replace node at node_location with new_random 
@@ -70,7 +71,7 @@ function Base.iterate(iter::StochasticSearchEnumerator, current_state::IteratorS
         end
         program_cost = calculate_cost(possible_program, iter.cost_function, examples, grammar)
         # @info "Possible program: $(rulenode2expr(possible_program, grammar)), $(program_cost)"
-        if iter.accept(current_cost, program_cost)
+        if iter.accept(current_cost, program_cost, new_temperature)  # TODO: check whether it should be previous or new temperature
             new_program = deepcopy(possible_program)
             current_cost = program_cost
             best_replacement = deepcopy(possible_replacement)

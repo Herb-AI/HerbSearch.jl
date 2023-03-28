@@ -40,6 +40,7 @@ export
   get_bfs_enumerator,
   get_mh_enumerator,
   get_vlsn_enumerator,
+  get_sa_enumerator,
   search_it,
   mean_squared_error,
   accuracy,

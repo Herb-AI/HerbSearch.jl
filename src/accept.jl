@@ -1,4 +1,4 @@
-function probabilistic_accept(current_cost, program_to_consider_cost)
+function probabilistic_accept(current_cost, program_to_consider_cost, temperature)
     ratio = current_cost / program_to_consider_cost 
     # if the program_to_consider cost is smaller ratio will be above one
     # @info "Ratio is $ratio"
@@ -19,6 +19,14 @@ function probabilistic_accept(current_cost, program_to_consider_cost)
     return false
 end
 
-function best_accept(current_cost, program_to_consider_cost)
+function best_accept(current_cost, program_to_consider_cost, temperature)
     return current_cost > program_to_consider_cost
+end
+
+function probabilistic_accept_with_temperature(current_cost, program_to_consider_cost, temperature)
+    delta = program_to_consider_cost - current_cost
+    if delta < 0
+        return true
+    end
+    return 1 / (1 + exp(delta / temperature)) > rand()
 end

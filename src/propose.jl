@@ -39,7 +39,7 @@ function enumerate_neighbours_propose(current_program, neighbourhood_node_loc, g
     subset_grammar = ContextFreeGrammar(dict["rule_subset"], grammar.types, grammar.isterminal, 
         grammar.iseval, grammar.bytype, grammar.childtypes, grammar.log_probabilities)
 
-    replacement_expressions_enumerator = get_bfs_enumerator(grammar, 2, neighbourhood_symbol)
+    replacement_expressions_enumerator = get_bfs_enumerator(subset_grammar, 2, neighbourhood_symbol)  # TODO: change depth - not hard coded
     replacement_expressions = collect(replacement_expressions_enumerator)
     # @info("$replacement_expressions")
 
