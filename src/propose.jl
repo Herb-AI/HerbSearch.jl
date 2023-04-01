@@ -63,8 +63,6 @@ function enumerate_neighbours_propose(current_program, neighbourhood_node_loc, g
     # this is depth that we can still generate without exceeding max_depth
     remaining_depth = max_depth - current_depth + 1  # TODO: make use of remaining depth
 
-    print(typeof(dict["rule_subset"]))
-
     subset_grammar = ContextFreeGrammar(dict["rule_subset"], grammar.types, grammar.isterminal,
         grammar.iseval, grammar.bytype, grammar.childtypes, grammar.log_probabilities)
 

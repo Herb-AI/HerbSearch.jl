@@ -1,9 +1,9 @@
 using Random
 
 """
-MetropolisHastingsEnumerator
+StochasticSearchEnumerator
 
-A unified struct for the algorithm Metropolis Hastings, Very Large Neighbourhood Search and Simulated Annealing.
+A unified struct for the algorithms Metropolis Hastings, Very Large Scale Neighbourhood and Simulated Annealing.
 Each algorithm implements `neighbourhood` `propose` `accept` and `temperature` functions. Below the signiture of all this function is shown
 
 ## Signatures
