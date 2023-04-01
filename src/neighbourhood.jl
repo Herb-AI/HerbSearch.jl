@@ -1,9 +1,31 @@
+"""
+A neighbourhood function returns a tuple of two elements: 
+- the node location of the neighbourhood 
+- the dictionary with additional properties of the neighbourhood.
+"""
+
+
+
+"""
+The neighbourhood node location is chosen at random.
+The dictionary is nothing.
+# Arguments
+- `current_program::RuleNode`: the current program.
+- `grammar::Grammar`: the grammar.
+"""
 function constructNeighbourhood(current_program::RuleNode, grammar::Grammar)
     # get a random position in the tree (parent,child index)
     node_location::NodeLoc = sample(NodeLoc, current_program)
     return node_location, nothing
 end
 
+"""
+The neighbourhood node location is chosen at random.
+The dictionary is contains one entry with key "rule_subset" and value of type Vector{Any} being a random subset of grammar rules.
+# Arguments
+- `current_program::RuleNode`: the current program.
+- `grammar::Grammar`: the grammar.
+"""
 function constructNeighbourhoodRuleSubset(current_program::RuleNode, grammar::Grammar)
     # get a random position in the tree (parent,child index)
     node_location::NodeLoc = sample(NodeLoc, current_program)
