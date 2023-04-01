@@ -16,6 +16,8 @@ end
 examples_hard = [Herb.HerbData.IOExample(Dict(:x => x), x * (x + 5) + 2) for x ∈ 1:10]
 problem = Herb.HerbData.Problem(examples_hard, "example")
 
-enumerator = HerbSearch.get_sa_enumeratorg(grammar, examples_hard, 4, :X, HerbSearch.mean_squared_error)
+# enumerator = HerbSearch.get_sa_enumerator(grammar, examples_hard, 4, :X, HerbSearch.mean_squared_error, 50000)
+
+enumerator = HerbSearch.get_mh_enumerator(grammar, examples_hard, 5, :X, HerbSearch.mean_squared_error)
 @time work = Herb.HerbSearch.search_it(grammar, problem, enumerator)
 println(work)

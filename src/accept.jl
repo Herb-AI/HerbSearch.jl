@@ -1,11 +1,11 @@
 function probabilistic_accept(current_cost, program_to_consider_cost, temperature)
-    ratio = current_cost / program_to_consider_cost 
+    ratio = current_cost / program_to_consider_cost
     # if the program_to_consider cost is smaller ratio will be above one
     # @info "Ratio is $ratio"
     if ratio >= 1
         # @info "Accepted! Ratio >= 1"
         return true
-    end 
+    end
 
     random_number = rand()
     # @debug "Ratio $ratio Random $random_number"
@@ -28,5 +28,13 @@ function probabilistic_accept_with_temperature(current_cost, program_to_consider
     if delta < 0
         return true
     end
-    return 1 / (1 + exp(delta / temperature)) > rand()
+    return 2 / (1 + exp(delta / temperature)) > rand()
+end
+
+function probabilistic_accept_with_temperature_fraction(current_cost, program_to_consider_cost, temperature)
+    ratio = current_cost / program_to_consider_cost
+    if ratio >= 1
+        return true
+    end
+    return ratio * temperature >= rand()
 end
