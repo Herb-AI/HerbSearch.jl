@@ -43,7 +43,7 @@ export
   get_sa_enumerator,
   search_it,
   mean_squared_error,
-  accuracy,
+  misclassification,
 
   dfs_expand_heuristic,
   dfs_priority_function,
