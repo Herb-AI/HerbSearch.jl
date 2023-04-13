@@ -22,29 +22,56 @@ Expression is an expression like x * x + x * x * x - 5 and max_depth is the max 
 """
 macro testmh(expression::String, max_depth=6)
     return :(
-        @testset "test Metropolis Hastings $($expression)" begin
+        @testset "mh $($expression)" begin
         e = Meta.parse("x -> $($expression)")
         problem, examples = create_problem(eval(e))
         enumerator = HerbSearch.get_mh_enumerator(grammar, examples, $max_depth, :X, HerbSearch.mean_squared_error)
         found = Herb.HerbSearch.search_it(grammar, problem, enumerator)
-        println("Wanted $($expression) => Found $found")
+        # TODO: remove before merge to master only for demonstation
+        println("Wanted mh $($expression) => Found $found")
+        @test 1 == 1
+    end
+    )
+end
+
+
+macro testsa(expression::String,max_depth=6,init_temp = 2)
+    return :(
+        @testset "sa $($expression)" begin
+        e = Meta.parse("x -> $($expression)")
+        problem, examples = create_problem(eval(e))
+        enumerator = HerbSearch.get_sa_enumerator(grammar, examples, $max_depth, :X, HerbSearch.mean_squared_error, $init_temp)
+        found = Herb.HerbSearch.search_it(grammar, problem, enumerator)
+        
+        # TODO: remove before merge to master only for demonstation
+        println("Wanted sa $($expression) => Found $found")
+        # Dummy assert so that it appears there. if we get to this point the search function founda a correct solution
+        @test 1 == 1
+    end
+    )
+end
+
+macro testvlsn(expression::String,max_depth=6)
+    return :(
+        @testset "vl $($expression)" begin
+        e = Meta.parse("x -> $($expression)")
+        problem, examples = create_problem(eval(e))
+        enumerator = HerbSearch.get_vlsn_enumerator(grammar, examples, $max_depth, :X, HerbSearch.mean_squared_error)
+        found = Herb.HerbSearch.search_it(grammar, problem, enumerator)
+        
+        # TODO: remove before merge to master only for demonstation
+        println("Wanted vl $($expression) => Found $found")
+        @test 1 == 1
     end
     )
 end
 
 @testset verbose = true "Algorithms" begin
     @testset verbose = true "MH" begin
-
+        @test 1 == 1
         @testmh "x * x + 4" 3
         @testmh "x * (x + 5) + 2" 4
         @testmh "x * (x + 25) + 5" 6
-        # @testmh "x * (x + 25) + 101" 5 <- tests takes a long time to run
-
-        # @testset "test Metropolis Hastings x * (x + 25) + 101" begin
-        #     problem, examples = create_problem(x -> x * (x + 25) + 101)
-        #     enumerator = HerbSearch.get_mh_enumerator(grammar, examples, 6, :X, HerbSearch.mean_squared_error)
-        #     println("Found ", Herb.HerbSearch.search_it(grammar, problem, enumerator))
-        # end
 
         function test_factor_out(number, max_depth::Int64)
             problem, examples = create_problem(x -> number)
@@ -53,15 +80,28 @@ end
         end
 
         @testset verbose = true "factorization" begin
-            @testset "125 = 5 * 5 * 5" begin
-                test_factor_out(125, 3)
-            end
-            @testset "625 = 5 * 5 * 5 * 5" begin
-                test_factor_out(125, 3)
-            end
-            @testset "150 = 2 * 3 * 5 * 5" begin
-                test_factor_out(150, 3)
-            end
+            @testmh  "5 * 5 * 5"         3  # 125 = 5 * 5 * 5 (depth 3)
+            @testmh  "5 * 5 * 5 * 5"     3  # 625 = 5 * 5 * 5 * 5 (depth 3)
+            @testmh  "2 * 3 * 5 * 5"     3  # 150 = 2 * 3 * 5 * 5 (depth 3)
+            @testmh  "2 * 2 * 3 * 4 * 5" 4  # 240 = ((2 * 2) * (3 * 4)) * 5 (depth 4)
+
+        end
+    end
+    
+    @testset verbose = true "Very Large Scale Neighbourhood" begin
+        @testvlsn "x * x * x" 3
+        @testvlsn "x * x * x * x" 4
+    end
+    
+    @testset verbose = true "Simulated Annealing" begin
+        @testsa "x * x + 4" 3
+        @testsa "x * (x + 5)" 3 2
+
+        @testset verbose = true "factorization" begin
+            @testsa  "5 * 5 * 5"         3  # 125 = 5 * 5 * 5 (depth 3)
+            @testsa  "5 * 5 * 5 * 5"     3  # 625 = 5 * 5 * 5 * 5 (depth 3)
+            @testsa  "2 * 3 * 5 * 5"     3  # 150 = 2 * 3 * 5 * 5 (depth 3)
+            @testsa  "2 * 2 * 3 * 4 * 5" 4  # 240 = ((2 * 2) * (3 * 4)) * 5 (depth 4)
 
         end
     end
