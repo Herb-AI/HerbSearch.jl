@@ -86,9 +86,11 @@ end
 """
 The algorithm that constructs the iterator of StochasticSearchEnumerator. It has the following structure:
 
-1. calculate the cost of the current program
 1. get a random node location -> location,dict = neighbourhood(current_program)
-2. call propose on the current program 
+2. call propose on the current program getting a list of possbile replacements in the node location 
+3. iterate through all the possible replacements and perform the replacement in the current program 
+    4.  accept the new program by modifying the next_program or reject the new program
+5. return the new next_program
 """
 function Base.iterate(iter::StochasticSearchEnumerator, current_state::IteratorState)
     grammar, examples = iter.grammar, iter.examples
