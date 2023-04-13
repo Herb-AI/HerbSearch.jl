@@ -1,15 +1,15 @@
 """
 Calculates the ratio between the cost of the current program and the cost of the proposed program.
-If the proposed program has smaller cost, returns true.
-Otherwise, returns true with the probability equal to the ratio.
-In any other case, returns false.
+If the functino returns 
+- True => new program is accepted 
+- False => new program is rejected
 # Arguments
 - `current_cost::Float`: the cost of the current program.
 - `next_cost::Float`: the cost of the proposed program.
 - `temperature::Float`: the temperature; not used.
 """
 function probabilistic_accept(current_cost, next_cost, temperature)
-    ratio = current_cost / next_cost
+    ratio = current_cost / (current_cost + next_cost)
     return ratio >= rand()
 end
 
@@ -45,8 +45,9 @@ function probabilistic_accept_with_temperature(current_cost, next_cost, temperat
     return 2 / (1 + exp(delta / temperature)) > rand()
 end
 
+
 function probabilistic_accept_with_temperature_fraction(current_cost, program_to_consider_cost, temperature)
-    ratio = current_cost / program_to_consider_cost
+    ratio = current_cost / (program_to_consider_cost + current_cost)
     if ratio >= 1
         return true
     end
