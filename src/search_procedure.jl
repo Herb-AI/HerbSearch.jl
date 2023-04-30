@@ -22,7 +22,7 @@ end
 """
 Searches the grammar in order to solve the provided input and output examples using the iterator provided
 """
-function search_it(g::Grammar, problem::Problem, iterator)::Any
+function search_it(g::Grammar, problem::Problem, iterator::ExpressionIterator)::Any
     symboltable :: SymbolTable = SymbolTable(g)
     for h :: RuleNode ∈ iterator
         # Create expression from rulenode representation of AST

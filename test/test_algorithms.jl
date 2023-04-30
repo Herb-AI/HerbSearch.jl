@@ -25,8 +25,8 @@ macro testmh(expression::String, max_depth=6)
         problem, examples = create_problem(eval(e))
         enumerator = HerbSearch.get_mh_enumerator(grammar, examples, $max_depth, :X, HerbSearch.mean_squared_error)
         found = Herb.HerbSearch.search_it(grammar, problem, enumerator)
-        # TODO: remove before merge to master only for demonstation
-        println("Wanted mh $($expression) => Found $found")
+        
+        # Dummy assert so that it appears there. If we get to this point the search function founda a correct solution.
         @test 1 == 1
     end
     )
@@ -41,9 +41,7 @@ macro testsa(expression::String,max_depth=6,init_temp = 2)
         enumerator = HerbSearch.get_sa_enumerator(grammar, examples, $max_depth, :X, HerbSearch.mean_squared_error, $init_temp)
         found = Herb.HerbSearch.search_it(grammar, problem, enumerator)
         
-        # TODO: remove before merge to master only for demonstation
-        println("Wanted sa $($expression) => Found $found")
-        # Dummy assert so that it appears there. if we get to this point the search function founda a correct solution
+        # Dummy assert so that it appears there. If we get to this point the search function founda a correct solution.
         @test 1 == 1
     end
     )
@@ -57,8 +55,7 @@ macro testvlsn(expression::String, max_depth = 6, enumeration_depth = 2)
         enumerator = HerbSearch.get_vlsn_enumerator(grammar, examples, $max_depth, :X, HerbSearch.mean_squared_error, $enumeration_depth)
         found = Herb.HerbSearch.search_it(grammar, problem, enumerator)
         
-        # TODO: remove before merge to master only for demonstation
-        println("Wanted vl $($expression) => Found $found")
+        # Dummy assert so that it appears there. If we get to this point the search function founda a correct solution.
         @test 1 == 1
     end
     )
