@@ -19,6 +19,9 @@ function search(g::Grammar, problem::Problem, depth::Int, start::Symbol, enumera
     return nothing
 end
 
+"""
+Searches the grammar in order to solve the provided input and output examples using the iterator provided
+"""
 function search_it(g::Grammar, problem::Problem, iterator)::Any
     symboltable :: SymbolTable = SymbolTable(g)
     for h :: RuleNode ∈ iterator

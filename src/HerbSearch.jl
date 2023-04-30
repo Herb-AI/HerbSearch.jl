@@ -16,12 +16,12 @@ include("csg_priority_enumerator.jl")
 
 include("stochastic_search_iterator.jl")
 include("search_procedure.jl")
-include("cost_functions.jl")
+include("stocastic_functions/cost_functions.jl")
 
-include("neighbourhood.jl")
-include("propose.jl")
-include("accept.jl")
-include("temperature.jl")
+include("stocastic_functions/neighbourhood.jl")
+include("stocastic_functions/propose.jl")
+include("stocastic_functions/accept.jl")
+include("stocastic_functions/temperature.jl")
 include("stochastic_enumerators.jl")
 
 export 
@@ -43,7 +43,7 @@ export
   get_sa_enumerator,
   search_it,
   mean_squared_error,
-  accuracy,
+  misclassification,
 
   dfs_expand_heuristic,
   dfs_priority_function,

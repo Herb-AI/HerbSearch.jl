@@ -3,7 +3,7 @@ Returns the amount of misclassified examples, i.e. how many tuples with non-matc
 # Arguments
 - `results::AbstractVector{Tuple{Int64, Int64}}`: the vector of tuples, where each tuple is in the form `Tuple{expected_output, actual_output}`.
 """
-function accuracy(results::AbstractVector{Tuple{Int64,Int64}})
+function misclassification(results::AbstractVector{Tuple{Int64,Int64}})
     return count(pair -> pair[1] != pair[2], results) / length(results)
 end
 

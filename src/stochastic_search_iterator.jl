@@ -86,9 +86,11 @@ end
 """
 The algorithm that constructs the iterator of StochasticSearchEnumerator. It has the following structure:
 
-1. calculate the cost of the current program
 1. get a random node location -> location,dict = neighbourhood(current_program)
-2. call propose on the current program 
+2. call propose on the current program getting a list of possbile replacements in the node location 
+3. iterate through all the possible replacements and perform the replacement in the current program 
+    4.  accept the new program by modifying the next_program or reject the new program
+5. return the new next_program
 """
 function Base.iterate(iter::StochasticSearchEnumerator, current_state::IteratorState)
     grammar, examples = iter.grammar, iter.examples
@@ -115,7 +117,6 @@ function Base.iterate(iter::StochasticSearchEnumerator, current_state::IteratorS
     next_program = deepcopy(current_program)
     possible_program = current_program
     best_replacement = nothing
-    # @info "Possible replacements size: $(length(possible_replacements))"
     for possible_replacement in possible_replacements
         # replace node at node_location with new_random 
         if neighbourhood_node_location.i == 0
@@ -126,20 +127,12 @@ function Base.iterate(iter::StochasticSearchEnumerator, current_state::IteratorS
             neighbourhood_node_location.parent.children[neighbourhood_node_location.i] = possible_replacement
         end
         program_cost = calculate_cost(possible_program, iter.cost_function, examples, grammar)
-        # TODO: check whether it should be previous or new temperature
         if iter.accept(current_cost, program_cost, new_temperature) 
             next_program = deepcopy(possible_program)
             current_cost = program_cost
             best_replacement = deepcopy(possible_replacement)
         end
     end
-
-    # if best_replacement !== nothing
-    #     @info "Best replace: $(rulenode2expr(best_replacement, grammar)) => Cost : $current_cost"
-    # else
-    #     @info "Can't find better"
-    # end
-    # @info "================"
 
     if current_cost < current_state.best_program_cost
         next_state = IteratorState(
