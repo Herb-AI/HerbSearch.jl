@@ -128,20 +128,12 @@ function Base.iterate(iter::StochasticSearchEnumerator, current_state::IteratorS
             neighbourhood_node_location.parent.children[neighbourhood_node_location.i] = possible_replacement
         end
         program_cost = calculate_cost(possible_program, iter.cost_function, examples, grammar)
-        # TODO: check whether it should be previous or new temperature
         if iter.accept(current_cost, program_cost, new_temperature) 
             next_program = deepcopy(possible_program)
             current_cost = program_cost
             best_replacement = deepcopy(possible_replacement)
         end
     end
-
-    # if best_replacement !== nothing
-    #     @info "Best replace: $(rulenode2expr(best_replacement, grammar)) => Cost : $current_cost"
-    # else
-    #     @info "Can't find better"
-    # end
-    # @info "================"
 
     if current_cost < current_state.best_program_cost
         next_state = IteratorState(

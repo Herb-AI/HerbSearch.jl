@@ -34,7 +34,7 @@ function get_sa_enumerator(grammar, examples, max_depth, start_symbol, cost_func
         neighbourhood=constructNeighbourhoodRuleSubset,
         propose=random_fill_propose,
         temperature=decreasing_temperature,
-        accept=probabilistic_accept_with_temperature_fraction,
+        accept=probabilistic_accept_with_temperature,
         cost_function=cost_function,
         start_symbol=start_symbol,
         initial_temperature=initial_temperature

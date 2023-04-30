@@ -2,18 +2,16 @@ using Logging
 disable_logging(LogLevel(1))
 
 
-function create_problem(f, range=10)
+function create_problem(f, range=20)
     examples = [Herb.HerbData.IOExample(Dict(:x => x), f(x)) for x ∈ 1:range]
     return Herb.HerbData.Problem(examples, "example"), examples
 end
 
 grammar = @cfgrammar begin
-    C = |(1:5)
     X = |(1:5)
-    X = C * X
+    X = X * X
     X = X + X
     X = X - X
-    X = X * X
     X = x
 end
 
@@ -72,6 +70,8 @@ end
         @testmh "x * x + 4" 3
         @testmh "x * (x + 5) + 2" 4
         @testmh "x * (x + 25) + 5" 6
+        @testmh "x * x + 5 * x * x * x * x" 6
+
 
         function test_factor_out(number, max_depth::Int64)
             problem, examples = create_problem(x -> number)
