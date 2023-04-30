@@ -117,7 +117,6 @@ function Base.iterate(iter::StochasticSearchEnumerator, current_state::IteratorS
     next_program = deepcopy(current_program)
     possible_program = current_program
     best_replacement = nothing
-    # @info "Possible replacements size: $(length(possible_replacements))"
     for possible_replacement in possible_replacements
         # replace node at node_location with new_random 
         if neighbourhood_node_location.i == 0

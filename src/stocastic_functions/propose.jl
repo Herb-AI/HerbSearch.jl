@@ -43,32 +43,31 @@ function random_fill_propose(current_program, neighbourhood_node_loc, grammar, m
 end
 
 """
-Returns a list with all the subprograms constructed by using a subset of the grammar rules with depth at most 2.
+The return function is a function that produces a list with all the subprograms constructed by using a subset of the grammar rules with depth at most `enumeration_depth`.
 The function expects the entry with key "rule_subset" in `dict` and value of type Vector{Any}.
 # Arguments
-- `current_program::RuleNode`: the current program.
-- `neighbourhood_node_loc::NodeLoc`: the location of the program to replace.
-- `grammar::Grammar`: the grammar used to create programs.
-- `max_depth::Int`: the maximum depth of the resulting programs.
-- `dict::Dict{String, Any}`: the dictionary with additional arguments; must contain "rule_subset"
+- `current_program::Int64`: the maximum enumeration depth.
 """
-function enumerate_neighbours_propose(current_program, neighbourhood_node_loc, grammar, max_depth, dict)
-    # it can change the current_program for fast replacing of the node
-    # find the symbol of subprogram
-    subprogram = get(current_program, neighbourhood_node_loc)
-    neighbourhood_symbol = return_type(grammar, subprogram)
+function enumerate_neighbours_propose(enumeration_depth)
+    return (current_program, neighbourhood_node_loc, grammar, max_depth, dict) -> begin
+        # it can change the current_program for fast replacing of the node
+        # find the symbol of subprogram
+        subprogram = get(current_program, neighbourhood_node_loc)
+        neighbourhood_symbol = return_type(grammar, subprogram)
+    
+        # find the depth of subprogram
+        current_depth = node_depth(current_program, subprogram)
+        # this is depth that we can still generate without exceeding max_depth
+        remaining_depth = max_depth - current_depth + 1  
+        depth_left = min(remaining_depth, enumeration_depth)
+        subset_grammar = ContextFreeGrammar(dict["rule_subset"], grammar.types, grammar.isterminal,
+            grammar.iseval, grammar.bytype, grammar.childtypes, grammar.log_probabilities)
 
-    # find the depth of subprogram
-    current_depth = node_depth(current_program, subprogram)
-    # this is depth that we can still generate without exceeding max_depth
-    remaining_depth = max_depth - current_depth + 1  # TODO: make use of remaining depth
-
-    subset_grammar = ContextFreeGrammar(dict["rule_subset"], grammar.types, grammar.isterminal,
-        grammar.iseval, grammar.bytype, grammar.childtypes, grammar.log_probabilities)
-
-    replacement_expressions_enumerator = get_bfs_enumerator(subset_grammar, 2, neighbourhood_symbol)  # TODO: change depth - not hard coded
-    replacement_expressions = collect(replacement_expressions_enumerator)
-    # @info("$replacement_expressions")
-
-    return replacement_expressions
+        replacement_expressions_enumerator = get_bfs_enumerator(subset_grammar, depth_left, neighbourhood_symbol)  
+        replacement_expressions = collect(replacement_expressions_enumerator)
+    
+        return replacement_expressions
+    end
 end
+    
+

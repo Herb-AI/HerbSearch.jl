@@ -49,12 +49,12 @@ macro testsa(expression::String,max_depth=6,init_temp = 2)
     )
 end
 
-macro testvlsn(expression::String,max_depth=6)
+macro testvlsn(expression::String, max_depth = 6, enumeration_depth = 2)
     return :(
         @testset "vl $($expression)" begin
         e = Meta.parse("x -> $($expression)")
         problem, examples = create_problem(eval(e))
-        enumerator = HerbSearch.get_vlsn_enumerator(grammar, examples, $max_depth, :X, HerbSearch.mean_squared_error)
+        enumerator = HerbSearch.get_vlsn_enumerator(grammar, examples, $max_depth, :X, HerbSearch.mean_squared_error, $enumeration_depth)
         found = Herb.HerbSearch.search_it(grammar, problem, enumerator)
         
         # TODO: remove before merge to master only for demonstation
@@ -90,7 +90,8 @@ end
     
     @testset verbose = true "Very Large Scale Neighbourhood" begin
         @testvlsn "x * x * x" 3
-        @testvlsn "x * x * x * x" 4
+        @testvlsn "x * x * x * x" 3
+
     end
     
     @testset verbose = true "Simulated Annealing" begin
