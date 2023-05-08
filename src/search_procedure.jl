@@ -8,6 +8,7 @@ Searches the grammar for the program that satisfies the maximum number of exampl
                               input variable assignments and returns the output of the expression.
         - enumerator        - A constructor for the enumerator that should be used in the search
         - max_depth         - The maximum depth of the search
+        - max_size          - The maximum number of nodes for ASTs in the search
         - max_time          - The maximum time allowed for the search in seconds
         - max_enumerations  - The maximum number of programs to enumerate and test
     Returns the optimal program once it has been found, or nothing otherwise.
@@ -19,6 +20,7 @@ function search(
         evaluator::Function=test_with_input, 
         enumerator::Function=get_bfs_enumerator,
         max_depth::Union{Int, Nothing}=nothing,
+        max_size::Union{Int, Nothing}=nothing,
         max_time::Union{Int, Nothing}=nothing,
         max_enumerations::Union{Int, Nothing}=nothing
     )::Any
@@ -28,7 +30,12 @@ function search(
     check_enumerations = max_enumerations !== nothing
     symboltable :: SymbolTable = SymbolTable(g)
 
-    hypotheses = enumerator(g, max_depth ≡ nothing ? typemax(Int) : max_depth , start)
+    hypotheses = enumerator(
+        g, 
+        max_depth ≡ nothing ? typemax(Int) : max_depth, 
+        max_size ≡ nothing ? typemax(Int) : max_size,
+        start
+    )
 
     for (i, h) ∈ enumerate(hypotheses)
         # Create expression from rulenode representation of AST
@@ -88,6 +95,7 @@ function search_best(
         enumerator::Function=get_bfs_enumerator,
         error_function::Function=default_error_function,
         max_depth::Union{Int, Nothing}=nothing,
+        max_size::Union{Int, Nothing}=nothing,
         max_time::Union{Int, Nothing}=nothing,
         max_enumerations::Union{Int, Nothing}=nothing
     )::Tuple{Any, Real}
@@ -97,8 +105,13 @@ function search_best(
     check_enumerations = max_enumerations !== nothing
     symboltable :: SymbolTable = SymbolTable(g)
 
-    hypotheses = enumerator(g, max_depth ≡ nothing ? typemax(Int) : max_depth , start)
-
+    hypotheses = enumerator(
+        g, 
+        max_depth ≡ nothing ? typemax(Int) : max_depth, 
+        max_size ≡ nothing ? typemax(Int) : max_size,
+        start
+    )
+    
     best_error = typemax(Int)
     best_program = nothing
     for (i, h) ∈ enumerate(hypotheses)

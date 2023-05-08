@@ -5,6 +5,7 @@ This means that smaller programs are returned before larger programs.
 mutable struct ContextSensitivePriorityEnumerator <: ExpressionIterator 
     grammar::ContextSensitiveGrammar
     max_depth::Int
+    max_size::Int
     # Assigns a priority to a (partial or complete) tree.
     priority_function::Function
     # Expands a partial tree.
@@ -12,33 +13,34 @@ mutable struct ContextSensitivePriorityEnumerator <: ExpressionIterator
     sym::Symbol
 end 
 
-@enum ExpandFailureReason depth_reached=1 already_complete=2
+@enum ExpandFailureReason limit_reached=1 already_complete=2
 
 struct PQItem 
     tree::AbstractRuleNode
+    size::Int
     constraints::Vector{LocalConstraint}
 end
-PQItem(tree::AbstractRuleNode) = PQItem(tree, [])
+PQItem(tree::AbstractRuleNode, size::Int) = PQItem(tree, size, [])
 
 function Base.iterate(iter::ContextSensitivePriorityEnumerator)
     # Priority queue with number of nodes in the program
     pq :: PriorityQueue{PQItem, Union{Real, Tuple{Vararg{Real}}}} = PriorityQueue()
 
-    grammar, max_depth, sym = iter.grammar, iter.max_depth, iter.sym
+    grammar, max_depth, max_size, sym = iter.grammar, iter.max_depth, iter.max_size, iter.sym
     priority_function, expand_function = iter.priority_function, iter.expand_function
 
     init_node = Hole(get_domain(grammar, sym))
 
-    enqueue!(pq, PQItem(init_node), priority_function(grammar, init_node, 0))
+    enqueue!(pq, PQItem(init_node, 0), priority_function(grammar, init_node, 0))
     
-    return _find_next_complete_tree(grammar, max_depth, priority_function, expand_function, pq)
+    return _find_next_complete_tree(grammar, max_depth, max_size, priority_function, expand_function, pq)
 end
 
 
 function Base.iterate(iter::ContextSensitivePriorityEnumerator, pq::DataStructures.PriorityQueue)
-    grammar, max_depth = iter.grammar, iter.max_depth
+    grammar, max_depth, max_size = iter.grammar, iter.max_depth, iter.max_size
     priority_function, expand_function = iter.priority_function, iter.expand_function
-    return _find_next_complete_tree(grammar, max_depth, priority_function, expand_function, pq)
+    return _find_next_complete_tree(grammar, max_depth, max_size, priority_function, expand_function, pq)
 end
 
 
@@ -77,14 +79,32 @@ Takes a priority queue and returns the smallest AST from the grammar it can obta
 queue or by (repeatedly) expanding trees that are in the queue.
 Returns nothing if there are no trees left within the depth limit.
 """
-function _find_next_complete_tree(grammar::ContextSensitiveGrammar, max_depth::Int, priority_function::Function, expand_function::Function, pq::PriorityQueue)
+function _find_next_complete_tree(
+    grammar::ContextSensitiveGrammar, 
+    max_depth::Int, 
+    max_size::Int,
+    priority_function::Function, 
+    expand_function::Function, 
+    pq::PriorityQueue
+)::Union{Tuple{RuleNode, PriorityQueue}, Nothing}
     while length(pq) ≠ 0
         (pqitem, priority_value) = dequeue_pair!(pq)
+        if pqitem.size == max_size
+            # Check if tree contains holes
+            if contains_hole(pqitem.tree)
+                # There is no need to expand this tree, since the size limit is reached
+                continue
+            end
+            return (pqitem.tree, pq)
+        elseif pqitem.size ≥ max_size
+            continue
+        end
         expand_result = expand_function(pqitem.tree, grammar, max_depth - 1, GrammarContext(pqitem.tree, [], pqitem.constraints))
         if expand_result ≡ already_complete
             # Current tree is complete, it can be returned
             return (pqitem.tree, pq)
-        elseif expand_result ≡ depth_reached
+        elseif expand_result ≡ limit_reached
+            # The maximum depth is reached
             continue
         elseif expand_result isa Tuple{Vector{AbstractRuleNode}, Vector{LocalConstraint}}
             # Either the current tree can't be expanded due to depth 
@@ -93,14 +113,12 @@ function _find_next_complete_tree(grammar::ContextSensitiveGrammar, max_depth::I
             # the next tree in the queue.
             expanded_child_trees, local_constraints = expand_result
             for expanded_tree ∈ expanded_child_trees
-                # Pass the local scope to the function for calculating the priority 
-                pqitem = PQItem(expanded_tree, local_constraints)
-                enqueue!(pq, pqitem, priority_function(grammar, expanded_tree, priority_value))
+                new_pqitem = PQItem(expanded_tree, pqitem.size + 1, local_constraints)
+                enqueue!(pq, new_pqitem, priority_function(grammar, expanded_tree, priority_value))
             end
         else
-            error("Got an invalid response of type $(typeof(expand_result)) from `_expand` function")
+            error("Got an invalid response of type $(typeof(expand_result)) from expand function")
         end
-
     end
     return nothing
 end
@@ -126,7 +144,7 @@ function _expand(
     if grammar.isterminal[node.ind]
         return already_complete
     elseif max_depth ≤ 0
-        return depth_reached
+        return limit_reached
     end
 
     for (child_index, child) ∈ enumerate(node.children)
@@ -136,10 +154,10 @@ function _expand(
         if expand_result ≡ already_complete
             # Subtree is already complete
             continue
-        elseif expand_result ≡ depth_reached
+        elseif expand_result ≡ limit_reached
             # There is a hole that can't be expanded further, so we cannot make this 
             # tree complete anymore. 
-            return depth_reached
+            return limit_reached
         elseif expand_result isa Tuple{Vector{AbstractRuleNode}, Vector{LocalConstraint}}
             # Hole was found and expanded
             nodes::Vector{AbstractRuleNode} = []
@@ -168,7 +186,7 @@ function _expand(
         expand_heuristic::Function=bfs_expand_heuristic
     )::Union{ExpandFailureReason, Tuple{Vector{AbstractRuleNode}, Vector{LocalConstraint}}}
     if max_depth < 0
-        return depth_reached
+        return limit_reached
     end
 
     nodes::Vector{AbstractRuleNode} = []
