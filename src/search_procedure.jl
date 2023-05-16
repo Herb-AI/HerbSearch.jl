@@ -42,8 +42,21 @@ function search(
         expr = rulenode2expr(h, g)
 
         # Evaluate the examples. 
-        # `all` shortcircuits, so not every example will be evaluated in every iteration. 
-        if all(example.out == evaluator(symboltable, expr, example.in) for example ∈ problem.examples)
+        falsified = false
+        for example ∈ problem.examples
+            # Evaluate the example, making sure that any exceptions are caught
+            try
+                output = evaluator(symboltable, expr, example.in)
+                if output ≠ example.out
+                    falsified = true
+                    break
+                end
+            catch
+                falsified = true
+                break
+            end
+        end
+        if !falsified
             return expr
         end
 
@@ -120,8 +133,17 @@ function search_best(
 
         # Evaluate the expression on the examples
         total_error = 0
+        crashed = false
         for example ∈ problem.examples
-            total_error = error_function(total_error, evaluator(symboltable, expr, example.in), example.out)
+            try
+                output = evaluator(symboltable, expr, example.in)
+                total_error = error_function(total_error, output, example.out)
+            catch e
+                # You could also decide to handle less severe errors (such as index out of range) differently,
+                # for example by just increasing the error value and keeping the program as a candidate.
+                crashed = true
+                break
+            end
 
             # Check if we can still improve the best program found so far
             if total_error ≥ best_error
@@ -129,7 +151,9 @@ function search_best(
             end
         end
 
-        if total_error == 0
+        if crashed 
+            # do nothing
+        elseif total_error == 0
             return expr, 0
         elseif total_error < best_error
             # Update the best found example so far
