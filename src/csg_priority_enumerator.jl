@@ -15,12 +15,15 @@ end
 
 @enum ExpandFailureReason limit_reached=1 already_complete=2
 
+NodeLocation = Vector{Int}
+
 struct PQItem 
     tree::AbstractRuleNode
+    hole_locations::Vector{NodeLocation}
     size::Int
     constraints::Vector{LocalConstraint}
 end
-PQItem(tree::AbstractRuleNode, size::Int) = PQItem(tree, size, [])
+PQItem(tree::AbstractRuleNode, size::Int) = PQItem(tree, [], size, [])
 
 function Base.iterate(iter::ContextSensitivePriorityEnumerator)
     # Priority queue with number of nodes in the program
@@ -99,21 +102,24 @@ function _find_next_complete_tree(
         elseif pqitem.size ≥ max_size
             continue
         end
-        expand_result = expand_function(pqitem.tree, grammar, max_depth - 1, GrammarContext(pqitem.tree, [], pqitem.constraints))
+        # println("pqitem holes: ", pqitem.hole_locations)
+        expand_result = expand_function(pqitem.tree, grammar, max_depth - 1, GrammarContext(pqitem.tree, [], pqitem.constraints), pqitem.hole_locations)
         if expand_result ≡ already_complete
             # Current tree is complete, it can be returned
             return (pqitem.tree, pq)
         elseif expand_result ≡ limit_reached
             # The maximum depth is reached
             continue
-        elseif expand_result isa Tuple{Vector{AbstractRuleNode}, Vector{LocalConstraint}}
+        elseif expand_result isa Tuple{Vector{AbstractRuleNode}, Vector{Vector{NodeLocation}}, Vector{LocalConstraint}}
             # Either the current tree can't be expanded due to depth 
             # limit (no expanded trees), or the expansion was successful. 
             # We add the potential expanded trees to the pq and move on to 
             # the next tree in the queue.
-            expanded_child_trees, local_constraints = expand_result
-            for expanded_tree ∈ expanded_child_trees
-                new_pqitem = PQItem(expanded_tree, pqitem.size + 1, local_constraints)
+            expanded_child_trees, new_holes_per_child_tree, local_constraints = expand_result
+            for (expanded_tree, new_holes) ∈ zip(expanded_child_trees, new_holes_per_child_tree)
+                # expanded_tree is a new program tree with a new expanded child compared to pqitem.tree
+                # new_holes are all the holes in expanded_tree
+                new_pqitem = PQItem(expanded_tree, new_holes, pqitem.size + 1, local_constraints)
                 enqueue!(pq, new_pqitem, priority_function(grammar, expanded_tree, priority_value))
             end
         else
@@ -126,7 +132,7 @@ end
 """
 Recursive expand function used in multiple enumeration techniques.
 Expands one hole/undefined leaf of the given RuleNode tree.
-The first hole found using a DFS is expanded first.
+The first hole found using a DFS is expanded first. (TODO: use hole_locations argument instead!)
 Returns list of new trees when expansion was succesfull.
 Returns nothing if tree is already complete (contains no holes).
 Returns empty list if the tree is partial (contains holes), 
@@ -137,8 +143,9 @@ function _expand(
         grammar::ContextSensitiveGrammar, 
         max_depth::Int, 
         context::GrammarContext, 
-        expand_heuristic::Function=bfs_expand_heuristic
-    )::Union{ExpandFailureReason, Tuple{Vector{AbstractRuleNode}, Vector{LocalConstraint}}}
+        hole_locations::Vector{NodeLocation},
+        expand_heuristic::Function=bfs_expand_heuristic,
+    )::Union{ExpandFailureReason, Tuple{Vector{AbstractRuleNode}, Vector{Vector{NodeLocation}}, Vector{LocalConstraint}}}
     # Find any hole. Technically, the type of search doesn't matter.
     # We use recursive DFS for memory efficiency, since depth is limited.
     if grammar.isterminal[node.ind]
@@ -150,7 +157,8 @@ function _expand(
     for (child_index, child) ∈ enumerate(node.children)
         child_context = GrammarContext(context.originalExpr, deepcopy(context.nodeLocation), context.constraints)
         push!(child_context.nodeLocation, child_index)
-        expand_result = _expand(child, grammar, max_depth - 1, child_context, expand_heuristic)
+
+        expand_result = _expand(child, grammar, max_depth - 1, child_context, hole_locations, expand_heuristic)
         if expand_result ≡ already_complete
             # Subtree is already complete
             continue
@@ -158,10 +166,10 @@ function _expand(
             # There is a hole that can't be expanded further, so we cannot make this 
             # tree complete anymore. 
             return limit_reached
-        elseif expand_result isa Tuple{Vector{AbstractRuleNode}, Vector{LocalConstraint}}
+        elseif expand_result isa Tuple{Vector{AbstractRuleNode}, Vector{Vector{NodeLocation}}, Vector{LocalConstraint}}
             # Hole was found and expanded
             nodes::Vector{AbstractRuleNode} = []
-            expanded_child_trees, local_constraints = expand_result
+            expanded_child_trees, new_hole_locations, local_constraints = expand_result
             for expanded_tree ∈ expanded_child_trees
                 # Copy other children of the current node
                 children = deepcopy(node.children)
@@ -169,7 +177,7 @@ function _expand(
                 children[child_index] = expanded_tree
                 push!(nodes, RuleNode(node.ind, children))
             end
-            return nodes, local_constraints
+            return nodes, new_hole_locations, local_constraints
         else
             error("Got an invalid response of type $(typeof(expand_result)) from `_expand` function")
         end
@@ -179,21 +187,31 @@ function _expand(
 end
 
 function _expand(
-        node::Hole, 
-        grammar::ContextSensitiveGrammar, 
-        max_depth::Int, 
-        context::GrammarContext, 
-        expand_heuristic::Function=bfs_expand_heuristic
-    )::Union{ExpandFailureReason, Tuple{Vector{AbstractRuleNode}, Vector{LocalConstraint}}}
+    node::Hole, 
+    grammar::ContextSensitiveGrammar, 
+    max_depth::Int, 
+    context::GrammarContext, 
+    hole_locations::Vector{NodeLocation},
+    expand_heuristic::Function=bfs_expand_heuristic,
+)::Union{ExpandFailureReason, Tuple{Vector{AbstractRuleNode}, Vector{Vector{NodeLocation}}, Vector{LocalConstraint}}}
     if max_depth < 0
         return limit_reached
     end
-
     nodes::Vector{AbstractRuleNode} = []
     domain, new_constraints::Vector{LocalConstraint} = propagate_constraints(grammar, context, findall(node.domain))
-    for rule_index ∈ expand_heuristic(domain)
-        push!(nodes, RuleNode(rule_index, grammar))
-    end
-    return nodes, new_constraints
-end
+    # copy the location of all holes in the current tree, except the context.nodeLocation which we just expanded
+    new_hole_locations::Vector{Vector{NodeLocation}} = [[location for location in hole_locations if location != context.nodeLocation] for _ in domain]
+    for (i, rule_index) ∈ enumerate(expand_heuristic(domain))
+        node = RuleNode(rule_index, grammar)
+        for c in eachindex(node.children)
+            # the path to the child is the path to the current node + the child index
+            child_location = deepcopy(context.nodeLocation)
+            push!(child_location, c)
 
+            # every child of node is a new hole to be added to the list
+            push!(new_hole_locations[i], child_location)
+        end
+        push!(nodes, node)
+    end
+    return nodes, new_hole_locations, new_constraints
+end

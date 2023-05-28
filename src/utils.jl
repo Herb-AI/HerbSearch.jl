@@ -6,12 +6,12 @@ bfs_expand_heuristic(rules) = rules
 Returns a breadth-first search enumerator. Returns trees in the grammar in increasing order of size. 
 """
 function get_bfs_enumerator(grammar::ContextFreeGrammar, max_depth::Int, max_size::Int, sym::Symbol)::ContextSensitivePriorityEnumerator
-    expand_function(node, grammar, max_depth, context) = _expand(node, grammar, max_depth, context, bfs_expand_heuristic)
+    expand_function(node, grammar, max_depth, context, hole_locations) = _expand(node, grammar, max_depth, context, hole_locations, bfs_expand_heuristic)
     return ContextSensitivePriorityEnumerator(cfg2csg(grammar), max_depth, max_size, bfs_priority_function, expand_function, sym)
 end
 
 function get_bfs_enumerator(grammar::ContextSensitiveGrammar, max_depth::Int, max_size::Int, sym::Symbol)::ContextSensitivePriorityEnumerator
-    expand_function(node, grammar, max_depth, context) = _expand(node, grammar, max_depth, context, bfs_expand_heuristic)
+    expand_function(node, grammar, max_depth, context, hole_locations) = _expand(node, grammar, max_depth, context, hole_locations, bfs_expand_heuristic)
     return ContextSensitivePriorityEnumerator(grammar, max_depth, max_size, bfs_priority_function, expand_function, sym)
 end
 
