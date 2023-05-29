@@ -13,6 +13,8 @@ include("count_expressions.jl")
 
 include("csg_priority_enumerator.jl")
 
+include("heuristics.jl")
+
 include("search_procedure.jl")
 
 export 
@@ -22,14 +24,17 @@ export
   
   ContextSensitivePriorityEnumerator,
   
+  heuristic_leftmost,
+  heuristic_rightmost,
+  heuristic_random,
+  heuristic_smallest_domain,
+
   search,
   search_best,
 
-  bfs_expand_heuristic,
   bfs_priority_function,
   get_bfs_enumerator,
 
-  dfs_expand_heuristic,
   dfs_priority_function,
   get_dfs_enumerator,
 

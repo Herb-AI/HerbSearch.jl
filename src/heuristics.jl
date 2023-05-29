@@ -1,85 +1,109 @@
+HeuristicResult = Tuple{Hole, Vector{Int}}
 
+function heuristic_leftmost(node::AbstractRuleNode, max_depth::Int)::Union{ExpandFailureReason, HeuristicResult}
+    function leftmost(node::RuleNode, max_depth::Int, path::Vector{Int})::Union{ExpandFailureReason, HeuristicResult}
+        if max_depth == 0 return limit_reached end
 
-function heuristic_leftmost(node::AbstractRuleNode)::Vector{Int}
-    function leftmost(node::RuleNode, path::Vector{Int})::Union{Nothing, Vector{Int}}
         for (i, child) in enumerate(node.children)
-            maybe_res = leftmost(child, push!(copy(path), i))
-            if !isnothing(maybe_res)
-                return maybe_res
+            new_path = push!(copy(path), i)
+            hole_res = leftmost(child, max_depth-1, new_path)
+            if (hole_res == limit_reached) || (hole_res isa HeuristicResult)
+                return hole_res
             end
         end
     
-        return nothing
+        return already_complete
     end
     
-    leftmost(::Hole, path::Vector{Int})::Union{Nothing,Vector{Int}} = path
+    function leftmost(hole::Hole, max_depth::Int, path::Vector{Int})::Union{ExpandFailureReason, HeuristicResult}
+        if max_depth == 0 return limit_reached end
+        return (hole, path)
+    end
 
-    return leftmost(node, [])
+    return leftmost(node, max_depth, Vector{Int}())
 end
 
 
-function heuristic_rightmost(node::AbstractRuleNode)::Vector{Int}
-    function rightmost(node::RuleNode, path::Vector{Int})::Union{Nothing, Vector{Int}}
+function heuristic_rightmost(node::AbstractRuleNode, max_depth::Int)::Union{ExpandFailureReason, HeuristicResult}
+    function rightmost(node::RuleNode, max_depth::Int, path::Vector{Int})::Union{ExpandFailureReason, HeuristicResult}
+        if max_depth == 0 return limit_reached end
+
         for (i, child) in Iterators.reverse(enumerate(node.children))
-            maybe_res = rightmost(child, push!(copy(path), i))
-            if !isnothing(maybe_res)
-                return maybe_res
+            new_path = push!(copy(path), i)
+            hole_res = rightmost(child, max_depth-1, new_path)
+            if (hole_res == limit_reached) || (hole_res isa HeuristicResult)
+                return hole_res
             end
         end
     
-        return nothing
+        return already_complete
     end
     
-    rightmost(::Hole, path::Vector{Int})::Union{Nothing,Vector{Int}} = path
+    function rightmost(hole::Hole, max_depth::Int, path::Vector{Int})::Union{ExpandFailureReason, HeuristicResult}
+        if max_depth == 0 return limit_reached end
+        return (hole, path)
+    end
 
-    return rightmost(node, [])
+    return rightmost(node, max_depth, Vector{Int}())
 end
 
 
-function heuristic_random(node::AbstractRuleNode)::Vector{Int}
-    function random(node::RuleNode, path::Vector{Int})::Union{Nothing, Vector{Int}}
+function heuristic_random(node::AbstractRuleNode, max_depth::Int)::Union{ExpandFailureReason, HeuristicResult}
+    function random(node::RuleNode, max_depth::Int, path::Vector{Int})::Union{ExpandFailureReason, HeuristicResult}
+        if max_depth == 0 return limit_reached end
+
         for (i, child) in shuffle(collect(enumerate(node.children)))
-            maybe_res = random(child, push!(copy(path), i))
-            if !isnothing(maybe_res)
-                return maybe_res
+            new_path = push!(copy(path), i)
+            hole_res = random(child, max_depth-1, new_path)
+            if (hole_res == limit_reached) || (hole_res isa HeuristicResult)
+                return hole_res
             end
         end
     
-        return nothing
+        return already_complete
     end
     
-    random(::Hole, path::Vector{Int})::Union{Nothing,Vector{Int}} = path
+    function random(hole::Hole, max_depth::Int, path::Vector{Int})::Union{ExpandFailureReason, HeuristicResult}
+        if max_depth == 0 return limit_reached end
+        return (hole, path)
+    end
 
-    return random(node, [])
+    return random(node, max_depth, Vector{Int}())
 end
 
 
-function heuristic_smallest_domain(node::AbstractRuleNode)::Vector{Int}
-    function smallest_domain(node::RuleNode, path::Vector{Int})::Union{Nothing, Tuple{Int, Vector{Int}}}
-        if node.children == []
-            return nothing
-        end
-        
+function heuristic_smallest_domain(node::AbstractRuleNode)::Union{ExpandFailureReason, HeuristicResult}
+    function smallest_domain(node::RuleNode, max_depth::Int, path::Vector{Int})::Union{ExpandFailureReason, HeuristicResult}
+        if max_depth == 0 return limit_reached end
+
         smallest_size::Int = typemax(Int)
-        smallest_path::Vector{Int} = []
+        smallest_result::HeuristicResult = nothing
 
-        for (i, child) in shuffle(collect(enumerate(node.children)))
-            maybe_res = smallest_domain(child, push!(copy(path), i))
-            if !isnothing(maybe_res)
-                (size, path) = maybe_res
-                if size < smallest_size
+        for (i, child) in enumerate(node.children)
+            new_path = push!(copy(path), i)
+            hole_res = leftmost(child, max_depth-1, new_path)
+
+            if hole_res == limit_reached
+                return hole_res
+            end
+
+            if hole_res isa HeuristicResult
+                hole, _ = hole_res
+                if count(hole.domain) < smallest_size
                     smallest_size = size
-                    smallest_path = path
+                    smallest_result = hole_res
                 end
             end
         end
-
-        return (smallest_size, smallest_path)
+    
+        if isnothing(smallest_result) return already_complete end
+        return smallest_result
     end
     
-    smallest_domain(hole::Hole, path::Vector{Int})::Union{Nothing, Tuple{Int, Vector{Int}}} = (count(hole.domain), path)
+    function smallest_domain(hole::Hole, max_depth::Int, path::Vector{Int})::Union{ExpandFailureReason, HeuristicResult}
+        if max_depth == 0 return limit_reached end
+        return (hole, path)
+    end
 
-    (size, path) = smallest_domain(node, [])
-
-    return path
+    return smallest_domain(node, max_depth, Vector{Int}())
 end
