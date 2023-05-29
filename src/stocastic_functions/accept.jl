@@ -1,8 +1,8 @@
+# Smaller cost means a better program. Bigger cost means a worse program.
+
 """
-Calculates the ratio between the cost of the current program and the cost of the proposed program.
-If the functino returns 
-- True => new program is accepted 
-- False => new program is rejected
+Probabilistically decides whether to accept the new program (next) based on the ratio of costs (smaller is better) between the previous and new program.
+Returns `True` if the new program is accepted, `False` otherwise.
 # Arguments
 - `current_cost::Float`: the cost of the current program.
 - `next_cost::Float`: the cost of the proposed program.
@@ -11,6 +11,23 @@ If the functino returns
 function probabilistic_accept(current_cost, next_cost, temperature)
     ratio = current_cost / (current_cost + next_cost)
     return ratio >= rand()
+end
+
+"""
+Probabilistically decides whether to accept the new program (next) based on the ratio of costs (smaller is better) between the previous and new program multiplied
+by the temperature.
+Returns `True` if the new program is accepted, `False` otherwise.
+# Arguments
+- `current_cost::Float`: the cost of the current program.
+- `next_cost::Float`: the cost of the proposed program.
+- `temperature::Float`: the current temperature 
+"""
+function probabilistic_accept_with_temperature_fraction(current_cost, program_to_consider_cost, temperature)
+    ratio = current_cost / (program_to_consider_cost + current_cost)
+    if ratio >= 1
+        return true
+    end
+    return ratio * temperature >= rand()
 end
 
 """
@@ -43,13 +60,4 @@ function probabilistic_accept_with_temperature(current_cost, next_cost, temperat
         return true
     end
     return 2 / (1 + exp(delta / temperature)) > rand()
-end
-
-
-function probabilistic_accept_with_temperature_fraction(current_cost, program_to_consider_cost, temperature)
-    ratio = current_cost / (program_to_consider_cost + current_cost)
-    if ratio >= 1
-        return true
-    end
-    return ratio * temperature >= rand()
 end
