@@ -35,7 +35,7 @@ Returns the cost of the current program. It receives a list of tuples `(expected
 
 ----
 # Fields
--   `grammar::ContextFreeGrammar` grammar that the algorithm uses
+-   `grammar::ContextSensitiveGrammar` grammar that the algorithm uses
 -   `max_depth::Int64 = 5`  maximum depth of the program to generate
 -   `examples::Vector{Example}` example used to check the program
 -   `neighbourhood::Function` 
@@ -48,7 +48,7 @@ Returns the cost of the current program. It receives a list of tuples `(expected
 An iterator over all possible expressions of a grammar up to max_depth with start symbol sym.
 """
 Base.@kwdef mutable struct StochasticSearchEnumerator <: ExpressionIterator
-    grammar::ContextFreeGrammar
+    grammar::ContextSensitiveGrammar
     max_depth::Int64 = 5  # maximum depth of the program that is generated
     examples::Vector{Example}
     neighbourhood::Function
@@ -63,8 +63,6 @@ end
 Base.@kwdef struct IteratorState
     current_program::RuleNode
     current_temperature::Float32
-    best_program::RuleNode
-    best_program_cost::Float32
 end
 
 Base.IteratorSize(::StochasticSearchEnumerator) = Base.SizeUnknown()
@@ -77,9 +75,7 @@ function Base.iterate(iter::StochasticSearchEnumerator)
     current_cost = calculate_cost(sampled_program, iter.cost_function, iter.examples, iter.grammar)
     return (sampled_program, IteratorState(
         current_program=sampled_program,
-        current_temperature=iter.initial_temperature,
-        best_program=sampled_program,
-        best_program_cost=current_cost))
+        current_temperature=iter.initial_temperature))
 end
 
 
@@ -134,19 +130,9 @@ function Base.iterate(iter::StochasticSearchEnumerator, current_state::IteratorS
         end
     end
 
-    if current_cost < current_state.best_program_cost
-        next_state = IteratorState(
-            current_program=next_program,
-            current_temperature=new_temperature,
-            best_program=next_program,
-            best_program_cost=current_cost)
-    else
-        next_state = IteratorState(
-            current_program=next_program,
-            current_temperature=new_temperature,
-            best_program=current_state.best_program,
-            best_program_cost=current_state.best_program_cost)
-    end
+    next_state = IteratorState(
+        current_program=next_program,
+        current_temperature=new_temperature)
 
     return (next_program, next_state)
 end

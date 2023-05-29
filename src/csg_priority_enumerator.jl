@@ -15,21 +15,14 @@ end
 
 function Base.iterate(iter::ContextSensitivePriorityEnumerator)
     # Priority queue with number of nodes in the program
-    pq :: PriorityQueue{RuleNode, Union{Real, Tuple{Vararg{Real}}}} = PriorityQueue()
+    pq :: PriorityQueue{AbstractRuleNode, Union{Real, Tuple{Vararg{Real}}}} = PriorityQueue()
 
     grammar, max_depth, sym = iter.grammar, iter.max_depth, iter.sym
     priority_function, expand_function = iter.priority_function, iter.expand_function
 
-    init_node = RuleNode(0)
-    init_context = GrammarContext(init_node)
-
-    rules = [x for x ∈ grammar[sym]]
-    rules = propagate_constraints(grammar, init_context, rules)
-
-    for r ∈ rules
-        node = RuleNode(r)
-        enqueue!(pq, node, priority_function(grammar, node, 0))
-    end
+    init_node = Hole(get_domain(grammar, sym))
+    enqueue!(pq, init_node, priority_function(grammar, init_node, 0))
+    
     return _find_next_complete_tree(grammar, max_depth, priority_function, expand_function, pq)
 end
 
@@ -38,6 +31,24 @@ function Base.iterate(iter::ContextSensitivePriorityEnumerator, pq::DataStructur
     grammar, max_depth = iter.grammar, iter.max_depth
     priority_function, expand_function = iter.priority_function, iter.expand_function
     return _find_next_complete_tree(grammar, max_depth, priority_function, expand_function, pq)
+end
+
+
+"""
+Reduces the set of possible children of a node using the grammar's constraints
+"""
+function propagate_constraints(
+        grammar::ContextSensitiveGrammar, 
+        context::GrammarContext, 
+        child_rules::Vector{Int}
+    )
+    domain = child_rules
+
+    for propagator ∈ grammar.constraints
+        domain = propagate(propagator, grammar, context, domain)
+    end
+
+    return domain
 end
 
 
@@ -85,46 +96,43 @@ function _expand(node::RuleNode, grammar::ContextSensitiveGrammar, max_depth::In
         return []
     end
 
-    childtypes = grammar.childtypes[node.ind]
     # This node doesn't have holes, check the children
-    if length(childtypes) == length(node.children)
-        for (child_index, child) ∈ enumerate(node.children)
-            child_context = GrammarContext(context.originalExpr, deepcopy(context.nodeLocation))
-            push!(child_context.nodeLocation, child_index)
-            expanded_child_trees = _expand(child, grammar, max_depth - 1, child_context, expand_heuristic)
-            if expanded_child_trees ≡ nothing
-                # Subtree is already complete
-                continue
-            elseif expanded_child_trees == []
-                # There is a hole that can't be expanded further, so we cannot make this 
-                # tree complete anymore. 
-                return []
-            else
-                # Hole was found and expanded
-                nodes = []
-                for expanded_tree ∈ expanded_child_trees
-                    # Copy other children of the current node
-                    children = deepcopy(node.children)
-                    # Update the child we are expanding
-                    children[child_index] = expanded_tree
-                    push!(nodes, RuleNode(node.ind, children))
-                end
-                return nodes
+    for (child_index, child) ∈ enumerate(node.children)
+        child_context = GrammarContext(context.originalExpr, deepcopy(context.nodeLocation))
+        push!(child_context.nodeLocation, child_index)
+        expanded_child_trees = _expand(child, grammar, max_depth - 1, child_context, expand_heuristic)
+        if expanded_child_trees ≡ nothing
+            # Subtree is already complete
+            continue
+        elseif expanded_child_trees == []
+            # There is a hole that can't be expanded further, so we cannot make this 
+            # tree complete anymore. 
+            return []
+        else
+            # Hole was found and expanded
+            nodes = []
+            for expanded_tree ∈ expanded_child_trees
+                # Copy other children of the current node
+                children = deepcopy(node.children)
+                # Update the child we are expanding
+                children[child_index] = expanded_tree
+                push!(nodes, RuleNode(node.ind, children))
             end
-
+            return nodes
         end
-    else # This node has an unfilled hole
-        child_type = childtypes[length(node.children) + 1]
-        nodes = []
 
-        for rule_index ∈ expand_heuristic(propagate_constraints(grammar, context, deepcopy(grammar[child_type])))
-            # Copy existing children of the current node
-            children = deepcopy(node.children)
-            # Add the child we are expanding
-            push!(children, RuleNode(rule_index))
-            push!(nodes, RuleNode(node.ind, children))
-        end
-        return nodes
     end
+end
+
+function _expand(node::Hole, grammar::ContextSensitiveGrammar, max_depth::Int, context::GrammarContext, expand_heuristic::Function=bfs_expand_heuristic)
+    if max_depth < 0
+        return []
+    end
+
+    nodes = []
+    for rule_index ∈ expand_heuristic(propagate_constraints(grammar, context, findall(node.domain)))
+        push!(nodes, RuleNode(rule_index, grammar))
+    end
+    return nodes
 end
 

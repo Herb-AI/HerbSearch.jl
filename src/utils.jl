@@ -1,4 +1,4 @@
-bfs_priority_function(::Grammar, ::RuleNode, parent_value::Union{Real, Tuple{Vararg{Real}}}) = parent_value + 1
+bfs_priority_function(::Grammar, ::AbstractRuleNode, parent_value::Union{Real, Tuple{Vararg{Real}}}) = parent_value + 1
 bfs_expand_heuristic(rules) = rules
 
 
@@ -15,7 +15,7 @@ function get_bfs_enumerator(grammar::ContextSensitiveGrammar, max_depth::Int, sy
     return ContextSensitivePriorityEnumerator(grammar, max_depth, bfs_priority_function, expand_function, sym)
 end
 
-dfs_priority_function(::Grammar, ::RuleNode, parent_value::Union{Real, Tuple{Vararg{Real}}}) = parent_value - 1
+dfs_priority_function(::Grammar, ::AbstractRuleNode, parent_value::Union{Real, Tuple{Vararg{Real}}}) = parent_value - 1
 dfs_expand_heuristic(rules) = rules
 
 
@@ -34,7 +34,9 @@ end
 
 
 
-most_likely_priority_function(g::Grammar, tree::RuleNode, ::Union{Real, Tuple{Vararg{Real}}}) = -rulenode_log_probability(tree, g)
+function most_likely_priority_function(g::Grammar, tree::AbstractRuleNode, ::Union{Real, Tuple{Vararg{Real}}})
+    -rulenode_log_probability(tree, g)
+end
 
 """
 Returns an enumerator that enumerates expressions in the grammar in decreasing order of probability.
@@ -43,4 +45,9 @@ Only use this function with probabilistic grammars.
 function get_most_likely_first_enumerator(grammar::ContextFreeGrammar, max_depth::Int, sym::Symbol)::ContextFreePriorityEnumerator
     expand_function(node, grammar, max_depth) = _expand(node, grammar, max_depth, identity)
     return ContextFreePriorityEnumerator(grammar, max_depth, most_likely_priority_function, expand_function, sym)
+end
+
+function get_most_likely_first_enumerator(grammar::ContextSensitiveGrammar, max_depth::Int, sym::Symbol)::ContextSensitivePriorityEnumerator
+    expand_function(node, grammar, max_depth, context) = _expand(node, grammar, max_depth, context, identity)
+    return ContextSensitivePriorityEnumerator(grammar, max_depth, most_likely_priority_function, expand_function, sym)
 end

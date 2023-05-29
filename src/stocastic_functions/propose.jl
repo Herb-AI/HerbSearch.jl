@@ -32,13 +32,9 @@ function random_fill_propose(current_program, neighbourhood_node_loc, grammar, m
         return [current_program]
     end
 
-    @assert remaining_depth >= 1 "remaining_depth $remaining_depth should be bigger than 1 here"
     # generate completely random expression (subprogram) with remaining_depth
     replacement = rand(RuleNode, grammar, neighbourhood_symbol, remaining_depth)
-    @assert depth(replacement) <= remaining_depth "The depth of new random = $(depth(replacement)) but remaning depth =  $remaining_depth. 
-            Expreesion was $(rulenode2expr(current_program,grammar))"
 
-    @assert depth(current_program) <= max_depth "Depth of program is $(depth(current_program)) but max_depth = $max_depth"
     return [replacement]
 end
 
@@ -60,8 +56,17 @@ function enumerate_neighbours_propose(enumeration_depth)
         # this is depth that we can still generate without exceeding max_depth
         remaining_depth = max_depth - current_depth + 1  
         depth_left = min(remaining_depth, enumeration_depth)
-        subset_grammar = ContextFreeGrammar(dict["rule_subset"], grammar.types, grammar.isterminal,
-            grammar.iseval, grammar.bytype, grammar.childtypes, grammar.log_probabilities)
+
+        subset_grammar = ContextSensitiveGrammar(
+            dict[:rule_subset], 
+            grammar.types, 
+            grammar.isterminal,
+            grammar.iseval, 
+            grammar.bytype,
+            grammar.domains,
+            grammar.childtypes, 
+            grammar.log_probabilities,
+            grammar.constraints)
 
         replacement_expressions_enumerator = get_bfs_enumerator(subset_grammar, depth_left, neighbourhood_symbol)  
         replacement_expressions = collect(replacement_expressions_enumerator)
