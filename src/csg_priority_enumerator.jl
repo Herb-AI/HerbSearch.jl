@@ -102,7 +102,6 @@ function _find_next_complete_tree(
         elseif pqitem.size ≥ max_size
             continue
         end
-        # println("pqitem holes: ", pqitem.hole_locations)
         expand_result = expand_function(pqitem.tree, grammar, max_depth - 1, GrammarContext(pqitem.tree, [], pqitem.constraints), pqitem.hole_locations)
         if expand_result ≡ already_complete
             # Current tree is complete, it can be returned
@@ -133,7 +132,9 @@ end
 Recursive expand function used in multiple enumeration techniques.
 Expands one hole/undefined leaf of the given RuleNode tree.
 The first hole found using a DFS is expanded first. (TODO: use hole_locations argument instead!)
-Returns list of new trees when expansion was succesfull.
+If the expansion was successful, returns a list of new trees and a
+list of lists of hole locations, corresponding to the holes of each
+new expanded tree. 
 Returns nothing if tree is already complete (contains no holes).
 Returns empty list if the tree is partial (contains holes), 
     but they couldn't be expanded because of the depth limit.
@@ -148,6 +149,7 @@ function _expand(
     )::Union{ExpandFailureReason, Tuple{Vector{AbstractRuleNode}, Vector{Vector{NodeLocation}}, Vector{LocalConstraint}}}
     # Find any hole. Technically, the type of search doesn't matter.
     # We use recursive DFS for memory efficiency, since depth is limited.
+    # TODO: use heuristics with hole_locations argument
     if grammar.isterminal[node.ind]
         return already_complete
     elseif max_depth ≤ 0
