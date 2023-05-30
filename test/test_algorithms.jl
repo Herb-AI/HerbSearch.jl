@@ -40,7 +40,7 @@ macro testsa(expression::String,max_depth=6,init_temp = 2)
         enumerator = HerbSearch.get_sa_enumerator(examples, HerbSearch.mean_squared_error, $init_temp)
         program, cost = Herb.HerbSearch.search_best(grammar, problem, :X, enumerator=enumerator, error_function=mse_error_function, max_depth=$max_depth, max_time=3)
         
-        @test cost <= 50
+        @test cost == 0
     end
     )
 end
@@ -93,8 +93,8 @@ end
 
         @testset verbose = true "factorization" begin
             @testsa  "5 * 5 * 5"         3  # 125 = 5 * 5 * 5 (depth 3)
-            @testsa  "5 * 5 * 5 * 5"     3  # 625 = 5 * 5 * 5 * 5 (depth 3)
-            @testsa  "2 * 3 * 5 * 5"     4  # 150 = 2 * 3 * 5 * 5 (depth 4, because with depth 3 is apparently hard to find)
+            @testsa  "2 * 3 * 4"         3  # (depth 3)
+            @testsa  "(5 + 5) * 5"       3  # (depth 3)
 
         end
     end
