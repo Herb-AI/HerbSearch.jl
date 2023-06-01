@@ -68,7 +68,7 @@ function enumerate_neighbours_propose(enumeration_depth)
             grammar.log_probabilities,
             grammar.constraints)
 
-        replacement_expressions_enumerator = get_bfs_enumerator(subset_grammar, depth_left, neighbourhood_symbol)  
+        replacement_expressions_enumerator = get_bfs_enumerator(subset_grammar, depth_left, typemax(Int), neighbourhood_symbol)  
         replacement_expressions = collect(replacement_expressions_enumerator)
     
         return replacement_expressions

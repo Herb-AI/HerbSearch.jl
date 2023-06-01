@@ -1,5 +1,5 @@
 function get_mh_enumerator(examples, cost_function)
-    return (grammar, max_depth, start_symbol) -> begin
+    return (grammar, max_depth, max_size, start_symbol) -> begin
         return StochasticSearchEnumerator(
             grammar=grammar,
             examples=examples,
@@ -16,7 +16,7 @@ function get_mh_enumerator(examples, cost_function)
 end
 
 function get_vlsn_enumerator(examples, cost_function, enumeration_depth = 2)
-    return (grammar, max_depth, start_symbol) -> begin
+    return (grammar, max_depth, max_size, start_symbol) -> begin
         return StochasticSearchEnumerator(
             grammar=grammar,
             examples=examples,
@@ -32,7 +32,7 @@ function get_vlsn_enumerator(examples, cost_function, enumeration_depth = 2)
 end
 
 function get_sa_enumerator(examples, cost_function, initial_temperature=1, temperature_decreasing_factor = 0.99)
-    return (grammar, max_depth, start_symbol) -> begin
+    return (grammar, max_depth, max_size, start_symbol) -> begin
         return StochasticSearchEnumerator(
             grammar=grammar,
             examples=examples,

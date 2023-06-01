@@ -81,21 +81,21 @@ end
         end
     end
     
-    # @testset verbose = true "Very Large Scale Neighbourhood" begin
-    #     @testvlsn "x * x * x" 3
-    #     @testvlsn "x * x * x * x" 3
-
-    # end
-    
-    @testset verbose = true "Simulated Annealing" begin
-        @testsa "x * x + 4" 3
-        @testsa "x * (x + 5)" 3 2
-
-        @testset verbose = true "factorization" begin
-            @testsa  "5 * 5 * 5"         3  # 125 = 5 * 5 * 5 (depth 3)
-            @testsa  "2 * 3 * 4"         3  # (depth 3)
-            @testsa  "(5 + 5) * 5"       3  # (depth 3)
+        @testset verbose = true "Very Large Scale Neighbourhood" begin
+            @testvlsn "x * x * x" 3
+            @testvlsn "x * x * x * x" 3
 
         end
-    end
+        
+        @testset verbose = true "Simulated Annealing" begin
+            @testsa "x * x + 4" 3
+            @testsa "x * (x + 5)" 3 2
+
+            @testset verbose = true "factorization" begin
+                @testsa  "5 * 5 * 5"         3  # 125 = 5 * 5 * 5 (depth 3)
+                @testsa  "2 * 3 * 4"         3  # (depth 3)
+                @testsa  "(5 + 5) * 5"       3  # (depth 3)
+
+            end
+        end
 end
