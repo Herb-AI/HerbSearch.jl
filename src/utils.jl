@@ -67,13 +67,3 @@ function get_most_likely_first_enumerator(
     expand_function(node, grammar, max_depth, context) = _expand(node, grammar, max_depth, context, hole_heuristic, value_heuristic)
     return ContextSensitivePriorityEnumerator(grammar, max_depth, max_size, most_likely_priority_function, expand_function, sym)
 end
-
-function get_node_from_path(root::AbstractRuleNode, path::Vector{Int})::AbstractRuleNode
-    node = root
-
-    for i in path
-        node = node.children[i]
-    end
-
-    return node
-end

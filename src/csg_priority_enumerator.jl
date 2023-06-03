@@ -15,6 +15,8 @@ end
 
 @enum ExpandFailureReason limit_reached=1 already_complete=2
 
+TreeConstraints = Tuple{AbstractRuleNode, Vector{LocalConstraint}}
+
 struct PQItem 
     tree::AbstractRuleNode
     size::Int
@@ -44,6 +46,40 @@ function Base.iterate(iter::ContextSensitivePriorityEnumerator, pq::DataStructur
 end
 
 
+function propagate_global(
+    root::AbstractRuleNode,
+    grammar::ContextSensitiveGrammar,
+    local_constraints::Vector{LocalConstraint}
+)::Vector{LocalConstraint}
+    function dfs(node::RuleNode, path::Vector{Int})::Vector{HeuristicResult}
+        holes::Vector{HeuristicResult} = []
+
+        for (i, child) in enumerate(node.children)
+            new_path = push!(copy(path), i)
+            append!(holes, dfs(child, new_path))
+        end
+
+        return holes
+    end
+
+    function dfs(hole::Hole, path::Vector{Int})::Vector{HeuristicResult}
+        return [(hole, path)]
+    end
+
+    new_local_constraints = local_constraints
+    for (hole, path) ∈ dfs(root, Vector{Int}())
+        new_domain, new_local_constraints = propagate_constraints(
+            grammar, 
+            GrammarContext(root, path, new_local_constraints), 
+            findall(hole.domain)
+        )
+        hole.domain = get_domain(grammar, new_domain)
+    end
+
+    return new_local_constraints
+end
+
+
 """
 Reduces the set of possible children of a node using the grammar's constraints
 """
@@ -51,7 +87,7 @@ function propagate_constraints(
         grammar::ContextSensitiveGrammar, 
         context::GrammarContext, 
         child_rules::Vector{Int}
-    )::Tuple
+    )::Tuple{Vector{Int}, Vector{LocalConstraint}}
     domain = child_rules
     new_local_constraints::Vector{LocalConstraint} = []
 
@@ -106,13 +142,12 @@ function _find_next_complete_tree(
         elseif expand_result ≡ limit_reached
             # The maximum depth is reached
             continue
-        elseif expand_result isa Tuple{Vector{AbstractRuleNode}, Vector{LocalConstraint}}
+        elseif expand_result isa Vector{TreeConstraints}
             # Either the current tree can't be expanded due to depth 
             # limit (no expanded trees), or the expansion was successful. 
             # We add the potential expanded trees to the pq and move on to 
             # the next tree in the queue.
-            expanded_child_trees, local_constraints = expand_result
-            for expanded_tree ∈ expanded_child_trees
+            for (expanded_tree, local_constraints) ∈ expand_result
                 # expanded_tree is a new program tree with a new expanded child compared to pqitem.tree
                 # new_holes are all the holes in expanded_tree
                 new_pqitem = PQItem(expanded_tree, pqitem.size + 1, local_constraints)
@@ -143,7 +178,7 @@ function _expand(
         context::GrammarContext, 
         hole_heuristic::Function,
         value_heuristic::Function,
-    )::Union{ExpandFailureReason, Tuple{Vector{AbstractRuleNode}, Vector{LocalConstraint}}}
+    )::Union{ExpandFailureReason, Vector{TreeConstraints}}
     hole_res = hole_heuristic(root, max_depth)
     if hole_res isa ExpandFailureReason
         return hole_res
@@ -151,21 +186,21 @@ function _expand(
         # Hole was found
         hole, node_location = hole_res
         hole_context = GrammarContext(context.originalExpr, node_location, context.constraints)
-        expanded_child_trees, local_constraints = _expand(hole, grammar, max_depth, hole_context, hole_heuristic, value_heuristic)
+        expanded_child_trees = _expand(hole, grammar, max_depth, hole_context, hole_heuristic, value_heuristic)
 
-        nodes::Vector{AbstractRuleNode} = []
-        for expanded_tree ∈ expanded_child_trees
+        nodes::Vector{TreeConstraints} = []
+        for (expanded_tree, local_constraints) ∈ expanded_child_trees
             copied_root = deepcopy(root)
 
-            parent_node = get_node_from_path(copied_root, node_location[1:end-1])
-
-            # Update the child we are expanding
+            parent_node = get_node_at_location(copied_root, node_location[1:end-1])
             parent_node.children[node_location[end]] = expanded_tree
 
-            push!(nodes, copied_root)
+            new_local_constraints = propagate_global(copied_root, grammar, local_constraints)
+
+            push!(nodes, (copied_root, new_local_constraints))
         end
         
-        return nodes, local_constraints
+        return nodes
     else
         error("Got an invalid response of type $(typeof(expand_result)) from `hole_heuristic` function")
     end
@@ -178,13 +213,13 @@ function _expand(
     context::GrammarContext, 
     hole_heuristic::Function,
     value_heuristic::Function,
-)::Tuple{Vector{AbstractRuleNode}, Vector{LocalConstraint}}
-    nodes::Vector{AbstractRuleNode} = []
+)::Union{ExpandFailureReason, Vector{TreeConstraints}}
+    nodes::Vector{TreeConstraints} = []
     domain, new_constraints::Vector{LocalConstraint} = propagate_constraints(grammar, context, findall(node.domain))
     
     for rule_index ∈ value_heuristic(domain)
-        push!(nodes, RuleNode(rule_index, grammar))
+        push!(nodes, (RuleNode(rule_index, grammar), new_constraints))
     end
 
-    return nodes, new_constraints
+    return nodes
 end
