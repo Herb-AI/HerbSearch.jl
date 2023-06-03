@@ -32,8 +32,14 @@ function Base.iterate(iter::ContextSensitivePriorityEnumerator)
     priority_function, expand_function = iter.priority_function, iter.expand_function
 
     init_node = Hole(get_domain(grammar, sym))
+    new_domain, new_constraints::Vector{LocalConstraint} = propagate_constraints(
+        grammar, 
+        GrammarContext(init_node, [], []), 
+        findall(init_node.domain)
+    )
+    init_node.domain = get_domain(grammar, new_domain)
 
-    enqueue!(pq, PQItem(init_node, 0), priority_function(grammar, init_node, 0))
+    enqueue!(pq, PQItem(init_node, 0, new_constraints), priority_function(grammar, init_node, 0))
     
     return _find_next_complete_tree(grammar, max_depth, max_size, priority_function, expand_function, pq)
 end
@@ -46,7 +52,7 @@ function Base.iterate(iter::ContextSensitivePriorityEnumerator, pq::DataStructur
 end
 
 
-function propagate_global(
+function propagate_all_holes(
     root::AbstractRuleNode,
     grammar::ContextSensitiveGrammar,
     local_constraints::Vector{LocalConstraint}
@@ -78,7 +84,6 @@ function propagate_global(
 
     return new_local_constraints
 end
-
 
 """
 Reduces the set of possible children of a node using the grammar's constraints
@@ -195,7 +200,7 @@ function _expand(
             parent_node = get_node_at_location(copied_root, node_location[1:end-1])
             parent_node.children[node_location[end]] = expanded_tree
 
-            new_local_constraints = propagate_global(copied_root, grammar, local_constraints)
+            new_local_constraints = propagate_all_holes(copied_root, grammar, local_constraints)
 
             push!(nodes, (copied_root, new_local_constraints))
         end
@@ -215,10 +220,9 @@ function _expand(
     value_heuristic::Function,
 )::Union{ExpandFailureReason, Vector{TreeConstraints}}
     nodes::Vector{TreeConstraints} = []
-    domain, new_constraints::Vector{LocalConstraint} = propagate_constraints(grammar, context, findall(node.domain))
     
-    for rule_index ∈ value_heuristic(domain)
-        push!(nodes, (RuleNode(rule_index, grammar), new_constraints))
+    for rule_index ∈ value_heuristic(findall(node.domain))
+        push!(nodes, (RuleNode(rule_index, grammar), context.constraints))
     end
 
     return nodes
