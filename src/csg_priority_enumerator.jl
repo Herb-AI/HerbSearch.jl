@@ -16,6 +16,7 @@ end
 @enum ExpandFailureReason limit_reached=1 already_complete=2
 
 TreeConstraints = Tuple{AbstractRuleNode, Vector{LocalConstraint}}
+IsValidTree = Bool
 
 struct PQItem 
     tree::AbstractRuleNode
@@ -56,7 +57,7 @@ function propagate_all_holes(
     root::AbstractRuleNode,
     grammar::ContextSensitiveGrammar,
     local_constraints::Vector{LocalConstraint}
-)::Vector{LocalConstraint}
+)::Tuple{IsValidTree, Vector{LocalConstraint}}
     function dfs(node::RuleNode, path::Vector{Int})::Vector{HeuristicResult}
         holes::Vector{HeuristicResult} = []
 
@@ -79,10 +80,15 @@ function propagate_all_holes(
             GrammarContext(root, path, new_local_constraints), 
             findall(hole.domain)
         )
+
+        if isempty(new_domain)
+            return false, []
+        end
+
         hole.domain = get_domain(grammar, new_domain)
     end
 
-    return new_local_constraints
+    return true, new_local_constraints
 end
 
 """
@@ -200,9 +206,11 @@ function _expand(
             parent_node = get_node_at_location(copied_root, node_location[1:end-1])
             parent_node.children[node_location[end]] = expanded_tree
 
-            new_local_constraints = propagate_all_holes(copied_root, grammar, local_constraints)
+            is_valid_tree, new_local_constraints = propagate_all_holes(copied_root, grammar, local_constraints)
 
-            push!(nodes, (copied_root, new_local_constraints))
+            if is_valid_tree
+                push!(nodes, (copied_root, new_local_constraints))
+            end
         end
         
         return nodes
