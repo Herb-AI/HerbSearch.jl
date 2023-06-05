@@ -15,13 +15,13 @@ end
 
 @enum ExpandFailureReason limit_reached=1 already_complete=2
 
-TreeConstraints = Tuple{AbstractRuleNode, Vector{LocalConstraint}}
+TreeConstraints = Tuple{AbstractRuleNode, Set{LocalConstraint}}
 IsValidTree = Bool
 
 struct PQItem 
     tree::AbstractRuleNode
     size::Int
-    constraints::Vector{LocalConstraint}
+    constraints::Set{LocalConstraint}
 end
 PQItem(tree::AbstractRuleNode, size::Int) = PQItem(tree, size, [])
 
@@ -33,13 +33,7 @@ function Base.iterate(iter::ContextSensitivePriorityEnumerator)
     priority_function, expand_function = iter.priority_function, iter.expand_function
 
     init_node = Hole(get_domain(grammar, sym))
-    new_domain, new_constraints::Vector{LocalConstraint} = propagate_constraints(
-        grammar, 
-        GrammarContext(init_node, [], []), 
-        findall(init_node.domain)
-    )
-    init_node.domain = get_domain(grammar, new_domain)
-
+    _, new_constraints = propagate_constraints(init_node, grammar, Set{LocalConstraint}())
     enqueue!(pq, PQItem(init_node, 0, new_constraints), priority_function(grammar, init_node, 0))
     
     return _find_next_complete_tree(grammar, max_depth, max_size, priority_function, expand_function, pq)
@@ -53,13 +47,14 @@ function Base.iterate(iter::ContextSensitivePriorityEnumerator, pq::DataStructur
 end
 
 
-function propagate_all_holes(
+function propagate_constraints(
     root::AbstractRuleNode,
     grammar::ContextSensitiveGrammar,
-    local_constraints::Vector{LocalConstraint}
-)::Tuple{IsValidTree, Vector{LocalConstraint}}
-    function dfs(node::RuleNode, path::Vector{Int})::Vector{HeuristicResult}
-        holes::Vector{HeuristicResult} = []
+    local_constraints::Set{LocalConstraint},
+    filled_hole::Union{HoleReference, Nothing}=nothing
+)::Tuple{IsValidTree, Set{LocalConstraint}}
+    function dfs(node::RuleNode, path::Vector{Int})::Vector{HoleReference}
+        holes::Vector{HoleReference} = []
 
         for (i, child) in enumerate(node.children)
             new_path = push!(copy(path), i)
@@ -69,55 +64,36 @@ function propagate_all_holes(
         return holes
     end
 
-    function dfs(hole::Hole, path::Vector{Int})::Vector{HeuristicResult}
-        return [(hole, path)]
+    function dfs(hole::Hole, path::Vector{Int})::Vector{HoleReference}
+        return [HoleReference(hole, path)]
     end
 
     new_local_constraints = local_constraints
-    for (hole, path) ∈ dfs(root, Vector{Int}())
-        new_domain, new_local_constraints = propagate_constraints(
-            grammar, 
-            GrammarContext(root, path, new_local_constraints), 
-            findall(hole.domain)
-        )
+    for (; hole, path) ∈ dfs(root, Vector{Int}())
+        context = GrammarContext(root, path, new_local_constraints)
+        new_domain = findall(hole.domain)
 
-        if isempty(new_domain)
-            return false, []
+        new_local_constraints::Set{LocalConstraint} = Set()
+    
+        # Local constraints that are specific to this rulenode
+        for constraint ∈ context.constraints
+            new_domain, local_constraints = propagate(constraint, grammar, context, new_domain, filled_hole)
+            new_domain == [] && return false, Set()
+            # TODO: Should we check for duplicates?
+            union!(new_local_constraints, local_constraints)
+        end
+    
+        # General constraints for the entire grammar
+        for constraint ∈ grammar.constraints
+            new_domain, local_constraints = propagate(constraint, grammar, context, new_domain, filled_hole)
+            new_domain == [] && return false, Set()
+            union!(new_local_constraints, local_constraints)
         end
 
         hole.domain = get_domain(grammar, new_domain)
     end
 
     return true, new_local_constraints
-end
-
-"""
-Reduces the set of possible children of a node using the grammar's constraints
-"""
-function propagate_constraints(
-        grammar::ContextSensitiveGrammar, 
-        context::GrammarContext, 
-        child_rules::Vector{Int}
-    )::Tuple{Vector{Int}, Vector{LocalConstraint}}
-    domain = child_rules
-    new_local_constraints::Vector{LocalConstraint} = []
-
-    # Local constraints that are specific to this rulenode
-    for constraint ∈ context.constraints
-        domain, local_constraints = propagate(constraint, grammar, context, domain)
-        domain == [] && return domain, []
-        # TODO: Should we check for duplicates?
-        append!(new_local_constraints, local_constraints)
-    end
-
-    # General constraints for the entire grammar
-    for constraint ∈ grammar.constraints
-        domain, local_constraints = propagate(constraint, grammar, context, domain)
-        domain == [] && return domain, []
-        append!(new_local_constraints, local_constraints)
-    end
-
-    return domain, new_local_constraints
 end
 
 
@@ -193,24 +169,21 @@ function _expand(
     hole_res = hole_heuristic(root, max_depth)
     if hole_res isa ExpandFailureReason
         return hole_res
-    elseif hole_res isa HeuristicResult
+    elseif hole_res isa HoleReference
         # Hole was found
-        hole, node_location = hole_res
-        hole_context = GrammarContext(context.originalExpr, node_location, context.constraints)
+        (; hole, path) = hole_res
+        hole_context = GrammarContext(context.originalExpr, path, context.constraints)
         expanded_child_trees = _expand(hole, grammar, max_depth, hole_context, hole_heuristic, value_heuristic)
 
         nodes::Vector{TreeConstraints} = []
         for (expanded_tree, local_constraints) ∈ expanded_child_trees
             copied_root = deepcopy(root)
 
-            parent_node = get_node_at_location(copied_root, node_location[1:end-1])
-            parent_node.children[node_location[end]] = expanded_tree
+            parent_node = get_node_at_location(copied_root, path[1:end-1])
+            parent_node.children[path[end]] = expanded_tree
 
-            is_valid_tree, new_local_constraints = propagate_all_holes(copied_root, grammar, local_constraints)
-
-            if is_valid_tree
-                push!(nodes, (copied_root, new_local_constraints))
-            end
+            is_valid_tree, new_local_constraints = propagate_constraints(copied_root, grammar, local_constraints, hole_res)
+            if is_valid_tree push!(nodes, (copied_root, new_local_constraints)) end
         end
         
         return nodes
@@ -230,8 +203,18 @@ function _expand(
     nodes::Vector{TreeConstraints} = []
     
     for rule_index ∈ value_heuristic(findall(node.domain))
-        push!(nodes, (RuleNode(rule_index, grammar), context.constraints))
+        new_node = RuleNode(rule_index, grammar)
+
+        # If dealing with the root of the tree, propagate here
+        if context.nodeLocation == []
+            is_valid_tree, new_local_constraints = propagate_constraints(new_node, grammar, context.constraints, HoleReference(node, []))
+            if is_valid_tree push!(nodes, (new_node, new_local_constraints)) end
+        else
+            push!(nodes, (new_node, context.constraints))
+        end
+
     end
+
 
     return nodes
 end
