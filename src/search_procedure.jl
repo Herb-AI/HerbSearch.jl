@@ -10,7 +10,8 @@ Searches the grammar for the program that satisfies the maximum number of exampl
         - max_depth         - The maximum depth of the search
         - max_size          - The maximum number of nodes for ASTs in the search
         - max_time          - The maximum time allowed for the search in seconds
-        - max_enumerations  - The maximum number of programs to enumerate and test
+        - max_enumerations  - The maximum number of programs to enumerate and test'
+        - allow_evaluation_errors - Whether the search should crash if an exception is thrown in the evaluation
     Returns the optimal program once it has been found, or nothing otherwise.
 """
 function search(
@@ -22,7 +23,8 @@ function search(
         max_depth::Union{Int, Nothing}=nothing,
         max_size::Union{Int, Nothing}=nothing,
         max_time::Union{Int, Nothing}=nothing,
-        max_enumerations::Union{Int, Nothing}=nothing
+        max_enumerations::Union{Int, Nothing}=nothing,
+        allow_evaluation_errors::Bool=false
     )::Any
 
     start_time = time()
@@ -51,7 +53,9 @@ function search(
                     falsified = true
                     break
                 end
-            catch
+            catch e
+                # Throw the error again if evaluation errors aren't allowed
+                allow_evaluation_errors || throw(e)
                 falsified = true
                 break
             end
@@ -97,6 +101,7 @@ The evaluator should be a function that takes a SymbolTable, expression and a di
     - max_depth         - The maximum depth of the search
     - max_time          - The maximum time allowed for the search in seconds
     - max_enumerations  - The maximum number of programs to enumerate and test
+    - allow_evaluation_errors - Whether the search should crash if an exception is thrown in the evaluation
 Returns a tuple with the best found program so far and the error. 
 Can be considerably slower than `search` due to having to evaluate each expression on each example.
 """
@@ -110,7 +115,8 @@ function search_best(
         max_depth::Union{Int, Nothing}=nothing,
         max_size::Union{Int, Nothing}=nothing,
         max_time::Union{Int, Nothing}=nothing,
-        max_enumerations::Union{Int, Nothing}=nothing
+        max_enumerations::Union{Int, Nothing}=nothing,
+        allow_evaluation_errors::Bool=false
     )::Tuple{Any, Real}
 
     start_time = time()
@@ -142,6 +148,8 @@ function search_best(
                 # You could also decide to handle less severe errors (such as index out of range) differently,
                 # for example by just increasing the error value and keeping the program as a candidate.
                 crashed = true
+                # Throw the error again if evaluation errors aren't allowed
+                allow_evaluation_errors || throw(e)
                 break
             end
 
