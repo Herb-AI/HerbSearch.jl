@@ -51,7 +51,7 @@ function propagate_constraints(
         grammar::ContextSensitiveGrammar, 
         context::GrammarContext, 
         child_rules::Vector{Int}
-    )::Tuple
+    )::Tuple{Vector{Int}, Vector{LocalConstraint}}
     domain = child_rules
     new_local_constraints::Vector{LocalConstraint} = []
 
