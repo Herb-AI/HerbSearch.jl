@@ -13,13 +13,33 @@ mutable struct ContextSensitivePriorityEnumerator <: ExpressionIterator
     sym::Symbol
 end 
 
+"""
+Representation of the different reasons why expanding a partial tree failed. 
+Currently, there are two possible causes of the expansion failing:
+
+- `limit_reached`: The depth limit or the size limit of the partial tree would 
+   be violated by the expansion
+- `already_complete`: There is no hole left in the tree, so nothing can be 
+   expanded.
+"""
 @enum ExpandFailureReason limit_reached=1 already_complete=2
 
+"""
+Represents an item in the priority enumerator priority queue.
+An item contains of:
+
+- `tree`: A partial AST
+- `size`: The size of the tree. This is a cached value which prevents
+   having to traverse the entire tree each time the size is needed.
+- `constraints`: The local constraints that apply to this tree. 
+   These constraints are enforced each time the tree is modified.
+"""
 struct PQItem 
     tree::AbstractRuleNode
     size::Int
     constraints::Vector{LocalConstraint}
 end
+
 PQItem(tree::AbstractRuleNode, size::Int) = PQItem(tree, size, [])
 
 function Base.iterate(iter::ContextSensitivePriorityEnumerator)
@@ -45,7 +65,12 @@ end
 
 
 """
-Reduces the set of possible children of a node using the grammar's constraints
+Reduces the set of possible children of a node using the grammar's constraints.
+
+- `grammar`: A context sensitive grammar, which contains the global constraints.
+- `context`: The context of the constraint, containing the partial tree, 
+                the path to the hole and the local constraints. 
+- `child_rules`: Grammar production rules that can be used to fill the hole.
 """
 function propagate_constraints(
         grammar::ContextSensitiveGrammar, 
