@@ -28,7 +28,7 @@
         end
         
         problem = Problem([IOExample(Dict(), x) for x ∈ 1:5], "")
-        solution = search(g₂, problem, :Index, max_depth=2)
+        solution = search(g₂, problem, :Index, max_depth=2, allow_evaluation_errors=true)
 
         @test solution ≡ nothing
     end
@@ -58,7 +58,7 @@
         end
         
         problem = Problem([IOExample(Dict(), x) for x ∈ 1:5], "")
-        solution, error = search_best(g₃, problem, :Index, max_depth=2)
+        solution, error = search_best(g₃, problem, :Index, max_depth=2, allow_evaluation_errors=true)
 
         @test solution ≡ nothing
         @test error == typemax(Int)
