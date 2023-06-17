@@ -77,16 +77,17 @@ function propagate_constraints(
     
         # Local constraints that are specific to this rulenode
         for constraint ∈ context.constraints
-            new_domain, local_constraints = propagate(constraint, grammar, context, new_domain, filled_hole)
-            new_domain == [] && return false, Set()
-            # TODO: Should we check for duplicates?
+            propagated_domain, local_constraints = propagate(constraint, grammar, context, new_domain, filled_hole)
+            !isa(propagated_domain, PropagateFailureReason) && (new_domain = propagated_domain)
+            (new_domain == []) && (return false, Set())
             union!(new_local_constraints, local_constraints)
         end
     
         # General constraints for the entire grammar
         for constraint ∈ grammar.constraints
-            new_domain, local_constraints = propagate(constraint, grammar, context, new_domain, filled_hole)
-            new_domain == [] && return false, Set()
+            propagated_domain, local_constraints = propagate(constraint, grammar, context, new_domain, filled_hole)
+            !isa(propagated_domain, PropagateFailureReason) && (new_domain = propagated_domain)
+            (new_domain == []) && (return false, Set())
             union!(new_local_constraints, local_constraints)
         end
 
