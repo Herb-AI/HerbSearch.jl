@@ -29,6 +29,7 @@ export
   heuristic_random,
   heuristic_smallest_domain,
 
+  search_rulenode,
   search,
   search_best,
 
