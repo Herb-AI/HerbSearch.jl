@@ -178,7 +178,14 @@ function _expand(
 
         nodes::Vector{TreeConstraints} = []
         for (expanded_tree, local_constraints) ∈ expanded_child_trees
-            copied_root = deepcopy(root)
+            copied_root = copy(root)
+
+            curr_node = copied_root
+            for p in path
+                curr_node.children = copy(curr_node.children)
+                curr_node.children[p] = copy(curr_node.children[p])
+                curr_node = curr_node.children[p]
+            end
 
             parent_node = get_node_at_location(copied_root, path[1:end-1])
             parent_node.children[path[end]] = expanded_tree
