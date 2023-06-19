@@ -53,28 +53,19 @@ function propagate_constraints(
     local_constraints::Set{LocalConstraint},
     filled_hole::Union{HoleReference, Nothing}=nothing
 )::Tuple{IsValidTree, Set{LocalConstraint}}
-    function dfs(node::RuleNode, path::Vector{Int})::Vector{HoleReference}
-        holes::Vector{HoleReference} = []
+    new_local_constraints = local_constraints
 
+    function dfs(node::RuleNode, path::Vector{Int})
         for (i, child) in enumerate(node.children)
             new_path = push!(copy(path), i)
-            append!(holes, dfs(child, new_path))
+            dfs(child, new_path)
         end
-
-        return holes
     end
 
-    function dfs(hole::Hole, path::Vector{Int})::Vector{HoleReference}
-        return [HoleReference(hole, path)]
-    end
-
-    new_local_constraints = local_constraints
-    for (; hole, path) ∈ dfs(root, Vector{Int}())
+    function dfs(hole::Hole, path::Vector{Int})
         context = GrammarContext(root, path, new_local_constraints)
         new_domain = findall(hole.domain)
-
-        new_local_constraints::Set{LocalConstraint} = Set()
-    
+   
         # Local constraints that are specific to this rulenode
         for constraint ∈ context.constraints
             propagated_domain, local_constraints = propagate(constraint, grammar, context, new_domain, filled_hole)
@@ -93,6 +84,8 @@ function propagate_constraints(
 
         hole.domain = get_domain(grammar, new_domain)
     end
+
+    dfs(root, Vector{Int}())
 
     return true, new_local_constraints
 end
