@@ -82,7 +82,9 @@ function propagate_constraints(
             union!(new_local_constraints, local_constraints)
         end
 
-        hole.domain = get_domain(grammar, new_domain)
+        for r ∈ 1:length(grammar.rules)
+            hole.domain[r] = r ∈ new_domain
+        end
     end
 
     dfs(root, Vector{Int}())
@@ -173,6 +175,7 @@ function _expand(
         for (expanded_tree, local_constraints) ∈ expanded_child_trees
             copied_root = copy(root)
 
+            # Copy only the path in question instead of deepcopying the entire tree
             curr_node = copied_root
             for p in path
                 curr_node.children = copy(curr_node.children)
