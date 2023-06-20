@@ -56,9 +56,12 @@ function propagate_constraints(
     new_local_constraints = local_constraints
 
     function dfs(node::RuleNode, path::Vector{Int})
-        for (i, child) in enumerate(node.children)
+        node.children = copy(node.children)
+
+        for i in eachindex(node.children)
             new_path = push!(copy(path), i)
-            dfs(child, new_path)
+            node.children[i] = copy(node.children[i])    
+            dfs(node.children[i], new_path)
         end
     end
 
