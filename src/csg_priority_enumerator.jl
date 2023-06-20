@@ -53,7 +53,7 @@ function propagate_constraints(
     local_constraints::Set{LocalConstraint},
     filled_hole::Union{HoleReference, Nothing}=nothing
 )::Tuple{IsValidTree, Set{LocalConstraint}}
-    new_local_constraints = local_constraints
+    new_local_constraints = Set()
 
     function dfs(node::RuleNode, path::Vector{Int})
         node.children = copy(node.children)
@@ -66,23 +66,23 @@ function propagate_constraints(
     end
 
     function dfs(hole::Hole, path::Vector{Int})
-        context = GrammarContext(root, path, new_local_constraints)
+        context = GrammarContext(root, path, local_constraints)
         new_domain = findall(hole.domain)
-   
+
         # Local constraints that are specific to this rulenode
         for constraint ∈ context.constraints
-            propagated_domain, local_constraints = propagate(constraint, grammar, context, new_domain, filled_hole)
-            !isa(propagated_domain, PropagateFailureReason) && (new_domain = propagated_domain)
+            curr_domain, curr_local_constraints = propagate(constraint, grammar, context, new_domain, filled_hole)
+            !isa(curr_domain, PropagateFailureReason) && (new_domain = curr_domain)
             (new_domain == []) && (return false, Set())
-            union!(new_local_constraints, local_constraints)
+            union!(new_local_constraints, curr_local_constraints)
         end
     
         # General constraints for the entire grammar
         for constraint ∈ grammar.constraints
-            propagated_domain, local_constraints = propagate(constraint, grammar, context, new_domain, filled_hole)
-            !isa(propagated_domain, PropagateFailureReason) && (new_domain = propagated_domain)
+            curr_domain, curr_local_constraints = propagate(constraint, grammar, context, new_domain, filled_hole)
+            !isa(curr_domain, PropagateFailureReason) && (new_domain = curr_domain)
             (new_domain == []) && (return false, Set())
-            union!(new_local_constraints, local_constraints)
+            union!(new_local_constraints, curr_local_constraints)
         end
 
         for r ∈ 1:length(grammar.rules)
