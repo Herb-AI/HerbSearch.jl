@@ -163,7 +163,7 @@ function _expand(
         max_depth::Int, 
         context::GrammarContext, 
         hole_heuristic::Function,
-        value_heuristic::Function,
+        derivation_heuristic::Function,
     )::Union{ExpandFailureReason, Vector{TreeConstraints}}
     hole_res = hole_heuristic(root, max_depth)
     if hole_res isa ExpandFailureReason
@@ -172,7 +172,7 @@ function _expand(
         # Hole was found
         (; hole, path) = hole_res
         hole_context = GrammarContext(context.originalExpr, path, context.constraints)
-        expanded_child_trees = _expand(hole, grammar, max_depth, hole_context, hole_heuristic, value_heuristic)
+        expanded_child_trees = _expand(hole, grammar, max_depth, hole_context, hole_heuristic, derivation_heuristic)
 
         nodes::Vector{TreeConstraints} = []
         for (expanded_tree, local_constraints) ∈ expanded_child_trees
@@ -205,11 +205,11 @@ function _expand(
     max_depth::Int, 
     context::GrammarContext, 
     hole_heuristic::Function,
-    value_heuristic::Function,
+    derivation_heuristic::Function,
 )::Union{ExpandFailureReason, Vector{TreeConstraints}}
     nodes::Vector{TreeConstraints} = []
     
-    for rule_index ∈ value_heuristic(findall(node.domain))
+    for rule_index ∈ derivation_heuristic(findall(node.domain), context)
         new_node = RuleNode(rule_index, grammar)
 
         # If dealing with the root of the tree, propagate here
