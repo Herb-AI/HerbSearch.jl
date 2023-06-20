@@ -132,7 +132,8 @@ function _find_next_complete_tree(
             return (pqitem.tree, pq)
         end
 
-        expand_result = expand_function(pqitem.tree, grammar, max_depth, max_size - pqitem.size, GrammarContext(pqitem.tree, [], pqitem.constraints))
+        # We are about to fill a hole, so the remaining #holes that are allowed in propagation, should be 1 fewer
+        expand_result = expand_function(pqitem.tree, grammar, max_depth, max_size - pqitem.size - 1, GrammarContext(pqitem.tree, [], pqitem.constraints))
         if expand_result ≡ already_complete
             # Current tree is complete, it can be returned
             return (pqitem.tree, pq)
