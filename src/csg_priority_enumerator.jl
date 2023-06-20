@@ -14,16 +14,18 @@ mutable struct ContextSensitivePriorityEnumerator <: ExpressionIterator
 end 
 
 @enum ExpandFailureReason limit_reached=1 already_complete=2
+@enum PropagateResult tree_complete=1 tree_incomplete=2 tree_infeasible=3
 
-TreeConstraints = Tuple{AbstractRuleNode, Set{LocalConstraint}}
+TreeConstraints = Tuple{AbstractRuleNode, Set{LocalConstraint}, PropagateResult}
 IsValidTree = Bool
 
 struct PQItem 
     tree::AbstractRuleNode
     size::Int
     constraints::Set{LocalConstraint}
+    complete::Bool
 end
-PQItem(tree::AbstractRuleNode, size::Int) = PQItem(tree, size, [])
+PQItem(tree::AbstractRuleNode, size::Int) = PQItem(tree, size, [], false)
 
 function Base.iterate(iter::ContextSensitivePriorityEnumerator)
     # Priority queue with number of nodes in the program
@@ -33,8 +35,9 @@ function Base.iterate(iter::ContextSensitivePriorityEnumerator)
     priority_function, expand_function = iter.priority_function, iter.expand_function
 
     init_node = Hole(get_domain(grammar, sym))
-    _, new_constraints = propagate_constraints(init_node, grammar, Set{LocalConstraint}())
-    enqueue!(pq, PQItem(init_node, 0, new_constraints), priority_function(grammar, init_node, 0))
+    propagate_result, new_constraints = propagate_constraints(init_node, grammar, Set{LocalConstraint}(), max_size)
+    if propagate_result == tree_infeasible return end
+    enqueue!(pq, PQItem(init_node, 0, new_constraints, propagate_result == tree_complete), priority_function(grammar, init_node, 0))
     
     return _find_next_complete_tree(grammar, max_depth, max_size, priority_function, expand_function, pq)
 end
@@ -47,25 +50,36 @@ function Base.iterate(iter::ContextSensitivePriorityEnumerator, pq::DataStructur
 end
 
 
+IsInfeasible = Bool
+
+
 function propagate_constraints(
     root::AbstractRuleNode,
     grammar::ContextSensitiveGrammar,
     local_constraints::Set{LocalConstraint},
-    filled_hole::Union{HoleReference, Nothing}=nothing
-)::Tuple{IsValidTree, Set{LocalConstraint}}
+    max_holes::Int,
+    filled_hole::Union{HoleReference, Nothing}=nothing,
+)::Tuple{PropagateResult, Set{LocalConstraint}}
     new_local_constraints = Set()
 
-    function dfs(node::RuleNode, path::Vector{Int})
+    found_holes = 0
+
+    function dfs(node::RuleNode, path::Vector{Int})::IsInfeasible
         node.children = copy(node.children)
 
         for i in eachindex(node.children)
             new_path = push!(copy(path), i)
             node.children[i] = copy(node.children[i])    
-            dfs(node.children[i], new_path)
+            if dfs(node.children[i], new_path) return true end
         end
+
+        return false
     end
 
-    function dfs(hole::Hole, path::Vector{Int})
+    function dfs(hole::Hole, path::Vector{Int})::IsInfeasible
+        found_holes += 1
+        if found_holes > max_holes return true end
+
         context = GrammarContext(root, path, local_constraints)
         new_domain = findall(hole.domain)
 
@@ -73,7 +87,7 @@ function propagate_constraints(
         for constraint ∈ context.constraints
             curr_domain, curr_local_constraints = propagate(constraint, grammar, context, new_domain, filled_hole)
             !isa(curr_domain, PropagateFailureReason) && (new_domain = curr_domain)
-            (new_domain == []) && (return false, Set())
+            (new_domain == []) && (return true)
             union!(new_local_constraints, curr_local_constraints)
         end
     
@@ -81,20 +95,23 @@ function propagate_constraints(
         for constraint ∈ grammar.constraints
             curr_domain, curr_local_constraints = propagate(constraint, grammar, context, new_domain, filled_hole)
             !isa(curr_domain, PropagateFailureReason) && (new_domain = curr_domain)
-            (new_domain == []) && (return false, Set())
+            (new_domain == []) && (return true)
             union!(new_local_constraints, curr_local_constraints)
         end
 
         for r ∈ 1:length(grammar.rules)
             hole.domain[r] = r ∈ new_domain
         end
+
+        return false
     end
 
-    dfs(root, Vector{Int}())
+    if dfs(root, Vector{Int}()) return tree_infeasible, Set() end
 
-    return true, new_local_constraints
+    return found_holes == 0 ? tree_complete : tree_incomplete, new_local_constraints
 end
 
+item = 0
 
 """
 Takes a priority queue and returns the smallest AST from the grammar it can obtain from the
@@ -111,17 +128,11 @@ function _find_next_complete_tree(
 )::Union{Tuple{RuleNode, PriorityQueue}, Nothing}
     while length(pq) ≠ 0
         (pqitem, priority_value) = dequeue_pair!(pq)
-        if pqitem.size == max_size
-            # Check if tree contains holes
-            if contains_hole(pqitem.tree)
-                # There is no need to expand this tree, since the size limit is reached
-                continue
-            end
+        if pqitem.complete
             return (pqitem.tree, pq)
-        elseif pqitem.size ≥ max_size
-            continue
         end
-        expand_result = expand_function(pqitem.tree, grammar, max_depth, GrammarContext(pqitem.tree, [], pqitem.constraints))
+
+        expand_result = expand_function(pqitem.tree, grammar, max_depth, max_size - pqitem.size, GrammarContext(pqitem.tree, [], pqitem.constraints))
         if expand_result ≡ already_complete
             # Current tree is complete, it can be returned
             return (pqitem.tree, pq)
@@ -133,10 +144,10 @@ function _find_next_complete_tree(
             # limit (no expanded trees), or the expansion was successful. 
             # We add the potential expanded trees to the pq and move on to 
             # the next tree in the queue.
-            for (expanded_tree, local_constraints) ∈ expand_result
+            for (expanded_tree, local_constraints, propagate_result) ∈ expand_result
                 # expanded_tree is a new program tree with a new expanded child compared to pqitem.tree
                 # new_holes are all the holes in expanded_tree
-                new_pqitem = PQItem(expanded_tree, pqitem.size + 1, local_constraints)
+                new_pqitem = PQItem(expanded_tree, pqitem.size + 1, local_constraints, propagate_result == tree_complete)
                 enqueue!(pq, new_pqitem, priority_function(grammar, expanded_tree, priority_value))
             end
         else
@@ -161,6 +172,7 @@ function _expand(
         root::RuleNode, 
         grammar::ContextSensitiveGrammar, 
         max_depth::Int, 
+        max_holes::Int,
         context::GrammarContext, 
         hole_heuristic::Function,
         value_heuristic::Function,
@@ -172,7 +184,7 @@ function _expand(
         # Hole was found
         (; hole, path) = hole_res
         hole_context = GrammarContext(context.originalExpr, path, context.constraints)
-        expanded_child_trees = _expand(hole, grammar, max_depth, hole_context, hole_heuristic, value_heuristic)
+        expanded_child_trees = _expand(hole, grammar, max_depth, max_holes, hole_context, hole_heuristic, value_heuristic)
 
         nodes::Vector{TreeConstraints} = []
         for (expanded_tree, local_constraints) ∈ expanded_child_trees
@@ -189,8 +201,9 @@ function _expand(
             parent_node = get_node_at_location(copied_root, path[1:end-1])
             parent_node.children[path[end]] = expanded_tree
 
-            is_valid_tree, new_local_constraints = propagate_constraints(copied_root, grammar, local_constraints, hole_res)
-            if is_valid_tree push!(nodes, (copied_root, new_local_constraints)) end
+            propagate_result, new_local_constraints = propagate_constraints(copied_root, grammar, local_constraints, max_holes, hole_res)
+            if propagate_result == tree_infeasible continue end
+            push!(nodes, (copied_root, new_local_constraints, propagate_result))
         end
         
         return nodes
@@ -202,9 +215,10 @@ end
 function _expand(
     node::Hole, 
     grammar::ContextSensitiveGrammar, 
-    max_depth::Int, 
+    ::Int, 
+    max_holes::Int,
     context::GrammarContext, 
-    hole_heuristic::Function,
+    ::Function,
     value_heuristic::Function,
 )::Union{ExpandFailureReason, Vector{TreeConstraints}}
     nodes::Vector{TreeConstraints} = []
@@ -214,10 +228,11 @@ function _expand(
 
         # If dealing with the root of the tree, propagate here
         if context.nodeLocation == []
-            is_valid_tree, new_local_constraints = propagate_constraints(new_node, grammar, context.constraints, HoleReference(node, []))
-            if is_valid_tree push!(nodes, (new_node, new_local_constraints)) end
+            propagate_result, new_local_constraints = propagate_constraints(new_node, grammar, context.constraints, max_holes, HoleReference(node, []))
+            if propagate_result == tree_infeasible continue end
+            push!(nodes, (new_node, new_local_constraints, propagate_result))
         else
-            push!(nodes, (new_node, context.constraints))
+            push!(nodes, (new_node, context.constraints, tree_incomplete))
         end
 
     end
