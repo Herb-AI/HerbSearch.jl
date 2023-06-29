@@ -23,15 +23,15 @@ costs that are worse.
 `cost` means how different are the outcomes of the program compared to the correct outcomes.
 The lower the `cost` the better the program performs on the examples. The `cost` is provided by the `cost_function`
 
-    accept(current_cost::Float, possible_cost::Float, temperature::Float) -> Bool
+    accept(current_cost::Real, possible_cost::Real, temperature::Real) -> Bool
 ----
 Returns the new temperature based on the previous temperature. Higher the `temperature` means that the algorithm will explore more.
     
-    temperature(previous_temperature::Float) -> Float 
+    temperature(previous_temperature::Real) -> Real 
 ---
 Returns the cost of the current program. It receives a list of tuples `(expected, found)` and gives back a cost.
     
-    cost_function(outcomes::Tuple{Int64,Int64}[]) -> Float
+    cost_function(outcomes::Tuple{<:Number,<:Number}[]) -> Real
 
 ----
 # Fields
@@ -44,7 +44,7 @@ Returns the cost of the current program. It receives a list of tuples `(expected
 -   `temperature::Function`
 -   `cost_function::Function`
 -   `start_symbol::Symbol` the start symbol of the algorithm `:Real` or `:Int`
--   `initial_temperature::Int64` = 1 
+-   `initial_temperature::Real` = 1 
 -   `evaluation_function`::Function that evaluates the julia expressions
 An iterator over all possible expressions of a grammar up to max_depth with start symbol sym.
 """
@@ -58,13 +58,13 @@ Base.@kwdef mutable struct StochasticSearchEnumerator <: ExpressionIterator
     temperature::Function
     cost_function::Function
     start_symbol::Symbol
-    initial_temperature::Int64 = 1
+    initial_temperature::Real = 1
     evaluation_function::Function
 end
 
 Base.@kwdef struct IteratorState
     current_program::RuleNode
-    current_temperature::Float32
+    current_temperature::Real
 end
 
 Base.IteratorSize(::StochasticSearchEnumerator) = Base.SizeUnknown()
@@ -144,7 +144,7 @@ Returns the cost of the `program` using the examples and the `cost_function`. It
 evaluates it on all the examples.
 """
 function calculate_cost(program::RuleNode, cost_function::Function, examples::AbstractVector{Example}, grammar::Grammar, evaluation_function::Function)
-    results = Tuple{Int64,Int64}[]
+    results = Tuple{<:Number,<:Number}[]
     expression = rulenode2expr(program, grammar)
     symbol_table = SymbolTable(grammar)
     for example ∈ filter(e -> e isa IOExample, examples)

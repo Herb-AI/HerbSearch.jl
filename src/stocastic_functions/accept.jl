@@ -4,11 +4,11 @@
 Probabilistically decides whether to accept the new program (next) based on the ratio of costs (smaller is better) between the previous and new program.
 Returns `True` if the new program is accepted, `False` otherwise.
 # Arguments
-- `current_cost::Float`: the cost of the current program.
-- `next_cost::Float`: the cost of the proposed program.
-- `temperature::Float`: the temperature; not used.
+- `current_cost::Real`: the cost of the current program.
+- `next_cost::Real`: the cost of the proposed program.
+- `temperature::Real`: the temperature; not used.
 """
-function probabilistic_accept(current_cost, next_cost, temperature)
+function probabilistic_accept(current_cost::Real, next_cost::Real, temperature::Real)
     ratio = current_cost / (current_cost + next_cost)
     return ratio >= rand()
 end
@@ -18,11 +18,11 @@ Probabilistically decides whether to accept the new program (next) based on the 
 by the temperature.
 Returns `True` if the new program is accepted, `False` otherwise.
 # Arguments
-- `current_cost::Float`: the cost of the current program.
-- `next_cost::Float`: the cost of the proposed program.
-- `temperature::Float`: the current temperature 
+- `current_cost::Real`: the cost of the current program.
+- `next_cost::Real`: the cost of the proposed program.
+- `temperature::Real`: the current temperature 
 """
-function probabilistic_accept_with_temperature_fraction(current_cost, program_to_consider_cost, temperature)
+function probabilistic_accept_with_temperature_fraction(current_cost::Real, program_to_consider_cost::Real, temperature::Real)
     ratio = current_cost / (program_to_consider_cost + current_cost)
     if ratio >= 1
         return true
@@ -34,11 +34,11 @@ end
 Returns true if the cost of the proposed program is smaller than the cost of the current program.
 Otherwise, returns false.
 # Arguments
-- `current_cost::Float`: the cost of the current program.
-- `next_cost::Float`: the cost of the proposed program.
-- `temperature::Float`: the temperature; not used.
+- `current_cost::Real`: the cost of the current program.
+- `next_cost::Real`: the cost of the proposed program.
+- `temperature::Real`: the temperature; not used.
 """
-function best_accept(current_cost, next_cost, temperature)
+function best_accept(current_cost::Real, next_cost::Real, temperature)
     return current_cost > next_cost
 end
 
@@ -50,11 +50,11 @@ Otherwise, returns true with the probability equal to:
 ```
 In any other case, returns false.
 # Arguments
-- `current_cost::Float`: the cost of the current program.
-- `next_cost::Float`: the cost of the proposed program.
-- `temperature::Float`: the temperature of the search.
+- `current_cost::Real`: the cost of the current program.
+- `next_cost::Real`: the cost of the proposed program.
+- `temperature::Real`: the temperature of the search.
 """
-function probabilistic_accept_with_temperature(current_cost, next_cost, temperature)
+function probabilistic_accept_with_temperature(current_cost::Real, next_cost::Real, temperature::Real)
     delta = next_cost - current_cost
     if delta < 0
         return true
