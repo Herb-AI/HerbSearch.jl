@@ -10,18 +10,18 @@ include("utils.jl")
 
 include("expression_iterator.jl")
 include("count_expressions.jl")
-include("cfg_priority_enumerator.jl")
 
 include("csg_priority_enumerator.jl")
+include("cfg_priority_enumerator.jl")
 
 include("search_procedure.jl")
 
 export 
   count_expressions,
   ExpressionIterator,
-  ContextFreePriorityEnumerator,
   
   ContextSensitivePriorityEnumerator,
+  ContextFreePriorityEnumerator,
   
   search,
   search_best,
