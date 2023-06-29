@@ -1,6 +1,7 @@
 module HerbSearch
 
 using DataStructures
+using ..HerbCore
 using ..HerbGrammar
 using ..HerbConstraints
 using ..HerbData
