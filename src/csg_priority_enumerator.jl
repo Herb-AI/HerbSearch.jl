@@ -113,21 +113,21 @@ function _find_next_complete_tree(
     pq::PriorityQueue
 )::Union{Tuple{RuleNode, PriorityQueue}, Nothing}
     while length(pq) ≠ 0
-        (PriorityQueueItem, priority_value) = dequeue_pair!(pq)
-        if PriorityQueueItem.size == max_size
+        (priority_queue_item, priority_value) = dequeue_pair!(pq)
+        if priority_queue_item.size == max_size
             # Check if tree contains holes
-            if contains_hole(PriorityQueueItem.tree)
+            if contains_hole(priority_queue_item.tree)
                 # There is no need to expand this tree, since the size limit is reached
                 continue
             end
-            return (PriorityQueueItem.tree, pq)
-        elseif PriorityQueueItem.size ≥ max_size
+            return (priority_queue_item.tree, pq)
+        elseif priority_queue_item.size ≥ max_size
             continue
         end
-        expand_result = expand_function(PriorityQueueItem.tree, grammar, max_depth - 1, GrammarContext(PriorityQueueItem.tree, [], PriorityQueueItem.constraints))
+        expand_result = expand_function(priority_queue_item.tree, grammar, max_depth - 1, GrammarContext(priority_queue_item.tree, [], priority_queue_item.constraints))
         if expand_result ≡ already_complete
             # Current tree is complete, it can be returned
-            return (PriorityQueueItem.tree, pq)
+            return (priority_queue_item.tree, pq)
         elseif expand_result ≡ limit_reached
             # The maximum depth is reached
             continue
@@ -138,8 +138,8 @@ function _find_next_complete_tree(
             # the next tree in the queue.
             expanded_child_trees, local_constraints = expand_result
             for expanded_tree ∈ expanded_child_trees
-                new_PriorityQueueItem = PriorityQueueItem(expanded_tree, PriorityQueueItem.size + 1, local_constraints)
-                enqueue!(pq, new_PriorityQueueItem, priority_function(grammar, expanded_tree, priority_value))
+                new_priority_queue_item = PriorityQueueItem(expanded_tree, priority_queue_item.size + 1, local_constraints)
+                enqueue!(pq, new_priority_queue_item, priority_function(grammar, expanded_tree, priority_value))
             end
         else
             error("Got an invalid response of type $(typeof(expand_result)) from expand function")
