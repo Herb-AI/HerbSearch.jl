@@ -1,6 +1,7 @@
 module HerbSearch
 
 using DataStructures
+using ..HerbCore
 using ..HerbGrammar
 using ..HerbConstraints
 using ..HerbData
@@ -12,6 +13,7 @@ include("expression_iterator.jl")
 include("count_expressions.jl")
 
 include("csg_priority_enumerator.jl")
+include("cfg_priority_enumerator.jl")
 
 include("heuristics.jl")
 
@@ -20,9 +22,9 @@ include("search_procedure.jl")
 export 
   count_expressions,
   ExpressionIterator,
-  ContextFreePriorityEnumerator,
   
   ContextSensitivePriorityEnumerator,
+  ContextFreePriorityEnumerator,
   
   heuristic_leftmost,
   heuristic_rightmost,

@@ -13,31 +13,53 @@ mutable struct ContextSensitivePriorityEnumerator <: ExpressionIterator
     sym::Symbol
 end 
 
+"""
+Representation of the different reasons why expanding a partial tree failed. 
+Currently, there are two possible causes of the expansion failing:
+
+- `limit_reached`: The depth limit or the size limit of the partial tree would 
+   be violated by the expansion
+- `already_complete`: There is no hole left in the tree, so nothing can be 
+   expanded.
+"""
 @enum ExpandFailureReason limit_reached=1 already_complete=2
 @enum PropagateResult tree_complete=1 tree_incomplete=2 tree_infeasible=3
 
 TreeConstraints = Tuple{AbstractRuleNode, Set{LocalConstraint}, PropagateResult}
 IsValidTree = Bool
 
-struct PQItem 
+"""
+Represents an item in the priority enumerator priority queue.
+An item contains of:
+
+- `tree`: A partial AST
+- `size`: The size of the tree. This is a cached value which prevents
+   having to traverse the entire tree each time the size is needed.
+- `constraints`: The local constraints that apply to this tree. 
+   These constraints are enforced each time the tree is modified.
+"""
+struct PriorityQueueItem 
     tree::AbstractRuleNode
     size::Int
     constraints::Set{LocalConstraint}
     complete::Bool
 end
-PQItem(tree::AbstractRuleNode, size::Int) = PQItem(tree, size, [], false)
+
+PriorityQueueItem(tree::AbstractRuleNode, size::Int) = PriorityQueueItem(tree, size, [])
+
 
 function Base.iterate(iter::ContextSensitivePriorityEnumerator)
     # Priority queue with number of nodes in the program
-    pq :: PriorityQueue{PQItem, Union{Real, Tuple{Vararg{Real}}}} = PriorityQueue()
+    pq :: PriorityQueue{PriorityQueueItem, Union{Real, Tuple{Vararg{Real}}}} = PriorityQueue()
 
     grammar, max_depth, max_size, sym = iter.grammar, iter.max_depth, iter.max_size, iter.sym
     priority_function, expand_function = iter.priority_function, iter.expand_function
 
     init_node = Hole(get_domain(grammar, sym))
+
     propagate_result, new_constraints = propagate_constraints(init_node, grammar, Set{LocalConstraint}(), max_size)
     if propagate_result == tree_infeasible return end
-    enqueue!(pq, PQItem(init_node, 0, new_constraints, propagate_result == tree_complete), priority_function(grammar, init_node, 0))
+    enqueue!(pq, PriorityQueueItem(init_node, 0, new_constraints, propagate_result == tree_complete), priority_function(grammar, init_node, 0))
     
     return _find_next_complete_tree(grammar, max_depth, max_size, priority_function, expand_function, pq)
 end
@@ -51,7 +73,6 @@ end
 
 
 IsInfeasible = Bool
-
 
 function propagate_constraints(
     root::AbstractRuleNode,
@@ -127,6 +148,7 @@ function _find_next_complete_tree(
     pq::PriorityQueue
 )::Union{Tuple{RuleNode, PriorityQueue}, Nothing}
     while length(pq) ≠ 0
+
         (pqitem, priority_value) = dequeue_pair!(pq)
         if pqitem.complete
             return (pqitem.tree, pq)
@@ -134,9 +156,10 @@ function _find_next_complete_tree(
 
         # We are about to fill a hole, so the remaining #holes that are allowed in propagation, should be 1 fewer
         expand_result = expand_function(pqitem.tree, grammar, max_depth, max_size - pqitem.size - 1, GrammarContext(pqitem.tree, [], pqitem.constraints))
+          
         if expand_result ≡ already_complete
             # Current tree is complete, it can be returned
-            return (pqitem.tree, pq)
+            return (priority_queue_item.tree, pq)
         elseif expand_result ≡ limit_reached
             # The maximum depth is reached
             continue
@@ -145,6 +168,7 @@ function _find_next_complete_tree(
             # limit (no expanded trees), or the expansion was successful. 
             # We add the potential expanded trees to the pq and move on to 
             # the next tree in the queue.
+
             for (expanded_tree, local_constraints, propagate_result) ∈ expand_result
                 # expanded_tree is a new program tree with a new expanded child compared to pqitem.tree
                 # new_holes are all the holes in expanded_tree
