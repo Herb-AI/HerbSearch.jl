@@ -12,9 +12,9 @@ Searches the grammar for the program that satisfies the maximum number of exampl
         - max_time          - The maximum time allowed for the search in seconds
         - max_enumerations  - The maximum number of programs to enumerate and test'
         - allow_evaluation_errors - Whether the search should crash if an exception is thrown in the evaluation
-    Returns the optimal program once it has been found, or nothing otherwise.
+    Returns a tuple of the rulenode and the expression of the solution program once it has been found, 
+    or nothing otherwise.
 """
-
 function search_rulenode(
     g::Grammar, 
     problem::Problem, 
@@ -24,7 +24,8 @@ function search_rulenode(
     max_depth::Union{Int, Nothing}=nothing,
     max_size::Union{Int, Nothing}=nothing,
     max_time::Union{Int, Nothing}=nothing,
-    max_enumerations::Union{Int, Nothing}=nothing
+    max_enumerations::Union{Int, Nothing}=nothing,
+    allow_evaluation_errors::Bool=false
 )::Union{Tuple{RuleNode, Any}, Nothing}
 
     start_time = time()
@@ -64,7 +65,7 @@ function search_rulenode(
             end
         end
         if !falsified
-            return expr
+            return (h, expr)
         end
 
         # Check stopping conditions
@@ -85,7 +86,8 @@ function search(
     max_depth::Union{Int, Nothing}=nothing,
     max_size::Union{Int, Nothing}=nothing,
     max_time::Union{Int, Nothing}=nothing,
-    max_enumerations::Union{Int, Nothing}=nothing
+    max_enumerations::Union{Int, Nothing}=nothing,
+    allow_evaluation_errors::Bool=false
 )::Union{Any, Nothing}
     res::Union{Tuple{RuleNode, Any}, Nothing} = search_rulenode(
         g,
@@ -96,7 +98,8 @@ function search(
         max_depth=max_depth,
         max_size=max_size,
         max_time=max_time,
-        max_enumerations=max_enumerations
+        max_enumerations=max_enumerations,
+        allow_evaluation_errors=allow_evaluation_errors
     )
 
     if res isa Tuple{RuleNode, Any}

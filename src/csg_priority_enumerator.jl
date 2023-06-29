@@ -84,21 +84,13 @@ function propagate_constraints(
     new_local_constraints = Set()
 
     found_holes = 0
-  
-    # Local constraints that are specific to this rulenode
-    for constraint ∈ context.constraints
-        curr_domain, curr_local_constraints = propagate(constraint, grammar, context, new_domain, filled_hole)
-        !isa(curr_domain, PropagateFailureReason) && (new_domain = curr_domain)
-        (new_domain == []) && (return true)
-        union!(new_local_constraints, curr_local_constraints)
-    end
 
     function dfs(node::RuleNode, path::Vector{Int})::IsInfeasible
         node.children = copy(node.children)
 
         for i in eachindex(node.children)
             new_path = push!(copy(path), i)
-            node.children[i] = copy(node.children[i])    
+            node.children[i] = copy(node.children[i])
             if dfs(node.children[i], new_path) return true end
         end
 
@@ -111,6 +103,14 @@ function propagate_constraints(
 
         context = GrammarContext(root, path, local_constraints)
         new_domain = findall(hole.domain)
+
+        # Local constraints that are specific to this rulenode
+        for constraint ∈ context.constraints
+            curr_domain, curr_local_constraints = propagate(constraint, grammar, context, new_domain, filled_hole)
+            !isa(curr_domain, PropagateFailureReason) && (new_domain = curr_domain)
+            (new_domain == []) && (return true)
+            union!(new_local_constraints, curr_local_constraints)
+        end
 
         # General constraints for the entire grammar
         for constraint ∈ grammar.constraints
@@ -172,7 +172,7 @@ function _find_next_complete_tree(
             for (expanded_tree, local_constraints, propagate_result) ∈ expand_result
                 # expanded_tree is a new program tree with a new expanded child compared to pqitem.tree
                 # new_holes are all the holes in expanded_tree
-                new_pqitem = PQItem(expanded_tree, pqitem.size + 1, local_constraints, propagate_result == tree_complete)
+                new_pqitem = PriorityQueueItem(expanded_tree, pqitem.size + 1, local_constraints, propagate_result == tree_complete)
                 enqueue!(pq, new_pqitem, priority_function(grammar, expanded_tree, priority_value))
             end
         else
