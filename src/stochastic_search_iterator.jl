@@ -74,7 +74,6 @@ function Base.iterate(iter::StochasticSearchEnumerator)
     grammar, max_depth = iter.grammar, iter.max_depth
     # sample a random node using start symbol and grammar
     sampled_program = rand(RuleNode, grammar, iter.start_symbol, max_depth)
-    current_cost = calculate_cost(sampled_program, iter.cost_function, iter.examples, iter.grammar, iter.evaluation_function)
     return (sampled_program, IteratorState(
         current_program=sampled_program,
         current_temperature=iter.initial_temperature))
