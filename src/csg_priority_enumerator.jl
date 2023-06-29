@@ -34,24 +34,24 @@ An item contains of:
 - `constraints`: The local constraints that apply to this tree. 
    These constraints are enforced each time the tree is modified.
 """
-struct PQItem 
+struct PriorityQueueItem 
     tree::AbstractRuleNode
     size::Int
     constraints::Vector{LocalConstraint}
 end
 
-PQItem(tree::AbstractRuleNode, size::Int) = PQItem(tree, size, [])
+PriorityQueueItem(tree::AbstractRuleNode, size::Int) = PriorityQueueItem(tree, size, [])
 
 function Base.iterate(iter::ContextSensitivePriorityEnumerator)
     # Priority queue with number of nodes in the program
-    pq :: PriorityQueue{PQItem, Union{Real, Tuple{Vararg{Real}}}} = PriorityQueue()
+    pq :: PriorityQueue{PriorityQueueItem, Union{Real, Tuple{Vararg{Real}}}} = PriorityQueue()
 
     grammar, max_depth, max_size, sym = iter.grammar, iter.max_depth, iter.max_size, iter.sym
     priority_function, expand_function = iter.priority_function, iter.expand_function
 
     init_node = Hole(get_domain(grammar, sym))
 
-    enqueue!(pq, PQItem(init_node, 0), priority_function(grammar, init_node, 0))
+    enqueue!(pq, PriorityQueueItem(init_node, 0), priority_function(grammar, init_node, 0))
     
     return _find_next_complete_tree(grammar, max_depth, max_size, priority_function, expand_function, pq)
 end
@@ -113,21 +113,21 @@ function _find_next_complete_tree(
     pq::PriorityQueue
 )::Union{Tuple{RuleNode, PriorityQueue}, Nothing}
     while length(pq) ≠ 0
-        (pqitem, priority_value) = dequeue_pair!(pq)
-        if pqitem.size == max_size
+        (PriorityQueueItem, priority_value) = dequeue_pair!(pq)
+        if PriorityQueueItem.size == max_size
             # Check if tree contains holes
-            if contains_hole(pqitem.tree)
+            if contains_hole(PriorityQueueItem.tree)
                 # There is no need to expand this tree, since the size limit is reached
                 continue
             end
-            return (pqitem.tree, pq)
-        elseif pqitem.size ≥ max_size
+            return (PriorityQueueItem.tree, pq)
+        elseif PriorityQueueItem.size ≥ max_size
             continue
         end
-        expand_result = expand_function(pqitem.tree, grammar, max_depth - 1, GrammarContext(pqitem.tree, [], pqitem.constraints))
+        expand_result = expand_function(PriorityQueueItem.tree, grammar, max_depth - 1, GrammarContext(PriorityQueueItem.tree, [], PriorityQueueItem.constraints))
         if expand_result ≡ already_complete
             # Current tree is complete, it can be returned
-            return (pqitem.tree, pq)
+            return (PriorityQueueItem.tree, pq)
         elseif expand_result ≡ limit_reached
             # The maximum depth is reached
             continue
@@ -138,8 +138,8 @@ function _find_next_complete_tree(
             # the next tree in the queue.
             expanded_child_trees, local_constraints = expand_result
             for expanded_tree ∈ expanded_child_trees
-                new_pqitem = PQItem(expanded_tree, pqitem.size + 1, local_constraints)
-                enqueue!(pq, new_pqitem, priority_function(grammar, expanded_tree, priority_value))
+                new_PriorityQueueItem = PriorityQueueItem(expanded_tree, PriorityQueueItem.size + 1, local_constraints)
+                enqueue!(pq, new_PriorityQueueItem, priority_function(grammar, expanded_tree, priority_value))
             end
         else
             error("Got an invalid response of type $(typeof(expand_result)) from expand function")
