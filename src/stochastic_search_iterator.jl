@@ -45,6 +45,7 @@ Returns the cost of the current program. It receives a list of tuples `(expected
 -   `cost_function::Function`
 -   `start_symbol::Symbol` the start symbol of the algorithm `:Real` or `:Int`
 -   `initial_temperature::Int64` = 1 
+-   `evaluation_function`::Function that evaluates the julia expressions
 An iterator over all possible expressions of a grammar up to max_depth with start symbol sym.
 """
 Base.@kwdef mutable struct StochasticSearchEnumerator <: ExpressionIterator
@@ -58,6 +59,7 @@ Base.@kwdef mutable struct StochasticSearchEnumerator <: ExpressionIterator
     cost_function::Function
     start_symbol::Symbol
     initial_temperature::Int64 = 1
+    evaluation_function::Function
 end
 
 Base.@kwdef struct IteratorState
@@ -72,7 +74,7 @@ function Base.iterate(iter::StochasticSearchEnumerator)
     grammar, max_depth = iter.grammar, iter.max_depth
     # sample a random node using start symbol and grammar
     sampled_program = rand(RuleNode, grammar, iter.start_symbol, max_depth)
-    current_cost = calculate_cost(sampled_program, iter.cost_function, iter.examples, iter.grammar)
+    current_cost = calculate_cost(sampled_program, iter.cost_function, iter.examples, iter.grammar, iter.evaluation_function)
     return (sampled_program, IteratorState(
         current_program=sampled_program,
         current_temperature=iter.initial_temperature))
@@ -92,7 +94,7 @@ function Base.iterate(iter::StochasticSearchEnumerator, current_state::IteratorS
     grammar, examples = iter.grammar, iter.examples
     current_program = current_state.current_program
     
-    current_cost = calculate_cost(current_program, iter.cost_function, examples, grammar)
+    current_cost = calculate_cost(current_program, iter.cost_function, examples, grammar, iter.evaluation_function)
 
     new_temperature = iter.temperature(current_state.current_temperature)
 
@@ -122,7 +124,7 @@ function Base.iterate(iter::StochasticSearchEnumerator, current_state::IteratorS
             # this line mutates also the current_program. That is why we deepcopy at 115
             neighbourhood_node_location.parent.children[neighbourhood_node_location.i] = possible_replacement
         end
-        program_cost = calculate_cost(possible_program, iter.cost_function, examples, grammar)
+        program_cost = calculate_cost(possible_program, iter.cost_function, examples, grammar, iter.evaluation_function)
         if iter.accept(current_cost, program_cost, new_temperature) 
             next_program = deepcopy(possible_program)
             current_cost = program_cost
@@ -141,12 +143,12 @@ end
 Returns the cost of the `program` using the examples and the `cost_function`. It first convert the program to an expression and
 evaluates it on all the examples.
 """
-function calculate_cost(program::RuleNode, cost_function::Function, examples::AbstractVector{Example}, grammar::Grammar)
+function calculate_cost(program::RuleNode, cost_function::Function, examples::AbstractVector{Example}, grammar::Grammar, evaluation_function::Function)
     results = Tuple{Int64,Int64}[]
     expression = rulenode2expr(program, grammar)
     symbol_table = SymbolTable(grammar)
     for example ∈ filter(e -> e isa IOExample, examples)
-        outcome = HerbEvaluation.test_with_input(symbol_table, expression, example.in)
+        outcome = evaluation_function(symbol_table, expression, example.in)
         push!(results, (example.out, outcome))
     end
     return cost_function(results)

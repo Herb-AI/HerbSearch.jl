@@ -1,4 +1,4 @@
-function get_mh_enumerator(examples, cost_function)
+function get_mh_enumerator(examples, cost_function, evaluation_function::Function=HerbEvaluation.test_with_input)
     return (grammar, max_depth, max_size, start_symbol) -> begin
         return StochasticSearchEnumerator(
             grammar=grammar,
@@ -10,12 +10,13 @@ function get_mh_enumerator(examples, cost_function)
             accept=probabilistic_accept,
             cost_function=cost_function,
             start_symbol=start_symbol,
+            evaluation_function=evaluation_function,
         )
     end
 
 end
 
-function get_vlsn_enumerator(examples, cost_function, enumeration_depth = 2)
+function get_vlsn_enumerator(examples, cost_function, enumeration_depth = 2, evaluation_function::Function=HerbEvaluation.test_with_input)
     return (grammar, max_depth, max_size, start_symbol) -> begin
         return StochasticSearchEnumerator(
             grammar=grammar,
@@ -27,11 +28,12 @@ function get_vlsn_enumerator(examples, cost_function, enumeration_depth = 2)
             accept=best_accept,
             cost_function=cost_function,
             start_symbol=start_symbol,
+            evaluation_function = evaluation_function,
         )
     end
 end
 
-function get_sa_enumerator(examples, cost_function, initial_temperature=1, temperature_decreasing_factor = 0.99)
+function get_sa_enumerator(examples, cost_function, initial_temperature=1, temperature_decreasing_factor = 0.99, evaluation_function::Function=HerbEvaluation.test_with_input)
     return (grammar, max_depth, max_size, start_symbol) -> begin
         return StochasticSearchEnumerator(
             grammar=grammar,
@@ -43,7 +45,8 @@ function get_sa_enumerator(examples, cost_function, initial_temperature=1, tempe
             accept=probabilistic_accept_with_temperature,
             cost_function=cost_function,
             start_symbol=start_symbol,
-            initial_temperature=initial_temperature
+            initial_temperature=initial_temperature,
+            evaluation_function = evaluation_function,
         )
     end
 end
