@@ -67,7 +67,17 @@ function search(
     max_time::Union{Int, Nothing}=nothing,
     max_enumerations::Union{Int, Nothing}=nothing
 )::Union{Any, Nothing}
-    res::Union{Tuple{RuleNode, Any}, Nothing} = search_rulenode(g, problem, start, evaluator, enumerator, max_depth, max_size, max_time, max_enumerations)
+    res::Union{Tuple{RuleNode, Any}, Nothing} = search_rulenode(
+        g,
+        problem,
+        start,
+        evaluator=evaluator,
+        enumerator=enumerator,
+        max_depth=max_depth,
+        max_size=max_size,
+        max_time=max_time,
+        max_enumerations=max_enumerations
+    )
 
     if res isa Tuple{RuleNode, Any}
         return res[2]
