@@ -57,8 +57,7 @@ function enumerate_neighbours_propose(enumeration_depth)
         remaining_depth = max_depth - current_depth + 1  
         depth_left = min(remaining_depth, enumeration_depth)
 
-        replacement_expressions_enumerator = get_bfs_enumerator(grammar, depth_left, typemax(Int), neighbourhood_symbol)  
-        return replacement_expressions_enumerator
+        return get_bfs_enumerator(grammar, depth_left, typemax(Int), neighbourhood_symbol)  
     end
 end
     
