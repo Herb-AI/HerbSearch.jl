@@ -14,18 +14,18 @@ Searches the grammar for the program that satisfies the maximum number of exampl
         - allow_evaluation_errors - Whether the search should crash if an exception is thrown in the evaluation
     Returns the optimal program once it has been found, or nothing otherwise.
 """
-function search(
-        g::Grammar, 
-        problem::Problem, 
-        start::Symbol; 
-        evaluator::Function=test_with_input, 
-        enumerator::Function=get_bfs_enumerator,
-        max_depth::Union{Int, Nothing}=nothing,
-        max_size::Union{Int, Nothing}=nothing,
-        max_time::Union{Int, Nothing}=nothing,
-        max_enumerations::Union{Int, Nothing}=nothing,
-        allow_evaluation_errors::Bool=false
-    )::Any
+
+function search_rulenode(
+    g::Grammar, 
+    problem::Problem, 
+    start::Symbol; 
+    evaluator::Function=test_with_input, 
+    enumerator::Function=get_bfs_enumerator,
+    max_depth::Union{Int, Nothing}=nothing,
+    max_size::Union{Int, Nothing}=nothing,
+    max_time::Union{Int, Nothing}=nothing,
+    max_enumerations::Union{Int, Nothing}=nothing
+)::Union{Tuple{RuleNode, Any}, Nothing}
 
     start_time = time()
     check_time = max_time !== nothing
@@ -44,6 +44,9 @@ function search(
         expr = rulenode2expr(h, g)
 
         # Evaluate the examples. 
+#         # `all` shortcircuits, so not every example will be evaluated in every iteration. 
+#         if all(example.out == evaluator(symboltable, expr, example.in) for example ∈ problem.examples)
+#             return (h, expr)
         falsified = false
         for example ∈ problem.examples
             # Evaluate the example, making sure that any exceptions are caught
@@ -72,6 +75,35 @@ function search(
     return nothing
 end
 
+
+function search(
+    g::Grammar, 
+    problem::Problem, 
+    start::Symbol; 
+    evaluator::Function=test_with_input, 
+    enumerator::Function=get_bfs_enumerator,
+    max_depth::Union{Int, Nothing}=nothing,
+    max_size::Union{Int, Nothing}=nothing,
+    max_time::Union{Int, Nothing}=nothing,
+    max_enumerations::Union{Int, Nothing}=nothing
+)::Union{Any, Nothing}
+    res::Union{Tuple{RuleNode, Any}, Nothing} = search_rulenode(
+        g,
+        problem,
+        start,
+        evaluator=evaluator,
+        enumerator=enumerator,
+        max_depth=max_depth,
+        max_size=max_size,
+        max_time=max_time,
+        max_enumerations=max_enumerations
+    )
+
+    if res isa Tuple{RuleNode, Any}
+        return res[2]
+    end
+    return nothing
+end
 
 """
 Default error function for `search_best`.
