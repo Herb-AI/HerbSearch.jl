@@ -1,6 +1,7 @@
 module HerbSearch
 
 using DataStructures
+using ..HerbCore
 using ..HerbGrammar
 using ..HerbConstraints
 using ..HerbData
@@ -12,6 +13,9 @@ include("expression_iterator.jl")
 include("count_expressions.jl")
 
 include("csg_priority_enumerator.jl")
+include("cfg_priority_enumerator.jl")
+
+include("heuristics.jl")
 
 include("stochastic_search_iterator.jl")
 include("search_procedure.jl")
@@ -26,14 +30,19 @@ include("stochastic_enumerators.jl")
 export 
   count_expressions,
   ExpressionIterator,
-  ContextFreePriorityEnumerator,
   
   ContextSensitivePriorityEnumerator,
+  ContextFreePriorityEnumerator,
   
+  heuristic_leftmost,
+  heuristic_rightmost,
+  heuristic_random,
+  heuristic_smallest_domain,
+
+  search_rulenode,
   search,
   search_best,
 
-  bfs_expand_heuristic,
   bfs_priority_function,
   get_bfs_enumerator,
   get_mh_enumerator,
@@ -43,7 +52,6 @@ export
   misclassification,
   mse_error_function,
 
-  dfs_expand_heuristic,
   dfs_priority_function,
   get_dfs_enumerator,
 

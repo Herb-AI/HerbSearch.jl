@@ -10,20 +10,23 @@ Searches the grammar for the program that satisfies the maximum number of exampl
         - max_depth         - The maximum depth of the search
         - max_size          - The maximum number of nodes for ASTs in the search
         - max_time          - The maximum time allowed for the search in seconds
-        - max_enumerations  - The maximum number of programs to enumerate and test
-    Returns the optimal program once it has been found, or nothing otherwise.
+        - max_enumerations  - The maximum number of programs to enumerate and test'
+        - allow_evaluation_errors - Whether the search should crash if an exception is thrown in the evaluation
+    Returns a tuple of the rulenode and the expression of the solution program once it has been found, 
+    or nothing otherwise.
 """
-function search(
-        g::Grammar, 
-        problem::Problem, 
-        start::Symbol; 
-        evaluator::Function=test_with_input, 
-        enumerator::Function=get_bfs_enumerator,
-        max_depth::Union{Int, Nothing}=nothing,
-        max_size::Union{Int, Nothing}=nothing,
-        max_time::Union{Int, Nothing}=nothing,
-        max_enumerations::Union{Int, Nothing}=nothing
-    )::Any
+function search_rulenode(
+    g::Grammar, 
+    problem::Problem, 
+    start::Symbol; 
+    evaluator::Function=test_with_input, 
+    enumerator::Function=get_bfs_enumerator,
+    max_depth::Union{Int, Nothing}=nothing,
+    max_size::Union{Int, Nothing}=nothing,
+    max_time::Union{Int, Nothing}=nothing,
+    max_enumerations::Union{Int, Nothing}=nothing,
+    allow_evaluation_errors::Bool=false
+)::Union{Tuple{RuleNode, Any}, Nothing}
 
     start_time = time()
     check_time = max_time !== nothing
@@ -42,9 +45,27 @@ function search(
         expr = rulenode2expr(h, g)
 
         # Evaluate the examples. 
-        # `all` shortcircuits, so not every example will be evaluated in every iteration. 
-        if all(example.out == evaluator(symboltable, expr, example.in) for example ∈ problem.examples)
-            return expr
+#         # `all` shortcircuits, so not every example will be evaluated in every iteration. 
+#         if all(example.out == evaluator(symboltable, expr, example.in) for example ∈ problem.examples)
+#             return (h, expr)
+        falsified = false
+        for example ∈ problem.examples
+            # Evaluate the example, making sure that any exceptions are caught
+            try
+                output = evaluator(symboltable, expr, example.in)
+                if output ≠ example.out
+                    falsified = true
+                    break
+                end
+            catch e
+                # Throw the error again if evaluation errors aren't allowed
+                allow_evaluation_errors || throw(e)
+                falsified = true
+                break
+            end
+        end
+        if !falsified
+            return (h, expr)
         end
 
         # Check stopping conditions
@@ -55,6 +76,37 @@ function search(
     return nothing
 end
 
+
+function search(
+    g::Grammar, 
+    problem::Problem, 
+    start::Symbol; 
+    evaluator::Function=test_with_input, 
+    enumerator::Function=get_bfs_enumerator,
+    max_depth::Union{Int, Nothing}=nothing,
+    max_size::Union{Int, Nothing}=nothing,
+    max_time::Union{Int, Nothing}=nothing,
+    max_enumerations::Union{Int, Nothing}=nothing,
+    allow_evaluation_errors::Bool=false
+)::Union{Any, Nothing}
+    res::Union{Tuple{RuleNode, Any}, Nothing} = search_rulenode(
+        g,
+        problem,
+        start,
+        evaluator=evaluator,
+        enumerator=enumerator,
+        max_depth=max_depth,
+        max_size=max_size,
+        max_time=max_time,
+        max_enumerations=max_enumerations,
+        allow_evaluation_errors=allow_evaluation_errors
+    )
+
+    if res isa Tuple{RuleNode, Any}
+        return res[2]
+    end
+    return nothing
+end
 
 """
 Default error function for `search_best`.
@@ -86,6 +138,7 @@ The evaluator should be a function that takes a SymbolTable, expression and a di
     - max_depth         - The maximum depth of the search
     - max_time          - The maximum time allowed for the search in seconds
     - max_enumerations  - The maximum number of programs to enumerate and test
+    - allow_evaluation_errors - Whether the search should crash if an exception is thrown in the evaluation
 Returns a tuple with the best found program so far and the error. 
 Can be considerably slower than `search` due to having to evaluate each expression on each example.
 """
@@ -99,7 +152,8 @@ function search_best(
         max_depth::Union{Int, Nothing}=nothing,
         max_size::Union{Int, Nothing}=nothing,
         max_time::Union{Int, Nothing}=nothing,
-        max_enumerations::Union{Int, Nothing}=nothing
+        max_enumerations::Union{Int, Nothing}=nothing,
+        allow_evaluation_errors::Bool=false
     )::Tuple{Any, Real}
 
     start_time = time()
@@ -122,8 +176,19 @@ function search_best(
 
         # Evaluate the expression on the examples
         total_error = 0
+        crashed = false
         for example ∈ problem.examples
-            total_error = error_function(total_error, evaluator(symboltable, expr, example.in), example.out)
+            try
+                output = evaluator(symboltable, expr, example.in)
+                total_error = error_function(total_error, output, example.out)
+            catch e
+                # You could also decide to handle less severe errors (such as index out of range) differently,
+                # for example by just increasing the error value and keeping the program as a candidate.
+                crashed = true
+                # Throw the error again if evaluation errors aren't allowed
+                allow_evaluation_errors || throw(e)
+                break
+            end
 
             # Check if we can still improve the best program found so far
             if total_error ≥ best_error
@@ -131,7 +196,9 @@ function search_best(
             end
         end
 
-        if total_error == 0
+        if crashed 
+            # do nothing
+        elseif total_error == 0
             return expr, 0
         elseif total_error < best_error
             # Update the best found example so far
