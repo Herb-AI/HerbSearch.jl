@@ -1,4 +1,6 @@
 """
+    get_mh_enumerator(examples::AbstractArray{Example}, cost_function::Function, evaluation_function::Function=HerbEvaluation.test_with_input)
+
 Returns an enumerator that runs according to the Metropolis Hastings algorithm.
 - `examples` : array of examples
 - `cost_function` : cost function to evaluate the programs proposed
@@ -25,6 +27,8 @@ function get_mh_enumerator(examples::AbstractArray{Example}, cost_function::Func
 end
 
 """
+    get_vlsn_enumerator(examples, cost_function, enumeration_depth = 2, evaluation_function::Function=HerbEvaluation.test_with_input)
+
 Returns an enumerator that runs according to the Very Large Scale Neighbourhood Search algorithm.
 - `examples` : array of examples
 - `cost_function` : cost function to evaluate the programs proposed
@@ -52,6 +56,8 @@ function get_vlsn_enumerator(examples, cost_function, enumeration_depth = 2, eva
 end
 
 """
+    get_sa_enumerator(examples, cost_function, initial_temperature=1, temperature_decreasing_factor = 0.99, evaluation_function::Function=HerbEvaluation.test_with_input)
+
 Returns an enumerator that runs according to the Very Large Scale Neighbourhood Search algorithm.
 - `examples` : array of examples
 - `cost_function` : cost function to evaluate the programs proposed
