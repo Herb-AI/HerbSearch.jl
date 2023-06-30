@@ -119,6 +119,8 @@ The default function returns `0` if the outputs match and `1` otherwise.
 """
 default_error_function(old_error, output, expected_output) = old_error + (output == expected_output ? 0 : 1)
 
+mse_error_function(old_error, output, expected_output) = old_error + (output - expected_output) ^ 2
+
 
 """
 Searches the grammar for the program that satisfies the maximum number of examples in the problem.
