@@ -13,9 +13,10 @@ Returns a list with only one proposed, completely random, subprogram.
 - `neighbourhood_node_loc::NodeLoc`: the location of the program to replace.
 - `grammar::Grammar`: the grammar used to create programs.
 - `max_depth::Int`: the maximum depth of the resulting programs.
+- `dmap::AbstractVector{Int} : the minimum possible depth to reach for each rule`
 - `dict::Dict{String, Any}`: the dictionary with additional arguments; not used.
 """
-function random_fill_propose(current_program, neighbourhood_node_loc, grammar, max_depth, dict)
+function random_fill_propose(current_program::RuleNode, neighbourhood_node_loc::NodeLoc, grammar::Grammar, max_depth::Int, dmap::AbstractVector{Int}, dict::Union{Nothing,Dict{String,Any}})
     # it can change the current_program for fast replacing of the node
     # find the symbol of subprogram
     subprogram = get(current_program, neighbourhood_node_loc)
@@ -33,7 +34,7 @@ function random_fill_propose(current_program, neighbourhood_node_loc, grammar, m
     end
 
     # generate completely random expression (subprogram) with remaining_depth
-    replacement = rand(RuleNode, grammar, neighbourhood_symbol, remaining_depth)
+    replacement = rand(RuleNode, grammar, neighbourhood_symbol, dmap, remaining_depth)
 
     return [replacement]
 end
@@ -44,7 +45,7 @@ The return function is a function that produces a list with all the subprograms 
 - `enumeration_depth::Int64`: the maximum enumeration depth.
 """
 function enumerate_neighbours_propose(enumeration_depth::Int64)
-    return (current_program, neighbourhood_node_loc, grammar, max_depth, dict) -> begin
+    return (current_program::RuleNode, neighbourhood_node_loc::NodeLoc, grammar::Grammar, max_depth::Int, dmap::AbstractVector{Int}, dict::Union{Nothing,Dict{String,Any}}) -> begin
         # it can change the current_program for fast replacing of the node
         # find the symbol of subprogram
         subprogram = get(current_program, neighbourhood_node_loc)

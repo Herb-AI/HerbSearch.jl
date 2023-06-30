@@ -65,6 +65,7 @@ end
 Base.@kwdef struct IteratorState
     current_program::RuleNode
     current_temperature::Real
+    dmap::AbstractVector{Int} # depth map of each rule
 end
 
 Base.IteratorSize(::StochasticSearchEnumerator) = Base.SizeUnknown()
@@ -73,10 +74,12 @@ Base.eltype(::StochasticSearchEnumerator) = RuleNode
 function Base.iterate(iter::StochasticSearchEnumerator)
     grammar, max_depth = iter.grammar, iter.max_depth
     # sample a random node using start symbol and grammar
+    dmap = mindepth_map(grammar)
     sampled_program = rand(RuleNode, grammar, iter.start_symbol, max_depth)
     return (sampled_program, IteratorState(
         current_program=sampled_program,
-        current_temperature=iter.initial_temperature))
+        current_temperature=iter.initial_temperature,
+        dmap=dmap))
 end
 
 
@@ -108,7 +111,7 @@ function Base.iterate(iter::StochasticSearchEnumerator, current_state::IteratorS
             temp $new_temperature"
 
     # propose new programs to consider. They are programs to put in the place of the node
-    possible_replacements = iter.propose(current_program, neighbourhood_node_location, grammar, iter.max_depth, dict)
+    possible_replacements = iter.propose(current_program, neighbourhood_node_location, grammar, iter.max_depth, current_state.dmap, dict)
     
     # the next program in the iteration
     next_program = deepcopy(current_program)
@@ -133,7 +136,8 @@ function Base.iterate(iter::StochasticSearchEnumerator, current_state::IteratorS
 
     next_state = IteratorState(
         current_program=next_program,
-        current_temperature=new_temperature)
+        current_temperature=new_temperature,
+        dmap = current_state.dmap)
 
     return (next_program, next_state)
 end
