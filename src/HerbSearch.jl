@@ -7,7 +7,7 @@ using ..HerbConstraints
 using ..HerbData
 using ..HerbEvaluation
 
-include("utils.jl")
+include("enumerator_constructors.jl")
 
 include("expression_iterator.jl")
 include("count_expressions.jl")
@@ -19,12 +19,12 @@ include("heuristics.jl")
 
 include("stochastic_search_iterator.jl")
 include("search_procedure.jl")
-include("stocastic_functions/cost_functions.jl")
+include("stochastic_functions/cost_functions.jl")
 
-include("stocastic_functions/neighbourhood.jl")
-include("stocastic_functions/propose.jl")
-include("stocastic_functions/accept.jl")
-include("stocastic_functions/temperature.jl")
+include("stochastic_functions/neighbourhood.jl")
+include("stochastic_functions/propose.jl")
+include("stochastic_functions/accept.jl")
+include("stochastic_functions/temperature.jl")
 include("stochastic_enumerators.jl")
 
 export 
