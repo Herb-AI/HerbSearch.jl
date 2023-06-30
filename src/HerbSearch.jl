@@ -8,6 +8,7 @@ using HerbConstraints
 using HerbData
 using HerbEvaluation
 
+include("sampling_grammar.jl")
 include("enumerator_constructors.jl")
 
 include("expression_iterator.jl")
@@ -57,5 +58,7 @@ export
   get_dfs_enumerator,
 
   most_likely_priority_function,
-  get_most_likely_first_enumerator
+  get_most_likely_first_enumerator,
+  sample,
+  rand
 end # module HerbSearch
