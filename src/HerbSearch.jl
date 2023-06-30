@@ -1,11 +1,12 @@
 module HerbSearch
 
 using DataStructures
-using ..HerbCore
-using ..HerbGrammar
-using ..HerbConstraints
-using ..HerbData
-using ..HerbEvaluation
+
+using HerbCore
+using HerbGrammar
+using HerbConstraints
+using HerbData
+using HerbEvaluation
 
 include("enumerator_constructors.jl")
 
