@@ -77,6 +77,9 @@ function search_rulenode(
 end
 
 
+"""
+Searches a program by calling search_rulenode and returning and only returns the found program.
+"""
 function search(
     g::Grammar, 
     problem::Problem, 
@@ -119,6 +122,15 @@ The default function returns `0` if the outputs match and `1` otherwise.
 """
 default_error_function(old_error, output, expected_output) = old_error + (output == expected_output ? 0 : 1)
 
+"""
+Mean squared error function for `search_best`.
+    
+    - old_error         - The existing total error
+    - output            - The actual output of the evaluator
+    - expected_output   - The expected output for the example
+
+The function build the mean squared error from `output` and `expected_output``.
+"""
 mse_error_function(old_error, output, expected_output) = old_error + (output - expected_output) ^ 2
 
 
