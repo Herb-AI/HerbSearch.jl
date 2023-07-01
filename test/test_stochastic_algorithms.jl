@@ -56,7 +56,6 @@ end
 
 @testset verbose = true "Algorithms" begin
     @testset verbose = true "MH" begin
-        @test 1 == 1
         @testmh "x * x + 4" 3
         @testmh "x * (x + 5) + 2" 4
         @testmh "x * (x + 25) + 5" 6
