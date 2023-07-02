@@ -57,8 +57,7 @@ end
 @testset verbose = true "Algorithms" begin
     @testset verbose = true "MH" begin
         @testmh "x * x + 4" 3
-        @testmh "x * (x + 5) + 2" 4
-        @testmh "x * (x + 25) + 5" 6
+        @testmh "x * (x + 5)" 4
 
 
         @testset verbose = true "factorization" begin

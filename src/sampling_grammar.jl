@@ -41,7 +41,7 @@ function Base.rand(::Type{RuleNode}, grammar::Grammar, typ::Symbol, dmap::Abstra
     return rulenode
 end
 
-mutable struct RuleNodeAndCount
+struct RuleNodeAndCount
     node::RuleNode
     cnt::Int
 end

@@ -1,4 +1,4 @@
-global const runs = 1000
+global const runs::Int16 = 1000
 
 function test_is_true_on_percentage(function_call::Function, percentage::Real)
     count = 0

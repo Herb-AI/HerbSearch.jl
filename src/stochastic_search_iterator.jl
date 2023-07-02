@@ -48,7 +48,7 @@ Returns the cost of the current program. It receives a list of tuples `(expected
 -   `evaluation_function`::Function that evaluates the julia expressions
 An iterator over all possible expressions of a grammar up to max_depth with start symbol sym.
 """
-Base.@kwdef mutable struct StochasticSearchEnumerator <: ExpressionIterator
+Base.@kwdef struct StochasticSearchEnumerator <: ExpressionIterator
     grammar::ContextSensitiveGrammar
     max_depth::Int64 = 5  # maximum depth of the program that is generated
     examples::Vector{Example}
@@ -62,7 +62,7 @@ Base.@kwdef mutable struct StochasticSearchEnumerator <: ExpressionIterator
     evaluation_function::Function
 end
 
-Base.@kwdef struct IteratorState
+struct IteratorState
     current_program::RuleNode
     current_temperature::Real
     dmap::AbstractVector{Int} # depth map of each rule
@@ -76,10 +76,8 @@ function Base.iterate(iter::StochasticSearchEnumerator)
     # sample a random node using start symbol and grammar
     dmap = mindepth_map(grammar)
     sampled_program = rand(RuleNode, grammar, iter.start_symbol, max_depth)
-    return (sampled_program, IteratorState(
-        current_program=sampled_program,
-        current_temperature=iter.initial_temperature,
-        dmap=dmap))
+
+    return (sampled_program, IteratorState(sampled_program,iter.initial_temperature,dmap))
 end
 
 
@@ -110,36 +108,34 @@ function Base.iterate(iter::StochasticSearchEnumerator, current_state::IteratorS
     @info "Start: $(rulenode2expr(current_program, grammar)), subexpr: $(rulenode2expr(subprogram, grammar)), cost: $current_cost
             temp $new_temperature"
 
-    # propose new programs to consider. They are programs to put in the place of the node
+    # propose new programs to consider. They are programs to put in the place of the nodelocation
     possible_replacements = iter.propose(current_program, neighbourhood_node_location, grammar, iter.max_depth, current_state.dmap, dict)
     
-    # the next program in the iteration
+    next_program = get_next_program(current_program, possible_replacements, neighbourhood_node_location, new_temperature, iter, current_cost)
+    next_state = IteratorState(next_program,new_temperature,current_state.dmap)
+    return (next_program, next_state)
+end
+
+
+function get_next_program(current_program::RuleNode, possible_replacements, neighbourhood_node_location::NodeLoc, new_temperature, iter::StochasticSearchEnumerator, current_cost)
     next_program = deepcopy(current_program)
     possible_program = current_program
-    best_replacement = nothing
     for possible_replacement in possible_replacements
-        # replace node at node_location with new_random 
+        # replace node at node_location with possible_replacement 
         if neighbourhood_node_location.i == 0
             possible_program = possible_replacement
         else
             # update current_program with the subprogram generated
-            # this line mutates also the current_program. That is why we deepcopy at 115
             neighbourhood_node_location.parent.children[neighbourhood_node_location.i] = possible_replacement
         end
-        program_cost = calculate_cost(possible_program, iter.cost_function, examples, grammar, iter.evaluation_function)
+        program_cost = calculate_cost(possible_program, iter.cost_function, iter.examples, iter.grammar, iter.evaluation_function)
         if iter.accept(current_cost, program_cost, new_temperature) 
             next_program = deepcopy(possible_program)
             current_cost = program_cost
-            best_replacement = deepcopy(possible_replacement)
         end
     end
+    return next_program
 
-    next_state = IteratorState(
-        current_program=next_program,
-        current_temperature=new_temperature,
-        dmap = current_state.dmap)
-
-    return (next_program, next_state)
 end
 
 """

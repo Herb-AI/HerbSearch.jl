@@ -2,7 +2,7 @@
 Enumerates a context-free grammar up to a given depth in a breadth-first order.
 This means that smaller programs are returned before larger programs.
 """
-mutable struct ContextSensitivePriorityEnumerator <: ExpressionIterator 
+struct ContextSensitivePriorityEnumerator <: ExpressionIterator 
     grammar::ContextSensitiveGrammar
     max_depth::Int
     max_size::Int
