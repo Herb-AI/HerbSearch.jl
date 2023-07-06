@@ -29,6 +29,7 @@ include("stochastic_functions/accept.jl")
 include("stochastic_functions/temperature.jl")
 include("stochastic_enumerators.jl")
 
+include("genetic_functions/fitness.jl")
 include("genetic_functions/mutation.jl")
 include("genetic_functions/crossover.jl")
 include("genetic_functions/select_parents.jl")

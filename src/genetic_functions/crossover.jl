@@ -1,4 +1,4 @@
-function crossover_2_children(parent1::RuleNode, parent2::RuleNode)
+function crossover_swap_children_2(parent1::RuleNode, parent2::RuleNode)
     copyparent1 = deepcopy(parent1)
     copyparent2 = deepcopy(parent2)
     
@@ -21,7 +21,7 @@ function crossover_2_children(parent1::RuleNode, parent2::RuleNode)
 end
 
 
-function crossover_1_child(parent1::RuleNode, parent2::RuleNode)
+function crossover_swap_children_1(parent1::RuleNode, parent2::RuleNode)
     copyparent1 = deepcopy(parent1)
     copyparent2 = deepcopy(parent2)
     
