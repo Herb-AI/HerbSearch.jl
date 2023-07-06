@@ -11,6 +11,9 @@ HerbEvaluation = "eb1bf938-813d-4942-ac0f-b4657a683e76"
 HerbData = "495a3ad3-8034-41b3-a087-aacf2fd71098"
 HerbConstraints = "1fa96474-3206-4513-b4fa-23913f296dfc"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
+Logging = "56ddb016-857b-54e1-b83d-db4d58db5568"
+StatsBase = "2913bbd2-ae8a-5f71-8c99-4fb6c76f3a91"
+
 
 [compat]
 DataStructures = "0.17,0.18"
@@ -24,6 +27,7 @@ HerbConstraints = "0.1.0"
 
 [extras]
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+LegibleLambdas = "f1f30506-32fe-5131-bd72-7c197988f9e5"
 
 [targets]
-test = ["Test"]
+test = ["Test","LegibleLambdas"]

@@ -1,5 +1,12 @@
 using Random
 
+struct AlgorithmStateIsInvalid <: Exception
+    message::String
+end
+
+Base.showerror(io::IO, e::AlgorithmStateIsInvalid) = print(io, e.message)
+
+
 Base.@kwdef struct GeneticSearchIterator{FitnessFunction,CrossOverFunction,MutationFunction,SelectParentsFunction,EvaluationFunction} <: ExpressionIterator
     grammar::ContextSensitiveGrammar
     examples::Vector{<:Example}
@@ -16,6 +23,7 @@ Base.@kwdef struct GeneticSearchIterator{FitnessFunction,CrossOverFunction,Mutat
     maximum_initial_population_depth::Int64
 
     max_depth::Int64  = 10    # not used
+
 end
 
 struct GeneticIteratorState
@@ -26,12 +34,43 @@ Base.IteratorSize(::GeneticSearchIterator) = Base.SizeUnknown()
 Base.eltype(::GeneticSearchIterator) = RuleNode
 
 
+"""
+Validates that the iterator has valid paramaters set
+"""
+function validate_iterator(iter)
+    if iter.population_size <= 0 
+        throw(AlgorithmStateIsInvalid("The iterator population size: '$(iter.population_size)' should be > 0"))
+    end
+    if !hasmethod(iter.fitness, Tuple{RuleNode, Array{Tuple{Any,Any}}})
+        throw(AlgorithmStateIsInvalid("The iterator fitness function should have two parameters: the program and an array with pair of tuples [(expected, value)]"))
+    end
+    if !hasmethod(iter.cross_over, Tuple{RuleNode, RuleNode})
+        throw(AlgorithmStateIsInvalid(
+            """The iterator select should get two paramaters:
+                - parent1 :: RuleNode -> parent1 program 
+                - parent2 :: RuleNode -> parent2 program 
+                and return a list of children.
+            """
+        ))
+    end
+
+    if !hasmethod(iter.select_parents, Tuple{Array{RuleNode}, Array{<:Real}})
+        throw(AlgorithmStateIsInvalid(
+            """The iterator select should get two paramaters: 
+                 - population: Array{RuleNode} -> array of programs
+                 - fitness array:  Array{<:Number} -> array of fitness value for the population
+                and return two rulenodes as the new parents.
+            """))
+    end
+    return true
+end
+
 function get_best_program_and_fitness(population::Array{RuleNode}, iter:: GeneticSearchIterator)::RuleNode
     best_program = nothing
     best_fitness = 0
     for index ∈ eachindex(population)
         chromosome = population[index]
-        fitness_value = iter.fitness(chromosome, calculate_cost(chromosome, iter.examples, iter.grammar, iter.evaluation_function))
+        fitness_value = iter.fitness(chromosome, calculate_cost_array(chromosome, iter.examples, iter.grammar, iter.evaluation_function))
         if isnothing(best_program) 
             best_fitness = fitness_value
             best_program = chromosome
@@ -45,6 +84,7 @@ function get_best_program_and_fitness(population::Array{RuleNode}, iter:: Geneti
     return best_program
 end
 function Base.iterate(iter::GeneticSearchIterator)
+    validate_iterator(iter)
     grammar = iter.grammar
     
     # sample a random node using start symbol and grammar
@@ -63,7 +103,7 @@ function Base.iterate(iter::GeneticSearchIterator, current_state::GeneticIterato
     current_population = current_state.population
 
     # Calculate fitness
-    fitness_array = [iter.fitness(chromosome, calculate_cost(chromosome, iter.examples, iter.grammar, iter.evaluation_function)) for chromosome in current_population]
+    fitness_array = [iter.fitness(chromosome, calculate_cost_array(chromosome, iter.examples, iter.grammar, iter.evaluation_function)) for chromosome in current_population]
     
     new_population = Vector{RuleNode}(undef,iter.population_size)
 
@@ -96,7 +136,7 @@ function Base.iterate(iter::GeneticSearchIterator, current_state::GeneticIterato
 end
 
 
-function calculate_cost(program::RuleNode, examples::Vector{<:Example}, grammar::Grammar, evaluation_function::Function)
+function calculate_cost_array(program::RuleNode, examples::Vector{<:Example}, grammar::Grammar, evaluation_function::Function)
     results = Tuple{<:Number,<:Number}[]
     expression = rulenode2expr(program, grammar)
     symbol_table = SymbolTable(grammar)
