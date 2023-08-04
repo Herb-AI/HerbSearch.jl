@@ -132,6 +132,8 @@ function Base.iterate(iter::GeneticSearchIterator, current_state::GeneticIterato
             iter.mutation!(chromosome, iter.grammar)
         end
     end
+
+    # return the program that has the highest fitness
     return (new_population[begin], GeneticIteratorState(new_population))
 end
 
