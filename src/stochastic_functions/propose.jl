@@ -39,12 +39,11 @@ function random_fill_propose(current_program, neighbourhood_node_loc, grammar, m
 end
 
 """
-The return function is a function that produces a list with all the subprograms constructed by using a subset of the grammar rules with depth at most `enumeration_depth`.
-The function expects the entry with key "rule_subset" in `dict` and value of type Vector{Any}.
+The return function is a function that produces a list with all the subprograms with depth at most `enumeration_depth`.
 # Arguments
-- `current_program::Int64`: the maximum enumeration depth.
+- `enumeration_depth::Int64`: the maximum enumeration depth.
 """
-function enumerate_neighbours_propose(enumeration_depth)
+function enumerate_neighbours_propose(enumeration_depth::Int64)
     return (current_program, neighbourhood_node_loc, grammar, max_depth, dict) -> begin
         # it can change the current_program for fast replacing of the node
         # find the symbol of subprogram
@@ -57,21 +56,7 @@ function enumerate_neighbours_propose(enumeration_depth)
         remaining_depth = max_depth - current_depth + 1  
         depth_left = min(remaining_depth, enumeration_depth)
 
-        subset_grammar = ContextSensitiveGrammar(
-            dict[:rule_subset], 
-            grammar.types, 
-            grammar.isterminal,
-            grammar.iseval, 
-            grammar.bytype,
-            grammar.domains,
-            grammar.childtypes, 
-            grammar.log_probabilities,
-            grammar.constraints)
-
-        replacement_expressions_enumerator = get_bfs_enumerator(subset_grammar, depth_left, typemax(Int), neighbourhood_symbol)  
-        replacement_expressions = collect(replacement_expressions_enumerator)
-    
-        return replacement_expressions
+        return get_bfs_enumerator(grammar, depth_left, typemax(Int), neighbourhood_symbol)  
     end
 end
     

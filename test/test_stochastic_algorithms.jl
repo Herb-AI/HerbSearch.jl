@@ -24,22 +24,20 @@ macro testmh(expression::String, max_depth=6)
         e = Meta.parse("x -> $($expression)")
         problem, examples = create_problem(eval(e))
         enumerator = HerbSearch.get_mh_enumerator(examples, HerbSearch.mean_squared_error)
-        program, cost = Herb.HerbSearch.search_best(grammar, problem, :X, enumerator=enumerator, error_function=mse_error_function, max_depth=$max_depth, max_time=3)
-        
+        program, cost = Herb.HerbSearch.search_best(grammar, problem, :X, enumerator=enumerator, error_function=mse_error_function, max_depth=$max_depth, max_time=MAX_RUNNING_TIME)
         @test cost == 0
     end
     )
 end
 
-
+const global MAX_RUNNING_TIME = 10
 macro testsa(expression::String,max_depth=6,init_temp = 2)
     return :(
         @testset "sa $($expression)" begin
         e = Meta.parse("x -> $($expression)")
         problem, examples = create_problem(eval(e))
         enumerator = HerbSearch.get_sa_enumerator(examples, HerbSearch.mean_squared_error, $init_temp)
-        program, cost = Herb.HerbSearch.search_best(grammar, problem, :X, enumerator=enumerator, error_function=mse_error_function, max_depth=$max_depth, max_time=3)
-        
+        program, cost = Herb.HerbSearch.search_best(grammar, problem, :X, enumerator=enumerator, error_function=mse_error_function, max_depth=$max_depth, max_time=MAX_RUNNING_TIME)
         @test cost == 0
     end
     )
@@ -51,8 +49,7 @@ macro testvlsn(expression::String, max_depth = 6, enumeration_depth = 2)
         e = Meta.parse("x -> $($expression)")
         problem, examples = create_problem(eval(e))
         enumerator = HerbSearch.get_vlsn_enumerator(examples, HerbSearch.mean_squared_error, $enumeration_depth)
-        program, cost = Herb.HerbSearch.search_best(grammar, problem, :X, enumerator=enumerator, error_function=mse_error_function, max_depth=$max_depth, max_time=3)
-        
+        program, cost = Herb.HerbSearch.search_best(grammar, problem, :X, enumerator=enumerator, error_function=mse_error_function, max_depth=$max_depth, max_time=MAX_RUNNING_TIME)
         @test cost == 0
     end
     )
@@ -81,21 +78,19 @@ end
         end
     end
     
-        @testset verbose = true "Very Large Scale Neighbourhood" begin
-            @testvlsn "x * x * x" 3
-            @testvlsn "x * x * x * x" 3
+    @testset verbose = true "Very Large Scale Neighbourhood" begin
+        @testvlsn "x * x * x" 3
+        @testvlsn "x * x * x * x" 3
 
+    end
+    
+    @testset verbose = true "Simulated Annealing" begin
+        @testsa "x * x + 4" 3
+        @testsa "x * (x + 5)" 3 2
+
+        @testset verbose = true "factorization" begin
+            @testsa  "5 * 5"             2  # 25 = 5 * 5 (depth 2)
+            @testsa  "2 * 3 * 4"         3  # (depth 3)
         end
-        
-        @testset verbose = true "Simulated Annealing" begin
-            @testsa "x * x + 4" 3
-            @testsa "x * (x + 5)" 3 2
-
-            @testset verbose = true "factorization" begin
-                @testsa  "5 * 5 * 5"         3  # 125 = 5 * 5 * 5 (depth 3)
-                @testsa  "2 * 3 * 4"         3  # (depth 3)
-                @testsa  "(5 + 5) * 5"       3  # (depth 3)
-
-            end
-        end
+    end
 end

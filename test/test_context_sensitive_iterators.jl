@@ -143,12 +143,12 @@
         @test RuleNode(4, [RuleNode(1), RuleNode(1)]) ∈ programs
     end
 
-    @testset "Ordered constraint" begin
+    @testset "RequireOnLeft constraint" begin
         g₁ = @csgrammar begin
             Real = |(1:3)
             Real = Real + Real
         end
-        constraint = OrderedPath([2, 1])
+        constraint = RequireOnLeft([2, 1])
         addconstraint!(g₁, constraint)
         programs = collect(get_bfs_enumerator(g₁, 2, typemax(Int), :Real))
 
