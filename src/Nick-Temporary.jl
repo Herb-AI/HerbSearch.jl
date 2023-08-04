@@ -5,6 +5,7 @@ using HerbSearch
 using Logging
 disable_logging(LogLevel(1))
 
+using Base.Threads
 
 
 arithmetic_grammar = @csgrammar begin
@@ -30,6 +31,7 @@ grammar = @csgrammar begin
     # MHCONFIGURATION = MAXDEPTH
     # MAXDEPTH = 3
     COMBINATOR = (Sequence,ALIST)
+    COMBINATOR = (Parallel,ALIST)
     ALIST = [MS;MS]
     ALIST = [MS;ALIST]
     # COMBINATOR = sequence(MSLIST)
@@ -99,6 +101,26 @@ function generic_run(::Type{Sequence}, meta_search_list::Vector; start_program::
         expression, start_program, cost = generic_run(x..., start_program = start_program)
         if cost < program_cost
             best_expression, best_program, program_cost = expression, start_program, cost
+        end
+    end
+    println("Done with cost: $program_cost")
+    return best_expression, best_program, program_cost
+end
+
+# parallel
+function generic_run(::Type{Parallel}, meta_search_list::Vector; start_program::Union{Nothing,RuleNode} = nothing)
+    # create an inital random program as the start
+    if isnothing(start_program)
+        start_program = rand(RuleNode, arithmetic_grammar, :X, 2)
+    end
+    best_expression = nothing 
+    best_program = start_program
+    program_cost = Inf64
+    # use threads
+    Threads.@threads for meta ∈ meta_search_list
+        expression, outcome_program, cost = generic_run(meta..., start_program = start_program)
+        if cost < program_cost
+            best_expression, best_program, program_cost = expression, outcome_program, cost
         end
     end
     println("Done with cost: $program_cost")

@@ -37,7 +37,7 @@ Returns the cost of the current program. It receives a list of tuples `(expected
 # Fields
 -   `grammar::ContextSensitiveGrammar` grammar that the algorithm uses
 -   `max_depth::Int64 = 5`  maximum depth of the program to generate
--   `examples::Vector{Example}` example used to check the program
+-   `examples::Vector{<:Example}` example used to check the program
 -   `neighbourhood::Function` 
 -   `propose::Function`
 -   `accept::Function`
@@ -47,19 +47,22 @@ Returns the cost of the current program. It receives a list of tuples `(expected
 -   `initial_temperature::Real` = 1 
 -   `evaluation_function`::Function that evaluates the julia expressions
 An iterator over all possible expressions of a grammar up to max_depth with start symbol sym.
+Parameterized StochasticSearchEnumerator based on the all the functions. This helps the performance.
+Using the type ::Function leads to poor compile performance. 
+Read https://discourse.julialang.org/t/how-to-enforce-function-signature-type-on-a-struct/101211/2
 """
-Base.@kwdef mutable struct StochasticSearchEnumerator <: ExpressionIterator
+Base.@kwdef mutable struct StochasticSearchEnumerator{A,B,C,D,E,F} <: ExpressionIterator
     grammar::ContextSensitiveGrammar
     max_depth::Int64 = 5  # maximum depth of the program that is generated
-    examples::Vector{Example}
-    neighbourhood::Function
-    propose::Function
-    accept::Function
-    temperature::Function
-    cost_function::Function
+    examples::Vector{<:Example}
+    neighbourhood::A
+    propose::B
+    accept::C
+    temperature::D
+    cost_function::E
     start_symbol::Symbol
     initial_temperature::Real = 1
-    evaluation_function::Function
+    evaluation_function::F
 end
 
 Base.@kwdef struct IteratorState
@@ -142,7 +145,7 @@ end
 Returns the cost of the `program` using the examples and the `cost_function`. It first convert the program to an expression and
 evaluates it on all the examples.
 """
-function calculate_cost(program::RuleNode, cost_function::Function, examples::AbstractVector{Example}, grammar::Grammar, evaluation_function::Function)
+function calculate_cost(program::RuleNode, cost_function::Function, examples::Vector{<:Example}, grammar::Grammar, evaluation_function::Function)
     results = Tuple{<:Number,<:Number}[]
     expression = rulenode2expr(program, grammar)
     symbol_table = SymbolTable(grammar)
