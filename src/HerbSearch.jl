@@ -32,6 +32,7 @@ export
   
   search,
   search_best,
+  supervised_search,
 
   bfs_expand_heuristic,
   bfs_priority_function,

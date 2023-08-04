@@ -146,3 +146,60 @@ function search_best(
     end
     return best_program, best_error
 end
+
+
+function supervised_search(
+    g::ContextSensitiveGrammar, 
+    problem::Problem, 
+    start::Symbol,
+    stopping_condition::Function,
+    start_program::RuleNode;
+    evaluator::Function=test_with_input,
+    enumerator::Function=get_bfs_enumerator,
+    error_function::Function=default_error_function,
+    )::Tuple{Any, Any, Real}
+
+    start_time = time()
+    symboltable :: SymbolTable = SymbolTable(g)
+
+    iterator = enumerator(
+        g, 
+        typemax(Int),
+        typemax(Int),
+        start
+    )
+
+    hypotheses = Iterators.rest(iterator, IteratorState(
+        current_program=start_program,
+        current_temperature=1))
+
+    best_error = typemax(Int)
+    best_program = nothing
+    best_rulenode = nothing
+    for (i, h) ∈ enumerate(hypotheses)
+        # Create expression from rulenode representation of AST
+        expr = rulenode2expr(h, g)
+
+        # Evaluate the expression on the examples
+        total_error = 0
+        for example ∈ problem.examples
+            total_error = error_function(total_error, evaluator(symboltable, expr, example.in), example.out)
+        end
+
+        if total_error == 0
+            return expr, 0
+        elseif total_error < best_error
+            # Update the best found example so far
+            best_error = total_error
+            best_program = expr
+            best_rulenode = h
+        end
+
+        # Check stopping conditions
+        current_time = time() - start_time
+        if stopping_condition(current_time, i, total_error)
+            return best_program, best_rulenode, best_error
+        end
+    end
+    return best_program, best_rulenode, best_error
+end
