@@ -21,9 +21,10 @@ grammar = @csgrammar begin
     S = generic_run(COMBINATOR...;)
     MS = A
     MS = COMBINATOR
-    A = mh(),STOPFUNCTION
+    MAX_DEPTH = 8
+    A = mh(),STOPFUNCTION,MAX_DEPTH
     # A = vlns,STOP
-    A = sa(),STOPFUNCTION
+    A = sa(),STOPFUNCTION,MAX_DEPTH
     # A = ga,STOP
     # A = dfs,STOP
     # A = bfs,STOP
@@ -55,7 +56,7 @@ end
 # CREATE A PROBLEM
 function create_problem(f, range=5)
     examples = [HerbData.IOExample(Dict(:x => x), f(x)) for x ∈ 1:range]
-    return HerbData.Problem(examples), examples
+    return HerbData.Problem(examples,"problem"), examples
 end
 
 problem, examples = create_problem(x -> x ^ 4 + x * x + 2 * x + 5)
@@ -82,8 +83,17 @@ end
 # parallel(::Type{Paralell}, start_program, [sequence(), sequence(), parallel()])
 
 # run for an simple algorithm
-function generic_run(enumerator::Function, stopping_condition::Function; start_program::RuleNode=rand(RuleNode, arithmetic_grammar, :X, 2))
-    program, rulenode, cost = HerbSearch.supervised_search(arithmetic_grammar, problem, :X, stopping_condition, start_program, enumerator=enumerator, error_function=HerbSearch.mse_error_function)
+function generic_run(enumerator::Function, stopping_condition::Function, max_depth::Int;  start_program::RuleNode=rand(RuleNode, arithmetic_grammar, :X, 2))
+    program, rulenode, cost = HerbSearch.supervised_search(
+        arithmetic_grammar,
+        problem,
+        :X, 
+        stopping_condition, 
+        start_program,
+        max_depth = max_depth, 
+        enumerator = enumerator,
+        error_function = HerbSearch.mse_error_function
+    )
     return program, rulenode, cost
 end
 
@@ -94,9 +104,7 @@ function generic_run(::Type{Sequence}, meta_search_list::Vector; start_program::
     if isnothing(start_program)
         start_program = rand(RuleNode, arithmetic_grammar, :X, 2)
     end
-    best_expression = nothing 
-    best_program = start_program
-    program_cost = Inf64
+    best_expression, best_program, program_cost = nothing, start_program, Inf64
     for x ∈ meta_search_list
         expression, start_program, cost = generic_run(x..., start_program = start_program)
         if cost < program_cost
@@ -113,9 +121,7 @@ function generic_run(::Type{Parallel}, meta_search_list::Vector; start_program::
     if isnothing(start_program)
         start_program = rand(RuleNode, arithmetic_grammar, :X, 2)
     end
-    best_expression = nothing 
-    best_program = start_program
-    program_cost = Inf64
+    best_expression, best_program, program_cost = nothing, start_program, Inf64
     # use threads
     Threads.@threads for meta ∈ meta_search_list
         expression, outcome_program, cost = generic_run(meta..., start_program = start_program)

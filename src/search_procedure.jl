@@ -224,6 +224,7 @@ function supervised_search(
     evaluator::Function=test_with_input,
     enumerator::Function=get_bfs_enumerator,
     error_function::Function=default_error_function,
+    max_depth::Union{Int, Nothing}=nothing,
     )::Tuple{Any, Any, Real}
 
     start_time = time()
@@ -231,7 +232,7 @@ function supervised_search(
 
     iterator = enumerator(
         g, 
-        typemax(Int),
+        max_depth ≡ nothing ? typemax(Int) : max_depth, 
         typemax(Int),
         start
     )
@@ -243,14 +244,18 @@ function supervised_search(
     best_error = typemax(Int)
     best_program = nothing
     best_rulenode = nothing
+    println("Starting search ",Threads.threadid(),"\n============")
     for (i, h) ∈ enumerate(hypotheses)
         # Create expression from rulenode representation of AST
         expr = rulenode2expr(h, g)
-
+        
         # Evaluate the expression on the examples
         total_error = 0
         for example ∈ problem.examples
             total_error = error_function(total_error, evaluator(symboltable, expr, example.in), example.out)
+        end
+        if i % 10000 == 0
+            println("Search #", Threads.threadid()," iter ",i," : total_error ",total_error)
         end
 
         if total_error == 0
