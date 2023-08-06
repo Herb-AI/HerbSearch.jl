@@ -64,19 +64,12 @@ end
 problem, examples = create_problem(x -> x ^ 4 + x * x + 2 * x + 5)
 
 # HELPER FUNCTIONS
-function mh()
-    enumerator = HerbSearch.get_mh_enumerator(examples, HerbSearch.mean_squared_error)
-    return enumerator
-end
+mh() = HerbSearch.get_mh_enumerator(examples, HerbSearch.mean_squared_error)
 
-function sa(inital_temperature,temperature_decreasing_factor)
-    enumerator = HerbSearch.get_sa_enumerator(examples, HerbSearch.mean_squared_error, inital_temperature, temperature_decreasing_factor)
-    return enumerator
-end
+sa(inital_temperature,temperature_decreasing_factor) = HerbSearch.get_sa_enumerator(examples, HerbSearch.mean_squared_error, inital_temperature, temperature_decreasing_factor)
 
-function vlsn(enumeration_depth)
-    return HerbSearch.get_vlsn_enumerator(examples, HerbSearch.mean_squared_error, enumeration_depth)
-end
+vlsn(enumeration_depth) = HerbSearch.get_vlsn_enumerator(examples, HerbSearch.mean_squared_error, enumeration_depth)
+
 
 
 abstract type Sequence
