@@ -17,14 +17,16 @@ arithmetic_grammar = @csgrammar begin
 end
 
 grammar = @csgrammar begin
-    # S = run(A...)
     S = generic_run(COMBINATOR...;)
     MS = A
     MS = COMBINATOR
     MAX_DEPTH = 8
-    A = mh(),STOPFUNCTION,MAX_DEPTH
-    # A = vlns,STOP
-    A = sa(),STOPFUNCTION,MAX_DEPTH
+    sa_inital_temperature = |(1:5)
+    # range from splits the range from [0.9,1] and generates 10 numbers with equal distance to each other
+    sa_temperature_decreasing_factor = |(range(0.9,1,10))
+    vlsn_enumeration_depth = |(2:3)
+    ALGORITHM = mh() | sa(sa_inital_temperature,sa_temperature_decreasing_factor) | vlsn(vlsn_enumeration_depth)
+    A = (ALGORITHM,STOPFUNCTION,MAX_DEPTH)
     # A = ga,STOP
     # A = dfs,STOP
     # A = bfs,STOP
@@ -67,9 +69,13 @@ function mh()
     return enumerator
 end
 
-function sa()
-    enumerator = HerbSearch.get_sa_enumerator(examples, HerbSearch.mean_squared_error, 5)
+function sa(inital_temperature,temperature_decreasing_factor)
+    enumerator = HerbSearch.get_sa_enumerator(examples, HerbSearch.mean_squared_error, inital_temperature, temperature_decreasing_factor)
     return enumerator
+end
+
+function vlsn(enumeration_depth)
+    return HerbSearch.get_vlsn_enumerator(examples, HerbSearch.mean_squared_error, enumeration_depth)
 end
 
 
@@ -134,7 +140,7 @@ function generic_run(::Type{Parallel}, meta_search_list::Vector; start_program::
 end
 
 # GENERATE META SEARCH PROCEDURE AND RUN IT
-meta_expression = rulenode2expr(rand(RuleNode, grammar, :S, 14), grammar)
+meta_expression = rulenode2expr(rand(RuleNode, grammar, :S, 10), grammar)
 
 println(meta_expression)
 @time expr,_,_ = eval(meta_expression)
