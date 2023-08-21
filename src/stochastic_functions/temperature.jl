@@ -4,6 +4,8 @@ between exploration and exploitation. Higher temperature values implies more exp
 """
 
 """
+    const_temperature(current_temperature)
+
 Returns the temperature unchanged. This function is used by Metropolis Hastings and Very Large Neighbourhood Search algorithms.
 # Arguments
 - `current_temperature::Real`: the current temperature of the search.
@@ -14,6 +16,8 @@ end
 
 
 """
+    decreasing_temperature(percentage::Real)
+
 Returns a function that produces a temperature decreased by `percentage`%. This function is used by the Simmulated Annealing algorithm.
 # Arguments
 - `percentage::Real`: the percentage to decrease the temperature by.
