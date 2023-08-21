@@ -25,7 +25,7 @@ end
 
 problem, examples = create_problem(x -> x ^ 4 + x * x + 2 * x + 5)
 
-grammar = @csgrammar begin
+meta_grammar = @csgrammar begin
     S = generic_run(COMBINATOR...;)
     MS = A
     MS = COMBINATOR
@@ -67,13 +67,12 @@ grammar = @csgrammar begin
 end
 
 
-# HELPER FUNCTIONS
 mh() = get_mh_enumerator(examples, HerbSearch.mean_squared_error)
 sa(inital_temperature,temperature_decreasing_factor) = get_sa_enumerator(examples, HerbSearch.mean_squared_error, inital_temperature, temperature_decreasing_factor)
 vlsn(enumeration_depth) = get_vlsn_enumerator(examples, HerbSearch.mean_squared_error, enumeration_depth)
 
 # GENERATE META SEARCH PROCEDURE AND RUN IT
-meta_expression = rulenode2expr(rand(RuleNode, grammar, :S, 10), grammar)
+meta_expression = rulenode2expr(rand(RuleNode, meta_grammar, :S, 10), meta_grammar)
 
 println(meta_expression)
 @time expr,_,_ = eval(meta_expression)
