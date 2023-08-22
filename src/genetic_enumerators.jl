@@ -20,7 +20,6 @@ function get_genetic_enumerator(examples;
             mutation! = random_mutate!,
             select_parents = select_parents,
             start_symbol = start_symbol,
-            max_depth = max_depth,  
             population_size = initial_population_size,
             maximum_initial_population_depth = maximum_initial_population_depth,
             mutation_probability = mutation_probability,
