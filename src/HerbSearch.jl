@@ -8,6 +8,7 @@ using HerbConstraints
 using HerbData
 using HerbEvaluation
 
+include("sampling_grammar.jl")
 include("enumerator_constructors.jl")
 
 include("expression_iterator.jl")
@@ -27,6 +28,13 @@ include("stochastic_functions/propose.jl")
 include("stochastic_functions/accept.jl")
 include("stochastic_functions/temperature.jl")
 include("stochastic_enumerators.jl")
+
+include("genetic_functions/fitness.jl")
+include("genetic_functions/mutation.jl")
+include("genetic_functions/crossover.jl")
+include("genetic_functions/select_parents.jl")
+include("genetic_search_iterator.jl")
+include("genetic_enumerators.jl")
 
 export 
   count_expressions,
@@ -49,6 +57,7 @@ export
   get_mh_enumerator,
   get_vlsn_enumerator,
   get_sa_enumerator,
+  get_genetic_enumerator,
   mean_squared_error,
   misclassification,
   mse_error_function,
@@ -57,5 +66,9 @@ export
   get_dfs_enumerator,
 
   most_likely_priority_function,
-  get_most_likely_first_enumerator
+  get_most_likely_first_enumerator,
+  random_mutate!,
+  crossover_2_children,
+  sample,
+  rand
 end # module HerbSearch
