@@ -73,7 +73,7 @@ end
     sample(root::RuleNode, typ::Symbol, grammar::Grammar,
                           maxdepth::Int=typemax(Int))
 
-Selects a uniformly random node of the given return type, typ, limited to maxdepth.
+Uniformly selects a random node of the given return type typ limited by maxdepth.
 """
 function StatsBase.sample(root::RuleNode, typ::Symbol, grammar::Grammar,
                           maxdepth::Int=typemax(Int))
@@ -102,8 +102,6 @@ function _sample(node::RuleNode, typ::Symbol, grammar::Grammar, x::RuleNodeAndCo
 end
 
 
-
-
 mutable struct NodeLocAndCount
 	loc::NodeLoc
 	cnt::Int
@@ -113,10 +111,9 @@ end
 """
 	sample(::Type{NodeLoc}, root::RuleNode, maxdepth::Int=typemax(Int))
     
-Selects a uniformly random node in the tree no deeper than maxdepth using reservoir sampling.
-Returns a NodeLoc that specifies the location using its parent so that the subtree can be replaced.
+Uniformly selects a random node in the tree no deeper than maxdepth using reservoir sampling.
+Returns a [`NodeLoc`](@ref) that specifies the location using its parent so that the subtree can be replaced.
 """
-    
 function StatsBase.sample(::Type{NodeLoc}, root::RuleNode, maxdepth::Int=typemax(Int))
 	x = NodeLocAndCount(NodeLoc(root, 0), 1)
 	_sample(NodeLoc, root, x, maxdepth-1)
@@ -138,8 +135,8 @@ end
 """
 	sample(::Type{NodeLoc}, root::RuleNode, typ::Symbol, grammar::Grammar)
     
-Selects a uniformly random node in the tree of a given type, specified using its parent such that the subtree can be replaced.
-Returns a NodeLoc.
+Uniformly selects a random node in the tree of a given type, specified using its parent such that the subtree can be replaced.
+Returns a [`NodeLoc`](@ref).
 """
 function StatsBase.sample(::Type{NodeLoc}, root::RuleNode, typ::Symbol, grammar::Grammar,
 			      maxdepth::Int=typemax(Int))
