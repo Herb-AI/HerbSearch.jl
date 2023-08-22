@@ -1,3 +1,8 @@
+"""
+    crossover_swap_children_2(parent1::RuleNode, parent2::RuleNode)
+
+Performs a random crossover of two parents of type [`RuleNode`](@ref). The subprograms are swapped and both altered parent programs are returned.
+"""
 function crossover_swap_children_2(parent1::RuleNode, parent2::RuleNode)
     copyparent1 = deepcopy(parent1)
     copyparent2 = deepcopy(parent2)
@@ -20,7 +25,11 @@ function crossover_swap_children_2(parent1::RuleNode, parent2::RuleNode)
     return (copyparent1,copyparent2)
 end
 
+"""
+    crossover_swap_children_1(parent1::RuleNode, parent2::RuleNode)
 
+Performs a random crossover of two parents of type [`RuleNode`](@ref). The subprograms are swapped and only one altered parent program is returned.
+"""
 function crossover_swap_children_1(parent1::RuleNode, parent2::RuleNode)
     copyparent1 = deepcopy(parent1)
     copyparent2 = deepcopy(parent2)
