@@ -6,7 +6,7 @@ using StatsBase
 """
     rand(::Type{RuleNode}, grammar::Grammar, typ::Symbol, max_depth::Int=10)
 
-Generates a random RuleNode of return type typ and maximum depth max_depth.
+Generates a random [`RuleNode`](@ref) of return type typ and maximum depth max_depth.
 """
 function Base.rand(::Type{RuleNode}, grammar::Grammar, typ::Symbol, max_depth::Int=10)
     dmap = mindepth_map(grammar)
@@ -15,7 +15,7 @@ end
 """
     rand(::Type{RuleNode}, grammar::Grammar, typ::Symbol, dmap::AbstractVector{Int}, max_depth::Int=10)
 
-Generates a random RuleNode of return type typ and maximum depth max_depth guided by a minimum depth map dmap.
+Generates a random [`RuleNode`](@ref) of return type typ and maximum depth max_depth guided by a minimum depth map dmap.
 """
 function Base.rand(::Type{RuleNode}, grammar::Grammar, typ::Symbol, dmap::AbstractVector{Int}, 
     max_depth::Int=10)
