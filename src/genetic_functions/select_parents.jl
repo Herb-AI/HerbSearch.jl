@@ -4,8 +4,7 @@
 Selects two parent chromosomes (individuals) from a population based on fitness-proportionate selection. The selected parents can be used for genetic crossover in the next steps of the algorithm.
 """
 function select_fitness_proportional_parents(population::Array{RuleNode}, fitness_array::Array{<:Real})::Tuple{RuleNode,RuleNode}
-    sum_of_fitness = sum(fitness_array)
-    fitness_array_normalized = [fitness_value / sum_of_fitness for fitness_value in fitness_array]
+    fitness_array_normalized = fitness_array/sum(fitness_array)
     parent1 = select_chromosome(population, fitness_array_normalized)
     parent2 = select_chromosome(population, fitness_array_normalized)
     return parent1, parent2
@@ -15,7 +14,7 @@ end
 """
     select_chromosome(population::Array{RuleNode}, fitness_array::Array{<:Real})::RuleNode
 
-Selects a chromosome (individual) from the population based on a fitness array. The function uses a fitness-proportionate selection strategy, often referred to as "roulette wheel" selection. 
+Selects a chromosome (individual) from the population based on a fitness array. The function uses a fitness-proportionate selection strategy, often referred to as "roulette wheel" selection. Assumes `fitness_array` to be normalized already.
 """
 function select_chromosome(population::Array{RuleNode}, fitness_array::Array{<:Real})::RuleNode
     random_number = rand()
