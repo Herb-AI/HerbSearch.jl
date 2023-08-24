@@ -10,18 +10,18 @@ end
 
 
 
-@testset "test if random_mutate! always changes the program" verbose=true begin
+@testset "test if mutate_random! always changes the program" verbose=true begin
     @testset "a specific program of depth 2" begin
         for i in 1:10
             ruleNode = RuleNode(6,[RuleNode(1),RuleNode(2)])
             before = deepcopy(ruleNode)
-            HerbSearch.random_mutate!(ruleNode,grammar)
+            HerbSearch.mutate_random!(ruleNode,grammar)
             @test ruleNode !== before
         end
     end
     @testset "only root node" begin
         root = RuleNode(1)
-        HerbSearch.random_mutate!(root,grammar)
+        HerbSearch.mutate_random!(root,grammar)
         @test root !== RuleNode(1)
     end
 end
@@ -33,14 +33,14 @@ end
                 root1 = RuleNode(1)
                 root2 = RuleNode(2)
                 # they should be swapped
-                @test HerbSearch.crossover_2_children(root1,root2) == (root2, root1)
+                @test HerbSearch.crossover_swap_children_2(root1,root2) == (root2, root1)
                 # no modification
                 @test root1 == RuleNode(1)
                 @test root2 == RuleNode(2)
             end
 
             @testset "crossing over the same rulenode gives the same rulenode two times" begin 
-                @test HerbSearch.crossover_2_children(RuleNode(1),RuleNode(1)) == (RuleNode(1),RuleNode(1))
+                @test HerbSearch.crossover_swap_children_2(RuleNode(1),RuleNode(1)) == (RuleNode(1),RuleNode(1))
             end
         end
 
@@ -48,7 +48,7 @@ end
 
             rulenode1 = RuleNode(1,[RuleNode(2)])
             rulenode2 = RuleNode(3,[RuleNode(4,[RuleNode(5)])])
-            child1,child2 = crossover_2_children(rulenode1,rulenode2)
+            child1,child2 = crossover_swap_children_2(rulenode1,rulenode2)
             println(child1,child2)
             @test child1 !== child2
             @test rulenode1 == RuleNode(1,[RuleNode(2)])
@@ -58,13 +58,13 @@ end
     @testset "having 1 child" begin
         @testset "only root node" begin
             @testset "crossing over the same rulenode gives the same rulenode" begin 
-                @test HerbSearch.crossover_1_child(RuleNode(1),RuleNode(1)) == RuleNode(1)
+                @test HerbSearch.crossover_swap_children_1(RuleNode(1),RuleNode(1)) == RuleNode(1)
             end
 
             @testset "crossing over the two roots gives one of them" begin 
                 root1 = RuleNode(1)
                 root2 = RuleNode(2)
-                child = HerbSearch.crossover_1_child(root1, root2)
+                child = HerbSearch.crossover_swap_children_1(root1, root2)
                 @test (child == root1 || child == root2)
                 @test root1 == RuleNode(1) && root2 == RuleNode(2)
             end
@@ -72,15 +72,13 @@ end
         @testset "not root" begin
             root1 = RuleNode(1,[RuleNode(2)])
             root2 = RuleNode(3,[RuleNode(4)])
-            child = HerbSearch.crossover_1_child(root1, root2)
+            child = HerbSearch.crossover_swap_children_1(root1, root2)
         end
 
     end
 end
 
 @testset "simple expressions" verbose = true begin
-
-    
 
     grammar = @csgrammar begin
         X = |(1:5)
