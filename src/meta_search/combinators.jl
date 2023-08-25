@@ -67,7 +67,7 @@ end
 
 
 """
-    generic_run(::Type{Parallel}, meta_search_list::Vector, grammar::ContextSensitiveGrammar; start_program::Union{Nothing,RuleNode} = nothing)
+    generic_run(::Type{Parallel}, meta_search_list::Vector, max_depth::Int, grammar::ContextSensitiveGrammar; start_program::Union{Nothing,RuleNode} = nothing)
 
 Runs combinators in parallel from the `meta_search_list`. 
 Parallel(A,B,C) means that A,B,C are ran in parallel on different threads.
@@ -78,10 +78,10 @@ The sequence step is stopped once an algorithm achieves cost `0`, meaning it sat
 
 Returns a tuple consisting of the `(expression found, program as rulenode, program cost)` coresponding to the best program found (lowest cost).
 """
-function generic_run(::Type{Parallel}, meta_search_list::Vector, grammar::ContextSensitiveGrammar; start_program::Union{Nothing,RuleNode} = nothing)
+function generic_run(::Type{Parallel}, meta_search_list::Vector, max_depth::Int, grammar::ContextSensitiveGrammar; start_program::Union{Nothing,RuleNode} = nothing)
     # create an inital random program as the start
     if isnothing(start_program)
-        start_program = rand(RuleNode, grammar, 2)
+        start_program = rand(RuleNode, grammar, max_depth)
     end
     best_expression, best_program, program_cost = nothing, start_program, Inf64
     # use threads
