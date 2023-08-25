@@ -7,6 +7,8 @@ using HerbData
 using Test
 
 include("test_helpers.jl")
+using Random
+Random.seed!(1234)
 
 @testset "HerbSearch.jl" verbose=true begin
     # include("realistic_search_tests.jl")
