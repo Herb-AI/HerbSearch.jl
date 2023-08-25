@@ -15,4 +15,5 @@ include("test_helpers.jl")
     include("test_context_sensitive_iterators.jl")
     include("test_search_procedure.jl")        
     include("test_context_free_iterators.jl")
+    include("test_sampling.jl")
 end
