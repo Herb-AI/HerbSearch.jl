@@ -3,10 +3,35 @@ using StatsBase
 	Contains all function for sampling expressions and from expressions
 """
 
+
+"""
+    rand(::Type{RuleNode}, grammar::Grammar, max_depth::Int=10)
+
+Generates a random [`RuleNode`](@ref) of arbitrary type and maximum depth max_depth.
+"""
+function Base.rand(::Type{RuleNode}, grammar::Grammar, max_depth::Int=10)
+    random_type = StatsBase.sample(grammar.types)
+    dmap = mindepth_map(grammar)
+    return rand(RuleNode, grammar, random_type, dmap, max_depth)
+end
+
 """
     rand(::Type{RuleNode}, grammar::Grammar, typ::Symbol, max_depth::Int=10)
 
 Generates a random [`RuleNode`](@ref) of return type typ and maximum depth max_depth.
+"""
+function Base.rand(::Type{RuleNode}, grammar::Grammar, typ::Symbol, max_depth::Int=10)
+    dmap = mindepth_map(grammar)
+    return rand(RuleNode, grammar, typ, dmap, max_depth)
+end
+
+
+
+"""
+    rand(::Type{RuleNode}, grammar::Grammar, typ::Symbol, max_depth::Int=10)
+
+Generates a random RuleNode of return type typ and maximum depth max_depth.
+
 """
 function Base.rand(::Type{RuleNode}, grammar::Grammar, typ::Symbol, max_depth::Int=10)
     dmap = mindepth_map(grammar)
@@ -100,7 +125,6 @@ function _sample(node::RuleNode, typ::Symbol, grammar::Grammar, x::RuleNodeAndCo
         _sample(child, typ, grammar, x, maxdepth-1)
     end
 end
-
 
 mutable struct NodeLocAndCount
 	loc::NodeLoc

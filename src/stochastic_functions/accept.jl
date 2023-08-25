@@ -1,6 +1,8 @@
 # Smaller cost means a better program. Bigger cost means a worse program.
 
 """
+    probabilistic_accept(current_cost::Real, next_cost::Real, temperature::Real)
+
 Probabilistically decides whether to accept the new program (next) based on the ratio of costs (smaller is better) between the previous and new program.
 Returns `True` if the new program is accepted, `False` otherwise.
 # Arguments
@@ -14,6 +16,8 @@ function probabilistic_accept(current_cost::Real, next_cost::Real, temperature::
 end
 
 """
+    probabilistic_accept_with_temperature_fraction(current_cost::Real, program_to_consider_cost::Real, temperature::Real)
+
 Probabilistically decides whether to accept the new program (next) based on the ratio of costs (smaller is better) between the previous and new program multiplied
 by the temperature.
 Returns `True` if the new program is accepted, `False` otherwise.
@@ -31,6 +35,8 @@ function probabilistic_accept_with_temperature_fraction(current_cost::Real, prog
 end
 
 """
+    best_accept(current_cost::Real, next_cost::Real, temperature)
+
 Returns true if the cost of the proposed program is smaller than the cost of the current program.
 Otherwise, returns false.
 # Arguments
@@ -43,6 +49,8 @@ function best_accept(current_cost::Real, next_cost::Real, temperature)
 end
 
 """
+    probabilistic_accept_with_temperature(current_cost::Real, next_cost::Real, temperature::Real)
+
 Returns true if the cost of the proposed program is smaller than the cost of the current program.
 Otherwise, returns true with the probability equal to: 
 ```math

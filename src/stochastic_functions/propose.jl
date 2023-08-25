@@ -5,8 +5,9 @@ It is the responsibility of the caller to make this replacement.
 """
 
 
-
 """
+    random_fill_propose(current_program, neighbourhood_node_loc, grammar, max_depth, dict)
+
 Returns a list with only one proposed, completely random, subprogram.
 # Arguments
 - `current_program::RuleNode`: the current program.
@@ -40,6 +41,8 @@ function random_fill_propose(current_program::RuleNode, neighbourhood_node_loc::
 end
 
 """
+    enumerate_neighbours_propose(enumeration_depth::Int64)
+
 The return function is a function that produces a list with all the subprograms with depth at most `enumeration_depth`.
 # Arguments
 - `enumeration_depth::Int64`: the maximum enumeration depth.

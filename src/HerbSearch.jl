@@ -29,6 +29,13 @@ include("stochastic_functions/accept.jl")
 include("stochastic_functions/temperature.jl")
 include("stochastic_enumerators.jl")
 
+include("genetic_functions/fitness.jl")
+include("genetic_functions/mutation.jl")
+include("genetic_functions/crossover.jl")
+include("genetic_functions/select_parents.jl")
+include("genetic_search_iterator.jl")
+include("genetic_enumerators.jl")
+
 export 
   count_expressions,
   ExpressionIterator,
@@ -50,6 +57,7 @@ export
   get_mh_enumerator,
   get_vlsn_enumerator,
   get_sa_enumerator,
+  get_genetic_enumerator,
   mean_squared_error,
   misclassification,
   mse_error_function,
@@ -59,6 +67,8 @@ export
 
   most_likely_priority_function,
   get_most_likely_first_enumerator,
+  mutate_random!,
+  crossover_swap_children_2,
   sample,
   rand
 end # module HerbSearch

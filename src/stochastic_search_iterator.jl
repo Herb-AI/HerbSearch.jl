@@ -1,7 +1,7 @@
 using Random
 
 """
-StochasticSearchEnumerator
+    Base.@kwdef mutable struct StochasticSearchEnumerator <: ExpressionIterator
 
 A unified struct for the algorithms Metropolis Hastings, Very Large Scale Neighbourhood and Simulated Annealing.
 Each algorithm implements `neighbourhood` `propose` `accept` and `temperature` functions. Below the signiture of all this function is shown
@@ -82,6 +82,8 @@ end
 
 
 """
+    Base.iterate(iter::StochasticSearchEnumerator, current_state::IteratorState)
+
 The algorithm that constructs the iterator of StochasticSearchEnumerator. It has the following structure:
 
 1. get a random node location -> location,dict = neighbourhood(current_program)
@@ -139,6 +141,8 @@ function get_next_program(current_program::RuleNode, possible_replacements, neig
 end
 
 """
+    calculate_cost(program::RuleNode, cost_function::Function, examples::AbstractVector{Example}, grammar::Grammar, evaluation_function::Function)
+
 Returns the cost of the `program` using the examples and the `cost_function`. It first convert the program to an expression and
 evaluates it on all the examples.
 """

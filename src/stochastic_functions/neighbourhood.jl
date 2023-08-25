@@ -7,6 +7,8 @@ A neighbourhood function returns a tuple of two elements:
 
 
 """
+    constructNeighbourhood(current_program::RuleNode, grammar::Grammar)
+
 The neighbourhood node location is chosen at random.
 The dictionary is nothing.
 # Arguments
@@ -20,6 +22,7 @@ function constructNeighbourhood(current_program::RuleNode, grammar::Grammar)
 end
 
 """
+    constructNeighbourhoodRuleSubset(current_program::RuleNode, grammar::Grammar)
 The neighbourhood node location is chosen at random.
 The dictionary is contains one entry with key "rule_subset" and value of type Vector{Any} being a random subset of grammar rules.
 # Arguments
