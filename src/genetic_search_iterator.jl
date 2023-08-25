@@ -96,7 +96,7 @@ function get_best_program(population::Array{RuleNode}, iter:: GeneticSearchItera
     best_fitness = 0
     for index ∈ eachindex(population)
         chromosome = population[index]
-        fitness_value = iter.fitness(chromosome, evaluate_program(chromosome, iter.examples, iter.grammar, iter.evaluation_function))
+        fitness_value = iter.fitness(chromosome, HerbEvaluation.evaluate_program(chromosome, iter.examples, iter.grammar, iter.evaluation_function))
         if isnothing(best_program) 
             best_fitness = fitness_value
             best_program = chromosome
@@ -140,7 +140,7 @@ function Base.iterate(iter::GeneticSearchIterator, current_state::GeneticIterato
     current_population = current_state.population
 
     # Calculate fitness
-    fitness_array = [iter.fitness(chromosome, evaluate_program(chromosome, iter.examples, iter.grammar, iter.evaluation_function)) for chromosome in current_population]
+    fitness_array = [iter.fitness(chromosome, HerbEvaluation.evaluate_program(chromosome, iter.examples, iter.grammar, iter.evaluation_function)) for chromosome in current_population]
     
     new_population = Vector{RuleNode}(undef,iter.population_size)
 
