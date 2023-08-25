@@ -1,7 +1,7 @@
 using Random
 
 """
-    Base.@kwdef mutable struct StochasticSearchEnumerator <: ExpressionIterator
+    Base.@kwdef struct StochasticSearchEnumerator <: ExpressionIterator
 
 A unified struct for the algorithms Metropolis Hastings, Very Large Scale Neighbourhood and Simulated Annealing.
 Each algorithm implements `neighbourhood` `propose` `accept` and `temperature` functions. Below the signiture of all this function is shown
@@ -144,15 +144,9 @@ end
     calculate_cost(program::RuleNode, cost_function::Function, examples::AbstractVector{Example}, grammar::Grammar, evaluation_function::Function)
 
 Returns the cost of the `program` using the examples and the `cost_function`. It first convert the program to an expression and
-evaluates it on all the examples.
+evaluates it on all the examples using [`HerbEvaluationevaluate_program`](@ref).
 """
 function calculate_cost(program::RuleNode, cost_function::Function, examples::AbstractVector{Example}, grammar::Grammar, evaluation_function::Function)
-    results = Tuple{<:Number,<:Number}[]
-    expression = rulenode2expr(program, grammar)
-    symbol_table = SymbolTable(grammar)
-    for example ∈ filter(e -> e isa IOExample, examples)
-        outcome = evaluation_function(symbol_table, expression, example.in)
-        push!(results, (example.out, outcome))
-    end
+    results = HerbEvaluation.evaluate_program(program,examples,grammar,evaluation_function)
     return cost_function(results)
 end

@@ -17,7 +17,7 @@ function get_genetic_enumerator(examples;
             examples = examples,
             fitness = fitness_function,
             cross_over = cross_over,
-            mutation! = random_mutate!,
+            mutation! = mutate_random!,
             select_parents = select_parents,
             start_symbol = start_symbol,
             population_size = initial_population_size,

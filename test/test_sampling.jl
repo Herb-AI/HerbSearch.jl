@@ -40,7 +40,6 @@ using HerbCore
         expression = rand(RuleNode, grammar, :A, 2)
         @test depth(expression) == 1 || depth(expression) == 2
         @test rulenode2expr(expression,grammar) in [:B,:C,:F,:G]
-        println("D2",rulenode2expr(expression,grammar))
         
     end
 
