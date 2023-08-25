@@ -3,7 +3,7 @@
 
 Enumerates a context-free grammar starting at [`Symbol`](@ref) `sym` with respect to the grammar up to a given depth and a given size. The exploration is done using the given priority function for derivations, and the expand function for discovered nodes.
 """
-mutable struct ContextSensitivePriorityEnumerator <: ExpressionIterator 
+struct ContextSensitivePriorityEnumerator <: ExpressionIterator 
     grammar::ContextSensitiveGrammar
     max_depth::Int
     max_size::Int
