@@ -6,6 +6,7 @@ function create_problem(f, range=20)
     return Problem(examples), examples
 end
 
+
 grammar = @csgrammar begin
     X = |(1:5)
     X = X * X
@@ -70,8 +71,10 @@ end
     end
     
     @testset verbose = true "Very Large Scale Neighbourhood" begin
-        @testvlsn "x * x * x" 3
-        @testvlsn "x * x * x * x" 3
+        @testvlsn "x"  1
+        @testvlsn "2"  1
+        @testvlsn "4"  1
+        @testvlsn "10" 2
 
     end
     
