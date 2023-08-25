@@ -26,17 +26,6 @@ function Base.rand(::Type{RuleNode}, grammar::Grammar, typ::Symbol, max_depth::I
 end
 
 
-
-"""
-    rand(::Type{RuleNode}, grammar::Grammar, typ::Symbol, max_depth::Int=10)
-
-Generates a random RuleNode of return type typ and maximum depth max_depth.
-
-"""
-function Base.rand(::Type{RuleNode}, grammar::Grammar, typ::Symbol, max_depth::Int=10)
-    dmap = mindepth_map(grammar)
-    return rand(RuleNode, grammar, typ, dmap, max_depth)
-end
 """
     rand(::Type{RuleNode}, grammar::Grammar, typ::Symbol, dmap::AbstractVector{Int}, max_depth::Int=10)
 
