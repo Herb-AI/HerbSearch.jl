@@ -223,8 +223,10 @@ function supervised_search(
     start_program::RuleNode;
     evaluator::Function=test_with_input,
     enumerator::Function=get_bfs_enumerator,
+    state=IteratorState,
     error_function::Function=default_error_function,
     max_depth::Union{Int, Nothing}=nothing,
+    is_running_meta_search = false
     )::Tuple{Any, Any, Real}
 
     start_time = time()
@@ -236,10 +238,9 @@ function supervised_search(
         typemax(Int),
         start
     )
-
-    hypotheses = Iterators.rest(iterator, IteratorState(
-        current_program=start_program,
-        current_temperature=1))
+    # instead of calling IteratorState(current_program = current_program) I abstracted away to a function call that creates 
+    # the appropriate struct for a given iterator. (Different iterators can have different structs for the IteratorState)
+    hypotheses = Iterators.rest(iterator, state(current_program=start_program))
 
     best_error = typemax(Int)
     best_program = nothing
@@ -250,26 +251,33 @@ function supervised_search(
         expr = rulenode2expr(h, g)
         
         # Evaluate the expression on the examples
-        total_error = 0
-        for example ∈ problem.examples
-            total_error = error_function(total_error, evaluator(symboltable, expr, example.in), example.out)
-        end
-        if i % 10000 == 0
-            println("Search #", Threads.threadid()," iter ",i," : total_error ",total_error)
+        if is_running_meta_search == false
+            total_error = 0
+            for example ∈ problem.examples
+                total_error = error_function(total_error, evaluator(symboltable, expr, example.in), example.out)
+            end
+            if i % 10000 == 0
+                println("Search #", Threads.threadid()," iter ",i," : total_error ",total_error)
+            end
+
+            if total_error == 0
+                return expr, h, 0
+            elseif total_error < best_error
+                # Update the best found example so far
+                best_error = total_error
+                best_program = expr
+                best_rulenode = h
+            end
+        else
+            # maybe something specific here to get the cost of the meta_program. The error_function is not suitable for the meta search
+            # because there are not examples.
         end
 
-        if total_error == 0
-            return expr, 0
-        elseif total_error < best_error
-            # Update the best found example so far
-            best_error = total_error
-            best_program = expr
-            best_rulenode = h
-        end
 
         # Check stopping conditions
         current_time = time() - start_time
-        if stopping_condition(current_time, i, total_error)
+        # current_time > 5 is just for debugging to make it not run forever :)
+        if stopping_condition(current_time, i, total_error) || current_time > 5
             return best_program, best_rulenode, best_error
         end
     end

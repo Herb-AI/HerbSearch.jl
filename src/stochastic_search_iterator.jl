@@ -67,7 +67,7 @@ end
 
 Base.@kwdef struct IteratorState
     current_program::RuleNode
-    current_temperature::Real
+    current_temperature::Real = 1
 end
 
 Base.IteratorSize(::StochasticSearchEnumerator) = Base.SizeUnknown()

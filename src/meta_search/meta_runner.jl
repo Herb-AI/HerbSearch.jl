@@ -20,7 +20,7 @@ end
 # CREATE A PROBLEM
 function create_problem(f, range=5)
     examples = [HerbData.IOExample(Dict(:x => x), f(x)) for x ∈ 1:range]
-    return HerbData.Problem(examples,"problem"), examples
+    return HerbData.Problem(examples), examples
 end
 
 problem, examples = create_problem(x -> x ^ 4 + x * x + 2 * x + 5)
@@ -71,7 +71,9 @@ mh() = get_mh_enumerator(examples, HerbSearch.mean_squared_error)
 sa(inital_temperature,temperature_decreasing_factor) = get_sa_enumerator(examples, HerbSearch.mean_squared_error, inital_temperature, temperature_decreasing_factor)
 vlsn(enumeration_depth) = get_vlsn_enumerator(examples, HerbSearch.mean_squared_error, enumeration_depth)
 
-# GENERATE META SEARCH PROCEDURE AND RUN IT
+"""
+    Function that is used for testing the meta_grammar. It generates a random meta_program 10 times and evaluates it.
+"""
 function run_grammar_multiple_times()
     for _ in 1:10
         meta_program = rand(RuleNode, meta_grammar, :S, 10)
@@ -81,21 +83,60 @@ function run_grammar_multiple_times()
     end
 end
 
+"""
+    fitness_function(program, array_of_outcomes)
+
+The fitness function used for a given program from the meta-grammar.
+To evaluate a possible combinator/algorithm for the meta-search we don't have access any input and outputs examples.
+We just the have the program itself (a combinator). 
+For instance how would you evaluate how well the program `sequence(mh(some_params), sa(some_other_params))` behaves?
+There are no input/output examples here, we just run the algorithm and see how far can we get. Thus, the second
+parameter (`array_of_outcomes`) is ignored by use of _ in julia.
+
+To evaluate how well the a given combinator works I look at the time it takes to complete and the final cost it reaches.
+Because higher fitness means better I invert the fraction usint 1 / (cost * 100 + duration).
+The 100 just gives more weight to the cost I think. You can chose another value.
+"""
 function fitness_function(program, _)
-    start_time = time()
     expression = rulenode2expr(program, meta_grammar)
-    println("Expr",expression)    
+    start_time = time()
+    # evaluate the search that gives a tuple of (expression,program,cost)
     expr, prog, cost = eval(expression)
     duration = time() - start_time
-    return 1 / (cost * 100 + duration) 
+    final_cost = 1 / (cost * 100 + duration)
+    println("Expr",expr," cost ", cost)
+    return final_cost
 end
+
+# create a random meta_program to start with
 meta_program = rand(RuleNode, meta_grammar, :S, 10)
 
+"""
+    genetic_state(; current_program::RuleNode)
+
+Is called by `supervised_search` and returns the genetic state that will be created from an initial program.
+It just duplicates the program 10 times and pus that into the start population.
+""" 
+genetic_state(;current_program::RuleNode) = HerbSearch.GeneticIteratorState([current_program for i ∈ 1:10])
+
+# prints the initial meta program for debugging. This is the start program of the supervised_search (see below)
+meta_expr = rulenode2expr(meta_program, meta_grammar)
+println(meta_expr)
+
+# creates a genetic enumerator with no examples and with the desired fitness function 
+# check `get_genetic_enumerator` from `genetic_enumerators.jl` for the defaults values chosen for other params.
 genetic_algorithm = get_genetic_enumerator(Vector{Example}([]),fitness_function = fitness_function)
-mh_alg = get_mh_enumerator(Vector{Example}([]),fitness_function = fitness_function)
-outcome = supervised_search(meta_grammar,problem,:S,(time, iteration, cost) -> time > 5, meta_program, enumerator 
 
+# run supervised_search on the meta_grammar telling it to stop after 1000 iterations of the genetic iterator 
+# (otherwise it runs forever because there is no "best" meta-algorithm I think)
+# it passes the state function that given a starting_program it constructs the necessary struct
+# this is needed because GeneticSearchIterator using GeneticIteratorState while the stochastic algorithms use IteratorState as a struct
+# there is no inheritance in julia so I just created a function that gives the right "struct" for an algorithm. I hope it makes sense.
 
-
-= genetic_algorithm)
-println(outcome)
+# a problem with no examples :)
+meta_problem = HerbData.Problem([])
+best_program, best_rulenode, best_error = supervised_search(meta_grammar, meta_problem, :S,(time, iteration, cost) -> iteration > 1000 || time > 2, meta_program, 
+    enumerator = genetic_algorithm,
+    state = genetic_state)
+# get the meta_program found so far.
+println("Best meta program is :",best_program)
