@@ -144,9 +144,9 @@ end
     calculate_cost(program::RuleNode, cost_function::Function, examples::AbstractVector{Example}, grammar::Grammar, evaluation_function::Function)
 
 Returns the cost of the `program` using the examples and the `cost_function`. It first convert the program to an expression and
-evaluates it on all the examples using [`HerbEvaluationevaluate_program`](@ref).
+evaluates it on all the examples using [`HerbInterpret.evaluate_program`](@ref).
 """
 function calculate_cost(program::RuleNode, cost_function::Function, examples::AbstractVector{Example}, grammar::Grammar, evaluation_function::Function)
-    results = HerbEvaluation.evaluate_program(program,examples,grammar,evaluation_function)
+    results = HerbInterpret.evaluate_program(program,examples,grammar,evaluation_function)
     return cost_function(results)
 end
