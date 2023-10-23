@@ -1,7 +1,7 @@
 using Random
 
 """
-StochasticSearchEnumerator
+    Base.@kwdef struct StochasticSearchEnumerator <: ExpressionIterator
 
 A unified struct for the algorithms Metropolis Hastings, Very Large Scale Neighbourhood and Simulated Annealing.
 Each algorithm implements `neighbourhood` `propose` `accept` and `temperature` functions. Below the signiture of all this function is shown
@@ -37,7 +37,7 @@ Returns the cost of the current program. It receives a list of tuples `(expected
 # Fields
 -   `grammar::ContextSensitiveGrammar` grammar that the algorithm uses
 -   `max_depth::Int64 = 5`  maximum depth of the program to generate
--   `examples::Vector{<:Example}` example used to check the program
+-   `examples::Vector{Example}` example used to check the program
 -   `neighbourhood::Function` 
 -   `propose::Function`
 -   `accept::Function`
@@ -47,9 +47,6 @@ Returns the cost of the current program. It receives a list of tuples `(expected
 -   `initial_temperature::Real` = 1 
 -   `evaluation_function`::Function that evaluates the julia expressions
 An iterator over all possible expressions of a grammar up to max_depth with start symbol sym.
-Parameterized StochasticSearchEnumerator based on the all the functions. This helps the performance.
-Using the type ::Function leads to poor compile performance. 
-Read https://discourse.julialang.org/t/how-to-enforce-function-signature-type-on-a-struct/101211/2
 """
 Base.@kwdef mutable struct StochasticSearchEnumerator{A,B,C,D,E,F} <: ExpressionIterator
     grammar::ContextSensitiveGrammar
@@ -65,25 +62,42 @@ Base.@kwdef mutable struct StochasticSearchEnumerator{A,B,C,D,E,F} <: Expression
     evaluation_function::F
 end
 
-Base.@kwdef struct IteratorState
+Base.@kwdef struct StochasticIteratorState
     current_program::RuleNode
     current_temperature::Real = 1
+    dmap::AbstractVector{Int} = [] # depth map of each rule
 end
 
 Base.IteratorSize(::StochasticSearchEnumerator) = Base.SizeUnknown()
 Base.eltype(::StochasticSearchEnumerator) = RuleNode
 
+
+"""
+    Overwrites Julia Base.Iterators.rest in order to provide the depth map precomputation when constructing the iterator state.
+"""
+function Base.Iterators.rest(itr,state::StochasticIteratorState)
+    return Base.Iterators.Rest(
+            itr,
+            StochasticIteratorState(
+                current_program = state.current_program,
+                dmap = mindepth_map(itr.grammar)
+            )
+        )
+end
+
 function Base.iterate(iter::StochasticSearchEnumerator)
     grammar, max_depth = iter.grammar, iter.max_depth
     # sample a random node using start symbol and grammar
+    dmap = mindepth_map(grammar)
     sampled_program = rand(RuleNode, grammar, iter.start_symbol, max_depth)
-    return (sampled_program, IteratorState(
-        current_program=sampled_program,
-        current_temperature=iter.initial_temperature))
+
+    return (sampled_program, StochasticIteratorState(sampled_program,iter.initial_temperature,dmap))
 end
 
 
 """
+    Base.iterate(iter::StochasticSearchEnumerator, current_state::StochasticIteratorState)
+
 The algorithm that constructs the iterator of StochasticSearchEnumerator. It has the following structure:
 
 1. get a random node location -> location,dict = neighbourhood(current_program)
@@ -92,7 +106,7 @@ The algorithm that constructs the iterator of StochasticSearchEnumerator. It has
     4.  accept the new program by modifying the next_program or reject the new program
 5. return the new next_program
 """
-function Base.iterate(iter::StochasticSearchEnumerator, current_state::IteratorState)
+function Base.iterate(iter::StochasticSearchEnumerator, current_state::StochasticIteratorState)
     grammar, examples = iter.grammar, iter.examples
     current_program = current_state.current_program
     
@@ -110,40 +124,41 @@ function Base.iterate(iter::StochasticSearchEnumerator, current_state::IteratorS
     @info "Start: $(rulenode2expr(current_program, grammar)), subexpr: $(rulenode2expr(subprogram, grammar)), cost: $current_cost
             temp $new_temperature"
 
-    # propose new programs to consider. They are programs to put in the place of the node
-    possible_replacements = iter.propose(current_program, neighbourhood_node_location, grammar, iter.max_depth, dict)
+    # propose new programs to consider. They are programs to put in the place of the nodelocation
+    possible_replacements = iter.propose(current_program, neighbourhood_node_location, grammar, iter.max_depth, current_state.dmap, dict)
     
-    # the next program in the iteration
+    next_program = get_next_program(current_program, possible_replacements, neighbourhood_node_location, new_temperature, iter, current_cost)
+    next_state = StochasticIteratorState(next_program,new_temperature,current_state.dmap)
+    return (next_program, next_state)
+end
+
+
+function get_next_program(current_program::RuleNode, possible_replacements, neighbourhood_node_location::NodeLoc, new_temperature, iter::StochasticSearchEnumerator, current_cost)
     next_program = deepcopy(current_program)
     possible_program = current_program
-    best_replacement = nothing
     for possible_replacement in possible_replacements
-        # replace node at node_location with new_random 
+        # replace node at node_location with possible_replacement 
         if neighbourhood_node_location.i == 0
             possible_program = possible_replacement
         else
             # update current_program with the subprogram generated
-            # this line mutates also the current_program. That is why we deepcopy at 115
             neighbourhood_node_location.parent.children[neighbourhood_node_location.i] = possible_replacement
         end
-        program_cost = calculate_cost(possible_program, iter.cost_function, examples, grammar, iter.evaluation_function)
+        program_cost = calculate_cost(possible_program, iter.cost_function, iter.examples, iter.grammar, iter.evaluation_function)
         if iter.accept(current_cost, program_cost, new_temperature) 
             next_program = deepcopy(possible_program)
             current_cost = program_cost
-            best_replacement = deepcopy(possible_replacement)
         end
     end
+    return next_program
 
-    next_state = IteratorState(
-        current_program=next_program,
-        current_temperature=new_temperature)
-
-    return (next_program, next_state)
 end
 
 """
+    calculate_cost(program::RuleNode, cost_function::Function, examples::AbstractVector{Example}, grammar::Grammar, evaluation_function::Function)
+
 Returns the cost of the `program` using the examples and the `cost_function`. It first convert the program to an expression and
-evaluates it on all the examples.
+evaluates it on all the examples using [`HerbInterpret.evaluate_program`](@ref).
 """
 function calculate_cost(program::RuleNode, cost_function::Function, examples::Vector{<:Example}, grammar::Grammar, evaluation_function::Function)
     results = Tuple{<:Number,<:Number}[]

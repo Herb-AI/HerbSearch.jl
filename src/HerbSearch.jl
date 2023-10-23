@@ -6,7 +6,7 @@ using HerbCore
 using HerbGrammar
 using HerbConstraints
 using HerbData
-using HerbEvaluation
+using HerbInterpret
 
 include("sampling_grammar.jl")
 include("enumerator_constructors.jl")
@@ -68,8 +68,8 @@ export
 
   most_likely_priority_function,
   get_most_likely_first_enumerator,
-  random_mutate!,
-  crossover_2_children,
+  mutate_random!,
+  crossover_swap_children_2,
   sample,
   rand
 end # module HerbSearch

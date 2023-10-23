@@ -23,7 +23,7 @@ function create_problem(f, range=5)
     return HerbData.Problem(examples), examples
 end
 
-problem, examples = create_problem(x -> x ^ 4 + x * x + 2 * x + 5)
+problem, examples = create_problem(x -> x^4 + x * x + 2 * x + 5)
 
 meta_grammar = @csgrammar begin
     S = generic_run(COMBINATOR...;)
@@ -32,22 +32,22 @@ meta_grammar = @csgrammar begin
     MAX_DEPTH = 8
     sa_inital_temperature = |(1:5)
     # range from splits the range from [0.9,1] and generates 10 numbers with equal distance to each other
-    sa_temperature_decreasing_factor = |(range(0.9,1,10))
+    sa_temperature_decreasing_factor = |(range(0.9, 1, 10))
     vlsn_enumeration_depth = |(2:3)
     GIVEN_GRAMMAR = arithmetic_grammar
     GIVEN_PROBLEM = problem
-    ALGORITHM = mh() | sa(sa_inital_temperature,sa_temperature_decreasing_factor) | vlsn(vlsn_enumeration_depth)
-    A = (ALGORITHM,STOPFUNCTION,MAX_DEPTH,GIVEN_PROBLEM,GIVEN_GRAMMAR)
+    ALGORITHM = mh() | sa(sa_inital_temperature, sa_temperature_decreasing_factor) | vlsn(vlsn_enumeration_depth)
+    A = (ALGORITHM, STOPFUNCTION, MAX_DEPTH, GIVEN_PROBLEM, GIVEN_GRAMMAR)
     # A = ga,STOP
     # A = dfs,STOP
     # A = bfs,STOP
     # A = astar,STOP
     # MHCONFIGURATION = MAXDEPTH
     # MAXDEPTH = 3
-    COMBINATOR = (Sequence,ALIST,MAX_DEPTH,GIVEN_GRAMMAR)
-    COMBINATOR = (Parallel,ALIST,MAX_DEPTH,GIVEN_GRAMMAR)
-    ALIST = [MS;MS]
-    ALIST = [MS;ALIST]
+    COMBINATOR = (Sequence, ALIST, MAX_DEPTH, GIVEN_GRAMMAR)
+    COMBINATOR = (Parallel, ALIST, MAX_DEPTH, GIVEN_GRAMMAR)
+    ALIST = [MS; MS]
+    ALIST = [MS; ALIST]
     # COMBINATOR = sequence(MSLIST)
     # COMBINATOR = parallel([MSLIST],SELECT)
     # MSLIST = MS,MS
@@ -68,7 +68,7 @@ end
 
 
 mh() = get_mh_enumerator(examples, HerbSearch.mean_squared_error)
-sa(inital_temperature,temperature_decreasing_factor) = get_sa_enumerator(examples, HerbSearch.mean_squared_error, inital_temperature, temperature_decreasing_factor)
+sa(inital_temperature, temperature_decreasing_factor) = get_sa_enumerator(examples, HerbSearch.mean_squared_error, inital_temperature, temperature_decreasing_factor)
 vlsn(enumeration_depth) = get_vlsn_enumerator(examples, HerbSearch.mean_squared_error, enumeration_depth)
 
 """
@@ -79,7 +79,7 @@ function run_grammar_multiple_times()
         meta_program = rand(RuleNode, meta_grammar, :S, 10)
         meta_expr = rulenode2expr(meta_program, meta_grammar)
         println(meta_expr)
-        @time expr,_,_ = eval(meta_expr)
+        @time expr, _, _ = eval(meta_expr)
     end
 end
 
@@ -104,7 +104,7 @@ function fitness_function(program, _)
     expr, prog, cost = eval(expression)
     duration = time() - start_time
     final_cost = 1 / (cost * 100 + duration)
-    println("Expr",expr," cost ", cost)
+    println("Expr", expr, " cost ", cost)
     return final_cost
 end
 
@@ -116,27 +116,30 @@ meta_program = rand(RuleNode, meta_grammar, :S, 10)
 
 Is called by `supervised_search` and returns the genetic state that will be created from an initial program.
 It just duplicates the program 10 times and pus that into the start population.
-""" 
-genetic_state(;current_program::RuleNode) = HerbSearch.GeneticIteratorState([current_program for i ∈ 1:10])
+"""
+genetic_state(; current_program::RuleNode) = HerbSearch.GeneticIteratorState([current_program for i ∈ 1:10])
 
-# prints the initial meta program for debugging. This is the start program of the supervised_search (see below)
-meta_expr = rulenode2expr(meta_program, meta_grammar)
-println(meta_expr)
+function run_meta_search()
+    # prints the initial meta program for debugging. This is the start program of the supervised_search (see below)
+    meta_expr = rulenode2expr(meta_program, meta_grammar)
+    println(meta_expr)
 
-# creates a genetic enumerator with no examples and with the desired fitness function 
-# check `get_genetic_enumerator` from `genetic_enumerators.jl` for the defaults values chosen for other params.
-genetic_algorithm = get_genetic_enumerator(Vector{Example}([]),fitness_function = fitness_function)
+    # creates a genetic enumerator with no examples and with the desired fitness function 
+    # check `get_genetic_enumerator` from `genetic_enumerators.jl` for the defaults values chosen for other params.
+    genetic_algorithm = get_genetic_enumerator(Vector{Example}([]), fitness_function=fitness_function)
 
-# run supervised_search on the meta_grammar telling it to stop after 1000 iterations of the genetic iterator 
-# (otherwise it runs forever because there is no "best" meta-algorithm I think)
-# it passes the state function that given a starting_program it constructs the necessary struct
-# this is needed because GeneticSearchIterator using GeneticIteratorState while the stochastic algorithms use IteratorState as a struct
-# there is no inheritance in julia so I just created a function that gives the right "struct" for an algorithm. I hope it makes sense.
+    # run supervised_search on the meta_grammar telling it to stop after 1000 iterations of the genetic iterator 
+    # (otherwise it runs forever because there is no "best" meta-algorithm I think)
+    # it passes the state function that given a starting_program it constructs the necessary struct
+    # this is needed because GeneticSearchIterator using GeneticIteratorState while the stochastic algorithms use StochasticIteratorState as a struct
+    # there is no inheritance in julia so I just created a function that gives the right "struct" for an algorithm. I hope it makes sense.
 
-# a problem with no examples :)
-meta_problem = HerbData.Problem([])
-best_program, best_rulenode, best_error = supervised_search(meta_grammar, meta_problem, :S,(time, iteration, cost) -> iteration > 1000 || time > 2, meta_program, 
-    enumerator = genetic_algorithm,
-    state = genetic_state)
-# get the meta_program found so far.
-println("Best meta program is :",best_program)
+    # a problem with no examples :)
+    meta_problem = HerbData.Problem([])
+    best_program, best_rulenode, best_error = supervised_search(meta_grammar, meta_problem, :S, (time, iteration, cost) -> iteration > 1000 || time > 2, meta_program,
+        enumerator=genetic_algorithm,
+        state=genetic_state)
+    # get the meta_program found so far.
+    println("Best meta program is :", best_program)
+end
+run_meta_search()

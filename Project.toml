@@ -1,33 +1,32 @@
 name = "HerbSearch"
 uuid = "3008d8e8-f9aa-438a-92ed-26e9c7b4829f"
-authors = ["Sebastijan Dumancic <s.dumancic@tudelft.nl>", "Jaap de Jong <J.deJong-18@student.tudelft.nl>", "Nicolae Filat <N.Filat@student.tudelft.nl>", "Piotr Cichoń <gitlab@gitlab.ewi.tudelft.nl>"]
-version = "0.1.0"
+authors = ["Sebastijan Dumancic <s.dumancic@tudelft.nl>", "Jaap de Jong <J.deJong-18@student.tudelft.nl>", "Nicolae Filat <N.Filat@student.tudelft.nl>", "Piotr Cichoń <gitlab@gitlab.ewi.tudelft.nl>", "Tilman Hinnerichs <t.r.hinnerichs@tudelft.nl>"]
+version = "0.1.1"
 
 [deps]
 DataStructures = "864edb3b-99cc-5e75-8d2d-829cb0a9cfe8"
-HerbCore = "2b23ba43-8213-43cb-b5ea-38c12b45bd45"
-HerbGrammar = "4ef9e186-2fe5-4b24-8de7-9f7291f24af7"
-HerbEvaluation = "eb1bf938-813d-4942-ac0f-b4657a683e76"
-HerbData = "495a3ad3-8034-41b3-a087-aacf2fd71098"
 HerbConstraints = "1fa96474-3206-4513-b4fa-23913f296dfc"
-Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
+HerbCore = "2b23ba43-8213-43cb-b5ea-38c12b45bd45"
+HerbData = "495a3ad3-8034-41b3-a087-aacf2fd71098"
+HerbGrammar = "4ef9e186-2fe5-4b24-8de7-9f7291f24af7"
+HerbInterpret = "5bbddadd-02c5-4713-84b8-97364418cca7"
 Logging = "56ddb016-857b-54e1-b83d-db4d58db5568"
+Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 StatsBase = "2913bbd2-ae8a-5f71-8c99-4fb6c76f3a91"
-
 
 [compat]
 DataStructures = "0.17,0.18"
-julia = "1.8"
-HerbCore = "0.1.0"
-HerbGrammar = "0.1.0"
-HerbEvaluation = "0.1.0"
-HerbData = "0.1.0"
 HerbConstraints = "0.1.0"
-
+HerbCore = "0.1.1"
+HerbData = "0.1.1"
+HerbGrammar = "0.1.0"
+HerbInterpret = "0.1.0"
+StatsBase = "0.34"
+julia = "1.8"
 
 [extras]
-Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 LegibleLambdas = "f1f30506-32fe-5131-bd72-7c197988f9e5"
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [targets]
-test = ["Test","LegibleLambdas"]
+test = ["Test", "LegibleLambdas"]

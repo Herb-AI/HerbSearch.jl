@@ -1,4 +1,6 @@
 """
+    search_rulenode(g::Grammar, problem::Problem, start::Symbol; evaluator::Function=test_with_input, enumerator::Function=get_bfs_enumerator, max_depth::Union{Int, Nothing}=nothing, max_size::Union{Int, Nothing}=nothing, max_time::Union{Int, Nothing}=nothing, max_enumerations::Union{Int, Nothing}=nothing, allow_evaluation_errors::Bool=false)::Union{Tuple{RuleNode, Any}, Nothing}
+
 Searches the grammar for the program that satisfies the maximum number of examples in the problem.
     
         - g                 - The grammar that defines the search space
@@ -77,6 +79,13 @@ function search_rulenode(
 end
 
 
+"""
+    search(g::Grammar, problem::Problem, start::Symbol; evaluator::Function=test_with_input, enumerator::Function=get_bfs_enumerator, max_depth::Union{Int, Nothing}=nothing, max_size::Union{Int, Nothing}=nothing, max_time::Union{Int, Nothing}=nothing, max_enumerations::Union{Int, Nothing}=nothing, allow_evaluation_errors::Bool=false)::Union{Any, Nothing}
+
+Searches for a program by calling [`search_rulenode`](@ref) starting from [`Symbol`](@ref) `start` guided by `enumerator` and [`Grammar`](@ref) trying to satisfy  the higher-order constraints in form of input/output examples defined in the [`Problem`](@ref). 
+This is the heart of the Herb's search for satisfying programs.
+Returns the found program when the evaluation calculated using `evaluator` is successful.
+"""
 function search(
     g::Grammar, 
     problem::Problem, 
@@ -109,6 +118,7 @@ function search(
 end
 
 """
+    default_error_function(old_error, output, expected_output)
 Default error function for `search_best`.
     
     - old_error         - The existing total error
@@ -119,10 +129,22 @@ The default function returns `0` if the outputs match and `1` otherwise.
 """
 default_error_function(old_error, output, expected_output) = old_error + (output == expected_output ? 0 : 1)
 
+"""
+    mse_error_function(old_error, output, expected_output)
+Mean squared error function for `search_best`.
+    
+    - old_error         - The existing total error
+    - output            - The actual output of the evaluator
+    - expected_output   - The expected output for the example
+
+The function build the mean squared error from `output` and `expected_output``.
+"""
 mse_error_function(old_error, output, expected_output) = old_error + (output - expected_output) ^ 2
 
 
 """
+    search_best(g::Grammar, problem::Problem, start::Symbol; evaluator::Function=test_with_input, enumerator::Function=get_bfs_enumerator, error_function::Function=default_error_function, max_depth::Union{Int, Nothing}=nothing, max_size::Union{Int, Nothing}=nothing, max_time::Union{Int, Nothing}=nothing, max_enumerations::Union{Int, Nothing}=nothing, allow_evaluation_errors::Bool=false)::Tuple{Any, Real}
+
 Searches the grammar for the program that satisfies the maximum number of examples in the problem.
 The evaluator should be a function that takes a SymbolTable, expression and a dictionary with 
     input variable assignments and returns the output of the expression.
@@ -223,7 +245,7 @@ function supervised_search(
     start_program::RuleNode;
     evaluator::Function=test_with_input,
     enumerator::Function=get_bfs_enumerator,
-    state=IteratorState,
+    state=StochasticIteratorState,
     error_function::Function=default_error_function,
     max_depth::Union{Int, Nothing}=nothing,
     is_running_meta_search = false
@@ -238,9 +260,9 @@ function supervised_search(
         typemax(Int),
         start
     )
-    # instead of calling IteratorState(current_program = current_program) I abstracted away to a function call that creates 
-    # the appropriate struct for a given iterator. (Different iterators can have different structs for the IteratorState)
-    hypotheses = Iterators.rest(iterator, state(current_program=start_program))
+    # instead of calling StochasticIteratorState(current_program = current_program) I abstracted away to a function call that creates 
+    # the appropriate struct for a given iterator. (Different iterators can have different structs for the StochasticIteratorState)
+    hypotheses = Base.Iterators.rest(iterator, state(current_program=start_program))
 
     best_error = typemax(Int)
     best_program = nothing
