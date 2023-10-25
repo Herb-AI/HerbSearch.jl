@@ -36,7 +36,16 @@ include("genetic_functions/select_parents.jl")
 include("genetic_search_iterator.jl")
 include("genetic_enumerators.jl")
 
+arithmetic_grammar = @csgrammar begin
+  X = |(1:5)
+  X = X * X
+  X = X + X
+  X = X - X
+  X = 2
+end
+
 export 
+  arithmetic_grammar,
   count_expressions,
   ExpressionIterator,
   
