@@ -171,6 +171,7 @@ function search_best(
         evaluator::Function=test_with_input, 
         enumerator::Function=get_bfs_enumerator,
         error_function::Function=default_error_function,
+        get_rulenode_from_iterator::Function = program -> program,
         max_depth::Union{Int, Nothing}=nothing,
         max_size::Union{Int, Nothing}=nothing,
         max_time::Union{Int, Nothing}=nothing,
@@ -194,7 +195,7 @@ function search_best(
     best_program = nothing
     for (i, h) ∈ enumerate(hypotheses)
         # Create expression from rulenode representation of AST
-        expr = rulenode2expr(h, g)
+        expr = rulenode2expr(get_rulenode_from_iterator(h), g)
 
         # Evaluate the expression on the examples
         total_error = 0
