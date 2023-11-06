@@ -9,6 +9,8 @@ function create_problem(f, range=20)
 end
 
 @testset "Genetic search algorithms" verbose=true begin 
+    # TODO: Test that cross_over only works if the two nodes have the same type.
+    
     @testset "mutate_random" begin
         grammar::ContextSensitiveGrammar = @csgrammar begin
             X = |(1:5)

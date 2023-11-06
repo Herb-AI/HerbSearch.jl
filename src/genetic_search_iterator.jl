@@ -50,6 +50,7 @@ struct GeneticIteratorState
 end
 
 Base.IteratorSize(::GeneticSearchIterator) = Base.SizeUnknown()
+# TODO: Document the fact that the iterator returns the best program and the fitness function for the current population.
 Base.eltype(::GeneticSearchIterator) = (RuleNode,Real)
 
 
@@ -121,6 +122,7 @@ function Base.iterate(iter::GeneticSearchIterator)
     
     population = Vector{RuleNode}(undef,iter.population_size)
 
+    # TODO: Run this in parallel
     for i in 1:iter.population_size
         # sample a random nodes using start symbol and grammar
         population[i] = rand(RuleNode, grammar, iter.start_symbol, iter.maximum_initial_population_depth)
@@ -168,6 +170,8 @@ function Base.iterate(iter::GeneticSearchIterator, current_state::GeneticIterato
             iter.mutation!(chromosome, iter.grammar)
         end
     end
+
+    # TODO: Maybe recompute the best program after the cross_over + mutation and then return it.
 
     # return the best program before any cross over or mutation and the fitness corresponding to that program
     return ((best_program, best_fitness), GeneticIteratorState(new_population))

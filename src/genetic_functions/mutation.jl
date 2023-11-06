@@ -7,6 +7,7 @@ function mutate_random!(program::RuleNode, grammar::Grammar)
     node_location::NodeLoc = sample(NodeLoc, program)
     subprogram = get(program, node_location)
     symbol = return_type(grammar, subprogram)
+    # TODO: Propagate grammar constraints here.
 
     random_program = rand(RuleNode, grammar, symbol)
     insert!(program, node_location, random_program)

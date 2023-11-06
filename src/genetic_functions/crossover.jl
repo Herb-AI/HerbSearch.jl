@@ -11,8 +11,14 @@ function crossover_swap_children_2(parent1::RuleNode, parent2::RuleNode, grammar
     subprogram1 = get(copyparent1, node_location1)
     node_type = return_type(grammar, subprogram1)
     # make sure that the second subtree has a matching node type 
+
+    # TODO: Take into account the case when the sample fails because there is no matching node.
+    # This does not happend too often but sometimes it happens.
+    # TODO: Propagate grammar constraints here.
+
     node_location2::NodeLoc = sample(NodeLoc, copyparent2, node_type, grammar)
     subprogram2 = get(copyparent2, node_location2)
+
     
     if node_location1.i != 0
         insert!(copyparent1, node_location1, subprogram2)

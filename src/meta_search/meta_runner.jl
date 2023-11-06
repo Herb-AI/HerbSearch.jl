@@ -3,6 +3,8 @@ using HerbGrammar
 using HerbData
 using HerbSearch
 using Logging
+
+# TODO: Create some good logging for the meta search. Don't just use println
 disable_logging(LogLevel(1))
 
 using Base.Threads
@@ -23,8 +25,10 @@ function create_problem(f, range=5)
     return HerbData.Problem(examples), examples
 end
 
+# TODO: Define more problems to evaluate the meta-program on.
 problem, examples = create_problem(x -> x^4 + x * x + 2 * x + 5)
 
+# TODO: Export the meta grammar to a different file.
 meta_grammar = @csgrammar begin
     S = generic_run(COMBINATOR...;)
     MS = A
@@ -37,6 +41,7 @@ meta_grammar = @csgrammar begin
     GIVEN_GRAMMAR = arithmetic_grammar
     GIVEN_PROBLEM = problem
     ALGORITHM = mh() | sa(sa_inital_temperature, sa_temperature_decreasing_factor) 
+    # TODO: Add back vlsn. I removed it for now because is just too slow.
     # ALGORITHM = vlsn(vlsn_enumeration_depth)
     A = (ALGORITHM, STOPFUNCTION, MAX_DEPTH, GIVEN_PROBLEM, GIVEN_GRAMMAR)
     # A = ga,STOP
@@ -107,6 +112,9 @@ function fitness_function(program, _)
     mean_cost = 0
     mean_running_time = 0
 
+    # TODO: Is ReentrantLock good in this case? Maybe use atomic instructions
+    # TODO: Ask Sebastijan if we should do this runs for non stochastic algorithms. Maybe we should not do that.
+
     lk = ReentrantLock()
     Threads.@threads for _ in 1:RUNS 
         start_time = time()
@@ -121,6 +129,7 @@ function fitness_function(program, _)
     mean_cost = mean_cost / RUNS
     mean_running_time = mean_running_time / RUNS
 
+    # TODO : Try different formulas here to experiment
     final_cost = 1 / (mean_cost * 100 + mean_running_time)
 
     if final_cost > 1
@@ -130,6 +139,8 @@ function fitness_function(program, _)
     return final_cost
 end
 
+
+# TODO: Don't hardcode value 10 as the value for the population, make it a configurable param maybe.
 """
     genetic_state(; current_program::RuleNode)
 

@@ -73,4 +73,6 @@ export
   crossover_swap_children_2,
   sample,
   rand
+# TODO: Don't export crossover_swap_children_2 and mutate_random!. It's a bit awkward
+# TODO: Export the meta search grammar for testing.
 end # module HerbSearch
