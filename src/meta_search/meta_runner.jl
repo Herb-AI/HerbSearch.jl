@@ -100,16 +100,31 @@ The 100 just gives more weight to the cost I think. You can chose another value.
 """
 function fitness_function(program, _)
     expression = rulenode2expr(program, meta_grammar)
-    # println("Evaluating fitness for: ", expression)
-    start_time = time()
-    # evaluate the search that gives a tuple of (expression,program,cost)
-    expr, prog, cost = eval(expression)
-    duration = time() - start_time
-    final_cost = 1 / (cost * 100 + duration)
-    # println("Expr", expr, " cost ", cost)
-    # println("Cost is: ",cost)
+
+    # evaluate the search 3 times to account for variable time of running a program
+    RUNS = 3
+
+    mean_cost = 0
+    mean_running_time = 0
+
+    lk = ReentrantLock()
+    Threads.@threads for _ in 1:RUNS 
+        start_time = time()
+        _, _, cost = eval(expression)
+        duration = time() - start_time
+        lock(lk) do
+            mean_cost += cost 
+            mean_running_time += duration
+        end
+    end
+
+    mean_cost = mean_cost / RUNS
+    mean_running_time = mean_running_time / RUNS
+
+    final_cost = 1 / (mean_cost * 100 + mean_running_time)
+
     if final_cost > 1
-        println("A program reached cost: $cost in time: $duration => $final_cost")
+        println("A program reached cost: $mean_cost in time: $mean_running_time => $final_cost")
     end
     # println("====================\n")
     return final_cost
