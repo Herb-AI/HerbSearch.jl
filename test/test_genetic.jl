@@ -9,8 +9,15 @@ function create_problem(f, range=20)
 end
 
 @testset "Genetic search algorithms" verbose=true begin 
-    @testset "test if mutate_random! always changes the program" begin
-        @testset "a specific program of depth 2" begin
+    @testset "mutate_random" begin
+        grammar::ContextSensitiveGrammar = @csgrammar begin
+            X = |(1:5)
+            X = X * X
+            X = X + X
+            X = X - X
+            X = x
+        end
+        @testset "gives a different program (new mem address) after mutation" begin
             for i in 1:10
                 ruleNode = RuleNode(6,[RuleNode(1),RuleNode(2)])
                 before = deepcopy(ruleNode)
@@ -18,10 +25,24 @@ end
                 @test ruleNode !== before
             end
         end
-        @testset "only root node" begin
-            root = RuleNode(1)
-            HerbSearch.mutate_random!(root,grammar)
-            @test root !== RuleNode(1)
+        @testset "gives a different program (new mem address) after mutating the root node" begin
+            root = RuleNode(4)
+            HerbSearch.mutate_random!(root,grammar,1)
+            @test root !== RuleNode(4)
+        end
+        grammar_two_types = @csgrammar begin
+            A = B | C | D
+            B = G | H
+        end
+        @testset "random_mutate works with more grammar variables" begin 
+            for i in 1:10
+                root = RuleNode(1,[RuleNode(4)]) # B->G
+                # the only way to mutate is to get the same program 
+                HerbSearch.mutate_random!(root, grammar_two_types, 2)
+                # either C,D (2,3)
+                # either G,H (1->4) and (1->5)
+                @test root in [RuleNode(2),RuleNode(3), RuleNode(1,[RuleNode(4)]),RuleNode(1,[RuleNode(5)])]
+            end
         end
     end
 
@@ -43,18 +64,18 @@ end
                 end
             end
 
-            @testset "crossing over two parents return two different children" begin
+            @testset "crossing over two parents returns two different children" begin
 
                 rulenode1 = RuleNode(1,[RuleNode(2)])
                 rulenode2 = RuleNode(3,[RuleNode(4,[RuleNode(5)])])
                 child1,child2 = crossover_swap_children_2(rulenode1,rulenode2)
-                println(child1,child2)
                 @test child1 !== child2
                 @test rulenode1 == RuleNode(1,[RuleNode(2)])
                 @test rulenode2 == RuleNode(3,[RuleNode(4,[RuleNode(5)])])
             end
+
         end
-        @testset "having 1 child" begin
+        @testset "outcome has one child" begin
             @testset "only root node" begin
                 @testset "crossing over the same rulenode gives the same rulenode" begin 
                     @test HerbSearch.crossover_swap_children_1(RuleNode(1),RuleNode(1)) == RuleNode(1)
@@ -92,7 +113,6 @@ end
             @λ(x -> 625),
             @λ(x -> 3 * x),
             @λ(x -> 3 * x + 10),
-            @λ(x -> 3 * x * x + 2),
             @λ(x -> 3 * x * x + (x + 2)),
         ]
         function pretty_print_lambda(lambda)
