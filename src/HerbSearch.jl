@@ -52,6 +52,7 @@ export
   search,
   search_best,
   supervised_search,
+  meta_search,
 
   bfs_priority_function,
   get_bfs_enumerator,

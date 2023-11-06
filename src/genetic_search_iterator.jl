@@ -50,7 +50,7 @@ struct GeneticIteratorState
 end
 
 Base.IteratorSize(::GeneticSearchIterator) = Base.SizeUnknown()
-Base.eltype(::GeneticSearchIterator) = RuleNode
+Base.eltype(::GeneticSearchIterator) = (RuleNode,Real)
 
 
 """
@@ -87,11 +87,11 @@ function validate_iterator(iter)
 end
 
 """
-    get_best_program(population::Array{RuleNode}, iter:: GeneticSearchIterator)::RuleNode
+    get_best_program(population::Array{RuleNode}, iter:: GeneticSearchIterator)
 
 Returns the best program within the population with respect to the fitness function.
 """
-function get_best_program(population::Array{RuleNode}, iter:: GeneticSearchIterator)::RuleNode
+function get_best_program(population::Array{RuleNode}, iter:: GeneticSearchIterator)
     best_program = nothing
     best_fitness = 0
     for index ∈ eachindex(population)
@@ -107,7 +107,7 @@ function get_best_program(population::Array{RuleNode}, iter:: GeneticSearchItera
             end
         end
     end 
-    return best_program
+    return best_program, best_fitness
 end
 
 """
@@ -125,8 +125,8 @@ function Base.iterate(iter::GeneticSearchIterator)
         # sample a random nodes using start symbol and grammar
         population[i] = rand(RuleNode, grammar, iter.start_symbol, iter.maximum_initial_population_depth)
     end 
-    best_program = get_best_program(population, iter)
-    return (best_program, GeneticIteratorState(population))
+    best_program, best_fitness = get_best_program(population, iter)
+    return ((best_program, best_fitness), GeneticIteratorState(population))
 end
 
 
@@ -145,7 +145,7 @@ function Base.iterate(iter::GeneticSearchIterator, current_state::GeneticIterato
     new_population = Vector{RuleNode}(undef,iter.population_size)
 
     # put the best program in the first slot of the population
-    best_program = get_best_program(current_population, iter)
+    best_program, best_fitness = get_best_program(current_population, iter)
     new_population[begin] = best_program
     
     # do crossover
@@ -169,9 +169,7 @@ function Base.iterate(iter::GeneticSearchIterator, current_state::GeneticIterato
         end
     end
 
-    # println("Fitness: ", fitness_array[begin])
-    # println("Expr: ", rulenode2expr(new_population[begin], iter.grammar))
-    # return the program that has the highest fitness
-    return (new_population[begin], GeneticIteratorState(new_population))
+    # return the best program before any cross over or mutation and the fitness corresponding to that program
+    return ((best_program, best_fitness), GeneticIteratorState(new_population))
 end
 

@@ -61,7 +61,6 @@ function generic_run(::Type{Sequence}, meta_search_list::Vector, max_depth::Int,
             break
         end
     end
-    println("Done with cost: $program_cost")
     return best_expression, best_program, program_cost
 end
 
@@ -91,6 +90,5 @@ function generic_run(::Type{Parallel}, meta_search_list::Vector, max_depth::Int,
             best_expression, best_program, program_cost = expression, outcome_program, cost
         end
     end
-    println("Done with cost: $program_cost")
     return best_expression, best_program, program_cost
 end

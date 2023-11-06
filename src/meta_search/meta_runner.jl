@@ -36,7 +36,8 @@ meta_grammar = @csgrammar begin
     vlsn_enumeration_depth = |(2:3)
     GIVEN_GRAMMAR = arithmetic_grammar
     GIVEN_PROBLEM = problem
-    ALGORITHM = mh() | sa(sa_inital_temperature, sa_temperature_decreasing_factor) | vlsn(vlsn_enumeration_depth)
+    ALGORITHM = mh() | sa(sa_inital_temperature, sa_temperature_decreasing_factor) 
+    # ALGORITHM = vlsn(vlsn_enumeration_depth)
     A = (ALGORITHM, STOPFUNCTION, MAX_DEPTH, GIVEN_PROBLEM, GIVEN_GRAMMAR)
     # A = ga,STOP
     # A = dfs,STOP
@@ -62,8 +63,8 @@ meta_grammar = @csgrammar begin
     # STOPTERM = OPERAND < VALUE
     # OPERAND = time | iteration | cost
     OPERAND = iteration
-    VALUE = |(100:110)
-    VALUE = 10 * VALUE
+    VALUE = |(4000:5000)
+    # VALUE = 10 * VALUE
 end
 
 
@@ -75,10 +76,10 @@ vlsn(enumeration_depth) = get_vlsn_enumerator(examples, HerbSearch.mean_squared_
     Function that is used for testing the meta_grammar. It generates a random meta_program 10 times and evaluates it.
 """
 function run_grammar_multiple_times()
-    for _ in 1:10
+    for _ in 1:100
         meta_program = rand(RuleNode, meta_grammar, :S, 10)
         meta_expr = rulenode2expr(meta_program, meta_grammar)
-        println(meta_expr)
+        # println(meta_expr)
         @time expr, _, _ = eval(meta_expr)
     end
 end
@@ -99,17 +100,20 @@ The 100 just gives more weight to the cost I think. You can chose another value.
 """
 function fitness_function(program, _)
     expression = rulenode2expr(program, meta_grammar)
+    # println("Evaluating fitness for: ", expression)
     start_time = time()
     # evaluate the search that gives a tuple of (expression,program,cost)
     expr, prog, cost = eval(expression)
     duration = time() - start_time
     final_cost = 1 / (cost * 100 + duration)
-    println("Expr", expr, " cost ", cost)
+    # println("Expr", expr, " cost ", cost)
+    # println("Cost is: ",cost)
+    if final_cost > 1
+        println("A program reached cost: $cost in time: $duration => $final_cost")
+    end
+    # println("====================\n")
     return final_cost
 end
-
-# create a random meta_program to start with
-meta_program = rand(RuleNode, meta_grammar, :S, 10)
 
 """
     genetic_state(; current_program::RuleNode)
@@ -120,6 +124,10 @@ It just duplicates the program 10 times and pus that into the start population.
 genetic_state(; current_program::RuleNode) = HerbSearch.GeneticIteratorState([current_program for i ∈ 1:10])
 
 function run_meta_search()
+
+    # create a random meta_program to start with
+    meta_program = rand(RuleNode, meta_grammar, :S, 10)
+
     # prints the initial meta program for debugging. This is the start program of the supervised_search (see below)
     meta_expr = rulenode2expr(meta_program, meta_grammar)
     println(meta_expr)
@@ -128,18 +136,19 @@ function run_meta_search()
     # check `get_genetic_enumerator` from `genetic_enumerators.jl` for the defaults values chosen for other params.
     genetic_algorithm = get_genetic_enumerator(Vector{Example}([]), fitness_function=fitness_function)
 
-    # run supervised_search on the meta_grammar telling it to stop after 1000 iterations of the genetic iterator 
-    # (otherwise it runs forever because there is no "best" meta-algorithm I think)
-    # it passes the state function that given a starting_program it constructs the necessary struct
-    # this is needed because GeneticSearchIterator using GeneticIteratorState while the stochastic algorithms use StochasticIteratorState as a struct
-    # there is no inheritance in julia so I just created a function that gives the right "struct" for an algorithm. I hope it makes sense.
-
-    # a problem with no examples :)
-    meta_problem = HerbData.Problem([])
-    best_program, best_rulenode, best_error = supervised_search(meta_grammar, meta_problem, :S, (time, iteration, cost) -> iteration > 1000 || time > 2, meta_program,
+    # run supervised_search on the meta_grammar telling it to stop after 10 iterations of the genetic iterator 
+    best_program, best_fitness = meta_search(
+        meta_grammar, :S, (time, iteration, fitness) -> iteration > 10, meta_program,
         enumerator=genetic_algorithm,
-        state=genetic_state)
+        state=genetic_state
+    )
+
     # get the meta_program found so far.
     println("Best meta program is :", best_program)
+    println("Best fitness found :", best_fitness)
+
 end
+
+# using Random
+# Random.seed!(40)
 run_meta_search()

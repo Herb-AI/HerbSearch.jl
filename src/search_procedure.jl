@@ -279,7 +279,7 @@ function supervised_search(
                 total_error = error_function(total_error, evaluator(symboltable, expr, example.in), example.out)
             end
             if i % 10000 == 0
-                println("Search #", Threads.threadid()," iter ",i," : total_error ",total_error)
+                # println("Search #", Threads.threadid()," iter ",i," : total_error ",total_error)
             end
 
             if total_error == 0
@@ -291,17 +291,72 @@ function supervised_search(
                 best_rulenode = h
             end
         else
-            # maybe something specific here to get the cost of the meta_program. The error_function is not suitable for the meta search
-            # because there are not examples.
+            println("Current MetaExpr ",expr)
+            print("=======")
         end
-
 
         # Check stopping conditions
         current_time = time() - start_time
         # current_time > 5 is just for debugging to make it not run forever :)
-        if stopping_condition(current_time, i, total_error) || current_time > 5
+        if stopping_condition(current_time, i, total_error)
             return best_program, best_rulenode, best_error
         end
     end
     return best_program, best_rulenode, best_error
+end
+
+
+function meta_search(
+    g::ContextSensitiveGrammar, 
+    start::Symbol,
+    stopping_condition::Function,
+    start_program::RuleNode;
+    enumerator::Function=get_bfs_enumerator,
+    state=StochasticIteratorState,
+    max_depth::Union{Int, Nothing}=nothing,
+    )::Tuple{Any, Any, Real}
+
+    start_time = time()
+    iterator = enumerator(
+        g, 
+        max_depth ≡ nothing ? typemax(Int) : max_depth, 
+        typemax(Int),
+        start
+    )
+    # instead of calling StochasticIteratorState(current_program = current_program) I abstracted away to a function call that creates 
+    # the appropriate struct for a given iterator. (Different iterators can have different structs for the StochasticIteratorState)
+    hypotheses = Base.Iterators.rest(iterator, state(current_program=start_program))
+
+    best_fitness = 0
+    best_program = nothing
+    println("Starting meta search!! ")
+    
+    for (i, (rulenode, fitness)) ∈ enumerate(hypotheses)
+        # Create expression from rulenode representation of AST
+        expr = rulenode2expr(rulenode, g)
+        if fitness > best_fitness
+            best_fitness = fitness 
+            best_program = expr
+        end
+
+        println("""
+        Meta Search status
+            - genetic iteration   : $i 
+            - current fitness     : $fitness
+            - Best fitness        : $best_fitness
+        """)
+
+        println(repeat("_",100))
+        println("Best expr: ",best_program)
+        println(repeat("_",100))
+        println("Current expr: ",expr)
+        println(repeat("=",100))
+
+        # Evaluate the expression on the examples
+        current_time = time() - start_time
+        if stopping_condition(current_time, i, fitness)
+            return best_program, best_fitness
+        end
+    end
+    return best_program, best_fitness
 end
