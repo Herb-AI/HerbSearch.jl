@@ -248,7 +248,6 @@ function supervised_search(
     state=StochasticIteratorState,
     error_function::Function=default_error_function,
     max_depth::Union{Int, Nothing}=nothing,
-    is_running_meta_search = false
     )::Tuple{Any, Any, Real}
 
     start_time = time()
@@ -267,32 +266,24 @@ function supervised_search(
     best_error = typemax(Int)
     best_program = nothing
     best_rulenode = nothing
-    println("Starting search ",Threads.threadid(),"\n============")
+    # println("Starting search ",Threads.threadid(),"\n============")
     for (i, h) ∈ enumerate(hypotheses)
         # Create expression from rulenode representation of AST
         expr = rulenode2expr(h, g)
         
         # Evaluate the expression on the examples
-        if is_running_meta_search == false
-            total_error = 0
-            for example ∈ problem.examples
-                total_error = error_function(total_error, evaluator(symboltable, expr, example.in), example.out)
-            end
-            if i % 10000 == 0
-                # println("Search #", Threads.threadid()," iter ",i," : total_error ",total_error)
-            end
+        total_error = 0
+        for example ∈ problem.examples
+            total_error = error_function(total_error, evaluator(symboltable, expr, example.in), example.out)
+        end
 
-            if total_error == 0
-                return expr, h, 0
-            elseif total_error < best_error
-                # Update the best found example so far
-                best_error = total_error
-                best_program = expr
-                best_rulenode = h
-            end
-        else
-            println("Current MetaExpr ",expr)
-            print("=======")
+        if total_error == 0
+            return expr, h, 0
+        elseif total_error < best_error
+            # Update the best found example so far
+            best_error = total_error
+            best_program = expr
+            best_rulenode = h
         end
 
         # Check stopping conditions
