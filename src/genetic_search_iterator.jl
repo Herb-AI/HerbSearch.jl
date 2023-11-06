@@ -65,7 +65,7 @@ function validate_iterator(iter)
     if !hasmethod(iter.fitness, Tuple{RuleNode, Array{Tuple{Any,Any}}})
         throw(AlgorithmStateIsInvalid("The iterator fitness function should have two parameters: the program and an array with pair of tuples [(expected, value)]"))
     end
-    if !hasmethod(iter.cross_over, Tuple{RuleNode, RuleNode})
+    if !hasmethod(iter.cross_over, Tuple{RuleNode, RuleNode, Grammar})
         throw(AlgorithmStateIsInvalid(
             """The iterator crossover function should get two parameters:
                 - parent1 :: RuleNode -> parent1 program 
@@ -152,7 +152,7 @@ function Base.iterate(iter::GeneticSearchIterator, current_state::GeneticIterato
     index = 2
     while index <= iter.population_size
         parent1, parent2 = iter.select_parents(current_population, fitness_array)
-        children = iter.cross_over(parent1, parent2)
+        children = iter.cross_over(parent1, parent2, iter.grammar)
         for child ∈ children
             if index > iter.population_size
                 break
@@ -161,7 +161,6 @@ function Base.iterate(iter::GeneticSearchIterator, current_state::GeneticIterato
             index += 1
         end
     end
-
     # Do mutation 
     for chromosome in new_population
         random_number = rand()
@@ -170,6 +169,8 @@ function Base.iterate(iter::GeneticSearchIterator, current_state::GeneticIterato
         end
     end
 
+    # println("Fitness: ", fitness_array[begin])
+    # println("Expr: ", rulenode2expr(new_population[begin], iter.grammar))
     # return the program that has the highest fitness
     return (new_population[begin], GeneticIteratorState(new_population))
 end
