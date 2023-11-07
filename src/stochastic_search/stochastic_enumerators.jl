@@ -1,3 +1,11 @@
+include("stochastic_functions/accept.jl")
+include("stochastic_functions/cost_functions.jl")
+include("stochastic_functions/neighbourhood.jl")
+include("stochastic_functions/propose.jl")
+include("stochastic_functions/temperature.jl")
+
+include("stochastic_search_iterator.jl")
+
 """
     get_mh_enumerator(examples::AbstractArray{<:Example}, cost_function::Function, evaluation_function::Function=HerbInterpret.test_with_input)
 
