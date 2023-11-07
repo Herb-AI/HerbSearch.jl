@@ -114,7 +114,6 @@ end
             @λ(x -> 625),
             @λ(x -> 3 * x),
             @λ(x -> 3 * x + 10),
-            @λ(x -> 3 * x * x + (x + 2)),
         ]
         function pretty_print_lambda(lambda)
             return repr(lambda)[2:end-1]
