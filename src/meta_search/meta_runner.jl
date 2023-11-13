@@ -1,10 +1,10 @@
-using HerbCore 
+using HerbCore
 using HerbGrammar
 using HerbData
 using HerbSearch
 using Logging
 
-# TODO: Create some good logging for the meta search. Don't just use println
+# TODO Supercomputer: Create some good logging for the meta search. Don't just use println
 disable_logging(LogLevel(1))
 
 using Base.Threads
@@ -25,10 +25,10 @@ function create_problem(f, range=5)
     return HerbData.Problem(examples), examples
 end
 
-# TODO: Define more problems to evaluate the meta-program on.
+# TODO Generalize: Define more problems to evaluate the meta-program on.
 problem, examples = create_problem(x -> x^4 + x * x + 2 * x + 5)
 
-# TODO: Export the meta grammar to a different file.
+# TODO Refactor: Export the meta grammar to a different file. We can't do that untill there is a quick fix in HerbGrammar.jl
 meta_grammar = @csgrammar begin
     S = generic_run(COMBINATOR...;)
     MS = A
@@ -40,9 +40,7 @@ meta_grammar = @csgrammar begin
     vlsn_enumeration_depth = |(2:3)
     GIVEN_GRAMMAR = arithmetic_grammar
     GIVEN_PROBLEM = problem
-    ALGORITHM = mh() | sa(sa_inital_temperature, sa_temperature_decreasing_factor) 
-    # TODO: Add back vlsn. I removed it for now because is just too slow.
-    # ALGORITHM = vlsn(vlsn_enumeration_depth)
+    ALGORITHM = mh() | sa(sa_inital_temperature, sa_temperature_decreasing_factor) | vlsn(vlsn_enumeration_depth)
     A = (ALGORITHM, STOPFUNCTION, MAX_DEPTH, GIVEN_PROBLEM, GIVEN_GRAMMAR)
     # A = ga,STOP
     # A = dfs,STOP
@@ -84,7 +82,6 @@ function run_grammar_multiple_times()
     for _ in 1:100
         meta_program = rand(RuleNode, meta_grammar, :S, 10)
         meta_expr = rulenode2expr(meta_program, meta_grammar)
-        # println(meta_expr)
         @time expr, _, _ = eval(meta_expr)
     end
 end
@@ -112,16 +109,18 @@ function fitness_function(program, _)
     mean_cost = 0
     mean_running_time = 0
 
-    # TODO: Is ReentrantLock good in this case? Maybe use atomic instructions
-    # TODO: Ask Sebastijan if we should do this runs for non stochastic algorithms. Maybe we should not do that.
+    # Nick:
+    # TODO Performance: Is SpinLock good in this case? Maybe use atomic instructions
+    # TODO Performance: Ask Sebastijan if we should do this runs for non stochastic algorithms. Maybe we should not do that.
 
-    lk = ReentrantLock()
-    Threads.@threads for _ in 1:RUNS 
+    # use a sping lock because the update should be very fast. This prevents race conditions in mean_cost
+    lk = Threads.ReentrantLock()
+    Threads.@threads for _ in 1:RUNS
         start_time = time()
         _, _, cost = eval(expression)
         duration = time() - start_time
         lock(lk) do
-            mean_cost += cost 
+            mean_cost += cost
             mean_running_time += duration
         end
     end
@@ -129,7 +128,7 @@ function fitness_function(program, _)
     mean_cost = mean_cost / RUNS
     mean_running_time = mean_running_time / RUNS
 
-    # TODO : Try different formulas here to experiment
+    # TODO Experiment: Try different formulas here to experiment
     final_cost = 1 / (mean_cost * 100 + mean_running_time)
 
     if final_cost > 1
@@ -140,7 +139,7 @@ function fitness_function(program, _)
 end
 
 
-# TODO: Don't hardcode value 10 as the value for the population, make it a configurable param maybe.
+# TODO Refactor: Don't hardcode value 10 as the value for the population, make it a configurable param maybe.
 """
     genetic_state(; current_program::RuleNode)
 
@@ -149,24 +148,25 @@ It just duplicates the program 10 times and pus that into the start population.
 """
 genetic_state(; current_program::RuleNode) = HerbSearch.GeneticIteratorState([current_program for i ∈ 1:10])
 
-function run_meta_search()
+"""
+    run_meta_search()
 
-    # create a random meta_program to start with
+Runs meta search on the meta grammar.
+"""
+function run_meta_search()
+    # create a random meta_program to start with that has max_depth 10
     meta_program = rand(RuleNode, meta_grammar, :S, 10)
 
-    # prints the initial meta program for debugging. This is the start program of the supervised_search (see below)
-    meta_expr = rulenode2expr(meta_program, meta_grammar)
-    println(meta_expr)
-
     # creates a genetic enumerator with no examples and with the desired fitness function 
-    # check `get_genetic_enumerator` from `genetic_enumerators.jl` for the defaults values chosen for other params.
     genetic_algorithm = get_genetic_enumerator(Vector{Example}([]), fitness_function=fitness_function)
 
-    # run supervised_search on the meta_grammar telling it to stop after 10 iterations of the genetic iterator 
-    best_program, best_fitness = meta_search(
-        meta_grammar, :S, (time, iteration, fitness) -> iteration > 10, meta_program,
-        enumerator=genetic_algorithm,
-        state=genetic_state
+    # run the meta search
+    @time best_program, best_fitness = meta_search(
+        meta_grammar, :S,
+        stopping_condition = (time, iteration, fitness) -> iteration >= 15,
+        start_program = meta_program,
+        enumerator = genetic_algorithm,
+        state = genetic_state
     )
 
     # get the meta_program found so far.
@@ -175,6 +175,4 @@ function run_meta_search()
 
 end
 
-# using Random
-# Random.seed!(40)
 run_meta_search()

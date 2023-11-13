@@ -300,13 +300,13 @@ end
 
 function meta_search(
     g::ContextSensitiveGrammar, 
-    start::Symbol,
+    start::Symbol;
     stopping_condition::Function,
-    start_program::RuleNode;
+    start_program::RuleNode,
     enumerator::Function=get_bfs_enumerator,
     state=StochasticIteratorState,
     max_depth::Union{Int, Nothing}=nothing,
-    )::Tuple{Any, Any, Real}
+    )::Tuple{Any, Real}
 
     start_time = time()
     iterator = enumerator(

@@ -124,7 +124,6 @@ function Base.iterate(iter::GeneticSearchIterator)
 
     population = Vector{RuleNode}(undef, iter.population_size)
 
-    # TODO: Run this in parallel
     Threads.@threads for i in 1:iter.population_size
         # sample a random nodes using start symbol and grammar
         population[i] = rand(RuleNode, grammar, iter.start_symbol, iter.maximum_initial_population_depth)
