@@ -1,16 +1,13 @@
 module dev
 
-include("../../src/Herb.jl")
-
-using .Herb
+using Herb
 using Revise
 
-using .Herb.HerbConstraints
-using .Herb.HerbGrammar
-using .Herb.HerbSearch
-using .Herb.HerbData
-using .Herb.HerbEvaluation
-
+using HerbConstraints
+using HerbGrammar
+using HerbSearch
+using HerbData
+using HerbInterpret
 
 
 #=

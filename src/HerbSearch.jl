@@ -6,7 +6,7 @@ using HerbCore
 using HerbGrammar
 using HerbConstraints
 using HerbData
-using HerbEvaluation
+using HerbInterpret
 
 include("sampling_grammar.jl")
 include("enumerator_constructors.jl")
