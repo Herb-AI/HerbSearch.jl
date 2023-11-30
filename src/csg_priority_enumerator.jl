@@ -291,7 +291,7 @@ function _expand(
 )::Union{ExpandFailureReason, Vector{TreeConstraints}}
     nodes::Vector{TreeConstraints} = []
     
-    for rule_index ∈ derivation_heuristic(findall(node.domain), context, grammar)
+    for rule_index ∈ derivation_heuristic(findall(node.domain), context)
         new_node = RuleNode(rule_index, grammar)
 
         # If dealing with the root of the tree, propagate here
