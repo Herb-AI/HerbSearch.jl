@@ -160,13 +160,7 @@ end
 Returns the cost of the `program` using the examples and the `cost_function`. It first convert the program to an expression and
 evaluates it on all the examples using [`HerbInterpret.evaluate_program`](@ref).
 """
-function calculate_cost(program::RuleNode, cost_function::Function, examples::Vector{<:Example}, grammar::Grammar, evaluation_function::Function)
-    results = Tuple{<:Number,<:Number}[]
-    expression = rulenode2expr(program, grammar)
-    symbol_table = SymbolTable(grammar)
-    for example ∈ filter(e -> e isa IOExample, examples)
-        outcome = evaluation_function(symbol_table, expression, example.in)
-        push!(results, (example.out, outcome))
-    end
+function calculate_cost(program::RuleNode, cost_function::Function, examples::AbstractVector{<:Example}, grammar::Grammar, evaluation_function::Function)
+    results = HerbInterpret.evaluate_program(program,examples,grammar,evaluation_function)
     return cost_function(results)
 end

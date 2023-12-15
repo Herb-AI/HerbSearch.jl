@@ -1,0 +1,14 @@
+problem_expression = "x -> x^4 + x * x + 2 * x + 5"
+problem_range_size = 5
+
+[fitness]
+number_of_runs_to_average_over = 3
+fitness_function = "(mean_cost, mean_running_time) -> 1 / (mean_cost * 100 + mean_running_time)"
+
+[genetic]
+initial_population_size = 10
+initial_program_max_depth = 15
+stopping_condition = "(time, iteration, fitness) -> time >= 130"
+
+[meta_grammar]
+maximum_depth = 10
