@@ -95,7 +95,21 @@ end
 """
     search(g::Grammar, problem::Problem, start::Symbol; evaluator::Function=test_with_input, enumerator::Function=get_bfs_enumerator, max_depth::Union{Int, Nothing}=nothing, max_size::Union{Int, Nothing}=nothing, max_time::Union{Int, Nothing}=nothing, max_enumerations::Union{Int, Nothing}=nothing, allow_evaluation_errors::Bool=false, mod::Module=Main)::Union{Any, Nothing}
 
-Searches for a program by calling [`search_rulenode`](@ref) starting from [`Symbol`](@ref) `start` guided by `enumerator` and [`Grammar`](@ref) trying to satisfy  the higher-order constraints in form of input/output examples defined in the [`Problem`](@ref). 
+Searches for a program by calling [`search_rulenode`](@ref) starting from [`Symbol`](@ref) `start` guided by `enumerator` and [`Grammar`](@ref) trying to satisfy  the higher-order constraints in form of input/output examples defined in the [`Problem`](@ref).
+    
+    - g                 - The grammar that defines the search space
+    - problem           - The problem definition with IO examples
+    - start             - The start symbol in the grammar
+    - evaluator         - The evaluation function. Takes a SymbolTable, expression and a dictionary with 
+                          input variable assignments and returns the output of the expression.
+    - enumerator        - A constructor for the enumerator that should be used in the search
+    - max_depth         - The maximum depth of the search
+    - max_size          - The maximum number of nodes for ASTs in the search
+    - max_time          - The maximum time allowed for the search in seconds
+    - max_enumerations  - The maximum number of programs to enumerate and test'
+    - allow_evaluation_errors - Whether the search should crash if an exception is thrown in the evaluation
+    - mod               - A module containing definitions for the functions in the grammar that do not exist in Main
+
 This is the heart of the Herb's search for satisfying programs.
 Returns the found program when the evaluation calculated using `evaluator` is successful.
 """
