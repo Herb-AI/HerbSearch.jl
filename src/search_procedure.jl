@@ -1,3 +1,13 @@
+struct EvaluationError <: Exception
+    expr::Expr
+    input::Dict{Symbol, Any}
+    error::Exception
+end
+
+Base.showerror(io::IO, e::EvaluationError) = print(io, "An exception was thrown while evaluating the expression $(e.expr) on input $(e.input): $(e.error)")
+
+
+
 """
     search_rulenode(g::Grammar, problem::Problem, start::Symbol; evaluator::Function=test_with_input, enumerator::Function=get_bfs_enumerator, max_depth::Union{Int, Nothing}=nothing, max_size::Union{Int, Nothing}=nothing, max_time::Union{Int, Nothing}=nothing, max_enumerations::Union{Int, Nothing}=nothing, allow_evaluation_errors::Bool=false)::Union{Tuple{RuleNode, Any}, Nothing}
 
@@ -61,7 +71,8 @@ function search_rulenode(
                 end
             catch e
                 # Throw the error again if evaluation errors aren't allowed
-                allow_evaluation_errors || throw(e)
+                eval_error = EvaluationError(expr, example.in, e)
+                allow_evaluation_errors || throw(eval_error)
                 falsified = true
                 break
             end
@@ -208,7 +219,8 @@ function search_best(
                 # for example by just increasing the error value and keeping the program as a candidate.
                 crashed = true
                 # Throw the error again if evaluation errors aren't allowed
-                allow_evaluation_errors || throw(e)
+                eval_error = EvaluationError(expr, example.in, e)
+                allow_evaluation_errors || throw(eval_error)
                 break
             end
 
