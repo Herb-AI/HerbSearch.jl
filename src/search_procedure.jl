@@ -9,7 +9,7 @@ Base.showerror(io::IO, e::EvaluationError) = print(io, "An exception was thrown 
 
 
 """
-    search_rulenode(g::Grammar, problem::Problem, start::Symbol; evaluator::Function=test_with_input, enumerator::Function=get_bfs_enumerator, max_depth::Union{Int, Nothing}=nothing, max_size::Union{Int, Nothing}=nothing, max_time::Union{Int, Nothing}=nothing, max_enumerations::Union{Int, Nothing}=nothing, allow_evaluation_errors::Bool=false)::Union{Tuple{RuleNode, Any}, Nothing}
+    search_rulenode(g::Grammar, problem::Problem, start::Symbol; evaluator::Function=test_with_input, enumerator::Function=get_bfs_enumerator, max_depth::Union{Int, Nothing}=nothing, max_size::Union{Int, Nothing}=nothing, max_time::Union{Int, Nothing}=nothing, max_enumerations::Union{Int, Nothing}=nothing, allow_evaluation_errors::Bool=false, mod::Module=Main)::Union{Tuple{RuleNode, Any}, Nothing}
 
 Searches the grammar for the program that satisfies the maximum number of examples in the problem.
     
@@ -24,6 +24,7 @@ Searches the grammar for the program that satisfies the maximum number of exampl
         - max_time          - The maximum time allowed for the search in seconds
         - max_enumerations  - The maximum number of programs to enumerate and test'
         - allow_evaluation_errors - Whether the search should crash if an exception is thrown in the evaluation
+        - mod               - A module containing definitions for the functions in the grammar that do not exist in Main
     Returns a tuple of the rulenode and the expression of the solution program once it has been found, 
     or nothing otherwise.
 """
@@ -37,13 +38,14 @@ function search_rulenode(
     max_size::Union{Int, Nothing}=nothing,
     max_time::Union{Int, Nothing}=nothing,
     max_enumerations::Union{Int, Nothing}=nothing,
-    allow_evaluation_errors::Bool=false
+    allow_evaluation_errors::Bool=false,
+    mod::Module=Main,
 )::Union{Tuple{RuleNode, Any}, Nothing}
 
     start_time = time()
     check_time = max_time !== nothing
     check_enumerations = max_enumerations !== nothing
-    symboltable :: SymbolTable = SymbolTable(g)
+    symboltable :: SymbolTable = SymbolTable(g, mod)
 
     hypotheses = enumerator(
         g, 
@@ -91,9 +93,23 @@ end
 
 
 """
-    search(g::Grammar, problem::Problem, start::Symbol; evaluator::Function=test_with_input, enumerator::Function=get_bfs_enumerator, max_depth::Union{Int, Nothing}=nothing, max_size::Union{Int, Nothing}=nothing, max_time::Union{Int, Nothing}=nothing, max_enumerations::Union{Int, Nothing}=nothing, allow_evaluation_errors::Bool=false)::Union{Any, Nothing}
+    search(g::Grammar, problem::Problem, start::Symbol; evaluator::Function=test_with_input, enumerator::Function=get_bfs_enumerator, max_depth::Union{Int, Nothing}=nothing, max_size::Union{Int, Nothing}=nothing, max_time::Union{Int, Nothing}=nothing, max_enumerations::Union{Int, Nothing}=nothing, allow_evaluation_errors::Bool=false, mod::Module=Main)::Union{Any, Nothing}
 
-Searches for a program by calling [`search_rulenode`](@ref) starting from [`Symbol`](@ref) `start` guided by `enumerator` and [`Grammar`](@ref) trying to satisfy  the higher-order constraints in form of input/output examples defined in the [`Problem`](@ref). 
+Searches for a program by calling [`search_rulenode`](@ref) starting from [`Symbol`](@ref) `start` guided by `enumerator` and [`Grammar`](@ref) trying to satisfy  the higher-order constraints in form of input/output examples defined in the [`Problem`](@ref).
+    
+    - g                 - The grammar that defines the search space
+    - problem           - The problem definition with IO examples
+    - start             - The start symbol in the grammar
+    - evaluator         - The evaluation function. Takes a SymbolTable, expression and a dictionary with 
+                          input variable assignments and returns the output of the expression.
+    - enumerator        - A constructor for the enumerator that should be used in the search
+    - max_depth         - The maximum depth of the search
+    - max_size          - The maximum number of nodes for ASTs in the search
+    - max_time          - The maximum time allowed for the search in seconds
+    - max_enumerations  - The maximum number of programs to enumerate and test'
+    - allow_evaluation_errors - Whether the search should crash if an exception is thrown in the evaluation
+    - mod               - A module containing definitions for the functions in the grammar that do not exist in Main
+
 This is the heart of the Herb's search for satisfying programs.
 Returns the found program when the evaluation calculated using `evaluator` is successful.
 """
@@ -107,7 +123,8 @@ function search(
     max_size::Union{Int, Nothing}=nothing,
     max_time::Union{Int, Nothing}=nothing,
     max_enumerations::Union{Int, Nothing}=nothing,
-    allow_evaluation_errors::Bool=false
+    allow_evaluation_errors::Bool=false,
+    mod::Module=Main,
 )::Union{Any, Nothing}
     res::Union{Tuple{RuleNode, Any}, Nothing} = search_rulenode(
         g,
@@ -119,7 +136,8 @@ function search(
         max_size=max_size,
         max_time=max_time,
         max_enumerations=max_enumerations,
-        allow_evaluation_errors=allow_evaluation_errors
+        allow_evaluation_errors=allow_evaluation_errors,
+        mod=mod
     )
 
     if res isa Tuple{RuleNode, Any}
@@ -154,7 +172,7 @@ mse_error_function(old_error, output, expected_output) = old_error + (output - e
 
 
 """
-    search_best(g::Grammar, problem::Problem, start::Symbol; evaluator::Function=test_with_input, enumerator::Function=get_bfs_enumerator, error_function::Function=default_error_function, max_depth::Union{Int, Nothing}=nothing, max_size::Union{Int, Nothing}=nothing, max_time::Union{Int, Nothing}=nothing, max_enumerations::Union{Int, Nothing}=nothing, allow_evaluation_errors::Bool=false)::Tuple{Any, Real}
+    search_best(g::Grammar, problem::Problem, start::Symbol; evaluator::Function=test_with_input, enumerator::Function=get_bfs_enumerator, error_function::Function=default_error_function, max_depth::Union{Int, Nothing}=nothing, max_size::Union{Int, Nothing}=nothing, max_time::Union{Int, Nothing}=nothing, max_enumerations::Union{Int, Nothing}=nothing, allow_evaluation_errors::Bool=false, mod::Module=Main)::Tuple{Any, Real}
 
 Searches the grammar for the program that satisfies the maximum number of examples in the problem.
 The evaluator should be a function that takes a SymbolTable, expression and a dictionary with 
@@ -172,6 +190,7 @@ The evaluator should be a function that takes a SymbolTable, expression and a di
     - max_time          - The maximum time allowed for the search in seconds
     - max_enumerations  - The maximum number of programs to enumerate and test
     - allow_evaluation_errors - Whether the search should crash if an exception is thrown in the evaluation
+    - mod               - A module containing definitions for the functions in the grammar that do not exist in Main
 Returns a tuple with the best found program so far and the error. 
 Can be considerably slower than `search` due to having to evaluate each expression on each example.
 """
@@ -186,13 +205,14 @@ function search_best(
         max_size::Union{Int, Nothing}=nothing,
         max_time::Union{Int, Nothing}=nothing,
         max_enumerations::Union{Int, Nothing}=nothing,
-        allow_evaluation_errors::Bool=false
+        allow_evaluation_errors::Bool=false,
+        mod::Module=Main,
     )::Tuple{Any, Real}
 
     start_time = time()
     check_time = max_time !== nothing
     check_enumerations = max_enumerations !== nothing
-    symboltable :: SymbolTable = SymbolTable(g)
+    symboltable :: SymbolTable = SymbolTable(g, mod)
 
     hypotheses = enumerator(
         g, 
