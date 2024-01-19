@@ -10,7 +10,7 @@ The temperature value of the algorithm remains constant over time.
 """
 function get_mh_enumerator(examples::AbstractArray{<:Example}, cost_function::Function, evaluation_function::Function=HerbInterpret.test_with_input)
     return (grammar, max_depth, max_size, start_symbol) -> begin
-        return StochasticSearchEnumerator(
+        return StochasticSearchIterator(
             grammar=grammar,
             examples=examples,
             max_depth=max_depth,
@@ -40,7 +40,7 @@ The temperature value of the algorithm remains constant over time.
 """
 function get_vlsn_enumerator(examples, cost_function, enumeration_depth = 2, evaluation_function::Function=HerbInterpret.test_with_input)
     return (grammar, max_depth, max_size, start_symbol) -> begin
-        return StochasticSearchEnumerator(
+        return StochasticSearchIterator(
             grammar=grammar,
             examples=examples,
             max_depth=max_depth,
@@ -69,7 +69,7 @@ but takes into account the tempeerature too.
 """
 function get_sa_enumerator(examples, cost_function, initial_temperature=1, temperature_decreasing_factor = 0.99, evaluation_function::Function=HerbInterpret.test_with_input)
     return (grammar, max_depth, max_size, start_symbol) -> begin
-        return StochasticSearchEnumerator(
+        return StochasticSearchIterator(
             grammar=grammar,
             examples=examples,
             max_depth=max_depth,

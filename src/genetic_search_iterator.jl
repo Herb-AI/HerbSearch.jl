@@ -7,9 +7,9 @@ end
 Base.showerror(io::IO, e::AlgorithmStateIsInvalid) = print(io, e.message)
 
 """
-    GeneticSearchIterator{FitnessFunction,CrossOverFunction,MutationFunction,SelectParentsFunction,EvaluationFunction} <: ExpressionIterator
+    GeneticSearchIterator{FitnessFunction,CrossOverFunction,MutationFunction,SelectParentsFunction,EvaluationFunction} <: ProgramIterator
 
-Defines an [`ExpressionIterator`](@ref) using genetic search. 
+Defines an [`ProgramIterator`](@ref) using genetic search. 
 
 Consists of:
 
@@ -28,7 +28,7 @@ Consists of:
 
 end
 """
-Base.@kwdef struct GeneticSearchIterator{FitnessFunction,CrossOverFunction,MutationFunction,SelectParentsFunction,EvaluationFunction} <: ExpressionIterator
+Base.@kwdef struct GeneticSearchIterator{FitnessFunction,CrossOverFunction,MutationFunction,SelectParentsFunction,EvaluationFunction} <: ProgramIterator
     grammar::ContextSensitiveGrammar
     examples::Vector{<:Example}
 

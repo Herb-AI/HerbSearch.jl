@@ -11,15 +11,17 @@ using HerbInterpret
 include("sampling_grammar.jl")
 include("enumerator_constructors.jl")
 
-include("expression_iterator.jl")
+include("program_iterator.jl")
 include("count_expressions.jl")
 
-include("csg_priority_enumerator.jl")
-include("cfg_priority_enumerator.jl")
+include("top_down_search_strategies.jl")
+include("top_down_iterator.jl")
 
 include("heuristics.jl")
 
-include("stochastic_search_iterator.jl")
+include("stochastic_search_strategies.jl")
+include("stochastic_iterator.jl")
+
 include("search_procedure.jl")
 include("stochastic_functions/cost_functions.jl")
 
@@ -38,7 +40,7 @@ include("genetic_enumerators.jl")
 
 export 
   count_expressions,
-  ExpressionIterator,
+  ProgramIterator,
   
   ContextSensitivePriorityEnumerator,
   ContextFreePriorityEnumerator,
@@ -51,6 +53,12 @@ export
   search_rulenode,
   search,
   search_best,
+
+  BreadthFirstSearchStrategy,
+  DepthFirstSearchStrategy,
+  MostLikelyFirstSearchStrategy,
+
+  TopDownIterator,
 
   bfs_priority_function,
   get_bfs_enumerator,

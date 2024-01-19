@@ -7,52 +7,31 @@ end
 Base.showerror(io::IO, e::EvaluationError) = print(io, "An exception was thrown while evaluating the expression $(e.expr) on input $(e.input): $(e.error)")
 
 
-
 """
-    search_rulenode(g::Grammar, problem::Problem, start::Symbol; evaluator::Function=test_with_input, enumerator::Function=get_bfs_enumerator, max_depth::Union{Int, Nothing}=nothing, max_size::Union{Int, Nothing}=nothing, max_time::Union{Int, Nothing}=nothing, max_enumerations::Union{Int, Nothing}=nothing, allow_evaluation_errors::Bool=false)::Union{Tuple{RuleNode, Any}, Nothing}
+    search_rulenode(problem::Problem, iterator::ProgramIterator, evaluator::Function=test_with_input, allow_evaluation_errors::Bool=false)::Union{Tuple{RuleNode, Any}, Nothing}
 
 Searches the grammar for the program that satisfies the maximum number of examples in the problem.
     
-        - g                 - The grammar that defines the search space
         - problem           - The problem definition with IO examples
-        - start             - The start symbol in the grammar
+        - iterator          - The iterator that will be used
         - evaluator         - The evaluation function. Takes a SymbolTable, expression and a dictionary with 
                               input variable assignments and returns the output of the expression.
-        - enumerator        - A constructor for the enumerator that should be used in the search
-        - max_depth         - The maximum depth of the search
-        - max_size          - The maximum number of nodes for ASTs in the search
-        - max_time          - The maximum time allowed for the search in seconds
-        - max_enumerations  - The maximum number of programs to enumerate and test'
         - allow_evaluation_errors - Whether the search should crash if an exception is thrown in the evaluation
     Returns a tuple of the rulenode and the expression of the solution program once it has been found, 
     or nothing otherwise.
 """
 function search_rulenode(
-    g::Grammar, 
-    problem::Problem, 
-    start::Symbol; 
+    problem::Problem,
+    iterator::ProgramIterator; 
     evaluator::Function=test_with_input, 
-    enumerator::Function=get_bfs_enumerator,
-    max_depth::Union{Int, Nothing}=nothing,
-    max_size::Union{Int, Nothing}=nothing,
-    max_time::Union{Int, Nothing}=nothing,
-    max_enumerations::Union{Int, Nothing}=nothing,
     allow_evaluation_errors::Bool=false
 )::Union{Tuple{RuleNode, Any}, Nothing}
 
+    g = iterator.grammar
     start_time = time()
-    check_time = max_time !== nothing
-    check_enumerations = max_enumerations !== nothing
     symboltable :: SymbolTable = SymbolTable(g)
 
-    hypotheses = enumerator(
-        g, 
-        max_depth ≡ nothing ? typemax(Int) : max_depth, 
-        max_size ≡ nothing ? typemax(Int) : max_size,
-        start
-    )
-
-    for (i, h) ∈ enumerate(hypotheses)
+    for (i, h) ∈ enumerate(iterator)
         # Create expression from rulenode representation of AST
         expr = rulenode2expr(h, g)
 
@@ -82,7 +61,7 @@ function search_rulenode(
         end
 
         # Check stopping conditions
-        if check_enumerations && i > max_enumerations || check_time && time() - start_time > max_time
+        if i > iterator.max_enumerations || time() - start_time > iterator.max_time
             return nothing
         end
     end
@@ -91,34 +70,22 @@ end
 
 
 """
-    search(g::Grammar, problem::Problem, start::Symbol; evaluator::Function=test_with_input, enumerator::Function=get_bfs_enumerator, max_depth::Union{Int, Nothing}=nothing, max_size::Union{Int, Nothing}=nothing, max_time::Union{Int, Nothing}=nothing, max_enumerations::Union{Int, Nothing}=nothing, allow_evaluation_errors::Bool=false)::Union{Any, Nothing}
+    search(problem::Problem, iterator::ProgramIterator, evaluator::Function=test_with_input, allow_evaluation_errors::Bool=false)::Union{Any, Nothing}
 
-Searches for a program by calling [`search_rulenode`](@ref) starting from [`Symbol`](@ref) `start` guided by `enumerator` and [`Grammar`](@ref) trying to satisfy  the higher-order constraints in form of input/output examples defined in the [`Problem`](@ref). 
+Searches for a program by calling [`search_rulenode`](@ref) starting from [`Symbol`](@ref) `iterator.start`, trying to satisfy the higher-order constraints in form of input/output examples defined in the [`Problem`](@ref). 
 This is the heart of the Herb's search for satisfying programs.
 Returns the found program when the evaluation calculated using `evaluator` is successful.
 """
 function search(
-    g::Grammar, 
-    problem::Problem, 
-    start::Symbol; 
-    evaluator::Function=test_with_input, 
-    enumerator::Function=get_bfs_enumerator,
-    max_depth::Union{Int, Nothing}=nothing,
-    max_size::Union{Int, Nothing}=nothing,
-    max_time::Union{Int, Nothing}=nothing,
-    max_enumerations::Union{Int, Nothing}=nothing,
+    problem::Problem,
+    iterator::ProgramIterator;
+    evaluator::Function=test_with_input,
     allow_evaluation_errors::Bool=false
 )::Union{Any, Nothing}
     res::Union{Tuple{RuleNode, Any}, Nothing} = search_rulenode(
-        g,
         problem,
-        start,
+        iterator,
         evaluator=evaluator,
-        enumerator=enumerator,
-        max_depth=max_depth,
-        max_size=max_size,
-        max_time=max_time,
-        max_enumerations=max_enumerations,
         allow_evaluation_errors=allow_evaluation_errors
     )
 
