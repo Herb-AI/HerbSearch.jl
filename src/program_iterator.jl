@@ -1,17 +1,9 @@
 """
-    abstract type AbstractSearchStrategy
-
-Abstract super-type for all possible search strategies of an [`ProgramIterator`](@ref)
-"""
-abstract type AbstractSearchStrategy end
-
-"""
     mutable struct ProgramIterator
 
 Generic iterator for all possible search strategies.    
 All iterators are expected to have the following fields:
 
-- `strategy::AbstractSearchStrategy`: defines the search strategy of this iterator
 - `grammar::ContextSensitiveGrammar`: the grammar to search over
 - `start::Symbol`: defines the start symbol from which the search should be started 
 - `max_depth::Int`: maximum depth of program trees
