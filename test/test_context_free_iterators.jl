@@ -1,6 +1,6 @@
 @testset verbose=true "Context-free iterators" begin
   @testset "test count_expressions on single Real grammar" begin
-    g1 = @cfgrammar begin
+    g1 = @csgrammar begin
         Real = |(1:9)
     end
 
@@ -11,7 +11,7 @@
   end
 
   @testset "test count_expressions on grammar with multiplication" begin
-    g1 = @cfgrammar begin
+    g1 = @csgrammar begin
         Real = 1 | 2
         Real = Real * Real 
     end
@@ -23,42 +23,42 @@
   end
 
   @testset "test count_expressions on different arithmetic operators" begin
-    g1 = @cfgrammar begin
+    g1 = @csgrammar begin
         Real = 1
         Real = Real * Real 
     end
 
-    g2 = @cfgrammar begin
+    g2 = @csgrammar begin
       Real = 1
       Real = Real / Real 
     end
 
-    g3 = @cfgrammar begin
+    g3 = @csgrammar begin
       Real = 1
       Real = Real + Real 
     end 
 
-    g4 = @cfgrammar begin
+    g4 = @csgrammar begin
       Real = 1
       Real = Real - Real 
     end 
     
-    g5 = @cfgrammar begin
+    g5 = @csgrammar begin
       Real = 1
       Real = Real % Real 
     end 
 
-    g6 = @cfgrammar begin
+    g6 = @csgrammar begin
       Real = 1
       Real = Real \ Real 
     end 
 
-    g7 = @cfgrammar begin
+    g7 = @csgrammar begin
       Real = 1
       Real = Real ^ Real 
     end 
 
-    g8 = @cfgrammar begin
+    g8 = @csgrammar begin
       Real = 1
       Real = -Real * Real 
     end
@@ -75,7 +75,7 @@
   end
 
   @testset "test count_expressions on grammar with functions" begin
-    g1 = @cfgrammar begin
+    g1 = @csgrammar begin
         Real = 1 | 2
         Real = f(Real)                # function call
     end
@@ -88,7 +88,7 @@
   end
 
   @testset "bfs enumerator" begin
-    g1 = @cfgrammar begin
+    g1 = @csgrammar begin
       Real = 1 | 2
       Real = Real * Real
     end
@@ -110,7 +110,7 @@
   end
 
   @testset "dfs enumerator" begin
-    g1 = @cfgrammar begin
+    g1 = @csgrammar begin
       Real = 1 | 2
       Real = Real * Real
     end
@@ -119,7 +119,7 @@
   end
 
   @testset "probabilistic enumerator" begin
-    g₁ = @pcfgrammar begin
+    g₁ = @pcsgrammar begin
       0.2 : Real = |(0:1)
       0.5 : Real = Real + Real
       0.3 : Real = Real * Real 

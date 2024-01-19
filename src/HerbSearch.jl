@@ -9,7 +9,6 @@ using HerbData
 using HerbInterpret
 
 include("sampling_grammar.jl")
-include("enumerator_constructors.jl")
 
 include("program_iterator.jl")
 include("count_expressions.jl")
@@ -43,7 +42,6 @@ export
   ProgramIterator,
   
   ContextSensitivePriorityEnumerator,
-  ContextFreePriorityEnumerator,
   
   heuristic_leftmost,
   heuristic_rightmost,

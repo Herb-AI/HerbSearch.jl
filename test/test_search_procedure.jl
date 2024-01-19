@@ -1,5 +1,5 @@
 @testset verbose=true "Search procedure" begin
-    g₁ = @cfgrammar begin
+    g₁ = @csgrammar begin
         Number = |(1:2)
         Number = x
         Number = Number + Number
@@ -21,7 +21,7 @@
     end
 
     @testset "Search with errors in evaluation" begin
-        g₂ = @cfgrammar begin
+        g₂ = @csgrammar begin
             Number = 1
             List = []
             Index = List[Number]
@@ -51,7 +51,7 @@
     end
 
     @testset "Search_best with errors in evaluation" begin
-        g₃ = @cfgrammar begin
+        g₃ = @csgrammar begin
             Number = 1
             List = []
             Index = List[Number]
