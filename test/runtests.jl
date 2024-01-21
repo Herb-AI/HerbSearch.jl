@@ -19,4 +19,5 @@ Random.seed!(1234)
     include("test_context_free_iterators.jl")
     include("test_sampling.jl")
     include("test_genetic.jl")
+    include("test_programiterator_macro.jl")
 end
