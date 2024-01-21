@@ -7,6 +7,7 @@ using HerbGrammar
 using HerbConstraints
 using HerbData
 using HerbInterpret
+using MLStyle
 
 include("sampling_grammar.jl")
 
