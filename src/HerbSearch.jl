@@ -41,6 +41,7 @@ include("genetic_enumerators.jl")
 export 
   count_expressions,
   ProgramIterator,
+  @programiterator,
   
   ContextSensitivePriorityEnumerator,
   
