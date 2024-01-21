@@ -14,13 +14,14 @@ include("sampling_grammar.jl")
 include("program_iterator.jl")
 include("count_expressions.jl")
 
-include("top_down_search_strategies.jl")
 include("top_down_iterator.jl")
 
 include("heuristics.jl")
 
 include("stochastic_search_strategies.jl")
 include("stochastic_iterator.jl")
+
+include("evaluate.jl")
 
 include("search_procedure.jl")
 include("stochastic_functions/cost_functions.jl")
@@ -50,9 +51,7 @@ export
   heuristic_random,
   heuristic_smallest_domain,
 
-  search_rulenode,
-  search,
-  search_best,
+  synth,
 
   BreadthFirstSearchStrategy,
   DepthFirstSearchStrategy,
