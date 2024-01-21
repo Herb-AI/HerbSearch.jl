@@ -17,14 +17,14 @@ Optional parameters:
 - `allow_evaluation_errors` - Whether the search should crash if an exception is thrown in the evaluation
 Returns a score in the interval [0, 1]
 """
-function evaluate(problem::Problem{Vector{IOExample}}, expr::Any, symboltable::SymbolTable; shortcircuit::Bool=true, allow_evaluation_errors::Bool=false)::Number
+function evaluate(problem::Problem, expr::Any, symboltable::SymbolTable; shortcircuit::Bool=true, allow_evaluation_errors::Bool=false)::Number
     number_of_satisfied_examples = 0
 
     crashed = false
     for example ∈ problem.examples
         try
             output = test_with_input(symboltable, expr, example.in)
-            if (output == expected_output)
+            if (output == example.out)
                 number_of_satisfied_examples += 1
             elseif (shortcircuit)
                 break;

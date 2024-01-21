@@ -14,11 +14,9 @@ include("sampling_grammar.jl")
 include("program_iterator.jl")
 include("count_expressions.jl")
 
-include("top_down_iterator.jl")
-
 include("heuristics.jl")
 
-include("stochastic_search_strategies.jl")
+include("top_down_iterator.jl")
 include("stochastic_iterator.jl")
 
 include("evaluate.jl")
@@ -53,27 +51,12 @@ export
 
   synth,
 
-  BreadthFirstSearchStrategy,
-  DepthFirstSearchStrategy,
-  MostLikelyFirstSearchStrategy,
-
   TopDownIterator,
+  BFSIterator,
+  DFSIterator,
+  MLFSIterator
 
-  bfs_priority_function,
-  get_bfs_enumerator,
-  get_mh_enumerator,
-  get_vlsn_enumerator,
-  get_sa_enumerator,
-  get_genetic_enumerator,
-  mean_squared_error,
   misclassification,
-  mse_error_function,
-
-  dfs_priority_function,
-  get_dfs_enumerator,
-
-  most_likely_priority_function,
-  get_most_likely_first_enumerator,
   mutate_random!,
   crossover_swap_children_2,
   sample,

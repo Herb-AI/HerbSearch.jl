@@ -48,37 +48,18 @@ using Random
 # -   `evaluation_function`::Function that evaluates the julia expressions
 # An iterator over all possible expressions of a grammar up to max_depth with start symbol sym.
 # """
-# Base.@kwdef struct StochasticSearchIterator <: ProgramIterator
-#     grammar::ContextSensitiveGrammar
-#     max_depth::Int64 = 5  # maximum depth of the program that is generated
-#     examples::Vector{Example}
-#     neighbourhood::Function
-#     propose::Function
-#     accept::Function
-#     temperature::Function
-#     cost_function::Function
-#     start_symbol::Symbol
-#     initial_temperature::Real = 1
-#     evaluation_function::Function
-# end
-
-"""
-    mutable struct StochasticSearchIterator <: ProgramIterator
-
-A program iterator using a [`StochasticSearchStrategy`](@ref) over all possible expressions of a `grammar` with start symbol `sym`.
-"""
-mutable struct StochasticSearchIterator <: ProgramIterator
-    search_strategy::TopDownSearchStrategy
-    grammar::Grammar
-    sym::Symbol
-    max_depth::Int
-    max_size::Int
-    max_time::Int
-    max_enumerations::Int
-end
-
-function StochasticSearchIterator(search_strategy::StochasticSearchStrategy, grammar::Grammar, sym::Symbol; max_depth::Int=typemax(Int), max_size::Int=typemax(Int), max_time::Int=typemax(Int), max_enumerations::Int=typemax(Int))
-    return StochasticSearchIterator(search_strategy, grammar, sym, max_depth, max_size, max_time, max_enumerations)
+Base.@kwdef struct StochasticSearchIterator <: ProgramIterator
+    grammar::ContextSensitiveGrammar
+    max_depth::Int64 = 5  # maximum depth of the program that is generated
+    examples::Vector{Example}
+    neighbourhood::Function
+    propose::Function
+    accept::Function
+    temperature::Function
+    cost_function::Function
+    start_symbol::Symbol
+    initial_temperature::Real = 1
+    evaluation_function::Function
 end
 
 struct IteratorState
@@ -91,12 +72,11 @@ Base.IteratorSize(::StochasticSearchIterator) = Base.SizeUnknown()
 Base.eltype(::StochasticSearchIterator) = RuleNode
 
 function Base.iterate(iter::StochasticSearchIterator)
-    grammar, max_depth, search_strategy = iter.grammar, iter.max_depth, iter.search_strategy
+    grammar, max_depth = iter.grammar, iter.max_depth
     # sample a random node using start symbol and grammar
     dmap = mindepth_map(grammar)
     sampled_program = rand(RuleNode, grammar, iter.start_symbol, max_depth)
 
-    #todo: states information is no longer in the iter, this should be refactored to the search_strategy
     return (sampled_program, IteratorState(sampled_program, iter.initial_temperature,dmap))  
 end
 
@@ -113,7 +93,7 @@ The algorithm that constructs the iterator of StochasticSearchIterator. It has t
 5. return the new next_program
 """
 function Base.iterate(iter::StochasticSearchIterator, current_state::IteratorState)
-    grammar, examples, search_strategy = iter.grammar, iter.examples, iter.search_strategy
+    grammar, examples = iter.grammar, iter.examples
     current_program = current_state.current_program
     
     current_cost = calculate_cost(current_program, iter.cost_function, examples, grammar, iter.evaluation_function)

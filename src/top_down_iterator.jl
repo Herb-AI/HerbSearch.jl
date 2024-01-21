@@ -11,7 +11,7 @@ Concrete iterators may overload the following methods:
 abstract type TopDownIterator <: ProgramIterator end
 
 """
-    priority_function(::TopDownSearchStrategy, g::Grammar, tree::AbstractRuleNode, parent_value::Union{Real, Tuple{Vararg{Real}}})
+    priority_function(::TopDownIterator, g::Grammar, tree::AbstractRuleNode, parent_value::Union{Real, Tuple{Vararg{Real}}})
 
 Assigns a priority value to a `tree` that needs to be considered later in the search. Trees with the lowest priority value are considered first.
 
@@ -50,11 +50,8 @@ function hole_heuristic(::TopDownIterator, node::AbstractRuleNode, max_depth::In
     return heuristic_leftmost(node, max_depth);
 end
 
-"""
-    struct BFSIterator
 
-Search strategy that will yield trees in the grammar in increasing order of size.
-"""
+# Iterator that will yield trees in the grammar in increasing order of size.
 @programiterator BFSIterator() <: TopDownIterator
 
 """
@@ -71,11 +68,8 @@ function priority_function(
     parent_value + 1;
 end
 
-"""
-    struct DFSIterator
 
-Search strategy that will yield trees in the grammar in decreasing order of size.
-"""
+# Iterator that will yield trees in the grammar in decreasing order of size.
 @programiterator DFSIterator() <: TopDownIterator
 
 """
@@ -92,22 +86,18 @@ function priority_function(
     parent_value - 1;
 end
 
-"""
-    struct MLFSIterator
 
-Returns an enumerator that enumerates expressions in the grammar in decreasing order of probability.
-Only use this function with probabilistic grammars.
-"""
+# Iterator that enumerates expressions in the grammar in decreasing order of probability (Only use this iterator with probabilistic grammars).
 @programiterator MLFSIterator() <: TopDownIterator
 
 """
-    priority_function(::MostLikelyFirstSearchStrategy, g::Grammar, tree::AbstractRuleNode, parent_value::Union{Real, Tuple{Vararg{Real}}})
+    priority_function(::MLFSIterator, g::Grammar, tree::AbstractRuleNode, parent_value::Union{Real, Tuple{Vararg{Real}}})
 
 Calculates logit for all possible derivations for a node in a tree and returns them.
 """
 function priority_function(
-    ::MostLikelyFirstSearchStrategy,
-    g::ContextSensitiveGrammar, 
+    ::MLFSIterator,
+    g::Grammar, 
     tree::AbstractRuleNode, 
     ::Union{Real, Tuple{Vararg{Real}}}
 )
@@ -179,15 +169,15 @@ function Base.iterate(iter::TopDownIterator)
     # Priority queue with number of nodes in the program
     pq :: PriorityQueue{PriorityQueueItem, Union{Real, Tuple{Vararg{Real}}}} = PriorityQueue()
 
-    grammar, max_depth, max_size, sym, search_strategy = iter.grammar, iter.max_depth, iter.max_size, iter.sym, iter.search_strategy
+    grammar, max_depth, max_size, sym = iter.grammar, iter.max_depth, iter.max_size, iter.sym
 
     init_node = Hole(get_domain(grammar, sym))
 
     propagate_result, new_constraints = propagate_constraints(init_node, grammar, Set{LocalConstraint}(), max_size)
     if propagate_result == tree_infeasible return end
-    enqueue!(pq, PriorityQueueItem(init_node, 0, new_constraints, propagate_result == tree_complete), priority_function(search_strategy, grammar, init_node, 0))
+    enqueue!(pq, PriorityQueueItem(init_node, 0, new_constraints, propagate_result == tree_complete), priority_function(iter, grammar, init_node, 0))
     
-    return _find_next_complete_tree(grammar, max_depth, max_size, search_strategy, pq)
+    return _find_next_complete_tree(grammar, max_depth, max_size, pq, iter)
 end
 
 
@@ -197,9 +187,9 @@ end
 Describes the iteration for a given [`TopDownIterator`](@ref) and a [`PriorityQueue`](@ref) over the grammar without enqueueing new items to the priority queue. Recursively returns the result for the priority queue.
 """
 function Base.iterate(iter::TopDownIterator, pq::DataStructures.PriorityQueue)
-    grammar, max_depth, max_size, search_strategy = iter.grammar, iter.max_depth, iter.max_size, iter.search_strategy
+    grammar, max_depth, max_size = iter.grammar, iter.max_depth, iter.max_size
 
-    return _find_next_complete_tree(grammar, max_depth, max_size, search_strategy, pq)
+    return _find_next_complete_tree(grammar, max_depth, max_size, pq, iter)
 end
 
 
@@ -272,7 +262,7 @@ end
 item = 0
 
 """
-    _find_next_complete_tree(grammar::ContextSensitiveGrammar, max_depth::Int, max_size::Int, search_strategy::TopDownSearchStrategy, pq::PriorityQueue)::Union{Tuple{RuleNode, PriorityQueue}, Nothing}
+    _find_next_complete_tree(grammar::ContextSensitiveGrammar, max_depth::Int, max_size::Int, pq::PriorityQueue, iter::TopDownIterator)::Union{Tuple{RuleNode, PriorityQueue}, Nothing}
 
 Takes a priority queue and returns the smallest AST from the grammar it can obtain from the queue or by (repeatedly) expanding trees that are in the queue.
 Returns `nothing` if there are no trees left within the depth limit.
@@ -281,8 +271,8 @@ function _find_next_complete_tree(
     grammar::ContextSensitiveGrammar, 
     max_depth::Int, 
     max_size::Int,
-    search_strategy::TopDownSearchStrategy,
-    pq::PriorityQueue
+    pq::PriorityQueue,
+    iter::TopDownIterator
 )::Union{Tuple{RuleNode, PriorityQueue}, Nothing}
     while length(pq) ≠ 0
 
@@ -292,7 +282,7 @@ function _find_next_complete_tree(
         end
 
         # We are about to fill a hole, so the remaining #holes that are allowed in propagation, should be 1 fewer
-        expand_result = _expand(pqitem.tree, grammar, max_depth, max_size - pqitem.size - 1, GrammarContext(pqitem.tree, [], pqitem.constraints), search_strategy)
+        expand_result = _expand(pqitem.tree, grammar, max_depth, max_size - pqitem.size - 1, GrammarContext(pqitem.tree, [], pqitem.constraints), iter)
 
         if expand_result ≡ already_complete
             # Current tree is complete, it can be returned
@@ -310,7 +300,7 @@ function _find_next_complete_tree(
                 # expanded_tree is a new program tree with a new expanded child compared to pqitem.tree
                 # new_holes are all the holes in expanded_tree
                 new_pqitem = PriorityQueueItem(expanded_tree, pqitem.size + 1, local_constraints, propagate_result == tree_complete)
-                enqueue!(pq, new_pqitem, priority_function(search_strategy, grammar, expanded_tree, priority_value))
+                enqueue!(pq, new_pqitem, priority_function(iter, grammar, expanded_tree, priority_value))
             end
         else
             error("Got an invalid response of type $(typeof(expand_result)) from expand function")
@@ -320,7 +310,7 @@ function _find_next_complete_tree(
 end
 
 """
-    _expand(root::RuleNode, grammar::ContextSensitiveGrammar, max_depth::Int, max_holes::Int, context::GrammarContext, search_strategy::TopDownSearchStrategy)::Union{ExpandFailureReason, Vector{TreeConstraints}}
+    _expand(root::RuleNode, grammar::ContextSensitiveGrammar, max_depth::Int, max_holes::Int, context::GrammarContext, iter::TopDownIterator)::Union{ExpandFailureReason, Vector{TreeConstraints}}
 
 Recursive expand function used in multiple enumeration techniques.
 Expands one hole/undefined leaf of the given RuleNode tree found using the given hole heuristic.
@@ -333,17 +323,17 @@ function _expand(
         grammar::ContextSensitiveGrammar, 
         max_depth::Int, 
         max_holes::Int,
-        context::GrammarContext, 
-        search_strategy::TopDownSearchStrategy
+        context::GrammarContext,
+        iter::TopDownIterator
     )::Union{ExpandFailureReason, Vector{TreeConstraints}}
-    hole_res = hole_heuristic(search_strategy, root, max_depth)
+    hole_res = hole_heuristic(iter, root, max_depth)
     if hole_res isa ExpandFailureReason
         return hole_res
     elseif hole_res isa HoleReference
         # Hole was found
         (; hole, path) = hole_res
         hole_context = GrammarContext(context.originalExpr, path, context.constraints)
-        expanded_child_trees = _expand(hole, grammar, max_depth, max_holes, hole_context, search_strategy)
+        expanded_child_trees = _expand(hole, grammar, max_depth, max_holes, hole_context, iter)
 
         nodes::Vector{TreeConstraints} = []
         for (expanded_tree, local_constraints) ∈ expanded_child_trees
@@ -373,7 +363,7 @@ end
 
 
 """
-    _expand(node::Hole, grammar::ContextSensitiveGrammar, ::Int, max_holes::Int, context::GrammarContext, search_strategy::TopDownSearchStrategy)::Union{ExpandFailureReason, Vector{TreeConstraints}}
+    _expand(node::Hole, grammar::ContextSensitiveGrammar, ::Int, max_holes::Int, context::GrammarContext, iter::TopDownIterator)::Union{ExpandFailureReason, Vector{TreeConstraints}}
 
 Expands a given hole that was found in [`_expand`](@ref) using the given derivation heuristic. Returns the list of discovered nodes in that order and with their respective constraints.
 """
@@ -382,13 +372,13 @@ function _expand(
     grammar::ContextSensitiveGrammar, 
     ::Int, 
     max_holes::Int,
-    context::GrammarContext, 
-    search_strategy::TopDownSearchStrategy
+    context::GrammarContext,
+    iter::TopDownIterator
 )::Union{ExpandFailureReason, Vector{TreeConstraints}}
     nodes::Vector{TreeConstraints} = []
     
     new_nodes = map(i -> RuleNode(i, grammar), findall(node.domain))
-    for new_node ∈ derivation_heuristic(search_strategy, new_nodes, context)
+    for new_node ∈ derivation_heuristic(iter, new_nodes, context)
 
         # If dealing with the root of the tree, propagate here
         if context.nodeLocation == []
