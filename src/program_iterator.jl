@@ -1,5 +1,5 @@
 """
-    mutable struct ProgramIterator
+    abstract type ProgramIterator
 
 Generic iterator for all possible search strategies.    
 All iterators are expected to have the following fields:
