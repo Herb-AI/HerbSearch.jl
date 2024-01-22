@@ -17,6 +17,23 @@ Base.IteratorSize(::ProgramIterator) = Base.SizeUnknown()
 
 Base.eltype(::ProgramIterator) = RuleNode
 
+"""
+Canonical way of creating a program iterator.
+The macro automatically declares the expected fields listed in the `ProgramIterator` documentation.
+Syntax accepted by the macro is as follows (anything enclosed in square brackets is optional):
+    ```
+    @programiterator [mutable] <IteratorName>(
+        <arg₁>,
+        ...,
+        <argₙ>
+    ) [<: <SupertypeIterator>]
+    ```
+Note that the macro emits an assertion that the `SupertypeIterator` 
+extends `ProgramIterator` which otherwise throws an ArgumentError.
+If no supertype is given, the new iterator extends `ProgramIterator` directly.
+Each <argᵢ> may be any expression valid in a struct declaration, and they must be comma separated.
+The `mutable` keyword determines whether the declared struct is mutable.
+"""
 macro programiterator(mut, ex)
     if mut == :mutable
         generate_iterator(__module__, ex, true)
@@ -47,7 +64,6 @@ end
 
 processdecl(mod::Module, mut::Bool, decl::Expr, super=nothing) = @match decl begin
     Expr(:call, name::Symbol, extrafields...) => begin
-        #extrafields = map!(verifyfield, extrafields, extrafields)
         head = Expr(:(<:), name, isnothing(super) ? :(HerbSearch.ProgramIterator) : :($mod.$super))
         
         fields = quote
@@ -65,11 +81,3 @@ processdecl(mod::Module, mut::Bool, decl::Expr, super=nothing) = @match decl beg
     end
     _ => throw(ArgumentError("invalid declaration structure for the iterator"))
 end
-
-# this disallows default constructors
-#= verifyfield(ex::Union{Expr, Symbol}) = if ex isa Symbol return ex
-    else @match ex begin
-        Expr(:(::), ::Symbol, ::Symbol) => ex
-        _ => throw(ArgumentError("invalid field declaration: $ex"))
-    end
-end =#
