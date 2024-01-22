@@ -47,7 +47,14 @@ end
 
 processdecl(mod::Module, mut::Bool, decl::Expr, super=nothing) = @match decl begin
     Expr(:call, name::Symbol, extrafields...) => begin
-        #extrafields = map!(verifyfield, extrafields, extrafields)
+        keywords = [
+            Expr(:kw, :(max_depth::Int), typemax(Int)), 
+            Expr(:kw, :(max_size::Int), typemax(Int)), 
+            Expr(:kw, :(max_time::Int), typemax(Int)), 
+            Expr(:kw, :(max_enumerations::Int), typemax(Int))
+        ]
+
+        extrafields = map!(ex -> verifyfield!(keywords, ex), extrafields, extrafields)
         head = Expr(:(<:), name, isnothing(super) ? :(HerbSearch.ProgramIterator) : :($mod.$super))
         
         fields = quote
@@ -58,18 +65,41 @@ processdecl(mod::Module, mut::Bool, decl::Expr, super=nothing) = @match decl beg
             max_time::Int
             max_enumerations::Int
         end
+        Base.remove_linenums!(fields)
 
         append!(fields.args, extrafields)
-        
-        Expr(:struct, mut, head, fields)
+
+        struct_decl = Expr(:struct, mut, head, fields)
+
+        keyword_fields = map(kw_ex -> kw_ex.args[1], keywords)
+        required_fields = filter(field -> !in(field, keyword_fields), fields.args)
+
+        constructor = Expr(:(=), 
+            Expr(:call, name, Expr(:parameters, keywords...), required_fields...), 
+            Expr(:call, name, map(get_field_name, required_fields)..., map(get_field_name, keyword_fields)...)
+        )
+
+        println(Expr(:block, struct_decl, constructor))
+
+        Expr(:block, struct_decl, constructor)
     end
     _ => throw(ArgumentError("invalid declaration structure for the iterator"))
 end
 
-# this disallows default constructors
-#= verifyfield(ex::Union{Expr, Symbol}) = if ex isa Symbol return ex
+get_field_name(ex) = if ex isa Symbol return ex
+    else @match ex begin
+        Expr(:(::), ::Symbol, ::Symbol) => ex.args[1]
+        _ => throw(ArgumentError("unexpected field: $ex"))
+    end
+end
+
+verifyfield!(keywords::Vector{Expr}, ex::Union{Expr, Symbol}) = if ex isa Symbol return ex
     else @match ex begin
         Expr(:(::), ::Symbol, ::Symbol) => ex
+        Expr(:kw, ::Symbol, ::Any) => begin
+            push!(keywords, ex)
+            ex.args[1]
+        end
         _ => throw(ArgumentError("invalid field declaration: $ex"))
     end
-end =#
+end
