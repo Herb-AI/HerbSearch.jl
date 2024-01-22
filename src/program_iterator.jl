@@ -18,6 +18,8 @@ Base.IteratorSize(::ProgramIterator) = Base.SizeUnknown()
 Base.eltype(::ProgramIterator) = RuleNode
 
 """
+    @programiterator
+
 Canonical way of creating a program iterator.
 The macro automatically declares the expected fields listed in the `ProgramIterator` documentation.
 Syntax accepted by the macro is as follows (anything enclosed in square brackets is optional):
