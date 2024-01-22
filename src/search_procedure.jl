@@ -13,13 +13,18 @@ At the moment there are two possible outcomes:
     synth(problem::Problem, iterator::ProgramIterator, evaluator::Function=test_with_input, allow_evaluation_errors::Bool=false)::Union{Tuple{RuleNode, Any}, Nothing}
 
 Synthesize a program that satisfies the maximum number of examples in the problem.
-        - problem           - The problem definition with IO examples
-        - iterator          - The iterator that will be used
+        - problem                 - The problem definition with IO examples
+        - iterator                - The iterator that will be used
+        - shortcircuit            - Whether to stop evaluating after finding a single example that fails, to speed up the [synth](@ref) procedure. If true, the returned score is an underapproximation of the actual score.
+        - allow_evaluation_errors - Whether the search should crash if an exception is thrown in the evaluation
+Returns a score in the interval [0, 1]
 Returns a tuple of the rulenode representing the solution program and a synthresult that indicates if that program is optimal
 """
 function synth(
     problem::Problem,
-    iterator::ProgramIterator
+    iterator::ProgramIterator; 
+    shortcircuit::Bool=true, 
+    allow_evaluation_errors::Bool=false
 )::Union{Tuple{RuleNode, SynthResult}, Nothing}
 
     start_time = time()
@@ -33,7 +38,7 @@ function synth(
         expr = rulenode2expr(candidate_program, iterator.grammar)
 
         # Evaluate the expression
-        score = evaluate(problem, expr, symboltable)
+        score = evaluate(problem, expr, symboltable, shortcircuit=shortcircuit, allow_evaluation_errors=allow_evaluation_errors)
         if score == 1
             return (candidate_program, optimal_program)
         elseif score >= best_score

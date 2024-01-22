@@ -13,8 +13,8 @@ Evaluate the expression on the examples.
 
 Optional parameters:
 
-- `shortcircuit` - Whether to stop evaluating after finding single example fails, to speed up the [synth](@ref) procedure. If true, the returned score is an underapproximation of the actual score.
-- `allow_evaluation_errors` - Whether the search should crash if an exception is thrown in the evaluation
+    - shortcircuit            - Whether to stop evaluating after finding a single example that fails, to speed up the [synth](@ref) procedure. If true, the returned score is an underapproximation of the actual score.
+    - allow_evaluation_errors - Whether the search should crash if an exception is thrown in the evaluation
 Returns a score in the interval [0, 1]
 """
 function evaluate(problem::Problem, expr::Any, symboltable::SymbolTable; shortcircuit::Bool=true, allow_evaluation_errors::Bool=false)::Number
