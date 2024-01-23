@@ -66,7 +66,7 @@ end
 
 processdecl(mod::Module, mut::Bool, decl::Expr, super=nothing) = @match decl begin
     Expr(:call, name::Symbol, extrafields...) => begin
-        basekwargs = [
+        kwargs = [
             Expr(:kw, :(max_depth::Int), typemax(Int)), 
             Expr(:kw, :(max_size::Int), typemax(Int)), 
             Expr(:kw, :(max_time::Int), typemax(Int)), 
@@ -83,18 +83,18 @@ processdecl(mod::Module, mut::Bool, decl::Expr, super=nothing) = @match decl beg
             max_enumerations::Int
         end)
 
-        map!(ex -> processkwarg!(basekwargs, ex), extrafields, extrafields)        
+        map!(ex -> processkwarg!(kwargs, ex), extrafields, extrafields)        
         append!(fields.args, extrafields)
         
         constrfields = copy(fields)
         map!(esc, constrfields.args, constrfields.args)
         struct_decl = Expr(:struct, mut, esc(head), constrfields)
 
-        keyword_fields = map(kwex -> kwex.args[1], basekwargs)
+        keyword_fields = map(kwex -> kwex.args[1], kwargs)
         required_fields = filter(field -> field ∉ keyword_fields && is_field_decl(field), fields.args)
 
         constructor = Expr(:(=), 
-            Expr(:call, esc(name), Expr(:parameters, esc.(basekwargs)...), esc.(required_fields)...), 
+            Expr(:call, esc(name), Expr(:parameters, esc.(kwargs)...), esc.(required_fields)...), 
             Expr(:call, esc(name), (esc ∘ extractname).(filter(is_field_decl, fields.args))...)
         )
 
