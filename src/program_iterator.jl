@@ -58,67 +58,88 @@ function generate_iterator(mod::Module, ex::Expr, mut::Bool=false)
                 throw(ArgumentError("attempting to inherit a non-ProgramIterator")))
             
             # process the decl 
-            Expr(:block, check, processdecl(mod, mut, decl, super))
+            Expr(:block, check, processdecl(mod, mut, decl, super)...)
         end
-        decl => processdecl(mod, mut, decl)
+        decl => Expr(:block, processdecl(mod, mut, decl)...)
     end
 end
 
 processdecl(mod::Module, mut::Bool, decl::Expr, super=nothing) = @match decl begin
     Expr(:call, name::Symbol, extrafields...) => begin
-        keywords = [
+        basekwargs = [
             Expr(:kw, :(max_depth::Int), typemax(Int)), 
             Expr(:kw, :(max_size::Int), typemax(Int)), 
             Expr(:kw, :(max_time::Int), typemax(Int)), 
             Expr(:kw, :(max_enumerations::Int), typemax(Int))
         ]
 
-        extrafields = map!(ex -> verifyfield!(keywords, ex), extrafields, extrafields)
         head = Expr(:(<:), name, isnothing(super) ? :(HerbSearch.ProgramIterator) : :($mod.$super))
-        
-        fields = quote
+        fields = Base.remove_linenums!(quote
             grammar::ContextSensitiveGrammar
             sym::Symbol
             max_depth::Int
             max_size::Int
             max_time::Int
             max_enumerations::Int
-        end
-        Base.remove_linenums!(fields)
+        end)
 
+        map!(ex -> processkwarg!(basekwargs, ex), extrafields, extrafields)        
         append!(fields.args, extrafields)
+        
+        constrfields = copy(fields)
+        map!(esc, constrfields.args, constrfields.args)
+        struct_decl = Expr(:struct, mut, esc(head), constrfields)
 
-        struct_decl = Expr(:struct, mut, head, fields)
-
-        keyword_fields = map(kw_ex -> kw_ex.args[1], keywords)
-        required_fields = filter(field -> !in(field, keyword_fields), fields.args)
+        keyword_fields = map(kwex -> kwex.args[1], basekwargs)
+        required_fields = filter(field -> field ∉ keyword_fields && is_field_decl(field), fields.args)
 
         constructor = Expr(:(=), 
-            Expr(:call, name, Expr(:parameters, keywords...), required_fields...), 
-            Expr(:call, name, map(get_field_name, required_fields)..., map(get_field_name, keyword_fields)...)
+            Expr(:call, esc(name), Expr(:parameters, esc.(basekwargs)...), esc.(required_fields)...), 
+            Expr(:call, esc(name), (esc ∘ extractname).(filter(is_field_decl, fields.args))...)
         )
 
-        println(Expr(:block, struct_decl, constructor))
-
-        Expr(:block, struct_decl, constructor)
+        struct_decl, constructor
     end
     _ => throw(ArgumentError("invalid declaration structure for the iterator"))
 end
 
-get_field_name(ex) = if ex isa Symbol return ex
-    else @match ex begin
-        Expr(:(::), ::Symbol, ::Symbol) => ex.args[1]
-        _ => throw(ArgumentError("unexpected field: $ex"))
-    end
+"""
+    extractname(ex)
+
+Extracts the name of a field declaration, otherwise throws an `ArgumentError`.
+A field declaration is of the form `<name>[::<type>]`
+"""
+extractname(ex) = @match ex begin
+    Expr(:(::), name, type) => name
+    name::Symbol            => name
+    _ => throw(ArgumentError("unexpected field: $ex"))
 end
 
-verifyfield!(keywords::Vector{Expr}, ex::Union{Expr, Symbol}) = if ex isa Symbol return ex
-    else @match ex begin
-        Expr(:(::), ::Symbol, ::Symbol) => ex
-        Expr(:kw, ::Symbol, ::Any) => begin
-            push!(keywords, ex)
-            ex.args[1]
-        end
-        _ => throw(ArgumentError("invalid field declaration: $ex"))
+
+"""
+    is_field_decl(ex)
+
+Check if `extractname(ex)` returns a name.
+"""
+is_field_decl(ex) = try extractname(ex)
+    true 
+catch e 
+    if e == ArgumentError("unexpected field: $ex")
+        false
+    else throw(e) end 
+end
+
+
+"""
+    processkwarg!(keywords::Vector{Expr}, ex::Union{Expr, Symbol})
+
+Checks if `ex` has a default value specified, if so it returns only the field declaration, 
+and pushes `ex` to `keywords`. Otherwise it returns `ex`
+"""
+processkwarg!(keywords::Vector{Expr}, ex::Union{Expr, Symbol}) = @match ex begin
+    Expr(:kw, field_decl, ::Any) => begin
+        push!(keywords, ex)
+        field_decl
     end
+    _ => ex
 end
