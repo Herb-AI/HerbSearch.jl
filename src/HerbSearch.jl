@@ -5,8 +5,8 @@ using DataStructures
 using HerbCore
 using HerbGrammar
 using HerbConstraints
-using HerbData
 using HerbInterpret
+using HerbSpecification
 using MLStyle
 
 include("sampling_grammar.jl")
@@ -50,6 +50,9 @@ export
   heuristic_smallest_domain,
 
   synth,
+  SynthResult,
+  optimal_program,
+  suboptimal_program,
 
   TopDownIterator,
   BFSIterator,

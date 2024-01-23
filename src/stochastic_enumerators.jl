@@ -1,5 +1,5 @@
 """
-    get_mh_enumerator(examples::AbstractArray{<:Example}, cost_function::Function, evaluation_function::Function=HerbInterpret.test_with_input)
+    get_mh_enumerator(examples::AbstractArray{<:IOExample}, cost_function::Function, evaluation_function::Function=HerbInterpret.test_with_input)
 
 Returns an enumerator that runs according to the Metropolis Hastings algorithm.
 - `examples` : array of examples
@@ -8,7 +8,7 @@ Returns an enumerator that runs according to the Metropolis Hastings algorithm.
 The propose function is random_fill_propose and the accept function is probabilistic.
 The temperature value of the algorithm remains constant over time. 
 """
-function get_mh_enumerator(examples::AbstractArray{<:Example}, cost_function::Function, evaluation_function::Function=HerbInterpret.test_with_input)
+function get_mh_enumerator(examples::AbstractArray{<:IOExample}, cost_function::Function, evaluation_function::Function=HerbInterpret.test_with_input)
     return (grammar, max_depth, max_size, start_symbol) -> begin
         return StochasticSearchIterator(
             grammar=grammar,

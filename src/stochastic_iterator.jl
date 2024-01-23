@@ -37,7 +37,7 @@ using Random
 # # Fields
 # -   `grammar::ContextSensitiveGrammar` grammar that the algorithm uses
 # -   `max_depth::Int64 = 5`  maximum depth of the program to generate
-# -   `examples::Vector{Example}` example used to check the program
+# -   `examples::Vector{IOExample}` example used to check the program
 # -   `neighbourhood::Function` 
 # -   `propose::Function`
 # -   `accept::Function`
@@ -51,7 +51,7 @@ using Random
 Base.@kwdef struct StochasticSearchIterator <: ProgramIterator
     grammar::ContextSensitiveGrammar
     max_depth::Int64 = 5  # maximum depth of the program that is generated
-    examples::Vector{Example}
+    examples::Vector{IOExample}
     neighbourhood::Function
     propose::Function
     accept::Function
@@ -141,12 +141,12 @@ function get_next_program(current_program::RuleNode, possible_replacements, neig
 end
 
 """
-    calculate_cost(program::RuleNode, cost_function::Function, examples::AbstractVector{Example}, grammar::Grammar, evaluation_function::Function)
+    calculate_cost(program::RuleNode, cost_function::Function, examples::AbstractVector{IOExample}, grammar::Grammar, evaluation_function::Function)
 
 Returns the cost of the `program` using the examples and the `cost_function`. It first convert the program to an expression and
 evaluates it on all the examples using [`HerbInterpret.evaluate_program`](@ref).
 """
-function calculate_cost(program::RuleNode, cost_function::Function, examples::AbstractVector{Example}, grammar::Grammar, evaluation_function::Function)
+function calculate_cost(program::RuleNode, cost_function::Function, examples::AbstractVector{IOExample}, grammar::Grammar, evaluation_function::Function)
     results = HerbInterpret.evaluate_program(program,examples,grammar,evaluation_function)
     return cost_function(results)
 end
