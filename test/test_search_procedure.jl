@@ -8,7 +8,7 @@
 
     @testset "Search" begin
         problem = Problem([IOExample(Dict(:x => x), 2x+1) for x ∈ 1:5])
-        iterator = BFSIterator(g₁, :Number, 5, typemax(Int), typemax(Int), typemax(Int))
+        iterator = BFSIterator(g₁, :Number, max_depth=5)
 
         solution, flag = synth(problem, iterator)
         program = rulenode2expr(solution, g₁)
@@ -19,7 +19,7 @@
     @testset "Search max_enumerations stopping condition" begin
         problem = Problem([IOExample(Dict(:x => x), 2x+1) for x ∈ 1:5])
 
-        iterator = BFSIterator(g₁, :Number, typemax(Int), typemax(Int), typemax(Int), 5)
+        iterator = BFSIterator(g₁, :Number, max_enumerations=5)
         solution, flag = synth(problem, iterator)
 
         @test Int(flag) == 2
@@ -34,7 +34,7 @@
         
         problem = Problem([IOExample(Dict(), x) for x ∈ 1:5])
         iterator = BFSIterator(g₂, :Index, 2, typemax(Int), typemax(Int), typemax(Int))
-        solution, flag = synth(problem, iterator) #@TODO allow_evaluation_errors is broken
+        solution, flag = synth(problem, iterator, allow_evaluation_errors=true)
 
         @test Int(flag) == 2
     end
@@ -70,9 +70,11 @@
         end
         
         problem = Problem([IOExample(Dict(), x) for x ∈ 1:5])
-        solution, error = search_best(g₃, problem, :Index, max_depth=2, allow_evaluation_errors=true)
+        iterator = BFSIterator(g₃, :Index, 2)
+        solution, flag = synth(problem, iterator) 
 
+        println("solution: ", solution)
         @test solution ≡ nothing
-        @test error == typemax(Int)
+        @test flag == suboptimal_program
     end
 end
