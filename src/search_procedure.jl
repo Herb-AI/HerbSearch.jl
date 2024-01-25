@@ -10,7 +10,7 @@ At the moment there are two possible outcomes:
 @enum SynthResult optimal_program=1 suboptimal_program=2
 
 """
-    synth(problem::Problem, iterator::ProgramIterator, evaluator::Function=test_with_input, allow_evaluation_errors::Bool=false)::Union{Tuple{RuleNode, Any}, Nothing}
+    synth(problem::Problem, iterator::ProgramIterator, evaluator::Function=execute_on_input, allow_evaluation_errors::Bool=false)::Union{Tuple{RuleNode, Any}, Nothing}
 
 Synthesize a program that satisfies the maximum number of examples in the problem.
         - problem                 - The problem definition with IO examples

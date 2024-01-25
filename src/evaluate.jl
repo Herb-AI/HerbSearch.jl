@@ -13,17 +13,18 @@ Evaluate the expression on the examples.
 
 Optional parameters:
 
-    - shortcircuit            - Whether to stop evaluating after finding a single example that fails, to speed up the [synth](@ref) procedure. If true, the returned score is an underapproximation of the actual score.
-    - allow_evaluation_errors - Whether the search should crash if an exception is thrown in the evaluation
+    - `shortcircuit` - Whether to stop evaluating after finding single example fails, to speed up the [synth](@ref) procedure. If true, the returned score is an underapproximation of the actual score.
+    - `allow_evaluation_errors` - Whether the search should continue if an exception is thrown in the evaluation or throw the error
+
 Returns a score in the interval [0, 1]
 """
-function evaluate(problem::Problem, expr::Any, symboltable::SymbolTable; shortcircuit::Bool=true, allow_evaluation_errors::Bool=false)::Number
+function evaluate(problem::Problem{Vector{IOExample}}, expr::Any, symboltable::SymbolTable; shortcircuit::Bool=true, allow_evaluation_errors::Bool=false)::Number
     number_of_satisfied_examples = 0
 
     crashed = false
-    for example ∈ problem.examples
+    for example ∈ problem.spec
         try
-            output = test_with_input(symboltable, expr, example.in)
+            output = execute_on_input(symboltable, expr, example.in)
             if (output == example.out)
                 number_of_satisfied_examples += 1
             elseif (shortcircuit)
@@ -40,6 +41,6 @@ function evaluate(problem::Problem, expr::Any, symboltable::SymbolTable; shortci
         end
     end
 
-    return number_of_satisfied_examples/length(problem.examples);
+    return number_of_satisfied_examples/length(problem.spec);
 end
 
