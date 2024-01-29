@@ -23,9 +23,9 @@ macro testmh(expression::String, max_depth=6)
         @testset "mh $($expression)" begin
         e = Meta.parse("x -> $($expression)")
         problem, examples = create_problem(eval(e))
-        enumerator = get_mh_enumerator(examples, mean_squared_error)
-        program, cost = search_best(grammar, problem, :X, enumerator=enumerator, error_function=mse_error_function, max_depth=$max_depth, max_time=MAX_RUNNING_TIME)
-        @test cost == 0
+        iterator = MHSearchIterator(grammar, examples, mean_squared_error)
+        solution, flag = synth(problem, :X, enumerator=enumerator, error_function=mse_error_function, max_depth=$max_depth, max_time=MAX_RUNNING_TIME)
+        @test flag == optimal_program
     end
     )
 end

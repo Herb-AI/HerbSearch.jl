@@ -48,7 +48,7 @@ using Random
 # -   `evaluation_function`::Function that evaluates the julia expressions
 # An iterator over all possible expressions of a grammar up to max_depth with start symbol sym.
 # """
-Base.@kwdef struct StochasticSearchIterator <: ProgramIterator
+abstract type StochasticSearchIterator <: ProgramIterator
     grammar::ContextSensitiveGrammar
     max_depth::Int64 = 5  # maximum depth of the program that is generated
     examples::Vector{IOExample}
@@ -96,12 +96,13 @@ function Base.iterate(iter::StochasticSearchIterator, current_state::IteratorSta
     grammar, examples = iter.grammar, iter.examples
     current_program = current_state.current_program
     
-    current_cost = calculate_cost(current_program, iter.cost_function, examples, grammar, iter.evaluation_function)
+    # current_cost = calculate_cost(current_program, iter.cost_function, examples, grammar, iter.evaluation_function)
+    current_cost = calculate_cost(iter, current_program)
 
-    new_temperature = iter.temperature(current_state.current_temperature)
+    new_temperature = temperature(iter, current_state.current_temperature)
 
     # get the neighbour node location 
-    neighbourhood_node_location, dict = iter.neighbourhood(current_state.current_program, grammar)
+    neighbourhood_node_location, dict = neighbourhood(iter, current_state.current_program)
 
     # get the subprogram pointed by node-location
     subprogram = get(current_program, neighbourhood_node_location)
@@ -111,15 +112,15 @@ function Base.iterate(iter::StochasticSearchIterator, current_state::IteratorSta
             temp $new_temperature"
 
     # propose new programs to consider. They are programs to put in the place of the nodelocation
-    possible_replacements = iter.propose(current_program, neighbourhood_node_location, grammar, iter.max_depth, current_state.dmap, dict)
+    possible_replacements = propose(iter, current_program, neighbourhood_node_location, current_state.dmap, dict)
     
-    next_program = get_next_program(current_program, possible_replacements, neighbourhood_node_location, new_temperature, iter, current_cost)
+    next_program = get_next_program(iter, current_program, possible_replacements, neighbourhood_node_location, new_temperature, current_cost)
     next_state = IteratorState(next_program,new_temperature,current_state.dmap)
     return (next_program, next_state)
 end
 
 
-function get_next_program(current_program::RuleNode, possible_replacements, neighbourhood_node_location::NodeLoc, new_temperature, iter::StochasticSearchIterator, current_cost)
+function get_next_program(iter::StochasticSearchIterator, current_program::RuleNode, possible_replacements, neighbourhood_node_location::NodeLoc, new_temperature, current_cost)
     next_program = deepcopy(current_program)
     possible_program = current_program
     for possible_replacement in possible_replacements
@@ -130,8 +131,8 @@ function get_next_program(current_program::RuleNode, possible_replacements, neig
             # update current_program with the subprogram generated
             neighbourhood_node_location.parent.children[neighbourhood_node_location.i] = possible_replacement
         end
-        program_cost = calculate_cost(possible_program, iter.cost_function, iter.examples, iter.grammar, iter.evaluation_function)
-        if iter.accept(current_cost, program_cost, new_temperature) 
+        program_cost = calculate_cost(iter, possible_program)
+        if accept(iter, current_cost, program_cost, new_temperature) 
             next_program = deepcopy(possible_program)
             current_cost = program_cost
         end
@@ -141,12 +142,103 @@ function get_next_program(current_program::RuleNode, possible_replacements, neig
 end
 
 """
-    calculate_cost(program::RuleNode, cost_function::Function, examples::AbstractVector{IOExample}, grammar::Grammar, evaluation_function::Function)
+    _calculate_cost(program::RuleNode, cost_function::Function, spec::AbstractVector{IOExample}, grammar::Grammar, evaluation_function::Function)
 
-Returns the cost of the `program` using the examples and the `cost_function`. It first convert the program to an expression and
-evaluates it on all the examples using [`HerbInterpret.evaluate_program`](@ref).
+Returns the cost of the `program` using the examples and the `cost_function`. It first convert the program to an expression and evaluates it on all the examples.
 """
-function calculate_cost(program::RuleNode, cost_function::Function, examples::AbstractVector{IOExample}, grammar::Grammar, evaluation_function::Function)
-    results = HerbInterpret.evaluate_program(program,examples,grammar,evaluation_function)
+function _calculate_cost(program::RuleNode, cost_function::Function, spec::AbstractVector{IOExample}, grammar::Grammar, evaluation_function::Function)
+    results = Tuple{<:Number,<:Number}[]
+
+    expr = rulenode2expr(program, grammar)
+    symbol_table = SymbolTable(grammar)
+
+    for example ∈ filter(e -> e isa IOExample, spec)
+        outcome = evaluation_function(symbol_table, expression, example.in)
+        push!(results, (example.out, outcome))
+    end
+
     return cost_function(results)
 end
+
+"""
+    calculate_cost(iter::StochasticSearchIterator, program::RuleNode)
+
+Wrapper around [`_calculate_cost`](@ref)
+"""
+calculate_cost(iter::StochasticSearchIterator, program::RuleNode) = _calculate_cost(program, iter.cost_function, iter.examples, iter.grammar, iter.evaluation_function)
+
+"""
+    MHSearchIterator(examples::AbstractArray{<:IOExample}, cost_function::Function, evaluation_function::Function=HerbInterpret.execute_on_input)
+
+Returns an enumerator that runs according to the Metropolis Hastings algorithm.
+- `examples` : array of examples
+- `cost_function` : cost function to evaluate the programs proposed
+- `evaluation_function` : evaluation function that evaluates the program generated and produces an output
+The propose function is random_fill_propose and the accept function is probabilistic.
+The temperature value of the algorithm remains constant over time.
+"""
+MHSearchIterator(examples::AbstractArray{<:IOExample}, cost_function::Function, evaluation_function::Function=HerbInterpret.execute_on_input) = StochasticSearchIterator(
+            grammar=grammar,
+            examples=examples,
+            max_depth=max_depth,
+            neighbourhood=constructNeighbourhood,
+            propose=random_fill_propose,
+            temperature=const_temperature,
+            accept=probabilistic_accept,
+            cost_function=cost_function,
+            start_symbol=start_symbol,
+            evaluation_function=evaluation_function)
+
+@programiterator MHSearchIterator() <: StochasticSearchIterator
+
+
+"""
+    VLSNSearchIterator(examples, cost_function, enumeration_depth = 2, evaluation_function::Function=HerbInterpret.execute_on_input) = StochasticSearchIterator(
+
+Returns an iterator that runs according to the Very Large Scale Neighbourhood Search algorithm.
+- `examples` : array of examples
+- `cost_function` : cost function to evaluate the programs proposed
+- `enumeration_depth` : the enumeration depth to search for a best program at a time
+- `evaluation_function` : evaluation function that evaluates the program generated and produces an output
+The propose function consists of all possible programs of the given `enumeration_depth`. The accept function accepts the program
+with the lowest cost according to the `cost_function`.
+The temperature value of the algorithm remains constant over time.
+"""
+VLSNSearchIterator(examples, cost_function, enumeration_depth = 2, evaluation_function::Function=HerbInterpret.execute_on_input) = StochasticSearchIterator(
+            grammar=grammar,
+            examples=examples,
+            max_depth=max_depth,
+            neighbourhood=constructNeighbourhood,
+            propose=enumerate_neighbours_propose(enumeration_depth),
+            temperature=const_temperature,
+            accept=best_accept,
+            cost_function=cost_function,
+            start_symbol=start_symbol,
+            evaluation_function = evaluation_function)
+
+
+"""
+    SASearchIterator(examples, cost_function, initial_temperature=1, temperature_decreasing_factor = 0.99, evaluation_function::Function=HerbInterpret.execute_on_input)
+
+
+Returns an enumerator that runs according to the Simulated Annealing Search algorithm.
+- `examples` : array of examples
+- `cost_function` : cost function to evaluate the programs proposed
+- `initial_temperature` : the starting temperature of the algorithm
+- `temperature_decreasing_factor` : the decreasing factor of the temperature of the time
+- `evaluation_function` : evaluation function that evaluates the program generated and produces an output
+The propose function is `random_fill_propose` (the same as for Metropolis Hastings). The accept function is probabilistic
+but takes into account the tempeerature too.
+"""
+SASearchIterator(examples, cost_function, initial_temperature=1, temperature_decreasing_factor = 0.99, evaluation_function::Function=HerbInterpret.execute_on_input) = StochasticSearchIterator(
+            grammar=grammar,
+            examples=examples,
+            max_depth=max_depth,
+            neighbourhood=constructNeighbourhood,
+            propose=random_fill_propose,
+            temperature=decreasing_temperature(temperature_decreasing_factor),
+            accept=probabilistic_accept_with_temperature,
+            cost_function=cost_function,
+            start_symbol=start_symbol,
+            initial_temperature=initial_temperature,
+            evaluation_function = evaluation_function)

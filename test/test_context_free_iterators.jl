@@ -92,7 +92,7 @@
       Real = 1 | 2
       Real = Real * Real
     end
-    programs = collect(get_bfs_enumerator(g1, 2, typemax(Int), :Real))
+    programs = collect(BFSIterator(g1, :Real, max_depth=2))
     @test all(map(t -> depth(t[1]) ≤ depth(t[2]), zip(programs[begin:end-1], programs[begin+1:end])))
     
     answer_programs = [
@@ -114,7 +114,7 @@
       Real = 1 | 2
       Real = Real * Real
     end
-    programs = collect(get_dfs_enumerator(g1, 2, typemax(Int), :Real))
+    programs = collect(DFSIterator(g1, :Real, max_depth=2))
     @test length(programs) == count_expressions(g1, 2, typemax(Int), :Real)
   end
 
@@ -125,7 +125,7 @@
       0.3 : Real = Real * Real 
     end
   
-    programs = collect(get_most_likely_first_enumerator(g₁, 2, typemax(Int), :Real))
+    programs = collect(MLFSIterator(g₁, :Real, max_depth=2))
     @test length(programs) == count_expressions(g₁, 2, typemax(Int), :Real)
     @test all(map(t -> rulenode_log_probability(t[1], g₁) ≥ rulenode_log_probability(t[2], g₁), zip(programs[begin:end-1], programs[begin+1:end])))
   end

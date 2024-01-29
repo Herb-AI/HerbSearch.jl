@@ -22,7 +22,7 @@
         iterator = BFSIterator(g₁, :Number, max_enumerations=5)
         solution, flag = synth(problem, iterator)
 
-        @test Int(flag) == 2
+        @test flag == suboptimal_program
     end
 
     @testset "Search with errors in evaluation" begin
@@ -33,33 +33,34 @@
         end
         
         problem = Problem([IOExample(Dict(), x) for x ∈ 1:5])
-        iterator = BFSIterator(g₂, :Index, 2, typemax(Int), typemax(Int), typemax(Int))
+        iterator = BFSIterator(g₂, :Index, max_depth=2)
         solution, flag = synth(problem, iterator, allow_evaluation_errors=true)
 
-        @test Int(flag) == 2
+        @test flag == suboptimal_program
     end
 
     @testset "Best search" begin
         problem = Problem(push!([IOExample(Dict(:x => x), 2x+1) for x ∈ 1:5], IOExample(Dict(:x => 5), 15)))
-        iterator = BFSIterator(g₁, :Number, 3, typemax(Int), typemax(Int), typemax(Int))
+        iterator = BFSIterator(g₁, :Number, max_depth=3)
 
         solution, flag = synth(problem, iterator)
         program = rulenode2expr(solution, g₁)
 
-        @test Int(flag) = 2
+        @test flag == suboptimal_program
         @test execute_on_input(SymbolTable(g₁), program, Dict(:x => 6)) == 2*6+1
 
     end
 
     @testset "Search_best max_enumerations stopping condition" begin
         problem = Problem([IOExample(Dict(:x => x), 2x-1) for x ∈ 1:5])
-        iterator = BFSIterator(g₁, :Number, typemax(Int), typemax(Int), typemax(Int), 2)
+        iterator = BFSIterator(g₁, :Number, max_enumerations=3)
 
         solution, flag = synth(problem, iterator)
         program = rulenode2expr(solution, g₁)
 
-        @test solution == 1
-        @test Int(flag) == 2
+
+        @test program == :x
+        @test flag == suboptimal_program
     end
 
     @testset "Search_best with errors in evaluation" begin
@@ -70,11 +71,10 @@
         end
         
         problem = Problem([IOExample(Dict(), x) for x ∈ 1:5])
-        iterator = BFSIterator(g₃, :Index, 2)
-        solution, flag = synth(problem, iterator) 
+        iterator = BFSIterator(g₃, :Index, max_depth=2)
+        solution, flag = synth(problem, iterator, allow_evaluation_errors=true) 
 
-        println("solution: ", solution)
-        @test solution ≡ nothing
+        @test solution == RuleNode(3, [RuleNode(2), RuleNode(1)])
         @test flag == suboptimal_program
     end
 end

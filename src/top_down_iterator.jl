@@ -26,7 +26,7 @@ function priority_function(
     parent_value::Union{Real, Tuple{Vararg{Real}}}
 )
     #the default priority function is the bfs priority function
-    priority_function(BreadthFirstSearchStrategy, g, tree, parent_value);
+    priority_function(BFSIterator, g, tree, parent_value);
 end
 
 """

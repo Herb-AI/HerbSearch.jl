@@ -28,7 +28,6 @@ include("stochastic_functions/neighbourhood.jl")
 include("stochastic_functions/propose.jl")
 include("stochastic_functions/accept.jl")
 include("stochastic_functions/temperature.jl")
-include("stochastic_enumerators.jl")
 
 include("genetic_functions/fitness.jl")
 include("genetic_functions/mutation.jl")
@@ -58,6 +57,10 @@ export
   BFSIterator,
   DFSIterator,
   MLFSIterator
+
+  MHSearchIterator,
+  VLSNSearchIterator,
+  SASearchIterator,
 
   misclassification,
   mutate_random!,
