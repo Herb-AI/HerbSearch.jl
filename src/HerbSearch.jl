@@ -22,8 +22,8 @@ include("stochastic_iterator.jl")
 include("evaluate.jl")
 
 include("search_procedure.jl")
-include("stochastic_functions/cost_functions.jl")
 
+include("stochastic_functions/cost_functions.jl")
 include("stochastic_functions/neighbourhood.jl")
 include("stochastic_functions/propose.jl")
 include("stochastic_functions/accept.jl")
@@ -56,15 +56,18 @@ export
   TopDownIterator,
   BFSIterator,
   DFSIterator,
-  MLFSIterator
+  MLFSIterator,
 
   MHSearchIterator,
   VLSNSearchIterator,
   SASearchIterator,
 
+  mean_squared_error,
   misclassification,
-  mutate_random!,
-  crossover_swap_children_2,
+
+  GeneticSearchIterator,
+  misclassification,
+  validate_iterator,
   sample,
   rand
 end # module HerbSearch

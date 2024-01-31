@@ -18,6 +18,6 @@ Random.seed!(1234)
     include("test_sampling.jl")
     include("test_stochastic_functions.jl")
     include("test_stochastic_algorithms.jl")
-    # include("test_genetic.jl")
+    include("test_genetic.jl")
     include("test_programiterator_macro.jl")
 end

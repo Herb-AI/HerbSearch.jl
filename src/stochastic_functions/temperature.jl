@@ -4,13 +4,13 @@ between exploration and exploitation. Higher temperature values implies more exp
 """
 
 """
-    const_temperature(current_temperature)
+    const_temperature(current_temperature::Real)
 
 Returns the temperature unchanged. This function is used by Metropolis Hastings and Very Large Neighbourhood Search algorithms.
 # Arguments
 - `current_temperature::Real`: the current temperature of the search.
 """
-function const_temperature(current_temperature)
+function const_temperature(current_temperature::Real)
     return current_temperature
 end
 
