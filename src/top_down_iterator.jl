@@ -51,7 +51,11 @@ function hole_heuristic(::TopDownIterator, node::AbstractRuleNode, max_depth::In
 end
 
 
-# Iterator that will yield trees in the grammar in increasing order of size.
+Base.@doc """
+    @programiterator BFSIterator() <: TopDownIterator
+
+Returns a breadth-first iterator given a grammar and a starting symbol. Returns trees in the grammar in increasing order of size. Inherits all stop-criteria from TopDownIterator.
+""" BFSIterator
 @programiterator BFSIterator() <: TopDownIterator
 
 """
@@ -69,7 +73,11 @@ function priority_function(
 end
 
 
-# Iterator that will yield trees in the grammar in decreasing order of size.
+Base.@doc """
+    @programiterator DFSIterator() <: TopDownIterator
+
+Returns a depth-first search enumerator given a grammar and a starting symbol. Returns trees in the grammar in decreasing order of size. Inherits all stop-criteria from TopDownIterator.
+""" DFSIterator
 @programiterator DFSIterator() <: TopDownIterator
 
 """
@@ -87,7 +95,11 @@ function priority_function(
 end
 
 
-# Iterator that enumerates expressions in the grammar in decreasing order of probability (Only use this iterator with probabilistic grammars).
+Base.@doc """
+    @programiterator MLFSIterator() <: TopDownIterator
+
+Iterator that enumerates expressions in the grammar in decreasing order of probability (Only use this iterator with probabilistic grammars). Inherits all stop-criteria from TopDownIterator.
+""" MLFSIterator
 @programiterator MLFSIterator() <: TopDownIterator
 
 """
