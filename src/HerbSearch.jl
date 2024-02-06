@@ -5,7 +5,7 @@ using DataStructures
 using HerbCore
 using HerbGrammar
 using HerbConstraints
-using HerbData
+using HerbSpecification
 using HerbInterpret
 
 include("sampling_grammar.jl")

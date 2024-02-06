@@ -9,12 +9,12 @@ Base.showerror(io::IO, e::EvaluationError) = print(io, "An exception was thrown 
 
 
 """
-    search_rulenode(g::Grammar, problem::Problem, start::Symbol; evaluator::Function=test_with_input, enumerator::Function=get_bfs_enumerator, max_depth::Union{Int, Nothing}=nothing, max_size::Union{Int, Nothing}=nothing, max_time::Union{Int, Nothing}=nothing, max_enumerations::Union{Int, Nothing}=nothing, allow_evaluation_errors::Bool=false, mod::Module=Main)::Union{Tuple{RuleNode, Any}, Nothing}
+    search_rulenode(g::Grammar, problem::Problem, start::Symbol; evaluator::Function=execute_on_input, enumerator::Function=get_bfs_enumerator, max_depth::Union{Int, Nothing}=nothing, max_size::Union{Int, Nothing}=nothing, max_time::Union{Int, Nothing}=nothing, max_enumerations::Union{Int, Nothing}=nothing, allow_evaluation_errors::Bool=false, mod::Module=Main)::Union{Tuple{RuleNode, Any}, Nothing}
 
 Searches the grammar for the program that satisfies the maximum number of examples in the problem.
     
         - g                 - The grammar that defines the search space
-        - problem           - The problem definition with IO examples
+        - problem           - The problem definition with an AbstractSpecification
         - start             - The start symbol in the grammar
         - evaluator         - The evaluation function. Takes a SymbolTable, expression and a dictionary with 
                               input variable assignments and returns the output of the expression.
@@ -32,7 +32,7 @@ function search_rulenode(
     g::Grammar, 
     problem::Problem, 
     start::Symbol; 
-    evaluator::Function=test_with_input, 
+    evaluator::Function=execute_on_input, 
     enumerator::Function=get_bfs_enumerator,
     max_depth::Union{Int, Nothing}=nothing,
     max_size::Union{Int, Nothing}=nothing,
@@ -58,12 +58,12 @@ function search_rulenode(
         # Create expression from rulenode representation of AST
         expr = rulenode2expr(h, g)
 
-        # Evaluate the examples. 
+        # Evaluate the specifcation. 
 #         # `all` shortcircuits, so not every example will be evaluated in every iteration. 
-#         if all(example.out == evaluator(symboltable, expr, example.in) for example ∈ problem.examples)
+#         if all(example.out == evaluator(symboltable, expr, example.in) for example ∈ problem.spec)
 #             return (h, expr)
         falsified = false
-        for example ∈ problem.examples
+        for example ∈ problem.spec
             # Evaluate the example, making sure that any exceptions are caught
             try
                 output = evaluator(symboltable, expr, example.in)
@@ -93,12 +93,12 @@ end
 
 
 """
-    search(g::Grammar, problem::Problem, start::Symbol; evaluator::Function=test_with_input, enumerator::Function=get_bfs_enumerator, max_depth::Union{Int, Nothing}=nothing, max_size::Union{Int, Nothing}=nothing, max_time::Union{Int, Nothing}=nothing, max_enumerations::Union{Int, Nothing}=nothing, allow_evaluation_errors::Bool=false, mod::Module=Main)::Union{Any, Nothing}
+    search(g::Grammar, problem::Problem, start::Symbol; evaluator::Function=execute_on_input, enumerator::Function=get_bfs_enumerator, max_depth::Union{Int, Nothing}=nothing, max_size::Union{Int, Nothing}=nothing, max_time::Union{Int, Nothing}=nothing, max_enumerations::Union{Int, Nothing}=nothing, allow_evaluation_errors::Bool=false, mod::Module=Main)::Union{Any, Nothing}
 
 Searches for a program by calling [`search_rulenode`](@ref) starting from [`Symbol`](@ref) `start` guided by `enumerator` and [`Grammar`](@ref) trying to satisfy  the higher-order constraints in form of input/output examples defined in the [`Problem`](@ref).
     
     - g                 - The grammar that defines the search space
-    - problem           - The problem definition with IO examples
+    - problem           - The problem definition with an AbstractSpecification
     - start             - The start symbol in the grammar
     - evaluator         - The evaluation function. Takes a SymbolTable, expression and a dictionary with 
                           input variable assignments and returns the output of the expression.
@@ -117,7 +117,7 @@ function search(
     g::Grammar, 
     problem::Problem, 
     start::Symbol; 
-    evaluator::Function=test_with_input, 
+    evaluator::Function=execute_on_input, 
     enumerator::Function=get_bfs_enumerator,
     max_depth::Union{Int, Nothing}=nothing,
     max_size::Union{Int, Nothing}=nothing,
@@ -172,14 +172,14 @@ mse_error_function(old_error, output, expected_output) = old_error + (output - e
 
 
 """
-    search_best(g::Grammar, problem::Problem, start::Symbol; evaluator::Function=test_with_input, enumerator::Function=get_bfs_enumerator, error_function::Function=default_error_function, max_depth::Union{Int, Nothing}=nothing, max_size::Union{Int, Nothing}=nothing, max_time::Union{Int, Nothing}=nothing, max_enumerations::Union{Int, Nothing}=nothing, allow_evaluation_errors::Bool=false, mod::Module=Main)::Tuple{Any, Real}
+    search_best(g::Grammar, problem::Problem, start::Symbol; evaluator::Function=execute_on_input, enumerator::Function=get_bfs_enumerator, error_function::Function=default_error_function, max_depth::Union{Int, Nothing}=nothing, max_size::Union{Int, Nothing}=nothing, max_time::Union{Int, Nothing}=nothing, max_enumerations::Union{Int, Nothing}=nothing, allow_evaluation_errors::Bool=false, mod::Module=Main)::Tuple{Any, Real}
 
 Searches the grammar for the program that satisfies the maximum number of examples in the problem.
 The evaluator should be a function that takes a SymbolTable, expression and a dictionary with 
     input variable assignments and returns the output of the expression.
 
     - g                 - The grammar that defines the search space
-    - problem           - The problem definition with IO examples
+    - problem           - The problem definition with an AbstractSpecification
     - start             - The start symbol in the grammar
     - evaluator         - The evaluation function. Takes a SymbolTable, expression and a dictionary with 
                           input variable assignments and returns the output of the expression.
@@ -196,9 +196,9 @@ Can be considerably slower than `search` due to having to evaluate each expressi
 """
 function search_best(
         g::Grammar, 
-        problem::Problem, 
+        problem::HerbSpecification.Problem, 
         start::Symbol;
-        evaluator::Function=test_with_input, 
+        evaluator::Function=execute_on_input, 
         enumerator::Function=get_bfs_enumerator,
         error_function::Function=default_error_function,
         max_depth::Union{Int, Nothing}=nothing,
@@ -230,7 +230,7 @@ function search_best(
         # Evaluate the expression on the examples
         total_error = 0
         crashed = false
-        for example ∈ problem.examples
+        for example ∈ problem.spec
             try
                 output = evaluator(symboltable, expr, example.in)
                 total_error = error_function(total_error, output, example.out)

@@ -37,7 +37,7 @@ Returns the cost of the current program. It receives a list of tuples `(expected
 # Fields
 -   `grammar::ContextSensitiveGrammar` grammar that the algorithm uses
 -   `max_depth::Int64 = 5`  maximum depth of the program to generate
--   `examples::Vector{Example}` example used to check the program
+-   `spec::AbstractSpecification}` example used to check the program
 -   `neighbourhood::Function` 
 -   `propose::Function`
 -   `accept::Function`
@@ -51,7 +51,7 @@ An iterator over all possible expressions of a grammar up to max_depth with star
 Base.@kwdef struct StochasticSearchEnumerator <: ExpressionIterator
     grammar::ContextSensitiveGrammar
     max_depth::Int64 = 5  # maximum depth of the program that is generated
-    examples::Vector{Example}
+    spec::AbstractSpecification
     neighbourhood::Function
     propose::Function
     accept::Function
@@ -93,10 +93,10 @@ The algorithm that constructs the iterator of StochasticSearchEnumerator. It has
 5. return the new next_program
 """
 function Base.iterate(iter::StochasticSearchEnumerator, current_state::IteratorState)
-    grammar, examples = iter.grammar, iter.examples
+    grammar, spec = iter.grammar, iter.spec
     current_program = current_state.current_program
     
-    current_cost = calculate_cost(current_program, iter.cost_function, examples, grammar, iter.evaluation_function)
+    current_cost = calculate_cost(current_program, iter.cost_function, spec, grammar, iter.evaluation_function)
 
     new_temperature = iter.temperature(current_state.current_temperature)
 
@@ -130,7 +130,7 @@ function get_next_program(current_program::RuleNode, possible_replacements, neig
             # update current_program with the subprogram generated
             neighbourhood_node_location.parent.children[neighbourhood_node_location.i] = possible_replacement
         end
-        program_cost = calculate_cost(possible_program, iter.cost_function, iter.examples, iter.grammar, iter.evaluation_function)
+        program_cost = calculate_cost(possible_program, iter.cost_function, iter.spec, iter.grammar, iter.evaluation_function)
         if iter.accept(current_cost, program_cost, new_temperature) 
             next_program = deepcopy(possible_program)
             current_cost = program_cost
@@ -141,12 +141,12 @@ function get_next_program(current_program::RuleNode, possible_replacements, neig
 end
 
 """
-    calculate_cost(program::RuleNode, cost_function::Function, examples::AbstractVector{Example}, grammar::Grammar, evaluation_function::Function)
+    calculate_cost(program::RuleNode, cost_function::Function, spec::AbstractSpecification, grammar::Grammar, evaluation_function::Function)
 
 Returns the cost of the `program` using the examples and the `cost_function`. It first convert the program to an expression and
 evaluates it on all the examples using [`HerbInterpret.evaluate_program`](@ref).
 """
-function calculate_cost(program::RuleNode, cost_function::Function, examples::AbstractVector{Example}, grammar::Grammar, evaluation_function::Function)
-    results = HerbInterpret.evaluate_program(program,examples,grammar,evaluation_function)
+function calculate_cost(program::RuleNode, cost_function::Function, spec::AbstractSpecification, grammar::Grammar, evaluation_function::Function)
+    results = HerbInterpret.evaluate_program(program,spec,grammar,evaluation_function)
     return cost_function(results)
 end

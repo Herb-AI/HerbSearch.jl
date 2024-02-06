@@ -19,7 +19,7 @@
         problem = Problem(examples)
         solution = search(g₁, problem, :Element, max_depth=3)
 
-        @test test_with_input(SymbolTable(g₁), solution, Dict(:x => -2)) == 4
+        @test execute_on_input(SymbolTable(g₁), solution, Dict(:x => -2)) == 4
     end
 
     @testset "Small domain, large operators" begin
@@ -46,7 +46,7 @@
         problem = Problem(examples)
         solution = search(g₂, problem, :Element)
 
-        @test test_with_input(SymbolTable(g₂), solution, Dict(:x => 0)) == 4
+        @test execute_on_input(SymbolTable(g₂), solution, Dict(:x => 0)) == 4
     end
 
     @testset "Large domain, small operators" begin
@@ -69,8 +69,8 @@
         problem = Problem(examples)
         solution = search(g₃, problem, :Element)
 
-        @test test_with_input(SymbolTable(g₃), solution, Dict(:x => 0)) == 1
-        @test test_with_input(SymbolTable(g₃), solution, Dict(:x => 100)) == 101
+        @test execute_on_input(SymbolTable(g₃), solution, Dict(:x => 0)) == 1
+        @test execute_on_input(SymbolTable(g₃), solution, Dict(:x => 100)) == 101
     end
 
     @testset "Large domain, large operators" begin
@@ -97,7 +97,7 @@
         problem = Problem(examples)
         solution = search(g₄, problem, :Element)
 
-        @test test_with_input(SymbolTable(g₄), solution, Dict(:x => 100)) == 418
+        @test execute_on_input(SymbolTable(g₄), solution, Dict(:x => 100)) == 418
     end
 
     @testset "Large domain with if-statements" begin
@@ -132,6 +132,6 @@
         problem = Problem(examples)
         solution = search(g₅, problem, :Element)
 
-        @test test_with_input(SymbolTable(g₅), solution, Dict(:x => 3)) == 5
+        @test execute_on_input(SymbolTable(g₅), solution, Dict(:x => 3)) == 5
     end    
 end

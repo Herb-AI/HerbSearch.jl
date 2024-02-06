@@ -14,7 +14,7 @@ Defines an [`ExpressionIterator`](@ref) using genetic search.
 Consists of:
 
 - `grammar::ContextSensitiveGrammar`: the grammar to search over
-- `examples::Vector{<:Example}`: a collection of examples defining the specification 
+- `spec::AbstractSpecification`: a collection of examples defining the specification 
 
 - `fitness::FitnessFunction`: assigns a numerical value (fitness score) to each individual based on how closely it meets the desired objective
 - `cross_over::CrossOverFunction`: combines the program from two parent individuals to create one or more offspring individuals
@@ -30,7 +30,7 @@ end
 """
 Base.@kwdef struct GeneticSearchIterator{FitnessFunction,CrossOverFunction,MutationFunction,SelectParentsFunction,EvaluationFunction} <: ExpressionIterator
     grammar::ContextSensitiveGrammar
-    examples::Vector{<:Example}
+    spec::AbstractSpecification
 
     fitness::FitnessFunction
     cross_over::CrossOverFunction
@@ -96,7 +96,7 @@ function get_best_program(population::Array{RuleNode}, iter:: GeneticSearchItera
     best_fitness = 0
     for index ∈ eachindex(population)
         chromosome = population[index]
-        fitness_value = iter.fitness(chromosome, HerbInterpret.evaluate_program(chromosome, iter.examples, iter.grammar, iter.evaluation_function))
+        fitness_value = iter.fitness(chromosome, HerbInterpret.evaluate_program(chromosome, iter.spec, iter.grammar, iter.evaluation_function))
         if isnothing(best_program) 
             best_fitness = fitness_value
             best_program = chromosome
@@ -140,7 +140,7 @@ function Base.iterate(iter::GeneticSearchIterator, current_state::GeneticIterato
     current_population = current_state.population
 
     # Calculate fitness
-    fitness_array = [iter.fitness(chromosome, HerbInterpret.evaluate_program(chromosome, iter.examples, iter.grammar, iter.evaluation_function)) for chromosome in current_population]
+    fitness_array = [iter.fitness(chromosome, HerbInterpret.evaluate_program(chromosome, iter.spec, iter.grammar, iter.evaluation_function)) for chromosome in current_population]
     
     new_population = Vector{RuleNode}(undef,iter.population_size)
 

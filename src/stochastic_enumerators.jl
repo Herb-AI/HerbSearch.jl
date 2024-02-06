@@ -1,18 +1,18 @@
 """
-    get_mh_enumerator(examples::AbstractArray{<:Example}, cost_function::Function, evaluation_function::Function=HerbInterpret.test_with_input)
+    get_mh_enumerator(spec::AbstractSpecification, cost_function::Function, evaluation_function::Function=HerbInterpret.execute_on_input)
 
 Returns an enumerator that runs according to the Metropolis Hastings algorithm.
-- `examples` : array of examples
+- `spec` : AbstractSpecification, could be an array of IOexamples
 - `cost_function` : cost function to evaluate the programs proposed
 - `evaluation_function` : evaluation function that evaluates the program generated and produces an output 
 The propose function is random_fill_propose and the accept function is probabilistic.
 The temperature value of the algorithm remains constant over time. 
 """
-function get_mh_enumerator(examples::AbstractArray{<:Example}, cost_function::Function, evaluation_function::Function=HerbInterpret.test_with_input)
+function get_mh_enumerator(spec::AbstractSpecification, cost_function::Function, evaluation_function::Function=execute_on_input)
     return (grammar, max_depth, max_size, start_symbol) -> begin
         return StochasticSearchEnumerator(
             grammar=grammar,
-            examples=examples,
+            spec=spec,
             max_depth=max_depth,
             neighbourhood=constructNeighbourhood,
             propose=random_fill_propose,
@@ -27,10 +27,10 @@ function get_mh_enumerator(examples::AbstractArray{<:Example}, cost_function::Fu
 end
 
 """
-    get_vlsn_enumerator(examples, cost_function, enumeration_depth = 2, evaluation_function::Function=HerbInterpret.test_with_input)
+    get_vlsn_enumerator(spec, cost_function, enumeration_depth = 2, evaluation_function::Function=HerbInterpret.execute_on_input)
 
 Returns an enumerator that runs according to the Very Large Scale Neighbourhood Search algorithm.
-- `examples` : array of examples
+- `spec` :AbstractSpecification, could be an array of IOexamples
 - `cost_function` : cost function to evaluate the programs proposed
 - `enumeration_depth` : the enumeration depth to search for a best program at a time
 - `evaluation_function` : evaluation function that evaluates the program generated and produces an output 
@@ -38,11 +38,11 @@ The propose function consists of all possible programs of the given `enumeration
 with the lowest cost according to the `cost_function`.
 The temperature value of the algorithm remains constant over time. 
 """
-function get_vlsn_enumerator(examples, cost_function, enumeration_depth = 2, evaluation_function::Function=HerbInterpret.test_with_input)
+function get_vlsn_enumerator(spec, cost_function, enumeration_depth = 2, evaluation_function::Function=execute_on_input)
     return (grammar, max_depth, max_size, start_symbol) -> begin
         return StochasticSearchEnumerator(
             grammar=grammar,
-            examples=examples,
+            spec=spec,
             max_depth=max_depth,
             neighbourhood=constructNeighbourhood,
             propose=enumerate_neighbours_propose(enumeration_depth),
@@ -56,10 +56,10 @@ function get_vlsn_enumerator(examples, cost_function, enumeration_depth = 2, eva
 end
 
 """
-    get_sa_enumerator(examples, cost_function, initial_temperature=1, temperature_decreasing_factor = 0.99, evaluation_function::Function=HerbInterpret.test_with_input)
+    get_sa_enumerator(spec, cost_function, initial_temperature=1, temperature_decreasing_factor = 0.99, evaluation_function::Function=HerbInterpret.execute_on_input)
 
 Returns an enumerator that runs according to the Very Large Scale Neighbourhood Search algorithm.
-- `examples` : array of examples
+- `spec` : AbstractSpecification, could be an array of IOexamples
 - `cost_function` : cost function to evaluate the programs proposed
 - `initial_temperature` : the starting temperature of the algorithm
 - `temperature_decreasing_factor` : the decreasing factor of the temperature of the time
@@ -67,11 +67,11 @@ Returns an enumerator that runs according to the Very Large Scale Neighbourhood 
 The propose function is `random_fill_propose` (the same as for Metropolis Hastings). The accept function is probabilistic
 but takes into account the tempeerature too.
 """
-function get_sa_enumerator(examples, cost_function, initial_temperature=1, temperature_decreasing_factor = 0.99, evaluation_function::Function=HerbInterpret.test_with_input)
+function get_sa_enumerator(spec, cost_function, initial_temperature=1, temperature_decreasing_factor = 0.99, evaluation_function::Function=execute_on_input)
     return (grammar, max_depth, max_size, start_symbol) -> begin
         return StochasticSearchEnumerator(
             grammar=grammar,
-            examples=examples,
+            spec=spec,
             max_depth=max_depth,
             neighbourhood=constructNeighbourhood,
             propose=random_fill_propose,
