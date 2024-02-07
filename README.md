@@ -10,7 +10,7 @@ For full documentation please see the [`Herb.jl` documentation](https://herb-ai.
 ## Getting started
 For a quick tutorial on how to get started with using `HerbSearch.jl` have a look at our [introductory tutorial](https://herb-ai.github.io/Herb.jl/dev/get_started/) or [Advanced search procedures](https://herb-ai.github.io/Herb.jl/dev/tutorials/advanced_search/).
 
-If you want help developing this project, initialize the project with 
+If you want to help developing this project, initialize the project with 
 ```shell
 julia --project=. -e 'using Pkg; Pkg.instantiate()'
 ```
