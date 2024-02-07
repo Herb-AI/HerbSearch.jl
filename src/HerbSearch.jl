@@ -17,12 +17,12 @@ include("count_expressions.jl")
 include("heuristics.jl")
 
 include("top_down_iterator.jl")
-include("stochastic_iterator.jl")
 
 include("evaluate.jl")
 
 include("search_procedure.jl")
 
+include("stochastic_iterator.jl")
 include("stochastic_functions/cost_functions.jl")
 include("stochastic_functions/neighbourhood.jl")
 include("stochastic_functions/propose.jl")
@@ -34,7 +34,6 @@ include("genetic_functions/mutation.jl")
 include("genetic_functions/crossover.jl")
 include("genetic_functions/select_parents.jl")
 include("genetic_search_iterator.jl")
-include("genetic_enumerators.jl")
 
 export 
   count_expressions,

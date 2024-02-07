@@ -28,7 +28,7 @@ end
     population_size::Int64=10, 
     mutation_probability::Float64=0.1, 
     maximum_initial_population_depth::Int64=3
-   ) <: ProgramIterator
+   )
 
 """
     fitness(::GeneticSearchIterator, program, results)
