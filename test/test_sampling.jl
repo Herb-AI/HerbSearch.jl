@@ -6,7 +6,7 @@ using HerbCore
 @testset "Sampling grammar" verbose=true begin 
 
     @testset "Sampling with rand() returns programs in the given max_depth" begin
-        arithmetic_grammar = @cfgrammar begin
+        arithmetic_grammar = @csgrammar begin
             X = X * X
             X = X + X
             X = X - X
@@ -22,7 +22,7 @@ using HerbCore
         end
     end
     @testset "rand() gives the possible expressions for a certain max_depth" begin
-        grammar = @cfgrammar begin 
+        grammar = @csgrammar begin 
             A = B | C | F
             F = G
             C = D
@@ -44,7 +44,7 @@ using HerbCore
     end
 
     @testset "Sampling throws an error if all expressions have a higher depth than max_depth" begin
-        grammar = @cfgrammar begin 
+        grammar = @csgrammar begin 
             A = B 
             B = C
             C = D

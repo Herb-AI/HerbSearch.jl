@@ -35,7 +35,7 @@ function probabilistic_accept_with_temperature_fraction(current_cost::Real, prog
 end
 
 """
-    best_accept(current_cost::Real, next_cost::Real, temperature)
+    best_accept(current_cost::Real, next_cost::Real, temperature::Real)
 
 Returns true if the cost of the proposed program is smaller than the cost of the current program.
 Otherwise, returns false.
@@ -44,7 +44,7 @@ Otherwise, returns false.
 - `next_cost::Real`: the cost of the proposed program.
 - `temperature::Real`: the temperature; not used.
 """
-function best_accept(current_cost::Real, next_cost::Real, temperature)
+function best_accept(current_cost::Real, next_cost::Real, temperature::Real)
     return current_cost > next_cost
 end
 
