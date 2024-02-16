@@ -23,3 +23,12 @@ function mean_squared_error(results::T)  where {T<:AbstractVector{<:Tuple{Number
     end
     return cost / length(results)
 end
+
+
+function mean_squared_error_strings(results)
+    cost = 0
+    for (expected, actual) in results
+        cost += HerbSearch.mse_error_function_strings(expected, actual)
+    end
+    return cost / length(results)
+end

@@ -141,6 +141,18 @@ The function build the mean squared error from `output` and `expected_output``.
 """
 mse_error_function(old_error, output, expected_output) = old_error + (output - expected_output) ^ 2
 
+mse_error_function_strings(output::Char, expected_output::String) = mse_error_function_strings(string(output), expected_output)
+mse_error_function_strings(output::String, expected_output::Char) = mse_error_function_strings(output, string(expected_output))
+mse_error_function_strings(output::Char, expected_output::Char) = mse_error_function_strings(string(output), string(expected_output))
+
+
+function mse_error_function_strings(output::String, expected_output::String) =
+    edit_dist = edit_distance(output,expected_output)
+    return edit_dist 
+end
+
+mse_error_function(old_error, output::String, expected_output::String) =  old_error + mse_error_function_strings(output, expected_output)
+
 
 """
     search_best(g::Grammar, problem::Problem, start::Symbol; evaluator::Function=test_with_input, enumerator::Function=get_bfs_enumerator, error_function::Function=default_error_function, max_depth::Union{Int, Nothing}=nothing, max_size::Union{Int, Nothing}=nothing, max_time::Union{Int, Nothing}=nothing, max_enumerations::Union{Int, Nothing}=nothing, allow_evaluation_errors::Bool=false)::Tuple{Any, Real}
@@ -177,7 +189,7 @@ function search_best(
         max_time::Union{Int, Nothing}=nothing,
         max_enumerations::Union{Int, Nothing}=nothing,
         allow_evaluation_errors::Bool=false
-    )::Tuple{Any, Real}
+    )::Tuple{Any, Real, RuleNode}
 
     start_time = time()
     check_time = max_time !== nothing
@@ -193,6 +205,7 @@ function search_best(
     
     best_error = typemax(Int)
     best_program = nothing
+    best_rulenode = nothing
     for (i, h) ∈ enumerate(hypotheses)
         # Create expression from rulenode representation of AST
         expr = rulenode2expr(get_rulenode_from_iterator(h), g)
@@ -210,6 +223,7 @@ function search_best(
                 crashed = true
                 # Throw the error again if evaluation errors aren't allowed
                 allow_evaluation_errors || throw(e)
+                total_error = Inf
                 break
             end
 
@@ -222,19 +236,23 @@ function search_best(
         if crashed 
             # do nothing
         elseif total_error == 0
-            return expr, 0
+            @warn "Reached error 0"
+            @warn "Program: $h"
+            return expr, 0, best_rulenode
         elseif total_error < best_error
             # Update the best found example so far
             best_error = total_error
             best_program = expr
+            best_rulenode = h
         end
 
         # Check stopping conditions
         if check_enumerations && i > max_enumerations || check_time && time() - start_time > max_time
-            return best_program, best_error
+            @warn "Stopping search because of time or enumerations"
+            return best_program, best_error, best_rulenode
         end
     end
-    return best_program, best_error
+    return best_program, best_error, best_rulenode
 end
 
 

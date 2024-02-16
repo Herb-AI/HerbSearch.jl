@@ -65,7 +65,8 @@ end
 Base.@kwdef struct StochasticIteratorState
     current_program::RuleNode
     current_temperature::Real = 1
-    dmap::AbstractVector{Int} = [] # depth map of each rule
+    previous_costs::Vector{Real} = []
+    dmap::Vector{Int} = [] # depth map of each rule
 end
 
 Base.IteratorSize(::StochasticSearchEnumerator) = Base.SizeUnknown()
@@ -91,7 +92,7 @@ function Base.iterate(iter::StochasticSearchEnumerator)
     dmap = mindepth_map(grammar)
     sampled_program = rand(RuleNode, grammar, iter.start_symbol, max_depth)
 
-    return (sampled_program, StochasticIteratorState(sampled_program,iter.initial_temperature,dmap))
+    return (sampled_program, StochasticIteratorState(sampled_program,iter.initial_temperature, [] ,dmap))
 end
 
 
@@ -111,7 +112,21 @@ function Base.iterate(iter::StochasticSearchEnumerator, current_state::Stochasti
     current_program = current_state.current_program
     
     current_cost = calculate_cost(current_program, iter.cost_function, examples, grammar, iter.evaluation_function)
+    push!(current_state.previous_costs, current_cost)
 
+    if length(current_state.previous_costs) > 5
+        popfirst!(current_state.previous_costs)
+    
+        if allequal(current_state.previous_costs) 
+            # reached plateu 
+            # @warn "Reached plateu with $(current_state.previous_costs[begin]) and costs: $(current_state.previous_costs)"
+            if current_state.previous_costs[begin] == Inf 
+                @warn "Restarting the search"
+                # call iterate again to get a new random program
+                return iterate(iter)
+            end
+        end
+    end
     new_temperature = iter.temperature(current_state.current_temperature)
 
     # get the neighbour node location 
@@ -120,7 +135,6 @@ function Base.iterate(iter::StochasticSearchEnumerator, current_state::Stochasti
     # get the subprogram pointed by node-location
     subprogram = get(current_program, neighbourhood_node_location)
 
-
     @info "Start: $(rulenode2expr(current_program, grammar)), subexpr: $(rulenode2expr(subprogram, grammar)), cost: $current_cost
             temp $new_temperature"
 
@@ -128,7 +142,8 @@ function Base.iterate(iter::StochasticSearchEnumerator, current_state::Stochasti
     possible_replacements = iter.propose(current_program, neighbourhood_node_location, grammar, iter.max_depth, current_state.dmap, dict)
     
     next_program = get_next_program(current_program, possible_replacements, neighbourhood_node_location, new_temperature, iter, current_cost)
-    next_state = StochasticIteratorState(next_program,new_temperature,current_state.dmap)
+    next_state = StochasticIteratorState(next_program, new_temperature, current_state.previous_costs ,current_state.dmap)
+
     return (next_program, next_state)
 end
 
@@ -151,7 +166,6 @@ function get_next_program(current_program::RuleNode, possible_replacements, neig
         end
     end
     return next_program
-
 end
 
 """
@@ -161,6 +175,15 @@ Returns the cost of the `program` using the examples and the `cost_function`. It
 evaluates it on all the examples using [`HerbInterpret.evaluate_program`](@ref).
 """
 function calculate_cost(program::RuleNode, cost_function::Function, examples::AbstractVector{<:Example}, grammar::Grammar, evaluation_function::Function)
-    results = HerbInterpret.evaluate_program(program,examples,grammar,evaluation_function)
-    return cost_function(results)
+    try 
+        results = HerbInterpret.evaluate_program(program,examples,grammar,evaluation_function)
+        return cost_function(results)
+    catch e
+        # if isa(e, BoundsError) || isa(e, ArgumentError)
+        #     @warn "Error while evaluating program: $(rulenode2expr(program,grammar))\n BoundsError"
+        #     return Inf
+        # end
+        # throw(e)
+        return Inf
+    end
 end

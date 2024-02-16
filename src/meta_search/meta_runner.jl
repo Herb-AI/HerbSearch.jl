@@ -119,6 +119,7 @@ function fitness_function(program, _)
     # TODO Performance: Ask Sebastijan if we should do this runs for non stochastic algorithms. Maybe we should not do that.
 
     # use a sping lock because the update should be very fast. This prevents race conditions in mean_cost
+    # TODO: use loop of indexes
     lk = Threads.ReentrantLock()
     for (problem,grammar) ∈ list_of_problems
         mean_cost_for_problem = 0

@@ -19,6 +19,7 @@ include("cfg_priority_enumerator.jl")
 
 include("heuristics.jl")
 
+include("edit_distance.jl")
 include("search_procedure.jl")
 
 include("stochastic_search/stochastic_enumerators.jl")
