@@ -138,13 +138,10 @@ function Base.iterate(iter::TopDownIterator)
     # Priority queue with number of nodes in the program
     pq :: PriorityQueue{State, Union{Real, Tuple{Vararg{Real}}}} = PriorityQueue()
 
-    #TODO: refactor this to the program iterator constructor
-    iter.solver = Solver(iter.grammar, iter.sym)
+    max_depth, max_size, solver = iter.max_depth, iter.max_size, iter.solver
 
-    grammar, max_depth, max_size, sym = iter.grammar, iter.max_depth, iter.max_size, iter.sym
-
-    enqueue!(pq, get_state(solver), priority_function(iter, grammar, init_node, 0))
-    return _find_next_complete_tree(grammar, max_depth, max_size, pq, iter)
+    enqueue!(pq, get_state(solver), priority_function(iter, get_grammar(solver), get_tree(solver), 0))
+    return _find_next_complete_tree(solver, max_depth, max_size, pq, iter)
 end
 
 
@@ -154,9 +151,9 @@ end
 Describes the iteration for a given [`TopDownIterator`](@ref) and a [`PriorityQueue`](@ref) over the grammar without enqueueing new items to the priority queue. Recursively returns the result for the priority queue.
 """
 function Base.iterate(iter::TopDownIterator, pq::DataStructures.PriorityQueue)
-    grammar, max_depth, max_size = iter.grammar, iter.max_depth, iter.max_size
+    solver, max_depth, max_size = iter.solver, iter.max_depth, iter.max_size
 
-    return _find_next_complete_tree(grammar, max_depth, max_size, pq, iter)
+    return _find_next_complete_tree(solver, max_depth, max_size, pq, iter)
 end
 
 """
@@ -166,7 +163,7 @@ Takes a priority queue and returns the smallest AST from the grammar it can obta
 Returns `nothing` if there are no trees left within the depth limit.
 """
 function _find_next_complete_tree(
-    grammar::ContextSensitiveGrammar, 
+    solver::Solver, 
     max_depth::Int, 
     max_size::Int,
     pq::PriorityQueue,
@@ -174,7 +171,7 @@ function _find_next_complete_tree(
 )::Union{Tuple{RuleNode, PriorityQueue}, Nothing}
     while length(pq) ≠ 0
         (state, priority_value) = dequeue_pair!(pq)
-        set_state!(solver, state)
+        load_state!(solver, state)
 
         #TODO: handle complete states
         # if pqitem.complete
@@ -184,20 +181,24 @@ function _find_next_complete_tree(
         hole_res = hole_heuristic(iter, get_tree(solver), max_depth)
         if hole_res ≡ already_complete
             # TODO: this tree could have fixed shaped holes only and should be iterated differently (https://github.com/orgs/Herb-AI/projects/6/views/1?pane=issue&itemId=54384555)
+            println(get_tree(solver))
+            continue
             return (get_tree(solver), pq)
         elseif hole_res ≡ limit_reached
             # The maximum depth is reached
             continue
         elseif hole_res isa HoleReference
             # Variable Shaped Hole was found
+            # TODO: problem. this 'hole' is tied to a target state. it should be state independent
             (; hole, path) = hole_res
     
-            for domain ∈ partition(hole, grammar)
-                state = save_state(solver)
-                remove_all_but!(solver, hole_res, domain)
-                enqueue!(pq, get_state(solver), priority_function(iter, grammar, expanded_tree, priority_value))
-                load_state(state)
+            for domain ∈ partition(hole, get_grammar(solver))
+                state = save_state!(solver)
+                remove_all_but!(solver, path, domain)
+                enqueue!(pq, get_state(solver), priority_function(iter, get_grammar(solver), get_tree(solver), priority_value))
+                load_state!(solver, state)
             end
+        end
     end
     return nothing
 end
