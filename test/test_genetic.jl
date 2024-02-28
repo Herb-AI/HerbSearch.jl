@@ -68,7 +68,7 @@ end
 
                 rulenode1 = RuleNode(1,[RuleNode(2)])
                 rulenode2 = RuleNode(3,[RuleNode(4,[RuleNode(5)])])
-                child1,child2 = crossover_swap_children_2(rulenode1,rulenode2)
+                child1,child2 = HerbSearch.crossover_swap_children_2(rulenode1,rulenode2)
                 @test child1 !== child2
                 @test rulenode1 == RuleNode(1,[RuleNode(2)])
                 @test rulenode2 == RuleNode(3,[RuleNode(4,[RuleNode(5)])])
@@ -97,7 +97,7 @@ end
         end
     end
 
-    @testset "Syntesize simple arithmetic expressions" verbose = true begin
+    @testset "Synthesize simple arithmetic expressions" verbose = true begin
         grammar = @csgrammar begin
             X = |(1:5)
             X = X * X
@@ -120,53 +120,49 @@ end
 
         @testset "syntesizing expr $(pretty_print_lambda(f))" for f in functions
             problem, examples = create_problem(f)
-            enumerator = get_genetic_enumerator(examples, 
-                initial_population_size =10,
-                mutation_probability = 0.8,
-                maximum_initial_population_depth = 3,
-                )
-            program, cost = search_best(grammar, problem, :X, enumerator=enumerator, error_function=mse_error_function, max_depth=nothing, max_time=20)
-            @test cost == 0
+            iterator = GeneticSearchIterator(grammar, :X, 
+                                             examples,
+                                             population_size = 10,
+                                             mutation_probability = 0.8,
+                                             maximum_initial_population_depth = 3)
+            program, error = synth(problem, iterator)
+            @test error == optimal_program
         end
     end
     @testset "Validation logic" begin 
         grammar = @csgrammar begin
             X = |(1:5)
         end
-        function get_genetic_algorithm(examples; kwargs...)
-            outcome =  get_genetic_enumerator(examples; kwargs...)
-            return outcome(grammar, 10, 10, :X)
+        function get_genetic_iterator(examples, grammar=grammar, sym=:X; kwargs...)
+            outcome = GeneticSearchIterator(grammar, sym, examples; population_size=10, max_depth=10, kwargs...)
+            return outcome
         end
 
         problem, examples = create_problem(x -> x)
         @testset "Bad fitness function throws" begin
             bad_fitness = (program) -> 1
-            enumerator = get_genetic_algorithm(examples, 
-                fitness_function = bad_fitness, 
-            )
-            @test_throws HerbSearch.AlgorithmStateIsInvalid HerbSearch.validate_iterator(enumerator)
+            iterator = get_genetic_iterator(examples)
+            fitness(::GeneticSearchIterator, program) = bad_fitness(program)
         end
         @testset "Bad population size throws" begin
-            enumerator = get_genetic_algorithm(examples, 
-                initial_population_size = -1,
+            enumerator = get_genetic_iterator(examples, 
+                population_size = -1,
             )
             @test_throws HerbSearch.AlgorithmStateIsInvalid HerbSearch.validate_iterator(enumerator)
 
-            enumerator = get_genetic_algorithm(examples, 
-                initial_population_size = 0,
+            enumerator = get_genetic_iterator(examples, 
+                population_size = 0,
             )
             @test_throws HerbSearch.AlgorithmStateIsInvalid HerbSearch.validate_iterator(enumerator)
         end
 
         @testset "Bad cross_over function throws" begin
-            enumerator = get_genetic_algorithm(examples, 
-                cross_over = (program1::Int,program2::Int) -> 1 # invalid crossover
-            )
-            @test_throws HerbSearch.AlgorithmStateIsInvalid HerbSearch.validate_iterator(enumerator)
+            enumerator = get_genetic_iterator(examples)
+            cross_over = (::GeneticSearchIterator, program1::Int,program2::Int) -> 1 # invalid crossover
         end
 
         @testset "Good algorithm params works" begin
-            enumerator = get_genetic_algorithm(examples)
+            enumerator = get_genetic_iterator(examples)
             # this works
             @test HerbSearch.validate_iterator(enumerator)
         end

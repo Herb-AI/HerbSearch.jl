@@ -1,6 +1,6 @@
 @testset verbose=true "Context-free iterators" begin
   @testset "test count_expressions on single Real grammar" begin
-    g1 = @cfgrammar begin
+    g1 = @csgrammar begin
         Real = |(1:9)
     end
 
@@ -11,7 +11,7 @@
   end
 
   @testset "test count_expressions on grammar with multiplication" begin
-    g1 = @cfgrammar begin
+    g1 = @csgrammar begin
         Real = 1 | 2
         Real = Real * Real 
     end
@@ -23,42 +23,42 @@
   end
 
   @testset "test count_expressions on different arithmetic operators" begin
-    g1 = @cfgrammar begin
+    g1 = @csgrammar begin
         Real = 1
         Real = Real * Real 
     end
 
-    g2 = @cfgrammar begin
+    g2 = @csgrammar begin
       Real = 1
       Real = Real / Real 
     end
 
-    g3 = @cfgrammar begin
+    g3 = @csgrammar begin
       Real = 1
       Real = Real + Real 
     end 
 
-    g4 = @cfgrammar begin
+    g4 = @csgrammar begin
       Real = 1
       Real = Real - Real 
     end 
     
-    g5 = @cfgrammar begin
+    g5 = @csgrammar begin
       Real = 1
       Real = Real % Real 
     end 
 
-    g6 = @cfgrammar begin
+    g6 = @csgrammar begin
       Real = 1
       Real = Real \ Real 
     end 
 
-    g7 = @cfgrammar begin
+    g7 = @csgrammar begin
       Real = 1
       Real = Real ^ Real 
     end 
 
-    g8 = @cfgrammar begin
+    g8 = @csgrammar begin
       Real = 1
       Real = -Real * Real 
     end
@@ -75,7 +75,7 @@
   end
 
   @testset "test count_expressions on grammar with functions" begin
-    g1 = @cfgrammar begin
+    g1 = @csgrammar begin
         Real = 1 | 2
         Real = f(Real)                # function call
     end
@@ -88,11 +88,11 @@
   end
 
   @testset "bfs enumerator" begin
-    g1 = @cfgrammar begin
+    g1 = @csgrammar begin
       Real = 1 | 2
       Real = Real * Real
     end
-    programs = collect(get_bfs_enumerator(g1, 2, typemax(Int), :Real))
+    programs = collect(BFSIterator(g1, :Real, max_depth=2))
     @test all(map(t -> depth(t[1]) ≤ depth(t[2]), zip(programs[begin:end-1], programs[begin+1:end])))
     
     answer_programs = [
@@ -110,22 +110,22 @@
   end
 
   @testset "dfs enumerator" begin
-    g1 = @cfgrammar begin
+    g1 = @csgrammar begin
       Real = 1 | 2
       Real = Real * Real
     end
-    programs = collect(get_dfs_enumerator(g1, 2, typemax(Int), :Real))
+    programs = collect(DFSIterator(g1, :Real, max_depth=2))
     @test length(programs) == count_expressions(g1, 2, typemax(Int), :Real)
   end
 
   @testset "probabilistic enumerator" begin
-    g₁ = @pcfgrammar begin
+    g₁ = @pcsgrammar begin
       0.2 : Real = |(0:1)
       0.5 : Real = Real + Real
       0.3 : Real = Real * Real 
     end
   
-    programs = collect(get_most_likely_first_enumerator(g₁, 2, typemax(Int), :Real))
+    programs = collect(MLFSIterator(g₁, :Real, max_depth=2))
     @test length(programs) == count_expressions(g₁, 2, typemax(Int), :Real)
     @test all(map(t -> rulenode_log_probability(t[1], g₁) ≥ rulenode_log_probability(t[2], g₁), zip(programs[begin:end-1], programs[begin+1:end])))
   end

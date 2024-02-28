@@ -6,7 +6,7 @@ It is the responsibility of the caller to make this replacement.
 
 
 """
-    random_fill_propose(current_program, neighbourhood_node_loc, grammar, max_depth, dict)
+    random_fill_propose(current_program::RuleNode, neighbourhood_node_loc::NodeLoc, grammar::Grammar, max_depth::Int, dmap::AbstractVector{Int}, dict::Union{Nothing,Dict{String,Any}})
 
 Returns a list with only one proposed, completely random, subprogram.
 # Arguments
@@ -60,7 +60,7 @@ function enumerate_neighbours_propose(enumeration_depth::Int64)
         remaining_depth = max_depth - current_depth + 1  
         depth_left = min(remaining_depth, enumeration_depth)
 
-        return get_bfs_enumerator(grammar, depth_left, typemax(Int), neighbourhood_symbol)  
+        return BFSIterator(grammar, neighbourhood_symbol, max_depth=depth_left)  
     end
 end
     
