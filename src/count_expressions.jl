@@ -1,9 +1,9 @@
 """
-    count_expressions(grammar::Grammar, max_depth::Int, max_size::Int, sym::Symbol)
+    count_expressions(grammar::AbstractGrammar, max_depth::Int, max_size::Int, sym::Symbol)
 
 Counts and returns the number of possible expressions of a grammar up to max_depth with start symbol sym.
 """
-function count_expressions(grammar::Grammar, max_depth::Int, max_size::Int, sym::Symbol)
+function count_expressions(grammar::AbstractGrammar, max_depth::Int, max_size::Int, sym::Symbol)
     l = 0
     # Calculate length without storing all expressions
     for _ ∈ BFSIterator(grammar, sym, max_depth=max_depth, max_size=max_size)
