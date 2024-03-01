@@ -339,6 +339,8 @@ function meta_search(
     println("Starting meta search!! ")
     
     for (i, (rulenode, fitness)) ∈ enumerate(hypotheses)
+        GC.gc()
+
         # Create expression from rulenode representation of AST
         expr = rulenode2expr(rulenode, g)
         if fitness > best_fitness

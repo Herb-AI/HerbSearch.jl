@@ -87,6 +87,8 @@ function fitness_function(program, _)
 
     lk = Threads.ReentrantLock()
     Threads.@threads for (problem, problem_text) ∈ problems_train
+        
+        GC.gc()
         mean_cost_for_problem = 0
         mean_running_time_for_problem = 0    
         for _ in 1:RUNS
@@ -94,7 +96,8 @@ function fitness_function(program, _)
 
             # get a program that needs a problem and a grammar to be able to run
             best_expression, best_program, program_cost = evaluate_meta_program(expression_to_evaluate, problem, arithmetic_grammar)
-            
+            GC.gc()
+
             # @show problem_text
             # @show (best_expression, program_cost)
             duration = time() - start_time
