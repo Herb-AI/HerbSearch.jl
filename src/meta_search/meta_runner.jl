@@ -53,9 +53,10 @@ function run_grammar_multiple_times()
         for (problem, _) ∈ problems_train
             meta_program = rand(RuleNode, meta_grammar, :S, 10)
             meta_expr = rulenode2expr(meta_program, meta_grammar)
-            print(meta_expr)
+            # print(meta_expr)
             # get a program that needs a problem and a grammar to be able to run
-            @time expr,_ = evaluate_meta_program(meta_expr, problem, arithmetic_grammar)
+            @time expr,cost = evaluate_meta_program(meta_expr, problem, arithmetic_grammar)
+            print(expr,"",cost)
         end
     end
 end
@@ -75,8 +76,10 @@ Because higher fitness means better I invert the fraction usint 1 / (cost * 100 
 The 100 just gives more weight to the cost I think. You can chose another value.
 """
 function fitness_function(program, _)
-    program_to_evaluate = rulenode2expr(program, meta_grammar)
+    println(typeof(program))
+    expression_to_evaluate = rulenode2expr(program, meta_grammar)
 
+    @show expression_to_evaluate
     # evaluate the search 3 times to account for variable time of running a program
     RUNS = fitness_configuration.number_of_runs_to_average_over
 
@@ -85,15 +88,20 @@ function fitness_function(program, _)
 
 
     lk = Threads.ReentrantLock()
-    for (problem, problem_text) ∈ problems_train
+    Threads.@threads for (problem, problem_text) ∈ problems_train
         mean_cost_for_problem = 0
         mean_running_time_for_problem = 0    
         for _ in 1:RUNS
             start_time = time()
-            _, _, cost = evaluate_meta_program(program_to_evaluate, problem, meta_grammar)
+
+            # get a program that needs a problem and a grammar to be able to run
+            best_expression, best_program, program_cost = evaluate_meta_program(expression_to_evaluate, problem, arithmetic_grammar)
+            
+            @show problem_text
+            @show (best_expression, program_cost)
             duration = time() - start_time
             lock(lk) do
-                mean_cost_for_problem += cost
+                mean_cost_for_problem += program_cost
                 mean_running_time_for_problem += duration
             end
         end
@@ -127,7 +135,6 @@ Runs meta search on the meta grammar.
 """
 function run_meta_search(stopping_condition:: Union{Nothing, Function})
     meta_program = rand(RuleNode, meta_grammar, :S, genetic_configuration.initial_program_max_depth)
-
     # creates a genetic enumerator with no examples and with the desired fitness function 
     genetic_algorithm = get_genetic_enumerator(Vector{IOExample}([]), fitness_function=fitness_function)
 

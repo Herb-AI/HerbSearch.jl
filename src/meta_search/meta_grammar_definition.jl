@@ -42,7 +42,7 @@ meta_grammar = @csgrammar begin
 	# STOPTERM = OPERAND < VALUE
 	# OPERAND = time | iteration | cost
 	OPERAND = iteration
-	VALUE = |(4000:5000)
+	VALUE = 1000 | 2000 | 3000 | 4000 | 5000
 	# VALUE = 10 * VALUE
 end
 

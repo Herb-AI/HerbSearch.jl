@@ -19,9 +19,13 @@ Returns the mean squared error of `results`.
 function mean_squared_error(results::T)  where {T<:AbstractVector{<:Tuple{Number,Number}}}
     cost = 0
     for (expected, actual) in results
-        cost += (expected - actual)^2
+        cost += (expected - actual)^2  / length(results)
+        if cost < 0
+            printstyled("Have overflow with cost $cost"; color=:red)
+            return Inf
+        end
     end
-    return cost / length(results)
+    return cost
 end
 
 
