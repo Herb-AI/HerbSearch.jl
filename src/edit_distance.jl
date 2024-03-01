@@ -23,9 +23,3 @@ function edit_distance(firstString::AbstractString, secondString::AbstractString
 
     return dp[n + 1, m + 1]
 end
-
-# Example usage:
-firstString = "5.1"
-secondString = "1"
-result = edit_distance(firstString, secondString)
-println("Edit Distance: ", result)
