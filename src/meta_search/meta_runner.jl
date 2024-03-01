@@ -8,24 +8,16 @@ include("meta_grammar_definition.jl")
 @option struct GeneticConfiguration 
     initial_population_size::Int16
     initial_program_max_depth::Int64
-    stopping_condition::String
 end
 
 @option struct FitnessFunctionConfiguration 
     number_of_runs_to_average_over::Int16
-    fitness_function::String
 end
 
-@option struct MetaGrammarConfiguration 
-    maximum_depth::Int
-end
 
 @option struct MetaConfiguration
-    problem_expression::String
-    problem_range_size::Int64
     fitness::FitnessFunctionConfiguration
     genetic::GeneticConfiguration
-    meta_grammar::MetaGrammarConfiguration
 end
 
 convert_string_to_lambda(e::String) = eval(Meta.parse(e))
@@ -34,9 +26,6 @@ convert_string_to_lambda(e::String) = eval(Meta.parse(e))
 meta_configuration = from_toml(MetaConfiguration, "configuration.toml")
 fitness_configuration = meta_configuration.fitness
 genetic_configuration = meta_configuration.genetic
-meta_grammar_configuration = meta_configuration.meta_grammar
-
-fitness_cost_function = convert_string_to_lambda(fitness_configuration.fitness_function)
 
 println("CONFIGURATION")
 println("- Number of available threads: ",Threads.nthreads())
@@ -102,11 +91,13 @@ function fitness_function(program, _)
                 mean_running_time_for_problem += duration
             end
         end
-        mean_cost_for_problem = mean_cost_for_problem / RUNS
-        mean_running_time_for_problem = mean_running_time_for_problem / RUNS    
-        
-        mean_cost += mean_cost_for_problem
-        mean_running_time += mean_running_time_for_problem
+        lock(lk) do 
+            mean_cost_for_problem = mean_cost_for_problem / RUNS
+            mean_running_time_for_problem = mean_running_time_for_problem / RUNS    
+            
+            mean_cost += mean_cost_for_problem
+            mean_running_time += mean_running_time_for_problem
+        end
     end
     mean_cost /= length(problems_train)
     mean_running_time /= length(problems_train)

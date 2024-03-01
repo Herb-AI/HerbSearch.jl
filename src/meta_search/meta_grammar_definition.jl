@@ -12,7 +12,7 @@ meta_grammar = @csgrammar begin
 	sa_temperature_decreasing_factor = |(range(0.9, 1, 10))
 
 	# VLSN configuration
-	vlsn_enumeration_depth = |(3:4)
+	vlsn_enumeration_depth = 1
 
 	ALGORITHM = get_mh_enumerator(problemExamples, HerbSearch.mean_squared_error) | 
 				get_sa_enumerator(problemExamples, HerbSearch.mean_squared_error, sa_inital_temperature, sa_temperature_decreasing_factor) |
@@ -27,15 +27,10 @@ meta_grammar = @csgrammar begin
 	ALIST = [MS; MS]
 	ALIST = [MS; ALIST]
 	# SELECT = best | crossover | mutate
-	STOPFUNCTION = (time, iteration, cost) -> STOPCONDITION
-	STOPCONDITION = STOPTERM
-	STOPCONDITION = STOPTERM && STOPCONDITION
-	# STOPTERM = OPERAND == VALUE
-	STOPTERM = ITERATION_STOP
+	STOPFUNCTION = (time, iteration, cost) -> ITERATION_STOP || time > 60
 	ITERATION_STOP = iteration > VALUE
 	# STOPTERM = OPERAND < VALUE
 	# OPERAND = time | iteration | cost
-	OPERAND = iteration
 	VALUE = 1000 | 2000 | 3000 | 4000 | 5000
 	# VALUE = 10 * VALUE
 end

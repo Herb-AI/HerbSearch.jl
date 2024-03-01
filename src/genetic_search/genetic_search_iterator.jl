@@ -92,21 +92,16 @@ end
 Returns the best program within the population with respect to the fitness function.
 """
 function get_best_program(population::Array{RuleNode}, iter::GeneticSearchIterator)
-    best_program = nothing
+    best_program = population[begin]
     best_fitness = 0
     lk = ReentrantLock()
     Threads.@threads for index ∈ eachindex(population)
         chromosome = population[index]
         fitness_value = iter.fitness(chromosome, HerbInterpret.evaluate_program(chromosome, iter.examples, iter.grammar, iter.evaluation_function))
         lock(lk) do
-            if isnothing(best_program)
+            if fitness_value > best_fitness
                 best_fitness = fitness_value
                 best_program = chromosome
-            else
-                if fitness_value > best_fitness
-                    best_fitness = fitness_value
-                    best_program = chromosome
-                end
             end
         end
     end
@@ -124,7 +119,7 @@ function Base.iterate(iter::GeneticSearchIterator)
 
     population = Vector{RuleNode}(undef, iter.population_size)
 
-    Threads.@threads for i in 1:iter.population_size
+    for i in 1:iter.population_size
         # sample a random nodes using start symbol and grammar
         population[i] = rand(RuleNode, grammar, iter.start_symbol, iter.maximum_initial_population_depth)
     end
@@ -142,13 +137,24 @@ function Base.iterate(iter::GeneticSearchIterator, current_state::GeneticIterato
 
     current_population = current_state.population
 
-    # Calculate fitness
-    fitness_array = [iter.fitness(chromosome, HerbInterpret.evaluate_program(chromosome, iter.examples, iter.grammar, iter.evaluation_function)) for chromosome in current_population]
+    # Calculate fitness and best program
+    fitness_array = Vector{Float64}(undef, iter.population_size)
+    best_program = current_population[begin]
+    best_fitness = 0
+
+    lk = ReentrantLock()
+    Threads.@threads for i in 1:iter.population_size
+        chromosome = current_population[i]
+        fitness_array[i] = iter.fitness(chromosome, HerbInterpret.evaluate_program(chromosome, iter.examples, iter.grammar, iter.evaluation_function))
+        lock(lk) do 
+            if fitness_array[i] > best_fitness 
+                best_fitness = fitness_array[i]
+                best_program = chromosome
+            end
+        end
+    end
 
     new_population = Vector{RuleNode}(undef, iter.population_size)
-
-    # put the best program in the first slot of the population
-    best_program, best_fitness = get_best_program(current_population, iter)
     new_population[begin] = best_program
 
     # do crossover

@@ -360,6 +360,7 @@ function meta_search(
         println(repeat("_",100))
         println("Current expr: ",expr)
         println(repeat("=",100))
+        flush(stdout)
 
         # Evaluate the expression on the examples
         current_time = time() - start_time

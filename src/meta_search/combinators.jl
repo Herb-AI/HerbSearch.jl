@@ -50,8 +50,17 @@ function generic_run(::Type{Sequence}, meta_search_list::Vector, max_depth::Int,
     if isnothing(start_program)
         start_program = rand(RuleNode, grammar, max_depth)
     end
+
+    start_time = time()
+    MAX_SEQUENCE_RUNNING_TIME = 20 # in seconds
+
     best_expression, best_program, program_cost = nothing, start_program, Inf64
     for x ∈ meta_search_list
+
+        current_time = time() - start_time
+        if current_time > MAX_SEQUENCE_RUNNING_TIME 
+            return best_expression, best_program, program_cost
+        end
         expression, start_program, cost = generic_run(x..., start_program = start_program)
         if cost < program_cost
             best_expression, best_program, program_cost = expression, start_program, cost
@@ -84,10 +93,13 @@ function generic_run(::Type{Parallel}, meta_search_list::Vector, max_depth::Int,
     end
     best_expression, best_program, program_cost = nothing, start_program, Inf64
     # use threads
+    lk = ReentrantLock()
     Threads.@threads for meta ∈ meta_search_list
         expression, outcome_program, cost = generic_run(meta..., start_program = start_program)
-        if cost < program_cost
-            best_expression, best_program, program_cost = expression, outcome_program, cost
+        lock(lk) do
+            if cost < program_cost
+                best_expression, best_program, program_cost = expression, outcome_program, cost
+            end
         end
     end
     return best_expression, best_program, program_cost
