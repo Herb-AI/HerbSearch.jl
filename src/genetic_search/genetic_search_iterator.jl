@@ -14,7 +14,7 @@ Defines an [`ExpressionIterator`](@ref) using genetic search.
 Consists of:
 
 - `grammar::ContextSensitiveGrammar`: the grammar to search over
-- `examples::Vector{<:Example}`: a collection of examples defining the specification 
+- `examples::Vector{<:IOExample}`: a collection of examples defining the specification 
 
 - `fitness::FitnessFunction`: assigns a numerical value (fitness score) to each individual based on how closely it meets the desired objective
 - `cross_over::CrossOverFunction`: combines the program from two parent individuals to create one or more offspring individuals
@@ -30,7 +30,7 @@ end
 """
 Base.@kwdef struct GeneticSearchIterator{FitnessFunction,CrossOverFunction,MutationFunction,SelectParentsFunction,EvaluationFunction} <: ExpressionIterator
     grammar::ContextSensitiveGrammar
-    examples::Vector{<:Example}
+    examples::Vector{<:IOExample}
 
     fitness::FitnessFunction
     cross_over::CrossOverFunction

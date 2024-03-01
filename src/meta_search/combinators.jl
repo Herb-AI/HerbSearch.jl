@@ -11,13 +11,13 @@ It uses [`HerbSearch.supervised_search`](@ref) to run the enumerator and monitor
 
 Returns a tuple consisting of the `(expression found, program as rulenode, program cost)`
 """
-function generic_run(enumerator::Function, stopping_condition::Function, max_depth::Int, problem::Problem, grammar::ContextSensitiveGrammar;  start_program::Union{Nothing,RuleNode} = nothing)
+function generic_run(enumerator::Function, stopping_condition::Function, max_depth::Int, examples::Vector{<:IOExample}, grammar::ContextSensitiveGrammar;  start_program::Union{Nothing,RuleNode} = nothing)
     if isnothing(start_program)
         start_program = rand(RuleNode, grammar, max_depth)
     end
     program, rulenode, cost = HerbSearch.supervised_search(
         grammar,
-        problem,
+        examples,
         :X, # TODO: remove hardcoding of variable X
         stopping_condition, 
         start_program,

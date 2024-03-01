@@ -51,7 +51,7 @@ An iterator over all possible expressions of a grammar up to max_depth with star
 Base.@kwdef mutable struct StochasticSearchEnumerator{A,B,C,D,E,F} <: ExpressionIterator
     grammar::ContextSensitiveGrammar
     max_depth::Int64 = 5  # maximum depth of the program that is generated
-    examples::Vector{<:Example}
+    examples::Vector{<:IOExample}
     neighbourhood::A
     propose::B
     accept::C
@@ -112,26 +112,25 @@ function Base.iterate(iter::StochasticSearchEnumerator, current_state::Stochasti
     current_program = current_state.current_program
     
     current_cost = calculate_cost(current_program, iter.cost_function, examples, grammar, iter.evaluation_function)
-    push!(current_state.previous_costs, current_cost)
-
-    if length(current_state.previous_costs) > 5
-        popfirst!(current_state.previous_costs)
+    # push!(current_state.previous_costs, current_cost)
+    # TODO: Remove the previous costs
+    # if length(current_state.previous_costs) > 5
+    #     popfirst!(current_state.previous_costs)
     
-        if allequal(current_state.previous_costs) 
-            # reached plateu 
-            # @warn "Reached plateu with $(current_state.previous_costs[begin]) and costs: $(current_state.previous_costs)"
-            if current_state.previous_costs[begin] == Inf 
-                @warn "Restarting the search"
-                # call iterate again to get a new random program
-                return iterate(iter)
-            end
-        end
-    end
+    #     if allequal(current_state.previous_costs) 
+    #         # reached plateu 
+    #         # @warn "Reached plateu with $(current_state.previous_costs[begin]) and costs: $(current_state.previous_costs)"
+    #         if current_state.previous_costs[begin] == Inf 
+    #             @warn "Restarting the search"
+    #             # call iterate again to get a new random program
+    #             return iterate(iter)
+    #         end
+    #     end
+    # end
     new_temperature = iter.temperature(current_state.current_temperature)
 
     # get the neighbour node location 
     neighbourhood_node_location, dict = iter.neighbourhood(current_state.current_program, grammar)
-
     # get the subprogram pointed by node-location
     subprogram = get(current_program, neighbourhood_node_location)
 
@@ -174,16 +173,7 @@ end
 Returns the cost of the `program` using the examples and the `cost_function`. It first convert the program to an expression and
 evaluates it on all the examples using [`HerbInterpret.evaluate_program`](@ref).
 """
-function calculate_cost(program::RuleNode, cost_function::Function, examples::AbstractVector{<:Example}, grammar::Grammar, evaluation_function::Function)
-    try 
-        results = HerbInterpret.evaluate_program(program,examples,grammar,evaluation_function)
-        return cost_function(results)
-    catch e
-        # if isa(e, BoundsError) || isa(e, ArgumentError)
-        #     @warn "Error while evaluating program: $(rulenode2expr(program,grammar))\n BoundsError"
-        #     return Inf
-        # end
-        # throw(e)
-        return Inf
-    end
+function calculate_cost(program::RuleNode, cost_function::Function, examples::Vector{<:IOExample}, grammar::Grammar, evaluation_function::Function)
+    results = HerbInterpret.evaluate_program(program,examples,grammar,evaluation_function)
+    return cost_function(results)
 end

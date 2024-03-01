@@ -1,17 +1,8 @@
-using HerbCore
-using HerbGrammar
-using HerbData
-using HerbSearch
-using Logging
+using Base.Threads
 using Configurations
 
-# TODO Supercomputer: Create some good logging for the meta search. Don't just use println
-disable_logging(LogLevel(1))
-
-using Base.Threads
-include("combinators.jl")
+include("meta_arithmetic_grammar.jl")
 include("meta_grammar_definition.jl")
-
 
 
 @option struct GeneticConfiguration 
@@ -45,7 +36,7 @@ fitness_configuration = meta_configuration.fitness
 genetic_configuration = meta_configuration.genetic
 meta_grammar_configuration = meta_configuration.meta_grammar
 
-fitnes_cost_function = convert_string_to_lambda(fitness_configuration.fitness_function)
+fitness_cost_function = convert_string_to_lambda(fitness_configuration.fitness_function)
 
 println("CONFIGURATION")
 println("- Number of available threads: ",Threads.nthreads())
@@ -53,41 +44,19 @@ print("- ")
 dump(meta_configuration)
 println("=========================================")
 
-arithmetic_grammar = @csgrammar begin
-    X = |(1:5)
-    X = X * X
-    X = X + X
-    X = X - X
-    X = x
-end
-
-# CREATE A PROBLEM
-function create_simple_problem(f)
-    examples = [HerbData.IOExample(Dict(:x => x), f(x)) for x ∈ 1:meta_configuration.problem_range_size]
-    return HerbData.Problem(examples)
-end
-
-# TODO Generalize: Define more problems to evaluate the meta-program on.
-arithmetic_problem = create_simple_problem(convert_string_to_lambda(meta_configuration.problem_expression))
-meta_grammar = get_meta_grammar()
-list_of_problems = [(arithmetic_problem, meta_grammar)]
-
-
 
 """
     Function that is used for testing the meta_grammar. It generates a random meta_program 10 times and evaluates it.
 """
 function run_grammar_multiple_times()
     for _ in 1:100
-        for (problem,grammar) ∈ list_of_problems
+        for (problem, _) ∈ problems_train
             meta_program = rand(RuleNode, meta_grammar, :S, 10)
             meta_expr = rulenode2expr(meta_program, meta_grammar)
             print(meta_expr)
             # get a program that needs a problem and a grammar to be able to run
-            @time expr,_,_ = evaluate_meta_program(meta_expr,problem, grammar)
+            @time expr,_ = evaluate_meta_program(meta_expr, problem, arithmetic_grammar)
         end
-        # return
-        # @time expr, _, _ = eval(meta_expr)
     end
 end
 
@@ -113,20 +82,15 @@ function fitness_function(program, _)
 
     mean_cost = 0
     mean_running_time = 0
-    # TODO: Switch to btime maybe
-    # Nick:
-    # TODO Performance: Is SpinLock good in this case? Maybe use atomic instructions
-    # TODO Performance: Ask Sebastijan if we should do this runs for non stochastic algorithms. Maybe we should not do that.
 
-    # use a sping lock because the update should be very fast. This prevents race conditions in mean_cost
-    # TODO: use loop of indexes
+
     lk = Threads.ReentrantLock()
-    for (problem,grammar) ∈ list_of_problems
+    for (problem, problem_text) ∈ problems_train
         mean_cost_for_problem = 0
         mean_running_time_for_problem = 0    
         for _ in 1:RUNS
             start_time = time()
-            _, _, cost = evaluate_meta_program(program_to_evaluate, problem, grammar)
+            _, _, cost = evaluate_meta_program(program_to_evaluate, problem, meta_grammar)
             duration = time() - start_time
             lock(lk) do
                 mean_cost_for_problem += cost
@@ -139,11 +103,11 @@ function fitness_function(program, _)
         mean_cost += mean_cost_for_problem
         mean_running_time += mean_running_time_for_problem
     end
-    mean_cost /= length(list_of_problems)
-    mean_running_time /= length(list_of_problems)
+    mean_cost /= length(problems_train)
+    mean_running_time /= length(problems_train)
 
 
-    fitness_value = fitnes_cost_function(mean_cost, mean_running_time)
+    fitness_value = fitness_cost_function(mean_cost, mean_running_time)
     return fitness_value
 end
 
@@ -161,11 +125,11 @@ genetic_state(; current_program::RuleNode) = HerbSearch.GeneticIteratorState([cu
 
 Runs meta search on the meta grammar.
 """
-function run_meta_search(meta_grammar, stopping_condition:: Union{Nothing, Function})
+function run_meta_search(stopping_condition:: Union{Nothing, Function})
     meta_program = rand(RuleNode, meta_grammar, :S, genetic_configuration.initial_program_max_depth)
 
     # creates a genetic enumerator with no examples and with the desired fitness function 
-    genetic_algorithm = get_genetic_enumerator(Vector{Example}([]), fitness_function=fitness_function)
+    genetic_algorithm = get_genetic_enumerator(Vector{IOExample}([]), fitness_function=fitness_function)
 
     function_to_run = isnothing(stopping_condition) ? convert_string_to_lambda(genetic_configuration.stopping_condition) : stopping_condition 
     # run the meta search
@@ -180,17 +144,17 @@ function run_meta_search(meta_grammar, stopping_condition:: Union{Nothing, Funct
     # get the meta_program found so far.
     println("Best meta program is :", best_program)
     println("Best fitness found :", best_fitness)
-
+    return best_program
 end
 
-filename = "run.csv"
-dirpath = joinpath(@__DIR__, "data")
-mkpath(dirpath)
+# filename = "run.csv"
+# dirpath = joinpath(@__DIR__, "data")
+# mkpath(dirpath)
 
-file_path = joinpath(dirpath, filename)
-open(file_path, "w") do file
-    write(file_path, "Hello world!")
-end
+# file_path = joinpath(dirpath, filename)
+# open(file_path, "w") do file
+#     write(file_path, "Hello world!")
+# end
 
-run_meta_search(meta_grammar, nothing)
+# run_meta_search(meta_grammar, nothing)
 # run_grammar_multiple_times()

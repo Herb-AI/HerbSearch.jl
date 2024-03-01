@@ -1,5 +1,5 @@
 """
-    search_rulenode(g::Grammar, problem::Problem, start::Symbol; evaluator::Function=test_with_input, enumerator::Function=get_bfs_enumerator, max_depth::Union{Int, Nothing}=nothing, max_size::Union{Int, Nothing}=nothing, max_time::Union{Int, Nothing}=nothing, max_enumerations::Union{Int, Nothing}=nothing, allow_evaluation_errors::Bool=false)::Union{Tuple{RuleNode, Any}, Nothing}
+    search_rulenode(g::Grammar, problem::Problem, start::Symbol; evaluator::Function=execute_on_input, enumerator::Function=get_bfs_enumerator, max_depth::Union{Int, Nothing}=nothing, max_size::Union{Int, Nothing}=nothing, max_time::Union{Int, Nothing}=nothing, max_enumerations::Union{Int, Nothing}=nothing, allow_evaluation_errors::Bool=false)::Union{Tuple{RuleNode, Any}, Nothing}
 
 Searches the grammar for the program that satisfies the maximum number of examples in the problem.
     
@@ -21,7 +21,7 @@ function search_rulenode(
     g::Grammar, 
     problem::Problem, 
     start::Symbol; 
-    evaluator::Function=test_with_input, 
+    evaluator::Function=execute_on_input, 
     enumerator::Function=get_bfs_enumerator,
     max_depth::Union{Int, Nothing}=nothing,
     max_size::Union{Int, Nothing}=nothing,
@@ -48,10 +48,10 @@ function search_rulenode(
 
         # Evaluate the examples. 
 #         # `all` shortcircuits, so not every example will be evaluated in every iteration. 
-#         if all(example.out == evaluator(symboltable, expr, example.in) for example ∈ problem.examples)
+#         if all(example.out == evaluator(symboltable, expr, example.in) for example ∈ problem.spec)
 #             return (h, expr)
         falsified = false
-        for example ∈ problem.examples
+        for example ∈ problem.spec
             # Evaluate the example, making sure that any exceptions are caught
             try
                 output = evaluator(symboltable, expr, example.in)
@@ -80,7 +80,7 @@ end
 
 
 """
-    search(g::Grammar, problem::Problem, start::Symbol; evaluator::Function=test_with_input, enumerator::Function=get_bfs_enumerator, max_depth::Union{Int, Nothing}=nothing, max_size::Union{Int, Nothing}=nothing, max_time::Union{Int, Nothing}=nothing, max_enumerations::Union{Int, Nothing}=nothing, allow_evaluation_errors::Bool=false)::Union{Any, Nothing}
+    search(g::Grammar, problem::Problem, start::Symbol; evaluator::Function=execute_on_input, enumerator::Function=get_bfs_enumerator, max_depth::Union{Int, Nothing}=nothing, max_size::Union{Int, Nothing}=nothing, max_time::Union{Int, Nothing}=nothing, max_enumerations::Union{Int, Nothing}=nothing, allow_evaluation_errors::Bool=false)::Union{Any, Nothing}
 
 Searches for a program by calling [`search_rulenode`](@ref) starting from [`Symbol`](@ref) `start` guided by `enumerator` and [`Grammar`](@ref) trying to satisfy  the higher-order constraints in form of input/output examples defined in the [`Problem`](@ref). 
 This is the heart of the Herb's search for satisfying programs.
@@ -90,7 +90,7 @@ function search(
     g::Grammar, 
     problem::Problem, 
     start::Symbol; 
-    evaluator::Function=test_with_input, 
+    evaluator::Function=execute_on_input, 
     enumerator::Function=get_bfs_enumerator,
     max_depth::Union{Int, Nothing}=nothing,
     max_size::Union{Int, Nothing}=nothing,
@@ -146,7 +146,7 @@ mse_error_function_strings(output::String, expected_output::Char) = mse_error_fu
 mse_error_function_strings(output::Char, expected_output::Char) = mse_error_function_strings(string(output), string(expected_output))
 
 
-function mse_error_function_strings(output::String, expected_output::String) =
+function mse_error_function_strings(output::String, expected_output::String)
     edit_dist = edit_distance(output,expected_output)
     return edit_dist 
 end
@@ -155,7 +155,7 @@ mse_error_function(old_error, output::String, expected_output::String) =  old_er
 
 
 """
-    search_best(g::Grammar, problem::Problem, start::Symbol; evaluator::Function=test_with_input, enumerator::Function=get_bfs_enumerator, error_function::Function=default_error_function, max_depth::Union{Int, Nothing}=nothing, max_size::Union{Int, Nothing}=nothing, max_time::Union{Int, Nothing}=nothing, max_enumerations::Union{Int, Nothing}=nothing, allow_evaluation_errors::Bool=false)::Tuple{Any, Real}
+    search_best(g::Grammar, problem::Problem, start::Symbol; evaluator::Function=execute_on_input, enumerator::Function=get_bfs_enumerator, error_function::Function=default_error_function, max_depth::Union{Int, Nothing}=nothing, max_size::Union{Int, Nothing}=nothing, max_time::Union{Int, Nothing}=nothing, max_enumerations::Union{Int, Nothing}=nothing, allow_evaluation_errors::Bool=false)::Tuple{Any, Real}
 
 Searches the grammar for the program that satisfies the maximum number of examples in the problem.
 The evaluator should be a function that takes a SymbolTable, expression and a dictionary with 
@@ -180,7 +180,7 @@ function search_best(
         g::Grammar, 
         problem::Problem, 
         start::Symbol;
-        evaluator::Function=test_with_input, 
+        evaluator::Function=execute_on_input, 
         enumerator::Function=get_bfs_enumerator,
         error_function::Function=default_error_function,
         get_rulenode_from_iterator::Function = program -> program,
@@ -213,7 +213,7 @@ function search_best(
         # Evaluate the expression on the examples
         total_error = 0
         crashed = false
-        for example ∈ problem.examples
+        for example ∈ problem.spec
             try
                 output = evaluator(symboltable, expr, example.in)
                 total_error = error_function(total_error, output, example.out)
@@ -236,8 +236,8 @@ function search_best(
         if crashed 
             # do nothing
         elseif total_error == 0
-            @warn "Reached error 0"
-            @warn "Program: $h"
+            @info "Reached error 0"
+            @info "Program: $h"
             return expr, 0, best_rulenode
         elseif total_error < best_error
             # Update the best found example so far
@@ -245,10 +245,9 @@ function search_best(
             best_program = expr
             best_rulenode = h
         end
-
         # Check stopping conditions
         if check_enumerations && i > max_enumerations || check_time && time() - start_time > max_time
-            @warn "Stopping search because of time or enumerations"
+            # @warn "Stopping search because of time or enumerations"
             return best_program, best_error, best_rulenode
         end
     end
@@ -258,11 +257,11 @@ end
 
 function supervised_search(
     g::ContextSensitiveGrammar, 
-    problem::Problem, 
+    examples::Array{<:IOExample}, 
     start::Symbol,
     stopping_condition::Function,
     start_program::RuleNode;
-    evaluator::Function=test_with_input,
+    evaluator::Function=execute_on_input,
     enumerator::Function=get_bfs_enumerator,
     state=StochasticIteratorState,
     error_function::Function=default_error_function,
@@ -292,7 +291,7 @@ function supervised_search(
         
         # Evaluate the expression on the examples
         total_error = 0
-        for example ∈ problem.examples
+        for example ∈ examples
             total_error = error_function(total_error, evaluator(symboltable, expr, example.in), example.out)
         end
 
@@ -333,8 +332,6 @@ function meta_search(
         typemax(Int),
         start
     )
-    # instead of calling StochasticIteratorState(current_program = current_program) I abstracted away to a function call that creates 
-    # the appropriate struct for a given iterator. (Different iterators can have different structs for the StochasticIteratorState)
     hypotheses = Base.Iterators.rest(iterator, state(current_program=start_program))
 
     best_fitness = 0
