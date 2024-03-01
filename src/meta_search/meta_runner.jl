@@ -79,7 +79,6 @@ function fitness_function(program, _)
     println(typeof(program))
     expression_to_evaluate = rulenode2expr(program, meta_grammar)
 
-    @show expression_to_evaluate
     # evaluate the search 3 times to account for variable time of running a program
     RUNS = fitness_configuration.number_of_runs_to_average_over
 
@@ -97,8 +96,8 @@ function fitness_function(program, _)
             # get a program that needs a problem and a grammar to be able to run
             best_expression, best_program, program_cost = evaluate_meta_program(expression_to_evaluate, problem, arithmetic_grammar)
             
-            @show problem_text
-            @show (best_expression, program_cost)
+            # @show problem_text
+            # @show (best_expression, program_cost)
             duration = time() - start_time
             lock(lk) do
                 mean_cost_for_problem += program_cost
