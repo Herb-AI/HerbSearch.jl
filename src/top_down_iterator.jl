@@ -145,15 +145,30 @@ function Base.iterate(iter::TopDownIterator)
 end
 
 
+# """
+#     Base.iterate(iter::TopDownIterator, pq::DataStructures.PriorityQueue)
+
+# Describes the iteration for a given [`TopDownIterator`](@ref) and a [`PriorityQueue`](@ref) over the grammar without enqueueing new items to the priority queue. Recursively returns the result for the priority queue.
+# """
+# function Base.iterate(iter::TopDownIterator, pq::DataStructures.PriorityQueue)
+#     solver, max_depth, max_size = iter.solver, iter.max_depth, iter.max_size
+
+#     return _find_next_complete_tree(solver, max_depth, max_size, pq, iter)
+# end
+
 """
     Base.iterate(iter::TopDownIterator, pq::DataStructures.PriorityQueue)
 
 Describes the iteration for a given [`TopDownIterator`](@ref) and a [`PriorityQueue`](@ref) over the grammar without enqueueing new items to the priority queue. Recursively returns the result for the priority queue.
 """
-function Base.iterate(iter::TopDownIterator, pq::DataStructures.PriorityQueue)
+function Base.iterate(iter::TopDownIterator, tup::Tuple{Vector{AbstractRuleNode}, DataStructures.PriorityQueue})
+    if !isempty(tup[1])
+        return (pop!(tup[1]), tup)
+    end
+
     solver, max_depth, max_size = iter.solver, iter.max_depth, iter.max_size
 
-    return _find_next_complete_tree(solver, max_depth, max_size, pq, iter)
+    return _find_next_complete_tree(solver, max_depth, max_size, tup[2], iter)
 end
 
 """
@@ -168,7 +183,7 @@ function _find_next_complete_tree(
     max_size::Int,
     pq::PriorityQueue,
     iter::TopDownIterator
-)::Union{Tuple{RuleNode, PriorityQueue}, Nothing}
+)::Union{Tuple{RuleNode, Tuple{Vector{AbstractRuleNode}, PriorityQueue}}, Nothing}
     while length(pq) ≠ 0
         (state, priority_value) = dequeue_pair!(pq)
         load_state!(solver, state)
@@ -181,9 +196,11 @@ function _find_next_complete_tree(
         hole_res = hole_heuristic(iter, get_tree(solver), max_depth)
         if hole_res ≡ already_complete
             # TODO: this tree could have fixed shaped holes only and should be iterated differently (https://github.com/orgs/Herb-AI/projects/6/views/1?pane=issue&itemId=54384555)
-            println(get_tree(solver))
-            continue
-            return (get_tree(solver), pq)
+            fixed_shaped_iter = FixedShapedIterator(get_grammar(solver), :StartingSymbolIsIgnored, solver=solver)
+            complete_trees = collect(fixed_shaped_iter)
+            if !isempty(complete_trees)
+                return (pop!(complete_trees), (complete_trees, pq))
+            end
         elseif hole_res ≡ limit_reached
             # The maximum depth is reached
             continue

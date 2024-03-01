@@ -1,5 +1,34 @@
 using Random
 
+"""
+    heuristic_leftmost_fixed_shaped_hole(node::AbstractRuleNode, max_depth::Int)::Union{ExpandFailureReason, HoleReference}
+    
+Defines a heuristic over [FixedShapeHole](@ref)s, where the left-most hole always gets considered first. Returns a [`HoleReference`](@ref) once a hole is found. This is the default option for enumerators.
+"""
+function heuristic_leftmost_fixed_shaped_hole(node::AbstractRuleNode, max_depth::Int)::Union{ExpandFailureReason, HoleReference}
+    function leftmost(node::AbstractRuleNode, max_depth::Int, path::Vector{Int})::Union{ExpandFailureReason, HoleReference}
+        if max_depth == 0 return limit_reached end
+
+        for (i, child) in enumerate(node.children)
+            new_path = push!(copy(path), i)
+            hole_res = leftmost(child, max_depth-1, new_path)
+            if (hole_res == limit_reached) || (hole_res isa HoleReference)
+                return hole_res
+            end
+        end
+    
+        return already_complete
+    end
+    
+    #TODO: refactor this. this method should be merged with `heuristic_leftmost`. The only difference is the `FixedShapedHole` typing in the signature below:
+    function leftmost(hole::FixedShapedHole, max_depth::Int, path::Vector{Int})::Union{ExpandFailureReason, HoleReference}
+        if max_depth == 0 return limit_reached end
+        return HoleReference(hole, path)
+    end
+
+    return leftmost(node, max_depth, Vector{Int}())
+end
+
 
 """
     heuristic_leftmost(node::AbstractRuleNode, max_depth::Int)::Union{ExpandFailureReason, HoleReference}
