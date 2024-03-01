@@ -76,7 +76,6 @@ Because higher fitness means better I invert the fraction usint 1 / (cost * 100 
 The 100 just gives more weight to the cost I think. You can chose another value.
 """
 function fitness_function(program, _)
-    println(typeof(program))
     expression_to_evaluate = rulenode2expr(program, meta_grammar)
 
     # evaluate the search 3 times to account for variable time of running a program
@@ -113,8 +112,7 @@ function fitness_function(program, _)
     mean_cost /= length(problems_train)
     mean_running_time /= length(problems_train)
 
-
-    fitness_value = fitness_cost_function(mean_cost, mean_running_time)
+    fitness_value = 1 / (mean_cost * 100 + mean_running_time)
     return fitness_value
 end
 

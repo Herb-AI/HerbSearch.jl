@@ -15,23 +15,17 @@ meta_grammar = @csgrammar begin
 	vlsn_enumeration_depth = |(3:4)
 
 	ALGORITHM = get_mh_enumerator(problemExamples, HerbSearch.mean_squared_error) | 
-							get_sa_enumerator(problemExamples, HerbSearch.mean_squared_error, sa_inital_temperature, sa_temperature_decreasing_factor)
-							get_vlsn_enumerator(problemExamples, HerbSearch.mean_squared_error, vlsn_enumeration_depth)
+				get_sa_enumerator(problemExamples, HerbSearch.mean_squared_error, sa_inital_temperature, sa_temperature_decreasing_factor) |
+				get_vlsn_enumerator(problemExamples, HerbSearch.mean_squared_error, vlsn_enumeration_depth)
 	A = (ALGORITHM, STOPFUNCTION, MAX_DEPTH, problemExamples, grammar)
 	# A = ga,STOP
 	# A = dfs,STOP
 	# A = bfs,STOP
 	# A = astar,STOP
-	# MHCONFIGURATION = MAXDEPTH
-	# MAXDEPTH = 3
 	COMBINATOR = (Sequence, ALIST, MAX_DEPTH, grammar)
 	COMBINATOR = (Parallel, ALIST, MAX_DEPTH, grammar)
 	ALIST = [MS; MS]
 	ALIST = [MS; ALIST]
-	# COMBINATOR = sequence(MSLIST)
-	# COMBINATOR = parallel([MSLIST],SELECT)
-	# MSLIST = MS,MS
-	# MSLIST = MS,MSLIST
 	# SELECT = best | crossover | mutate
 	STOPFUNCTION = (time, iteration, cost) -> STOPCONDITION
 	STOPCONDITION = STOPTERM
