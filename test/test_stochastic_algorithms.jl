@@ -24,7 +24,7 @@ macro testmh(expression::String, max_depth=6)
         e = Meta.parse("x -> $($expression)")
         problem, examples = create_problem(eval(e))
         enumerator = get_mh_enumerator(examples, mean_squared_error)
-        program, cost = search_best(grammar, problem, :X, enumerator=enumerator, error_function=mse_error_function, max_depth=$max_depth, max_time=MAX_RUNNING_TIME)
+        program, cost, _ = search_best(grammar, problem, :X, enumerator=enumerator, error_function=mse_error_function, max_depth=$max_depth, max_time=MAX_RUNNING_TIME)
         @test cost == 0
     end
     )
@@ -37,7 +37,7 @@ macro testsa(expression::String,max_depth=6,init_temp = 2)
         e = Meta.parse("x -> $($expression)")
         problem, examples = create_problem(eval(e))
         enumerator = get_sa_enumerator(examples, mean_squared_error, $init_temp)
-        program, cost = search_best(grammar, problem, :X, enumerator=enumerator, error_function=mse_error_function, max_depth=$max_depth, max_time=MAX_RUNNING_TIME)
+        program, cost, _  = search_best(grammar, problem, :X, enumerator=enumerator, error_function=mse_error_function, max_depth=$max_depth, max_time=MAX_RUNNING_TIME)
         @test cost == 0
     end
     )
@@ -49,7 +49,7 @@ macro testvlsn(expression::String, max_depth = 6, enumeration_depth = 2)
         e = Meta.parse("x -> $($expression)")
         problem, examples = create_problem(eval(e))
         enumerator = get_vlsn_enumerator(examples, mean_squared_error, $enumeration_depth)
-        program, cost = search_best(grammar, problem, :X, enumerator=enumerator, error_function=mse_error_function, max_depth=$max_depth, max_time=MAX_RUNNING_TIME)
+        program, cost, _  = search_best(grammar, problem, :X, enumerator=enumerator, error_function=mse_error_function, max_depth=$max_depth, max_time=MAX_RUNNING_TIME)
         @test cost == 0
     end
     )

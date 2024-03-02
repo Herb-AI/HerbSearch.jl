@@ -153,6 +153,8 @@ end
 
 mse_error_function(old_error, output::String, expected_output::String) =  old_error + mse_error_function_strings(output, expected_output)
 
+get_rulenode_from_iterator(tuple :: Tuple{RuleNode,Float64}) :: RuleNode = tuple[begin]
+get_rulenode_from_iterator(x::RuleNode) :: RuleNode = x
 
 """
     search_best(g::Grammar, problem::Problem, start::Symbol; evaluator::Function=execute_on_input, enumerator::Function=get_bfs_enumerator, error_function::Function=default_error_function, max_depth::Union{Int, Nothing}=nothing, max_size::Union{Int, Nothing}=nothing, max_time::Union{Int, Nothing}=nothing, max_enumerations::Union{Int, Nothing}=nothing, allow_evaluation_errors::Bool=false)::Tuple{Any, Real}
@@ -183,13 +185,12 @@ function search_best(
         evaluator::Function=execute_on_input, 
         enumerator::Function=get_bfs_enumerator,
         error_function::Function=default_error_function,
-        get_rulenode_from_iterator::Function = program -> program,
         max_depth::Union{Int, Nothing}=nothing,
         max_size::Union{Int, Nothing}=nothing,
         max_time::Union{Int, Nothing}=nothing,
         max_enumerations::Union{Int, Nothing}=nothing,
         allow_evaluation_errors::Bool=false
-    )::Tuple{Any, Real, RuleNode}
+    )::Tuple{Any, Real, Union{RuleNode,Nothing}}
 
     start_time = time()
     check_time = max_time !== nothing
@@ -208,8 +209,8 @@ function search_best(
     best_rulenode = nothing
     for (i, h) ∈ enumerate(hypotheses)
         # Create expression from rulenode representation of AST
-        expr = rulenode2expr(get_rulenode_from_iterator(h), g)
-
+        rulenode = get_rulenode_from_iterator(h)
+        expr = rulenode2expr(rulenode, g)
         # Evaluate the expression on the examples
         total_error = 0
         crashed = false
@@ -238,12 +239,12 @@ function search_best(
         elseif total_error == 0
             @info "Reached error 0"
             @info "Program: $h"
-            return expr, 0, best_rulenode
+            return expr, 0, rulenode
         elseif total_error < best_error
             # Update the best found example so far
             best_error = total_error
             best_program = expr
-            best_rulenode = h
+            best_rulenode = rulenode
         end
         # Check stopping conditions
         if check_enumerations && i > max_enumerations || check_time && time() - start_time > max_time

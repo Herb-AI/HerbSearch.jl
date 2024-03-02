@@ -126,9 +126,7 @@ end
                 mutation_probability=0.8,
                 maximum_initial_population_depth=3,
             )
-            program, cost = search_best(grammar, problem, :X, enumerator=enumerator, error_function=mse_error_function, max_depth=nothing, max_time=20,
-                get_rulenode_from_iterator=(tuple) -> tuple[begin]
-            )
+            program, cost, rulenode = search_best(grammar, problem, :X, enumerator=enumerator, error_function=mse_error_function, max_depth=nothing, max_time=20)     
             @test cost == 0
         end
     end

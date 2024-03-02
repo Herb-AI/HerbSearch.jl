@@ -10,7 +10,7 @@
         problem = Problem([IOExample(Dict(:x => x), 2x+1) for x ∈ 1:5])
         solution = search(g₁, problem, :Number, max_depth=3)
 
-        @test test_with_input(SymbolTable(g₁), solution, Dict(:x => 6)) == 2*6+1
+        @test execute_on_input(SymbolTable(g₁), solution, Dict(:x => 6)) == 2*6+1
     end
 
     @testset "Search max_enumerations stopping condition" begin
@@ -35,16 +35,16 @@
 
     @testset "Best search" begin
         problem = Problem(push!([IOExample(Dict(:x => x), 2x+1) for x ∈ 1:5], IOExample(Dict(:x => 5), 15)))
-        solution, error = search_best(g₁, problem, :Number, max_depth=3)
+        solution, error, _  = search_best(g₁, problem, :Number, max_depth=3)
 
         @test error == 1
-        @test test_with_input(SymbolTable(g₁), solution, Dict(:x => 6)) == 2*6+1
+        @test execute_on_input(SymbolTable(g₁), solution, Dict(:x => 6)) == 2*6+1
 
     end
 
     @testset "Search_best max_enumerations stopping condition" begin
         problem = Problem([IOExample(Dict(:x => x), 2x-1) for x ∈ 1:5])
-        solution, error = search_best(g₁, problem, :Number, max_enumerations=2)
+        solution, error, _  = search_best(g₁, problem, :Number, max_enumerations=2)
 
         @test solution == 1
         @test error == 4
@@ -58,7 +58,7 @@
         end
         
         problem = Problem([IOExample(Dict(), x) for x ∈ 1:5])
-        solution, error = search_best(g₃, problem, :Index, max_depth=2, allow_evaluation_errors=true)
+        solution, error, _  = search_best(g₃, problem, :Index, max_depth=2, allow_evaluation_errors=true)
 
         @test solution ≡ nothing
         @test error == typemax(Int)

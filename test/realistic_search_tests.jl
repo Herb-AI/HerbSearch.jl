@@ -75,7 +75,7 @@ function _execute_test(
 
     # check if all additional tests succeed
     symbol_table:: SymbolTable = SymbolTable(grammar)
-    tests_succeed::Vector{Bool} = [test.out == test_with_input(symbol_table, res_expr, test.in) for test ∈ tests]
+    tests_succeed::Vector{Bool} = [test.out == execute_on_input(symbol_table, res_expr, test.in) for test ∈ tests]
     if !all(tests_succeed)
         failed_tests::Vector{Int} = lookup(isequal(false), tests_succeed)
         printstyled("Test $(name) failed; additional tests $(failed_tests) failed (expression = $(res_expr))", color = :red)
