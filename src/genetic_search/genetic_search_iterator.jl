@@ -45,7 +45,10 @@ Base.@kwdef struct GeneticSearchIterator{FitnessFunction,CrossOverFunction,Mutat
 end
 
 struct GeneticIteratorState
-    population::Array{RuleNode}
+    population::Vector{RuleNode}
+    fitness_array::Vector{Float64}
+    best_program::RuleNode 
+    best_fitness::Float64   
 end
 
 Base.IteratorSize(::GeneticSearchIterator) = Base.SizeUnknown()
@@ -87,25 +90,27 @@ function validate_iterator(iter)
 end
 
 """
-    get_best_program(population::Array{RuleNode}, iter:: GeneticSearchIterator)
+get_fitness_and_best_program(population::Array{RuleNode}, iter:: GeneticSearchIterator)
 
 Returns the best program within the population with respect to the fitness function.
 """
-function get_best_program(population::Array{RuleNode}, iter::GeneticSearchIterator)
+function get_fitness_and_best_program(population::Array{RuleNode}, iter::GeneticSearchIterator)
+    fitness_array = Vector{Float64}(undef, iter.population_size)
     best_program = population[begin]
     best_fitness = 0
+
     lk = ReentrantLock()
     Threads.@threads for index ∈ eachindex(population)
         chromosome = population[index]
-        fitness_value = iter.fitness(chromosome, HerbInterpret.evaluate_program(chromosome, iter.examples, iter.grammar, iter.evaluation_function))
+        fitness_array[index] = iter.fitness(chromosome, HerbInterpret.evaluate_program(chromosome, iter.examples, iter.grammar, iter.evaluation_function))
         lock(lk) do
-            if fitness_value > best_fitness
-                best_fitness = fitness_value
+            if fitness_array[index] > best_fitness
+                best_fitness = fitness_array[index]
                 best_program = chromosome
             end
         end
     end
-    return best_program, best_fitness
+    return fitness_array, best_program, best_fitness
 end
 
 """
@@ -117,14 +122,13 @@ function Base.iterate(iter::GeneticSearchIterator)
     validate_iterator(iter)
     grammar = iter.grammar
 
+    # sample a random nodes using start symbol and grammar and generate the initial population
     population = Vector{RuleNode}(undef, iter.population_size)
-
     for i in 1:iter.population_size
-        # sample a random nodes using start symbol and grammar
         population[i] = rand(RuleNode, grammar, iter.start_symbol, iter.maximum_initial_population_depth)
     end
-    best_program, best_fitness = get_best_program(population, iter)
-    return ((best_program, best_fitness), GeneticIteratorState(population))
+    fitness_array, best_program, best_fitness = get_fitness_and_best_program(population, iter)
+    return ((best_program, best_fitness), GeneticIteratorState(population, fitness_array, best_program, best_fitness))
 end
 
 
@@ -137,30 +141,12 @@ function Base.iterate(iter::GeneticSearchIterator, current_state::GeneticIterato
 
     current_population = current_state.population
 
-    # Calculate fitness and best program
-    fitness_array = Vector{Float64}(undef, iter.population_size)
-    best_program = current_population[begin]
-    best_fitness = 0
-
-    lk = ReentrantLock()
-    Threads.@threads for i in 1:iter.population_size
-        chromosome = current_population[i]
-        fitness_array[i] = iter.fitness(chromosome, HerbInterpret.evaluate_program(chromosome, iter.examples, iter.grammar, iter.evaluation_function))
-        lock(lk) do 
-            if fitness_array[i] > best_fitness 
-                best_fitness = fitness_array[i]
-                best_program = chromosome
-            end
-        end
-    end
-
     new_population = Vector{RuleNode}(undef, iter.population_size)
-    new_population[begin] = best_program
 
     # do crossover
-    index = 2
+    index = 1
     while index <= iter.population_size
-        parent1, parent2 = iter.select_parents(current_population, fitness_array)
+        parent1, parent2 = iter.select_parents(current_population, current_state.fitness_array)
         children = iter.cross_over(parent1, parent2, iter.grammar)
         for child ∈ children
             if index > iter.population_size
@@ -178,9 +164,23 @@ function Base.iterate(iter::GeneticSearchIterator, current_state::GeneticIterato
         end
     end
 
-    # TODO: Maybe recompute the best program after the cross_over + mutation and then return it.
+    fitness_array, best_program, best_fitness = get_fitness_and_best_program(new_population, iter)
+    if best_fitness < current_state.best_fitness
+        # if the previous program was better than what we have now we add the best program in the place of the worst
 
-    # return the best program before any cross over or mutation and the fitness corresponding to that program
-    return ((best_program, best_fitness), GeneticIteratorState(new_population))
+        # find the indes of the lowest fitness chromosome 
+        minimum_fitness, index_with_minimum_fitness = findmin(fitness_array)
+        # replace the program in the population and the fitness arrays
+        fitness_array[index_with_minimum_fitness] = current_state.best_fitness
+        new_population[index_with_minimum_fitness] = current_state.best_program
+        # change best program and best fitness
+        best_fitness = current_state.best_fitness
+        best_program = current_state.best_program
+    end
+    @assert (best_fitness >= current_state.best_fitness)
+
+
+    # return the best program and best fitness from the new population
+    return ((best_program, best_fitness), GeneticIteratorState(new_population, fitness_array, best_program, best_fitness))
 end
 

@@ -32,7 +32,9 @@ println("- Number of available threads: ",Threads.nthreads())
 print("- ")
 dump(meta_configuration)
 println("=========================================")
-
+dump(meta_grammar)
+println("=========================================")
+println("Genetic algorithm always adds the best program so far in the population")
 
 """
     Function that is used for testing the meta_grammar. It generates a random meta_program 10 times and evaluates it.
@@ -125,11 +127,10 @@ function run_meta_search(stopping_condition:: Union{Nothing, Function})
     # creates a genetic enumerator with no examples and with the desired fitness function 
     genetic_algorithm = get_genetic_enumerator(Vector{IOExample}([]), fitness_function=fitness_function)
 
-    function_to_run = isnothing(stopping_condition) ? convert_string_to_lambda(genetic_configuration.stopping_condition) : stopping_condition 
     # run the meta search
     @time best_program, best_fitness = meta_search(
         meta_grammar, :S,
-        stopping_condition = function_to_run,
+        stopping_condition = stopping_condition,
         start_program = meta_program,
         enumerator = genetic_algorithm,
         state = genetic_state
