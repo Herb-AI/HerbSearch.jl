@@ -11,7 +11,7 @@ It uses [`HerbSearch.supervised_search`](@ref) to run the enumerator and monitor
 
 Returns a tuple consisting of the `(expression found, program as rulenode, program cost)`
 """
-function generic_run(enumerator::Function, stopping_condition::Function, max_depth::Int, examples::Vector{<:IOExample}, grammar::ContextSensitiveGrammar;  start_program::Union{Nothing,RuleNode} = nothing)
+function generic_run(enumerator::Function, stopping_condition::Function, max_depth::Int, examples::Vector{<:IOExample}, grammar::ContextSensitiveGrammar;  start_program::Union{Nothing,RuleNode} = nothing, stop_channel::Union{Nothing,Channel{Bool}}=nothing)
     if isnothing(start_program)
         start_program = rand(RuleNode, grammar, max_depth)
     end
@@ -23,7 +23,8 @@ function generic_run(enumerator::Function, stopping_condition::Function, max_dep
         start_program,
         max_depth = max_depth, 
         enumerator = enumerator,
-        error_function = HerbSearch.mse_error_function
+        error_function = HerbSearch.mse_error_function,
+        stop_channel = stop_channel
     )
     return program, rulenode, cost
 end
@@ -44,7 +45,7 @@ The sequence step is stopped once an algorithm achieves cost `0`, meaning it sat
 
 Returns a tuple consisting of the `(expression found, program as rulenode, program cost)` coresponding to the best program found (lowest cost).
 """
-function generic_run(::Type{Sequence}, meta_search_list::Vector, max_depth::Int, grammar::ContextSensitiveGrammar; start_program::Union{Nothing,RuleNode} = nothing)
+function generic_run(::Type{Sequence}, meta_search_list::Vector, max_depth::Int, grammar::ContextSensitiveGrammar; start_program::Union{Nothing,RuleNode} = nothing, stop_channel::Union{Nothing,Channel{Bool}}=nothing)
     # first flatten the list
     # create an inital random program as the start
     if isnothing(start_program)
@@ -52,21 +53,29 @@ function generic_run(::Type{Sequence}, meta_search_list::Vector, max_depth::Int,
     end
 
     start_time = time()
-    MAX_SEQUENCE_RUNNING_TIME = 20 # in seconds
+    MAX_SEQUENCE_RUNNING_TIME = 60 # in seconds
 
     best_expression, best_program, program_cost = nothing, start_program, Inf64
     for x ∈ meta_search_list
+        if !isnothing(stop_channel) && !isempty(stop_channel)
+            return best_program, best_rulenode, best_error
+        end
 
         current_time = time() - start_time
         if current_time > MAX_SEQUENCE_RUNNING_TIME 
+            println("Quittting because of too much seq time!")
             return best_expression, best_program, program_cost
         end
-        expression, start_program, cost = generic_run(x..., start_program = start_program)
+        expression, start_program, cost = generic_run(x..., start_program = start_program, stop_channel=stop_channel)
         if cost < program_cost
             best_expression, best_program, program_cost = expression, start_program, cost
         end
         # if we reached cost 0 then we have a working program, there is no point in continuing the sequence
         if cost == 0
+            if !isnothing(stop_channel)
+                HerbSearch.safe_put!(stop_channel,true)
+                close(stop_channel)
+            end
             break
         end
     end
@@ -86,21 +95,29 @@ The sequence step is stopped once an algorithm achieves cost `0`, meaning it sat
 
 Returns a tuple consisting of the `(expression found, program as rulenode, program cost)` coresponding to the best program found (lowest cost).
 """
-function generic_run(::Type{Parallel}, meta_search_list::Vector, max_depth::Int, grammar::ContextSensitiveGrammar; start_program::Union{Nothing,RuleNode} = nothing)
+function generic_run(::Type{Parallel}, meta_search_list::Vector, max_depth::Int, grammar::ContextSensitiveGrammar; start_program::Union{Nothing,RuleNode} = nothing, stop_channel::Union{Nothing,Channel{Bool}}=nothing)
     # create an inital random program as the start
     if isnothing(start_program)
         start_program = rand(RuleNode, grammar, max_depth)
     end
-    best_expression, best_program, program_cost = nothing, start_program, Inf64
+
+    if isnothing(stop_channel)
+        stop_channel = Channel{Bool}(1)
+    end
+
     # use threads
-    lk = ReentrantLock()
-    Threads.@threads for meta ∈ meta_search_list
-        expression, outcome_program, cost = generic_run(meta..., start_program = start_program)
-        lock(lk) do
-            if cost < program_cost
-                best_expression, best_program, program_cost = expression, outcome_program, cost
-            end
+    thread_list = [Threads.@spawn generic_run(meta..., start_program = start_program, stop_channel = stop_channel) for meta ∈ meta_search_list]
+
+    best_expression, best_program, program_cost = nothing, start_program, Inf64
+    for (expr,prog,cost) in fetch.(thread_list)
+        if cost < program_cost
+            best_expression, best_program, program_cost = expr, prog, cost
         end
     end
+    if program_cost == 0
+        HerbSearch.safe_put!(stop_channel,true)
+        close(stop_channel)
+    end
+    
     return best_expression, best_program, program_cost
 end

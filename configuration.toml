@@ -1,5 +1,5 @@
 [fitness]
-number_of_runs_to_average_over = 2
+number_of_runs_to_average_over = 3
 
 [genetic]
 initial_population_size = 10

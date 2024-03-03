@@ -6,7 +6,7 @@ include("meta_grammar_definition.jl")
 
 
 @option struct GeneticConfiguration 
-    initial_population_size::Int16
+    initial_population_size::Int64
     initial_program_max_depth::Int64
 end
 
@@ -32,7 +32,7 @@ println("- Number of available threads: ",Threads.nthreads())
 print("- ")
 dump(meta_configuration)
 println("=========================================")
-dump(meta_grammar)
+@show meta_grammar
 println("=========================================")
 println("Genetic algorithm always adds the best program so far in the population")
 
@@ -51,6 +51,14 @@ function run_grammar_multiple_times()
         end
     end
 end
+
+filename = "run-$(abs(rand(Int16)))"
+dirpath = joinpath(@__DIR__, "data")
+mkpath(dirpath)
+file_path = joinpath(dirpath, filename)
+println("filename is: $filename")
+io = open(file_path, "a");
+
 
 """
     fitness_function(program, array_of_outcomes)
@@ -75,24 +83,24 @@ function fitness_function(program, _)
     mean_cost = 0
     mean_running_time = 0
 
-
-    lk = Threads.ReentrantLock()
-    Threads.@threads for (problem, problem_text) ∈ problems_train
+    lk = Threads.SpinLock()
+    for i ∈ eachindex(problems_train)
+        (problem,problem_text) = problems_train[i]
         mean_cost_for_problem = 0
-        mean_running_time_for_problem = 0    
-        for _ in 1:RUNS
-            start_time = time()
+        mean_running_time_for_problem = 0   
 
+        Threads.@threads for _ in 1:RUNS
+            
             # get a program that needs a problem and a grammar to be able to run
-            best_expression, best_program, program_cost = evaluate_meta_program(expression_to_evaluate, problem, arithmetic_grammar)
-            # @show problem_text
-            # @show (best_expression, program_cost)
-            duration = time() - start_time
+            output = @timed best_expression, best_program, program_cost = evaluate_meta_program(expression_to_evaluate, problem, arithmetic_grammar)
+            write(io,"$problem_text -> duration: $(output.time), gc: $(output.gctime) cost: $program_cost\n")
+            flush(io)
             lock(lk) do
                 mean_cost_for_problem += program_cost
-                mean_running_time_for_problem += duration
+                mean_running_time_for_problem += output.time
             end
         end
+
         lock(lk) do 
             mean_cost_for_problem = mean_cost_for_problem / RUNS
             mean_running_time_for_problem = mean_running_time_for_problem / RUNS    
@@ -103,19 +111,10 @@ function fitness_function(program, _)
     end
     mean_cost /= length(problems_train)
     mean_running_time /= length(problems_train)
-
     fitness_value = 1 / (mean_cost * 100 + mean_running_time)
     return fitness_value
 end
 
-
-"""
-    genetic_state(; current_program::RuleNode)
-
-Is called by `supervised_search` and returns the genetic state that will be created from an initial program.
-It just duplicates the program 10 times and pus that into the start population.
-"""
-genetic_state(; current_program::RuleNode) = HerbSearch.GeneticIteratorState([current_program for i ∈ 1:genetic_configuration.initial_population_size])
 
 """
     run_meta_search()
@@ -123,17 +122,20 @@ genetic_state(; current_program::RuleNode) = HerbSearch.GeneticIteratorState([cu
 Runs meta search on the meta grammar.
 """
 function run_meta_search(stopping_condition:: Union{Nothing, Function})
-    meta_program = rand(RuleNode, meta_grammar, :S, genetic_configuration.initial_program_max_depth)
     # creates a genetic enumerator with no examples and with the desired fitness function 
-    genetic_algorithm = get_genetic_enumerator(Vector{IOExample}([]), fitness_function=fitness_function)
+    println("Creating initial population with random programs of maxdepth $(genetic_configuration.initial_population_size)")
+    genetic_algorithm = get_genetic_enumerator(Vector{IOExample}([]), 
+        fitness_function=fitness_function,
+        maximum_initial_population_depth = genetic_configuration.initial_program_max_depth,
+        initial_population_size          = genetic_configuration.initial_population_size
+    )
 
     # run the meta search
     @time best_program, best_fitness = meta_search(
-        meta_grammar, :S,
+        meta_grammar, 
+        :S,
         stopping_condition = stopping_condition,
-        start_program = meta_program,
         enumerator = genetic_algorithm,
-        state = genetic_state
     )
 
     # get the meta_program found so far.
@@ -142,14 +144,9 @@ function run_meta_search(stopping_condition:: Union{Nothing, Function})
     return best_program
 end
 
-# filename = "run.csv"
-# dirpath = joinpath(@__DIR__, "data")
-# mkpath(dirpath)
 
-# file_path = joinpath(dirpath, filename)
-# open(file_path, "w") do file
-#     write(file_path, "Hello world!")
-# end
+
+
 
 # run_meta_search(meta_grammar, nothing)
 # run_grammar_multiple_times()

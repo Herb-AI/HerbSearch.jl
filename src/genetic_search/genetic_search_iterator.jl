@@ -99,7 +99,7 @@ function get_fitness_and_best_program(population::Array{RuleNode}, iter::Genetic
     best_program = population[begin]
     best_fitness = 0
 
-    lk = ReentrantLock()
+    lk = Threads.SpinLock()
     Threads.@threads for index ∈ eachindex(population)
         chromosome = population[index]
         fitness_array[index] = iter.fitness(chromosome, HerbInterpret.evaluate_program(chromosome, iter.examples, iter.grammar, iter.evaluation_function))

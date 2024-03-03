@@ -11,8 +11,7 @@ include("run_algorithm.jl")
 
 Logging.disable_logging(Logging.LogLevel(1))
 
-
-output = run_meta_search((current_time, i, fitness) -> i > 100)
+@time output = run_meta_search((current_time, i, fitness) -> i > 1000)
 
 println("Output of meta search is: ", output)
 #=

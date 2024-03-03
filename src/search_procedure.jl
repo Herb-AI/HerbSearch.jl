@@ -267,6 +267,7 @@ function supervised_search(
     state=StochasticIteratorState,
     error_function::Function=default_error_function,
     max_depth::Union{Int, Nothing}=nothing,
+    stop_channel::Union{Nothing,Channel{Bool}}=nothing,
     )::Tuple{Any, Any, Real}
 
     start_time = time()
@@ -285,8 +286,11 @@ function supervised_search(
     best_error = typemax(Int)
     best_program = nothing
     best_rulenode = nothing
-    # println("Starting search ",Threads.threadid(),"\n============")
     for (i, h) ∈ enumerate(hypotheses)
+        if !isnothing(stop_channel) && !isempty(stop_channel)
+            return best_program, best_rulenode, best_error
+        end
+
         # Create expression from rulenode representation of AST
         expr = rulenode2expr(h, g)
         
@@ -297,6 +301,10 @@ function supervised_search(
         end
 
         if total_error == 0
+            if !isnothing(stop_channel) 
+                safe_put!(stop_channel,true)
+                close(stop_channel)
+            end
             return expr, h, 0
         elseif total_error < best_error
             # Update the best found example so far
@@ -320,28 +328,25 @@ function meta_search(
     g::ContextSensitiveGrammar, 
     start::Symbol;
     stopping_condition::Function,
-    start_program::RuleNode,
-    enumerator::Function=get_bfs_enumerator,
-    state=StochasticIteratorState,
-    max_depth::Union{Int, Nothing}=nothing,
+    enumerator::Function,
     )::Tuple{Any, Real}
 
     start_time = time()
-    iterator = enumerator(
+
+    # genetic search ignores max_depth and max_size
+    hypotheses = enumerator(
         g, 
-        max_depth ≡ nothing ? typemax(Int) : max_depth, 
+        typemax(Int), 
         typemax(Int),
         start
     )
-    hypotheses = Base.Iterators.rest(iterator, state(current_program=start_program))
 
     best_fitness = 0
     best_program = nothing
     println("Starting meta search!! ")
-    
+    prev_time = time()
     for (i, (rulenode, fitness)) ∈ enumerate(hypotheses)
         GC.gc()
-
         # Create expression from rulenode representation of AST
         expr = rulenode2expr(rulenode, g)
         if fitness > best_fitness
@@ -349,11 +354,13 @@ function meta_search(
             best_program = expr
         end
 
+        timer = time() - prev_time
         println("""
         Meta Search status
             - genetic iteration   : $i 
             - current fitness     : $fitness
             - Best fitness        : $best_fitness
+            - time for iterationn : $timer
         """)
 
         println(repeat("_",100))
@@ -363,6 +370,7 @@ function meta_search(
         println(repeat("=",100))
         flush(stdout)
 
+        prev_time = time()
         # Evaluate the expression on the examples
         current_time = time() - start_time
         if stopping_condition(current_time, i, fitness)
