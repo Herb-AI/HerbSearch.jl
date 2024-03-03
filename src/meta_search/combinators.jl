@@ -58,7 +58,7 @@ function generic_run(::Type{Sequence}, meta_search_list::Vector, max_depth::Int,
     best_expression, best_program, program_cost = nothing, start_program, Inf64
     for x ∈ meta_search_list
         if !isnothing(stop_channel) && !isempty(stop_channel)
-            return best_program, best_rulenode, best_error
+            return best_expression, best_program, best_error
         end
 
         current_time = time() - start_time
