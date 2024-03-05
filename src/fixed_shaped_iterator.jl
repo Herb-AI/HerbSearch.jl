@@ -90,7 +90,9 @@ function _find_next_complete_tree(
             for rule_index ∈ findall(hole.domain)
                 state = save_state!(solver)
                 fill_hole!(solver, path, rule_index)
-                enqueue!(pq, get_state(solver), priority_function(iter, get_grammar(solver), get_tree(solver), priority_value))
+                if is_feasible(solver)
+                    enqueue!(pq, get_state(solver), priority_function(iter, get_grammar(solver), get_tree(solver), priority_value))
+                end
                 load_state!(solver, state)
             end
         end

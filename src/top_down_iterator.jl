@@ -188,11 +188,6 @@ function _find_next_complete_tree(
         (state, priority_value) = dequeue_pair!(pq)
         load_state!(solver, state)
 
-        #TODO: handle complete states
-        # if pqitem.complete
-        #     return (pqitem.tree, pq)
-        # end
-
         hole_res = hole_heuristic(iter, get_tree(solver), max_depth)
         if hole_res ≡ already_complete
             # TODO: this tree could have fixed shaped holes only and should be iterated differently (https://github.com/orgs/Herb-AI/projects/6/views/1?pane=issue&itemId=54384555)
@@ -206,13 +201,15 @@ function _find_next_complete_tree(
             continue
         elseif hole_res isa HoleReference
             # Variable Shaped Hole was found
-            # TODO: problem. this 'hole' is tied to a target state. it should be state independent
+            # TODO: problem. this 'hole' is tied to a target state. it should be state independent, so we only use the `path`
             (; hole, path) = hole_res
     
             for domain ∈ partition(hole, get_grammar(solver))
                 state = save_state!(solver)
                 remove_all_but!(solver, path, domain)
-                enqueue!(pq, get_state(solver), priority_function(iter, get_grammar(solver), get_tree(solver), priority_value))
+                if is_feasible(solver)
+                    enqueue!(pq, get_state(solver), priority_function(iter, get_grammar(solver), get_tree(solver), priority_value))
+                end
                 load_state!(solver, state)
             end
         end
