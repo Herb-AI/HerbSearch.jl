@@ -204,13 +204,19 @@ function _find_next_complete_tree(
             # TODO: problem. this 'hole' is tied to a target state. it should be state independent, so we only use the `path`
             (; hole, path) = hole_res
     
-            for domain ∈ partition(hole, get_grammar(solver))
-                state = save_state!(solver)
+            partitioned_domains = partition(hole, get_grammar(solver))
+            number_of_domains = length(partitioned_domains)
+            for (i, domain) ∈ enumerate(partitioned_domains)
+                if i < number_of_domains
+                    state = save_state!(solver)
+                end
                 remove_all_but!(solver, path, domain)
                 if is_feasible(solver)
                     enqueue!(pq, get_state(solver), priority_function(iter, get_grammar(solver), get_tree(solver), priority_value))
                 end
-                load_state!(solver, state)
+                if i < number_of_domains
+                    load_state!(solver, state)
+                end
             end
         end
     end

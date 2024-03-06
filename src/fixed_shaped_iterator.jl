@@ -87,13 +87,19 @@ function _find_next_complete_tree(
             # TODO: problem. this 'hole' is tied to a target state. it should be state independent
             (; hole, path) = hole_res
     
-            for rule_index ∈ findall(hole.domain)
-                state = save_state!(solver)
+            rules = findall(hole.domain)
+            number_of_rules = length(rules)
+            for (i, rule_index) ∈ enumerate(findall(hole.domain))
+                if i < number_of_rules
+                    state = save_state!(solver)
+                end
                 fill_hole!(solver, path, rule_index)
                 if is_feasible(solver)
                     enqueue!(pq, get_state(solver), priority_function(iter, get_grammar(solver), get_tree(solver), priority_value))
                 end
-                load_state!(solver, state)
+                if i < number_of_rules
+                    load_state!(solver, state)
+                end
             end
         end
     end
