@@ -26,7 +26,7 @@ end
 
 
 """
-    hole_heuristic(::TopDownIterator, node::AbstractRuleNode, max_depth::Int)::Union{ExpandFailureReason, HoleReference}
+    hole_heuristic(::FixedShapedIterator, node::AbstractRuleNode, max_depth::Int)::Union{ExpandFailureReason, HoleReference}
 
 Defines a heuristic over fixed shaped holes. Returns a [`HoleReference`](@ref) once a hole is found.
 """
@@ -35,7 +35,7 @@ function hole_heuristic(::FixedShapedIterator, node::AbstractRuleNode, max_depth
 end
 
 """
-    Base.iterate(iter::TopDownIterator)
+    Base.iterate(iter::FixedShapedIterator)
 
 Describes the iteration for a given [`TopDownIterator`](@ref) over the grammar. The iteration constructs a [`PriorityQueue`](@ref) first and then prunes it propagating the active constraints. Recursively returns the result for the priority queue.
 """
@@ -52,7 +52,7 @@ end
 
 
 """
-    Base.iterate(iter::TopDownIterator, pq::DataStructures.PriorityQueue)
+    Base.iterate(iter::FixedShapedIterator, pq::DataStructures.PriorityQueue)
 
 Describes the iteration for a given [`TopDownIterator`](@ref) and a [`PriorityQueue`](@ref) over the grammar without enqueueing new items to the priority queue. Recursively returns the result for the priority queue.
 """
@@ -61,7 +61,7 @@ function Base.iterate(iter::FixedShapedIterator, pq::DataStructures.PriorityQueu
 end
 
 """
-    _find_next_complete_tree(grammar::ContextSensitiveGrammar, max_depth::Int, max_size::Int, pq::PriorityQueue, iter::TopDownIterator)::Union{Tuple{RuleNode, PriorityQueue}, Nothing}
+    _find_next_complete_tree(solver::Solver, pq::PriorityQueue, iter::FixedShapedIterator)::Union{Tuple{RuleNode, PriorityQueue}, Nothing}
 
 Takes a priority queue and returns the smallest AST from the grammar it can obtain from the queue or by (repeatedly) expanding trees that are in the queue.
 Returns `nothing` if there are no trees left within the depth limit.

@@ -138,10 +138,13 @@ function Base.iterate(iter::TopDownIterator)
     # Priority queue with number of nodes in the program
     pq :: PriorityQueue{State, Union{Real, Tuple{Vararg{Real}}}} = PriorityQueue()
 
-    max_depth, max_size, solver = iter.max_depth, iter.max_size, iter.solver
+    #TODO: these attributes should be part of the solver, not of the iterator
+    solver = iter.solver
+    solver.max_size = iter.max_size
+    solver.max_depth = iter.max_depth
 
     enqueue!(pq, get_state(solver), priority_function(iter, get_grammar(solver), get_tree(solver), 0))
-    return _find_next_complete_tree(solver, max_depth, max_size, pq, iter)
+    return _find_next_complete_tree(iter.solver, pq, iter)
 end
 
 
@@ -162,25 +165,22 @@ end
 Describes the iteration for a given [`TopDownIterator`](@ref) and a [`PriorityQueue`](@ref) over the grammar without enqueueing new items to the priority queue. Recursively returns the result for the priority queue.
 """
 function Base.iterate(iter::TopDownIterator, tup::Tuple{Vector{AbstractRuleNode}, DataStructures.PriorityQueue})
+    track!(iter.solver.statistics, "#CompleteTrees")
     if !isempty(tup[1])
         return (pop!(tup[1]), tup)
     end
 
-    solver, max_depth, max_size = iter.solver, iter.max_depth, iter.max_size
-
-    return _find_next_complete_tree(solver, max_depth, max_size, tup[2], iter)
+    return _find_next_complete_tree(iter.solver, tup[2], iter)
 end
 
 """
-    _find_next_complete_tree(grammar::ContextSensitiveGrammar, max_depth::Int, max_size::Int, pq::PriorityQueue, iter::TopDownIterator)::Union{Tuple{RuleNode, PriorityQueue}, Nothing}
+    _find_next_complete_tree(solver::Solver, pq::PriorityQueue, iter::TopDownIterator)::Union{Tuple{RuleNode, Tuple{Vector{AbstractRuleNode}, PriorityQueue}}, Nothing}
 
 Takes a priority queue and returns the smallest AST from the grammar it can obtain from the queue or by (repeatedly) expanding trees that are in the queue.
 Returns `nothing` if there are no trees left within the depth limit.
 """
 function _find_next_complete_tree(
-    solver::Solver, 
-    max_depth::Int, 
-    max_size::Int,
+    solver::Solver,
     pq::PriorityQueue,
     iter::TopDownIterator
 )::Union{Tuple{RuleNode, Tuple{Vector{AbstractRuleNode}, PriorityQueue}}, Nothing}
@@ -188,10 +188,11 @@ function _find_next_complete_tree(
         (state, priority_value) = dequeue_pair!(pq)
         load_state!(solver, state)
 
-        hole_res = hole_heuristic(iter, get_tree(solver), max_depth)
+        hole_res = hole_heuristic(iter, get_tree(solver), get_max_depth(solver))
         if hole_res ≡ already_complete
             # TODO: this tree could have fixed shaped holes only and should be iterated differently (https://github.com/orgs/Herb-AI/projects/6/views/1?pane=issue&itemId=54384555)
             fixed_shaped_iter = FixedShapedIterator(get_grammar(solver), :StartingSymbolIsIgnored, solver=solver)
+            track!(solver.statistics, "#FixedShapedTrees")
             complete_trees = collect(fixed_shaped_iter)
             if !isempty(complete_trees)
                 return (pop!(complete_trees), (complete_trees, pq))
