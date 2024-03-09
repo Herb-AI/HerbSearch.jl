@@ -21,6 +21,7 @@ Random.seed!(1234)
     include("test_programiterator_macro.jl")
 
     include("test_forbidden.jl")
+    include("test_ordered.jl")
 
     # Excluded because it contains long tests
     # include("test_realistic_searches.jl")
