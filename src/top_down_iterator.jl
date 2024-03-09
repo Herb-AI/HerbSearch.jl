@@ -30,14 +30,13 @@ function priority_function(
 end
 
 """
-    derivation_heuristic(::TopDownIterator, nodes::Vector{RuleNode}, ::GrammarContext)::Vector{AbstractRuleNode}
+    derivation_heuristic(::TopDownIterator, nodes::Vector{RuleNode})::Vector{AbstractRuleNode}
 
 Returns an ordered sublist of `nodes`, based on which ones are most promising to fill the hole at the given `context`.
 
 - `nodes::Vector{RuleNode}`: a list of nodes the hole can be filled with
-- `context::GrammarContext`: holds the location of the to be filled hole
 """
-function derivation_heuristic(::TopDownIterator, nodes::Vector{RuleNode}, ::GrammarContext)::Vector{AbstractRuleNode}
+function derivation_heuristic(::TopDownIterator, nodes::Vector{RuleNode})::Vector{AbstractRuleNode}
     return nodes;
 end
 
