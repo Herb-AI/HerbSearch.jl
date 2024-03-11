@@ -49,7 +49,7 @@ macro programiterator(ex)
     generate_iterator(__module__, ex)
 end
 
-function generate_iterator(mod::Module, ex::Expr, mut::Bool=false)
+function generate_iterator(mod::Module, ex::Expr, mut::Bool=true)
     Base.remove_linenums!(ex)
 
     @match ex begin

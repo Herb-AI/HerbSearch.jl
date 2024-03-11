@@ -137,6 +137,11 @@ function Base.iterate(iter::TopDownIterator)
     # Priority queue with number of nodes in the program
     pq :: PriorityQueue{State, Union{Real, Tuple{Vararg{Real}}}} = PriorityQueue()
 
+    #TODO: instantiating the solver should be in the program iterator macro
+    if isnothing(iter.solver)
+        iter.solver = Solver(iter.grammar, iter.sym)
+    end
+
     #TODO: these attributes should be part of the solver, not of the iterator
     solver = iter.solver
     solver.max_size = iter.max_size
