@@ -65,10 +65,13 @@ export
   mutate_random!,
   crossover_swap_children_2,
   sample,
-  rand
+  rand,
 
-  # meta 
-  # genetic_run
+  # meta search
+  meta_grammar,
+  generic_run,
+  run_meta_search
+
 # TODO: Don't export crossover_swap_children_2 and mutate_random!. It's a bit awkward
 # TODO: Export the meta search grammar for testing.
 end # module HerbSearch
