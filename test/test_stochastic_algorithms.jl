@@ -23,9 +23,9 @@ macro testmh(expression::String, max_depth=6)
         @testset "mh $($expression)" begin
         e = Meta.parse("x -> $($expression)")
         problem, examples = create_problem(eval(e))
-        enumerator = get_mh_enumerator(examples, mean_squared_error)
-        program, cost = search_best(grammar, problem, :X, enumerator=enumerator, error_function=mse_error_function, max_depth=$max_depth, max_time=MAX_RUNNING_TIME)
-        @test cost == 0
+        iterator = MHSearchIterator(grammar, :X, examples, mean_squared_error, max_depth=$max_depth, max_time=MAX_RUNNING_TIME)
+        solution, flag = synth(problem, iterator)
+        @test flag == optimal_program
     end
     )
 end
@@ -36,21 +36,25 @@ macro testsa(expression::String,max_depth=6,init_temp = 2)
         @testset "sa $($expression)" begin
         e = Meta.parse("x -> $($expression)")
         problem, examples = create_problem(eval(e))
-        enumerator = get_sa_enumerator(examples, mean_squared_error, $init_temp)
-        program, cost = search_best(grammar, problem, :X, enumerator=enumerator, error_function=mse_error_function, max_depth=$max_depth, max_time=MAX_RUNNING_TIME)
-        @test cost == 0
+        iterator = SASearchIterator(grammar, :X, examples, mean_squared_error, initial_temperature=$init_temp, max_depth=$max_depth, max_time=MAX_RUNNING_TIME)
+
+        solution, flag = synth(problem, iterator)
+        @test flag == optimal_program
     end
     )
 end
 
-macro testvlsn(expression::String, max_depth = 6, enumeration_depth = 2)
+macro testvlsn(expression::String, max_depth = 6, neighbourhood_depth = 2)
     return :(
         @testset "vl $($expression)" begin
         e = Meta.parse("x -> $($expression)")
         problem, examples = create_problem(eval(e))
-        enumerator = get_vlsn_enumerator(examples, mean_squared_error, $enumeration_depth)
-        program, cost = search_best(grammar, problem, :X, enumerator=enumerator, error_function=mse_error_function, max_depth=$max_depth, max_time=MAX_RUNNING_TIME)
-        @test cost == 0
+        iterator = VLSNSearchIterator(grammar, :X, examples, mean_squared_error, vlsn_neighbourhood_depth=$neighbourhood_depth, max_depth=$max_depth, max_time=MAX_RUNNING_TIME)
+
+        #@TODO overwrite evaluate function within synth to showcase how you may use that
+
+        solution, flag = synth(problem, iterator)
+        @test flag == optimal_program
     end
     )
 end

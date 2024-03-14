@@ -6,18 +6,18 @@ It is the responsibility of the caller to make this replacement.
 
 
 """
-    random_fill_propose(current_program, neighbourhood_node_loc, grammar, max_depth, dict)
+    random_fill_propose(current_program::RuleNode, neighbourhood_node_loc::NodeLoc, grammar::AbstractGrammar, max_depth::Int, dmap::AbstractVector{Int}, dict::Union{Nothing,Dict{String,Any}})
 
 Returns a list with only one proposed, completely random, subprogram.
 # Arguments
 - `current_program::RuleNode`: the current program.
 - `neighbourhood_node_loc::NodeLoc`: the location of the program to replace.
-- `grammar::Grammar`: the grammar used to create programs.
+- `grammar::AbstractGrammar`: the grammar used to create programs.
 - `max_depth::Int`: the maximum depth of the resulting programs.
 - `dmap::AbstractVector{Int} : the minimum possible depth to reach for each rule`
 - `dict::Dict{String, Any}`: the dictionary with additional arguments; not used.
 """
-function random_fill_propose(current_program::RuleNode, neighbourhood_node_loc::NodeLoc, grammar::Grammar, max_depth::Int, dmap::AbstractVector{Int}, dict::Union{Nothing,Dict{String,Any}})
+function random_fill_propose(current_program::RuleNode, neighbourhood_node_loc::NodeLoc, grammar::AbstractGrammar, max_depth::Int, dmap::AbstractVector{Int}, dict::Union{Nothing,Dict{String,Any}})
     # it can change the current_program for fast replacing of the node
     # find the symbol of subprogram
     subprogram = get(current_program, neighbourhood_node_loc)
@@ -48,7 +48,7 @@ The return function is a function that produces a list with all the subprograms 
 - `enumeration_depth::Int64`: the maximum enumeration depth.
 """
 function enumerate_neighbours_propose(enumeration_depth::Int64)
-    return (current_program::RuleNode, neighbourhood_node_loc::NodeLoc, grammar::Grammar, max_depth::Int, dmap::AbstractVector{Int}, dict::Union{Nothing,Dict{String,Any}}) -> begin
+    return (current_program::RuleNode, neighbourhood_node_loc::NodeLoc, grammar::AbstractGrammar, max_depth::Int, dmap::AbstractVector{Int}, dict::Union{Nothing,Dict{String,Any}}) -> begin
         # it can change the current_program for fast replacing of the node
         # find the symbol of subprogram
         subprogram = get(current_program, neighbourhood_node_loc)
@@ -60,7 +60,7 @@ function enumerate_neighbours_propose(enumeration_depth::Int64)
         remaining_depth = max_depth - current_depth + 1  
         depth_left = min(remaining_depth, enumeration_depth)
 
-        return get_bfs_enumerator(grammar, depth_left, typemax(Int), neighbourhood_symbol)  
+        return BFSIterator(grammar, neighbourhood_symbol, max_depth=depth_left)  
     end
 end
     
