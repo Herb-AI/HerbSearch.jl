@@ -16,6 +16,8 @@ problems_train = [
     create_problem(x -> (x + 10) * x + 5,"x -> (x + 10) * x + 5"),
     create_problem(x -> 5 * x * x * x + 10,"x -> 5 * x * x * x + 10"),
     create_problem(x -> (x + 8) * (x - 5) * x + 20,"x -> (x + 8) * (x - 5) * x + 20"),
+    create_problem(x -> x * x * x * x * x + 2,"x * x * x * x * x + 2"),
+    create_problem(x -> (x + 2) * x * x + (x - 1) * x - 2,"(x + 2) * x * x + (x - 1) * x - 2"),
 ]
   
 problems_test = [
