@@ -34,22 +34,3 @@ end
 function get_bad_iterator(grammar)
     return BadIterator(grammar)
 end
-
-
-@testset "MetaRunner runs" begin
-    Mocking.activate()  # Need to call `activate` before executing `apply`
-
-    # mh() = get_mh_enumerator(examples, HerbSearch.mean_squared_error)
-    # sa(inital_temperature, temperature_decreasing_factor) = get_sa_enumerator(examples, HerbSearch.mean_squared_error, inital_temperature, temperature_decreasing_factor)
-    # vlsn(enumeration_depth) = get_vlsn_enumerator(examples, HerbSearch.mean_squared_error, enumeration_depth)
-
-
-    patch1 = @patch sa(inital_temperature, temperature_decreasing_factor) = get_bad_iterator()
-    patch2 = @patch vlsn(enumeration_depth) = get_bad_iterator()
-    # apply(patch1) do 
-    #     apply(patch2) do 
-    #         run_meta_search()            
-    #     end
-    # end
-    # run_meta_search()
-end

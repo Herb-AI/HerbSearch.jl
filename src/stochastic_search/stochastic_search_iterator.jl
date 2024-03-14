@@ -69,6 +69,8 @@ Base.@kwdef struct StochasticIteratorState
     dmap::Vector{Int} = [] # depth map of each rule
 end
 
+construct_state_from_start_program(::Type{StochasticSearchEnumerator{A,B,C,D,E,F}}, start_program::RuleNode) where {A,B,C,D,E,F} = StochasticIteratorState(current_program = start_program)
+
 Base.IteratorSize(::StochasticSearchEnumerator) = Base.SizeUnknown()
 Base.eltype(::StochasticSearchEnumerator) = RuleNode
 

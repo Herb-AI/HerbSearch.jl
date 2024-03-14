@@ -26,6 +26,9 @@ include("search_procedure.jl")
 include("stochastic_search/stochastic_enumerators.jl")
 include("genetic_search/genetic_enumerators.jl")
 
+include("meta_search/meta_runner.jl")
+include("meta_search/run_algorithm.jl")
+
 export 
   count_expressions,
   ExpressionIterator,
@@ -63,6 +66,9 @@ export
   crossover_swap_children_2,
   sample,
   rand
+
+  # meta 
+  # genetic_run
 # TODO: Don't export crossover_swap_children_2 and mutate_random!. It's a bit awkward
 # TODO: Export the meta search grammar for testing.
 end # module HerbSearch

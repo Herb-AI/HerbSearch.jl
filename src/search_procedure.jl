@@ -281,7 +281,7 @@ function supervised_search(
     )
     # instead of calling StochasticIteratorState(current_program = current_program) I abstracted away to a function call that creates 
     # the appropriate struct for a given iterator. (Different iterators can have different structs for the StochasticIteratorState)
-    hypotheses = Base.Iterators.rest(iterator, state(current_program=start_program))
+    hypotheses = Base.Iterators.rest(iterator, construct_state_from_start_program(typeof(iterator),current_program=start_program))
 
     best_error = typemax(Int)
     best_program = nothing

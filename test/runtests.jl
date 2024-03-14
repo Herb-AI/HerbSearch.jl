@@ -11,6 +11,9 @@ include("test_helpers.jl")
 using Random
 Random.seed!(1234)
 
+using Logging
+disable_logging(LogLevel(1))
+
 @testset "HerbSearch.jl" verbose=true begin
     # include("realistic_search_tests.jl")
     include("test_stochastic_functions.jl")
@@ -20,4 +23,5 @@ Random.seed!(1234)
     include("test_context_free_iterators.jl")
     include("test_sampling.jl")
     include("test_genetic.jl")
+    include("meta_search_tests.jl")
 end
