@@ -31,7 +31,7 @@ using HerbCore, HerbGrammar, HerbConstraints
 
     @testset "Number of candidate programs" begin
         for (grammar, constraint) in [get_grammar_and_constraint1(), get_grammar_and_constraint2()]
-            iter = BFSIterator(grammar, :Number, solver=Solver(grammar, :Number), max_size=6)
+            iter = BFSIterator(grammar, :Number, solver=GenericSolver(grammar, :Number), max_size=6)
             alltrees = 0
             validtrees = 0
             for p ∈ iter
@@ -42,7 +42,7 @@ using HerbCore, HerbGrammar, HerbConstraints
             end
 
             addconstraint!(grammar, constraint)
-            constraint_iter = BFSIterator(grammar, :Number, solver=Solver(grammar, :Number), max_size=6)
+            constraint_iter = BFSIterator(grammar, :Number, solver=GenericSolver(grammar, :Number), max_size=6)
 
             @test validtrees > 0
             @test validtrees < alltrees

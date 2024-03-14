@@ -139,7 +139,7 @@ function Base.iterate(iter::TopDownIterator)
 
     #TODO: instantiating the solver should be in the program iterator macro
     if isnothing(iter.solver)
-        iter.solver = Solver(iter.grammar, iter.sym)
+        iter.solver = GenericSolver(iter.grammar, iter.sym)
     end
 
     #TODO: these attributes should be part of the solver, not of the iterator
