@@ -264,7 +264,6 @@ function supervised_search(
     start_program::RuleNode;
     evaluator::Function=execute_on_input,
     enumerator::Function=get_bfs_enumerator,
-    state=StochasticIteratorState,
     error_function::Function=default_error_function,
     max_depth::Union{Int, Nothing}=nothing,
     stop_channel::Union{Nothing,Channel{Bool}}=nothing,
@@ -279,9 +278,7 @@ function supervised_search(
         typemax(Int),
         start
     )
-    # instead of calling StochasticIteratorState(current_program = current_program) I abstracted away to a function call that creates 
-    # the appropriate struct for a given iterator. (Different iterators can have different structs for the StochasticIteratorState)
-    hypotheses = Base.Iterators.rest(iterator, construct_state_from_start_program(typeof(iterator),current_program=start_program))
+    hypotheses = Base.Iterators.rest(iterator, construct_state_from_start_program(typeof(iterator),start_program=start_program))
 
     best_error = typemax(Int)
     best_program = nothing
@@ -360,7 +357,8 @@ function meta_search(
             - genetic iteration   : $i 
             - current fitness     : $fitness
             - Best fitness        : $best_fitness
-            - time for iterationn : $timer
+            - time of iteration   : $timer
+            - estimate of runtime : $(estimate_runtime_of_one_genetic_iteration())
         """)
 
         println(repeat("_",100))

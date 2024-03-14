@@ -29,6 +29,8 @@ function generic_run(enumerator::Function, stopping_condition::Function, max_dep
     return program, rulenode, cost
 end
 
+MAX_SEQUENCE_RUNNING_TIME = 8 # Max sequence running time in seconds
+
 """
     generic_run(::Type{Sequence}, meta_search_list::Vector, max_depth::Int, grammar::ContextSensitiveGrammar; start_program::Union{Nothing,RuleNode} = nothing)
 
@@ -53,7 +55,6 @@ function generic_run(::Type{Sequence}, meta_search_list::Vector, max_depth::Int,
     end
 
     start_time = time()
-    MAX_SEQUENCE_RUNNING_TIME = 60 # in seconds
 
     best_expression, best_program, program_cost = nothing, start_program, Inf64
     for x ∈ meta_search_list

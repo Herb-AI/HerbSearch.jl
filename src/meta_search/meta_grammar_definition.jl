@@ -1,5 +1,6 @@
 include("combinators.jl")
 
+LONGEST_RUNNING_ALG_TIME = 5
 # input is grammar and problem
 meta_grammar = @csgrammar begin
 	S = (problemExamples,grammar) -> generic_run(COMBINATOR...;)
@@ -31,7 +32,7 @@ meta_grammar = @csgrammar begin
 	ITERATION_STOP = iteration > VALUE
 	# STOPTERM = OPERAND < VALUE
 	# OPERAND = time | iteration | cost
-	BIGGEST_TIME = 10 | 20 | 30
+	BIGGEST_TIME = 2 | 3 | 4 | 5
 	VALUE = 1000 | 2000 | 3000 | 4000 | 5000
 	# VALUE = 10 * VALUE
 end
