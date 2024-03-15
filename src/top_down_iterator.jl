@@ -168,10 +168,27 @@ end
 
 Describes the iteration for a given [`TopDownIterator`](@ref) and a [`PriorityQueue`](@ref) over the grammar without enqueueing new items to the priority queue. Recursively returns the result for the priority queue.
 """
-function Base.iterate(iter::TopDownIterator, tup::Tuple{Vector{AbstractRuleNode}, DataStructures.PriorityQueue})
-    track!(iter.solver.statistics, "#CompleteTrees")
+function Base.iterate(iter::TopDownIterator, tup::Tuple{Vector{<:AbstractRuleNode}, DataStructures.PriorityQueue})
+    track!(iter.solver.statistics, "#CompleteTrees (by FixedShapedIterator)")
+    # iterating over fixed shaped trees using the FixedShapedIterator
     if !isempty(tup[1])
         return (pop!(tup[1]), tup)
+    end
+
+    return _find_next_complete_tree(iter.solver, tup[2], iter)
+end
+
+
+function Base.iterate(iter::TopDownIterator, tup::Tuple{FixedShapedSolver, DataStructures.PriorityQueue})
+    track!(iter.solver.statistics, "#CompleteTrees (by FixedShapedSolver)")
+    # iterating over fixed shaped trees using the FixedShapedSolver
+    tree = next_solution!(tup[1])
+    if !isnothing(tree)
+        #TODO: do not convert the found solution to a rulenode. but convert the StateFixedShapedHole to an expression directly
+        return (statefixedshapedhole2rulenode(tree), tup)
+    end
+    if !isnothing(tup[1].statistics)
+        println(tup[1].statistics)
     end
 
     return _find_next_complete_tree(iter.solver, tup[2], iter)
@@ -187,19 +204,28 @@ function _find_next_complete_tree(
     solver::Solver,
     pq::PriorityQueue,
     iter::TopDownIterator
-)::Union{Tuple{RuleNode, Tuple{Vector{AbstractRuleNode}, PriorityQueue}}, Nothing}
+)#::Union{Tuple{RuleNode, Tuple{Vector{AbstractRuleNode}, PriorityQueue}}, Nothing}
     while length(pq) ≠ 0
         (state, priority_value) = dequeue_pair!(pq)
         load_state!(solver, state)
 
         hole_res = hole_heuristic(iter, get_tree(solver), get_max_depth(solver))
         if hole_res ≡ already_complete
-            # TODO: this tree could have fixed shaped holes only and should be iterated differently (https://github.com/orgs/Herb-AI/projects/6/views/1?pane=issue&itemId=54384555)
-            fixed_shaped_iter = FixedShapedIterator(get_grammar(solver), :StartingSymbolIsIgnored, solver=solver)
             track!(solver.statistics, "#FixedShapedTrees")
-            complete_trees = collect(fixed_shaped_iter)
-            if !isempty(complete_trees)
-                return (pop!(complete_trees), (complete_trees, pq))
+            if solver.use_fixedshapedsolver
+                #TODO: use_fixedshapedsolver should be the default case
+                fixed_shaped_solver = FixedShapedSolver(get_grammar(solver), get_tree(solver), with_statistics=!isnothing(solver.statistics))
+                solution = next_solution!(fixed_shaped_solver)
+                if !isnothing(solution)
+                    #TODO: do not convert the found solution to a rulenode. but convert the StateFixedShapedHole to an expression directly
+                    return (statefixedshapedhole2rulenode(solution), (fixed_shaped_solver, pq))
+                end
+            else
+                fixed_shaped_iter = FixedShapedIterator(get_grammar(solver), :StartingSymbolIsIgnored, solver=solver)
+                complete_trees = collect(fixed_shaped_iter)
+                if !isempty(complete_trees)
+                    return (pop!(complete_trees), (complete_trees, pq))
+                end
             end
         elseif hole_res ≡ limit_reached
             # The maximum depth is reached
