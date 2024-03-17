@@ -8,7 +8,7 @@ end
 
 import HerbSearch.construct_state_from_start_program
 
-function HerbSearch.construct_state_from_start_program(::Type{BadIterator}, start_program::RuleNode) 
+function HerbSearch.construct_state_from_start_program(::Type{BadIterator}; start_program::RuleNode) 
     return BadIteratorState(current_program = start_program)
 end
 
