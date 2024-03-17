@@ -12,7 +12,7 @@ import Random
 Logging.disable_logging(Logging.LogLevel(1))
 
 function get_meta_algorithm()
-    @time output = run_meta_search((current_time, i, fitness) -> i > 1000)
+    @time output = run_meta_search((current_time, i, fitness) -> i > 100)
     println("Output of meta search is: ", output)
     return output
 end

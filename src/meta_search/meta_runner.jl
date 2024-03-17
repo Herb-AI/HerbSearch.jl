@@ -37,7 +37,7 @@ println("Genetic algorithm always adds the best program so far in the population
 
 # The estimates below do not take into account the threads
 function estimate_runtime_of_one_algorithm()
-    return MAX_SEQUENCE_RUNNING_TIME + LONGEST_RUNNING_ALG_TIME
+    return 20
 end
 
 function estimate_runtime_of_fitness_function()
@@ -45,7 +45,7 @@ function estimate_runtime_of_fitness_function()
 end
 
 function estimate_runtime_of_one_genetic_iteration()
-    return estimate_runtime_of_fitness_function() * genetic_configuration.initial_population_size
+    return estimate_runtime_of_fitness_function() * genetic_configuration.initial_population_size / Threads.nthreads()
 end
 
 println("ESTIMATES")
@@ -79,30 +79,19 @@ function fitness_function(program, _)
     lk = Threads.ReentrantLock()
     Threads.@threads for i ∈ eachindex(problems_train)
         (problem,problem_text) = problems_train[i]
-        mean_cost_for_problem = 0
-        mean_running_time_for_problem = 0   
-
         Threads.@threads for _ in 1:RUNS
             
             # get a program that needs a problem and a grammar to be able to run
             @time "one run on problem $i" (output = @timed best_expression, best_program, program_cost = evaluate_meta_program(expression_to_evaluate, problem, arithmetic_grammar))
             
             lock(lk) do
-                mean_cost_for_problem += program_cost
-                mean_running_time_for_problem += output.time
+                mean_cost += program_cost
+                mean_running_time += output.time
             end
         end
-
-        lock(lk) do 
-            mean_cost_for_problem = mean_cost_for_problem / RUNS
-            mean_running_time_for_problem = mean_running_time_for_problem / RUNS    
-            
-            mean_cost += mean_cost_for_problem
-            mean_running_time += mean_running_time_for_problem
-        end
     end
-    mean_cost /= length(problems_train)
-    mean_running_time /= length(problems_train)
+    mean_cost /= (length(problems_train) * RUNS)
+    mean_running_time /= (length(problems_train) * RUNS)
     fitness_value = 1 / (mean_cost * 100 + mean_running_time)
     return fitness_value
 end

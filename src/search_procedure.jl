@@ -364,8 +364,6 @@ function meta_search(
         println(repeat("_",100))
         println("Best expr: ",best_program)
         println(repeat("_",100))
-        println("Current expr: ",expr)
-        println(repeat("=",100))
         flush(stdout)
 
         prev_time = time()
