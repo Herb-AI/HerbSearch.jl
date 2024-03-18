@@ -187,8 +187,8 @@ function Base.iterate(iter::TopDownIterator, tup::Tuple{FixedShapedSolver, DataS
         #TODO: do not convert the found solution to a rulenode. but convert the StateFixedShapedHole to an expression directly
         return (statefixedshapedhole2rulenode(tree), tup)
     end
-    if !isnothing(tup[1].statistics)
-        println(tup[1].statistics)
+    if !isnothing(iter.solver.statistics)
+        iter.solver.statistics.name = "GenericSolver" #statistics swap back from FixedShapedSolver to GenericSolver
     end
 
     return _find_next_complete_tree(iter.solver, tup[2], iter)
@@ -214,7 +214,7 @@ function _find_next_complete_tree(
             track!(solver.statistics, "#FixedShapedTrees")
             if solver.use_fixedshapedsolver
                 #TODO: use_fixedshapedsolver should be the default case
-                fixed_shaped_solver = FixedShapedSolver(get_grammar(solver), get_tree(solver), with_statistics=!isnothing(solver.statistics))
+                fixed_shaped_solver = FixedShapedSolver(get_grammar(solver), get_tree(solver), with_statistics=solver.statistics)
                 solution = next_solution!(fixed_shaped_solver)
                 if !isnothing(solution)
                     #TODO: do not convert the found solution to a rulenode. but convert the StateFixedShapedHole to an expression directly
