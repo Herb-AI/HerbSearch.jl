@@ -84,4 +84,47 @@ using HerbCore, HerbGrammar, HerbConstraints
         trees = collect(iter)
         @test length(trees) == 3 # 3 out of the 4 combinations to fill the FixedShapedHoles are valid
     end
+
+    @testset "DomainRuleNode" begin
+        function get_grammar1() 
+            # Use 5 constraints to forbid rules 1, 2, 3, 4 and 5
+            grammar = @csgrammar begin
+                Int = |(1:5)
+                Int = x
+                Int = Int + Int
+            end  
+            constraint1 = Forbidden(RuleNode(1))
+            constraint2 = Forbidden(RuleNode(2))
+            constraint3 = Forbidden(RuleNode(3))
+            constraint4 = Forbidden(RuleNode(4))
+            constraint5 = Forbidden(RuleNode(5))
+            addconstraint!(grammar, constraint1)
+            addconstraint!(grammar, constraint2)
+            addconstraint!(grammar, constraint3)
+            addconstraint!(grammar, constraint4)
+            addconstraint!(grammar, constraint5)
+            return grammar
+        end
+
+        function get_grammar2() 
+            # Use a DomainRuleNode to forbid rules 1, 2, 3, 4 and 5
+            grammar = @csgrammar begin
+                Int = |(1:5)
+                Int = x
+                Int = Int + Int
+            end
+            constraint_combined = Forbidden(DomainRuleNode(BitVector((1, 1, 1, 1, 1, 0, 0)), []))
+            addconstraint!(grammar, constraint_combined)
+            return grammar
+        end
+        
+        iter1 = BFSIterator(get_grammar1(), :Int, max_depth=4, max_size=100)
+        number_of_programs1 = length(collect(iter1))
+
+        iter2 = BFSIterator(get_grammar2(), :Int, max_depth=4, max_size=100)
+        number_of_programs2 = length(collect(iter2))
+
+        @test number_of_programs1 == 26
+        @test number_of_programs2 == 26
+    end
 end
