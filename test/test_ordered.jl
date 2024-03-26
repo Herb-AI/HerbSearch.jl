@@ -49,4 +49,42 @@ using HerbCore, HerbGrammar, HerbConstraints
             @test length(collect(constraint_iter)) == validtrees
         end
     end
+
+    @testset "DomainRuleNode" begin
+        #Expressing commutativity of + and * in 2 constraints
+        grammar = @csgrammar begin
+            Number = 1
+            Number = x
+            Number = Number + Number
+            Number = Number * Number
+        end
+        constraint1 = Ordered(RuleNode(3, [
+            VarNode(:a),
+            VarNode(:b)
+        ]), [:a, :b])
+        constraint2 = Ordered(RuleNode(4, [
+            VarNode(:a),
+            VarNode(:b)
+        ]), [:a, :b])
+        addconstraint!(grammar, constraint1)
+        addconstraint!(grammar, constraint2)
+        
+        #Expressing commutativity of + and * using a single constraint (with a DomainRuleNode)
+        grammar_domainrulenode = @csgrammar begin
+            Number = 1
+            Number = x
+            Number = Number + Number
+            Number = Number - Number
+        end
+        constraint_domainrulenode = Ordered(DomainRuleNode(BitVector((0, 0, 1, 1)), [
+            VarNode(:a),
+            VarNode(:b)
+        ]), [:a, :b])
+        addconstraint!(grammar_domainrulenode, constraint_domainrulenode)
+        
+        #The number of solutions should be equal in both approaches
+        iter = BFSIterator(grammar, :Number, solver=GenericSolver(grammar, :Number), max_size=6)
+        iter_domainrulenode = BFSIterator(grammar_domainrulenode, :Number, solver=GenericSolver(grammar, :Number), max_size=6)
+        @test length(collect(iter)) == length(collect(iter_domainrulenode))
+    end
 end
