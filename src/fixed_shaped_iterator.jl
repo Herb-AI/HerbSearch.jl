@@ -46,7 +46,9 @@ function Base.iterate(iter::FixedShapedIterator)
     solver = iter.solver
     @assert !contains_variable_shaped_hole(get_tree(iter.solver)) "A FixedShapedIterator cannot iterate partial programs with VariableShapedHoles"
 
-    enqueue!(pq, get_state(solver), priority_function(iter, get_grammar(solver), get_tree(solver), 0))
+    if is_feasible(solver)
+        enqueue!(pq, get_state(solver), priority_function(iter, get_grammar(solver), get_tree(solver), 0))
+    end
     return _find_next_complete_tree(solver, pq, iter)
 end
 
@@ -93,7 +95,8 @@ function _find_next_complete_tree(
                 if i < number_of_rules
                     state = save_state!(solver)
                 end
-                fill_hole!(solver, path, rule_index)
+                @assert is_feasible(solver) "Attempting to expand an infeasible tree: $(get_tree(solver))"
+                remove_all_but!(solver, path, rule_index)
                 if is_feasible(solver)
                     enqueue!(pq, get_state(solver), priority_function(iter, get_grammar(solver), get_tree(solver), priority_value))
                 end
