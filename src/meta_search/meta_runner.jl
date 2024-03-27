@@ -45,7 +45,9 @@ function estimate_runtime_of_fitness_function()
 end
 
 function estimate_runtime_of_one_genetic_iteration()
-    return estimate_runtime_of_fitness_function() * genetic_configuration.initial_population_size / Threads.nthreads()
+    # hope that the each chromosome fitness computation runs in parallel
+    # add a bit of extra time to do cross over and mutation
+    return estimate_runtime_of_fitness_function() + 2
 end
 
 println("ESTIMATES")
@@ -77,9 +79,9 @@ function fitness_function(program, _)
     mean_running_time = 0
 
     lk = Threads.ReentrantLock()
-    Threads.@threads for i ∈ eachindex(problems_train)
+    for i ∈ eachindex(problems_train)
         (problem,problem_text) = problems_train[i]
-        Threads.@threads for _ in 1:RUNS
+        for _ in 1:RUNS
             
             # get a program that needs a problem and a grammar to be able to run
             @time "one run on problem $i" (output = @timed best_expression, best_program, program_cost = evaluate_meta_program(expression_to_evaluate, problem, arithmetic_grammar))
