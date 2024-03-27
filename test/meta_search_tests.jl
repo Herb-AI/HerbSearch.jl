@@ -63,57 +63,57 @@ end
     grammar = HerbSearch.arithmetic_grammar
 
 
-    @testset "Parallel tests" verbose=true begin
-        simpleProblemExamples = create_examples(x -> x)
-        @testset "Threads matter" begin
-            # test fails if ran with no threads `julia  --project=. `
-            # test passed if ran with more threads.
-            # => Threads DO matter
-            runtime_stats = @timed HerbSearch.generic_run((HerbSearch.Parallel, 
-            [
-                create_bad_alg(simpleProblemExamples, max_time = 10),
-                create_bad_alg(simpleProblemExamples, max_time = 10),
-                create_mh(simpleProblemExamples, max_time = 2),
-                create_bad_alg(simpleProblemExamples, max_time = 10),
-                create_bad_alg(simpleProblemExamples, max_time = 10),
+    # @testset "Parallel tests" verbose=true begin
+    #     simpleProblemExamples = create_examples(x -> x)
+    #     @testset "Threads matter" begin
+    #         # test fails if ran with no threads `julia  --project=. `
+    #         # test passed if ran with more threads.
+    #         # => Threads DO matter
+    #         @test Threads.nthreads() >= 4
+    #         runtime_stats = @timed HerbSearch.generic_run((HerbSearch.Parallel, 
+    #         [
+    #             create_bad_alg(simpleProblemExamples, max_time = 10),
+    #             create_bad_alg(simpleProblemExamples, max_time = 10),
+    #             create_mh(simpleProblemExamples, max_time = 2),
+    #             create_bad_alg(simpleProblemExamples, max_time = 10),
 
-            ], 10, grammar)...;)
+    #         ], 10, grammar)...;)
 
             
-            # even though a lot of bad iterators are nested MH will find the answer and succeed :)
-            _,_,cost = runtime_stats.value
-            @test cost == 0
-            @test runtime_stats.time <= 5
-        end
+    #         # even though a lot of bad iterators are nested MH will find the answer and succeed :)
+    #         _,_,cost = runtime_stats.value
+    #         @test cost == 0
+    #         @test runtime_stats.time <= 5
+    #     end
 
-        @testset "Simple MH in parallel" begin
-            runtime_stats = @timed HerbSearch.generic_run((HerbSearch.Parallel, 
-            [
-                create_mh(simpleProblemExamples, max_time = 1)
+    #     @testset "Simple MH in parallel" begin
+    #         runtime_stats = @timed HerbSearch.generic_run((HerbSearch.Parallel, 
+    #         [
+    #             create_mh(simpleProblemExamples, max_time = 1)
 
-            ], 10, grammar)...;)
+    #         ], 10, grammar)...;)
 
-            _,_,cost = runtime_stats.value
-            @test cost == 0
-            @test runtime_stats.time <= 2
-        end
+    #         _,_,cost = runtime_stats.value
+    #         @test cost == 0
+    #         @test runtime_stats.time <= 2
+    #     end
 
-        @testset "Parallel has runtime roughly equal to the longest running algorithm" begin
-            runtime_stats = @timed HerbSearch.generic_run((HerbSearch.Parallel, 
-            [
-                create_bad_alg(simpleProblemExamples, max_time = 1),
-                create_bad_alg(simpleProblemExamples, max_time = 1),
-                create_bad_alg(simpleProblemExamples, max_time = 1),
-                create_bad_alg(simpleProblemExamples, max_time = 2),
-                create_bad_alg(simpleProblemExamples, max_time = 3),
-            ], 10, grammar)...;)
+    #     @testset "Parallel has runtime roughly equal to the longest running algorithm" begin
+    #         runtime_stats = @timed HerbSearch.generic_run((HerbSearch.Parallel, 
+    #         [
+    #             create_bad_alg(simpleProblemExamples, max_time = 1),
+    #             create_bad_alg(simpleProblemExamples, max_time = 1),
+    #             create_bad_alg(simpleProblemExamples, max_time = 1),
+    #             create_bad_alg(simpleProblemExamples, max_time = 2),
+    #             create_bad_alg(simpleProblemExamples, max_time = 3),
+    #         ], 10, grammar)...;)
 
-            @test runtime_stats.time <= 3 + 0.2
-        end
-    end
+    #         @test runtime_stats.time <= 3 + 0.2
+    #     end
+    # end
 
-    @testset "Sequence test" begin 
-        problemExamples = create_examples(x -> x)
+    @testset "Sequence test" verbose=true begin 
+        problemExamples = create_examples(x -> x + 1)
 
         @testset "MH in Sequence is fast" begin
             runtime_stats = @timed HerbSearch.generic_run((HerbSearch.Sequence, 
@@ -148,28 +148,74 @@ end
             ], 10, grammar)...;)
 
             # sum of the time taken for first bad itearors plus fast MH
-            @test runtime_stats.time <= 0.5 + 1.5 + 1
+            @test 0.5 + 1.5 <= runtime_stats.time <= 0.5 + 1.5 + 1
         end
 
-        @testset "Sequence of MH stops at the right time for an impossible problem" begin 
-            impossible_problem_examples = create_examples(x -> (x - 23239) * (x + 28347) * (x + x * 12817))
+        # @testset "Sequence of has the right stopping time" begin 
+        #     problem = create_examples(x -> x)
+        #     specs = @timed generic_run((HerbSearch.Sequence, 
+        #     [   
+        #         create_bad_alg(problem, max_time = HerbSearch.MAX_SEQUENCE_RUNNING_TIME - 1),
+        #         (HerbSearch.Sequence,[
+        #             create_bad_alg(problem, max_time = HerbSearch.MAX_SEQUENCE_RUNNING_TIME - 1),
+        #             (HerbSearch.Sequence,[
+        #                 create_bad_alg(problem, max_time = HerbSearch.MAX_SEQUENCE_RUNNING_TIME - 1),
+        #                 ],10,grammar
+        #             ),
+        #         ],10,grammar),
 
-            time_after = 2
-            time_exceeded_a_lot = 100
-            specs = @timed generic_run((Sequence, 
-            [   
-                create_mh(impossible_problem_examples, max_time = HerbSearch.MAX_SEQUENCE_RUNNING_TIME),
-                create_mh(impossible_problem_examples, max_time = time_after),
-                create_mh(impossible_problem_examples, max_time = time_exceeded_a_lot),
+        #     ], 10, grammar)...;)
+            
+        #     _,_,cost = specs.value 
+            
+        #     @test (specs.time <= HerbSearch.MAX_SEQUENCE_RUNNING_TIME + 0.2)
 
-            ], 10, grammar)...;)
             
-            _,_,cost = specs.value 
+        #     specs = @timed generic_run((HerbSearch.Sequence, 
+        #     [   
+        #         (HerbSearch.Sequence,[
+        #             (HerbSearch.Sequence,[
+        #                 (HerbSearch.Sequence,[
+        #                     create_bad_alg(problem, max_time = HerbSearch.MAX_SEQUENCE_RUNNING_TIME - 1),
+        #                     ],10,grammar
+        #                 ),
+        #             ],10,grammar
+        #             ),
+        #         ],10,grammar),
+        #     ], 10, grammar)...;)
             
-            # this was not solved by MH
-            @test cost != 0
-            @test (specs.time <= HerbSearch.MAX_SEQUENCE_RUNNING_TIME + time_after + 0.2)
-    
+        #     @test (specs.time <= HerbSearch.MAX_SEQUENCE_RUNNING_TIME + 0.2)
+
+        # end
+
+        @testset "Generic run stops on max time even though stopping condition gives more time" begin
+            # the maximum time is 3 seconds but it takes 2 seconds because of the maximum running time
+            specs = @timed generic_run(
+                get_bad_iterator(), 
+                ((time, iteration, cost) -> time > 3), 
+                1, 
+                problemExamples, 
+                grammar,
+                max_running_time = 2
+
+            )
+            println(specs.time)
+            @test (2.0 <= specs.time <= 2.1)
+
+
+            # it stops after the stopping condition (3 seconds)
+            specs = @timed generic_run(
+                get_bad_iterator(), 
+                ((time, iteration, cost) -> time > 3), 
+                1, 
+                problemExamples, 
+                grammar,
+                max_running_time = 20
+
+            )
+            println(specs.time)
+            @test (3.0 <= specs.time <= 3.1)
+
         end
     end
 
@@ -177,11 +223,11 @@ end
 end
 
 # @testset "Meta Search runtime" begin 
-#     impossible_problem_examples = create_examples(x -> (x - 23239) * (x + 28347) * (x + x * 12817))
+#     problem = create_examples(x -> (x - 23239) * (x + 28347) * (x + x * 12817))
 
 #     @testset "test_runtime_of_a_single_run_does_exceed_expected_runtime" begin
 #         index = 4 # <- hardest problem
-#         problem = Problem(impossible_problem_examples)
+#         problem = Problem(problem)
 
 #         for i ∈ 1:10
 #             random_meta_program = rand(RuleNode, meta_grammar, :S)

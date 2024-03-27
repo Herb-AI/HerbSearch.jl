@@ -11,7 +11,7 @@ It uses [`HerbSearch.supervised_search`](@ref) to run the enumerator and monitor
 
 Returns a tuple consisting of the `(expression found, program as rulenode, program cost)`
 """
-function generic_run(enumerator::Function, stopping_condition::Function, max_depth::Int, examples::Vector{<:IOExample}, grammar::ContextSensitiveGrammar;  start_program::Union{Nothing,RuleNode} = nothing, stop_channel::Union{Nothing,Channel{Bool}}=nothing)
+function generic_run(enumerator::Function, stopping_condition::Function, max_depth::Int, examples::Vector{<:IOExample}, grammar::ContextSensitiveGrammar;  start_program::Union{Nothing,RuleNode} = nothing, stop_channel::Union{Nothing,Channel{Bool}}=nothing, max_running_time=0)
     if isnothing(start_program)
         start_program = rand(RuleNode, grammar, max_depth)
     end
@@ -24,7 +24,8 @@ function generic_run(enumerator::Function, stopping_condition::Function, max_dep
         max_depth = max_depth, 
         enumerator = enumerator,
         error_function = HerbSearch.mse_error_function,
-        stop_channel = stop_channel
+        stop_channel = stop_channel,
+        max_time     = max_running_time
     )
     return program, rulenode, cost
 end
@@ -47,9 +48,8 @@ The sequence step is stopped once an algorithm achieves cost `0`, meaning it sat
 
 Returns a tuple consisting of the `(expression found, program as rulenode, program cost)` coresponding to the best program found (lowest cost).
 """
-function generic_run(::Type{Sequence}, meta_search_list::Vector, max_depth::Int, grammar::ContextSensitiveGrammar; start_program::Union{Nothing,RuleNode} = nothing, stop_channel::Union{Nothing,Channel{Bool}}=nothing)
-    # first flatten the list
-    # create an inital random program as the start
+function generic_run(::Type{Sequence}, meta_search_list::Vector, max_depth::Int, grammar::ContextSensitiveGrammar; start_program::Union{Nothing,RuleNode} = nothing, stop_channel::Union{Nothing,Channel{Bool}}=nothing, max_running_time=MAX_SEQUENCE_RUNNING_TIME)
+    # create an inital random program as the start if there is no start program to begin with
     if isnothing(start_program)
         start_program = rand(RuleNode, grammar, max_depth)
     end
@@ -63,11 +63,12 @@ function generic_run(::Type{Sequence}, meta_search_list::Vector, max_depth::Int,
         end
 
         current_time = time() - start_time
-        if current_time > MAX_SEQUENCE_RUNNING_TIME 
+        if current_time > max_running_time 
             println("Quittting because of too much seq time!")
             return best_expression, best_program, program_cost
         end
-        expression, start_program, cost = generic_run(x..., start_program = start_program, stop_channel=stop_channel)
+        time_left = max_running_time - current_time
+        expression, start_program, cost = generic_run(x..., start_program = start_program, stop_channel = stop_channel, max_running_time = time_left)
         if cost < program_cost
             best_expression, best_program, program_cost = expression, start_program, cost
         end
@@ -96,7 +97,7 @@ The sequence step is stopped once an algorithm achieves cost `0`, meaning it sat
 
 Returns a tuple consisting of the `(expression found, program as rulenode, program cost)` coresponding to the best program found (lowest cost).
 """
-function generic_run(::Type{Parallel}, meta_search_list::Vector, max_depth::Int, grammar::ContextSensitiveGrammar; start_program::Union{Nothing,RuleNode} = nothing, stop_channel::Union{Nothing,Channel{Bool}}=nothing)
+function generic_run(::Type{Parallel}, meta_search_list::Vector, max_depth::Int, grammar::ContextSensitiveGrammar; start_program::Union{Nothing,RuleNode} = nothing, stop_channel::Union{Nothing,Channel{Bool}}=nothing, max_running_time=0)
     # create an inital random program as the start
     if isnothing(start_program)
         start_program = rand(RuleNode, grammar, max_depth)
@@ -107,7 +108,7 @@ function generic_run(::Type{Parallel}, meta_search_list::Vector, max_depth::Int,
     end
 
     # use threads
-    thread_list = [Threads.@spawn generic_run(meta..., start_program = start_program, stop_channel = stop_channel) for meta ∈ meta_search_list]
+    thread_list = [Threads.@spawn generic_run(meta..., start_program = start_program, stop_channel = stop_channel, max_running_time = max_running_time) for meta ∈ meta_search_list]
 
     best_expression, best_program, program_cost = nothing, start_program, Inf64
     for (expr,prog,cost) in fetch.(thread_list)

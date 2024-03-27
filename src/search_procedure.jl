@@ -267,6 +267,7 @@ function supervised_search(
     error_function::Function=default_error_function,
     max_depth::Union{Int, Nothing}=nothing,
     stop_channel::Union{Nothing,Channel{Bool}}=nothing,
+    max_time = 0,
     )::Tuple{Any, Any, Real}
 
     start_time = time()
@@ -312,8 +313,7 @@ function supervised_search(
 
         # Check stopping conditions
         current_time = time() - start_time
-        # current_time > 5 is just for debugging to make it not run forever :)
-        if stopping_condition(current_time, i, total_error)
+        if stopping_condition(current_time, i, total_error) || (max_time > 0 && current_time > max_time)
             return best_program, best_rulenode, best_error
         end
     end

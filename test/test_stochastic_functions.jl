@@ -1,5 +1,12 @@
-global const runs::Int16 = 1000
+global const runs::Int32 = 10000
 
+"""
+    test_is_true_on_percentage(function_call::Function, percentage::Real)
+
+Test if the function_call returns true more than % percentage of the time.
+
+The function will be ran `runs` times and the number of times that is true will be counted. 
+"""
 function test_is_true_on_percentage(function_call::Function, percentage::Real)
     count = 0
     for _ in 1:runs
@@ -8,56 +15,71 @@ function test_is_true_on_percentage(function_call::Function, percentage::Real)
             count = count + 1
         end
     end
-    @test count >= (percentage - 0.2) * runs 
+    @test count >= (percentage - 0.1) * runs 
 end
 
 @testset "Accept function" begin
-parametrized_test(
-    [
-        [1, 1, 0.5],
-        [1, 3, 0.25],
-        [1, 9, 0.1],
-        [10, 1, 1]
-    ],
-    function probabilistic_accept_on_percentage(current_cost, next_cost, percentage)
-        test_is_true_on_percentage(() -> HerbSearch.probabilistic_accept(current_cost, next_cost, 0), percentage)
-    end
-)
+    parametrized_test(
+        [
+            [1, 1, 0.5],
+            [1, 3, 1 / (1 + 3)],
+            [1, 9, 1 / (1 + 9)],
+            [10, 1, 10 / (1 + 10)]
+        ],
+        function probabilistic_accept_on_percentage(current_cost, next_cost, percentage)
+            test_is_true_on_percentage(() -> HerbSearch.probabilistic_accept(current_cost, next_cost, 0), percentage)
+        end
+    )
 
+    parametrized_test(
+        [   
+            #= formula is     
+            ratio = current_cost / (program_to_consider_cost + current_cost)
+            return ratio * temperature >= rand()
+            =#
+            [1, 1, 1, 1 * 1 / (1 + 1)], # 1 * 1 / ( 1 + 1)
+            [1, 1, 3, 1], # 1 * 3 / (1 + 1) = 1.5 but probability is at most 1
+            [1, 1, 0.8, 0.8 / (1 + 1)],
+            [1, 1, 0.9, 0.9 * 1 / (1 + 1)],
+            [2, 3, 0.99, 2 * 0.99 / (2 + 3)],
+        ],
+        function probabilistic_accept_with_temperature_fraction(current_cost::Real, program_to_consider_cost::Real, temperature::Real, percentage)
+            test_is_true_on_percentage(() -> HerbSearch.probabilistic_accept_with_temperature_fraction(current_cost, program_to_consider_cost, temperature), percentage)
+        end
+    )
 
+    parametrized_test(
+        [   
+            # (current_cost, next_cost, temperature, percentage)
+            # temperature equal to 1
+            [1, 1,  1, 0.5],
+            [1, 3,  1, 0.25],
+            [1, 9,  1, 0.1],
+            [10, 1, 1, 1],
+            # temperature not 1
+            [4, 2, 5, 1],
+            [4, 5, 9, 1],
+            [4, 5, 3, 0.3],
+            [4, 5, 0, 0],
+            [4, 5, 0.1, 1/9 * 0.1]
+        ],
+        function probabilistic_accept_with_temperature(current_cost, next_cost, temperature, percentage)
+            test_is_true_on_percentage(() -> HerbSearch.probabilistic_accept_with_temperature(current_cost, next_cost, temperature), percentage)
+        end
+    )
 
-parametrized_test(
-    [   
-        # (current_cost, next_cost, temperature, percentage)
-        # temperature equal to 1
-        [1, 1,  1, 0.5],
-        [1, 3,  1, 0.25],
-        [1, 9,  1, 0.1],
-        [10, 1, 1, 1],
-        # temperature not 1
-        [4, 2, 5, 1],
-        [4, 5, 9, 1],
-        [4, 5, 3, 0.3],
-        [4, 5, 0, 0],
-        [4, 5, 0.1, 1/9 * 0.1]
-    ],
-    function probabilistic_accept_with_temperature(current_cost, next_cost, temperature, percentage)
-        test_is_true_on_percentage(() -> HerbSearch.probabilistic_accept_with_temperature(current_cost, next_cost, temperature), percentage)
-    end
-)
-
-parametrized_test(
-    [
-        # if cost strictly decreases it means it is better
-        [1, 1, false],
-        [1, 3, false],
-        [2, 1, true],
-        [10, 1, true]
-    ],
-    function best_accept(current_cost, next_cost, outcome)
-        @test HerbSearch.best_accept(current_cost, next_cost, 0) == outcome
-    end
-)
+    parametrized_test(
+        [
+            # if cost strictly decreases it means it is better
+            [1, 1, false],
+            [1, 3, false],
+            [2, 1, true],
+            [10, 1, true]
+        ],
+        function best_accept(current_cost, next_cost, outcome)
+            @test HerbSearch.best_accept(current_cost, next_cost, 0) == outcome
+        end
+    )
 end
 @testset "Cost functions" begin
     parametrized_test(
