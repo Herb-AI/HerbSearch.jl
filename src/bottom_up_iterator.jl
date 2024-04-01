@@ -11,13 +11,13 @@ Concrete implementations of this iterator should implement the following methods
 """
 abstract type BottomUpIterator <: ProgramIterator end
 
-Base.@doc """
-	@programiterator BasicIterator(problem::Problem{Vector{IOExample}}) <: BottomUpIterator
+# Base.@doc """
+# 	@programiterator BasicIterator(problem::Problem{Vector{IOExample}}) <: BottomUpIterator
 
-A basic implementation of the bottom-up iterator. It will enumerate all programs in a breadth-first manner, starting with the smallest ones.
-Inherits all stop conditions from the BottomUpIterator.
-Needs to have the problem as an argument to be able to hash the outputs of the programs for observing equivalent programs.
-"""
+# A basic implementation of the bottom-up iterator. It will enumerate all programs in a breadth-first manner, starting with the smallest ones.
+# Inherits all stop conditions from the BottomUpIterator.
+# Needs to have the problem as an argument to be able to hash the outputs of the programs for observing equivalent programs.
+# """
 @programiterator BasicIterator(problem::Problem{Vector{IOExample}}) <: BottomUpIterator
 
 """
