@@ -4,6 +4,7 @@ authors = ["Sebastijan Dumancic <s.dumancic@tudelft.nl>", "Jaap de Jong <J.deJon
 version = "0.1.1"
 
 [deps]
+Combinatorics = "861a8166-3701-5b0c-9a16-15d98fcdc6aa"
 DataStructures = "864edb3b-99cc-5e75-8d2d-829cb0a9cfe8"
 HerbConstraints = "1fa96474-3206-4513-b4fa-23913f296dfc"
 HerbCore = "2b23ba43-8213-43cb-b5ea-38c12b45bd45"
@@ -19,7 +20,6 @@ StatsBase = "2913bbd2-ae8a-5f71-8c99-4fb6c76f3a91"
 DataStructures = "0.17,0.18"
 HerbConstraints = "0.1.0"
 HerbCore = "0.1.1"
-HerbGrammar = "0.1.0"
 HerbInterpret = "0.1.0"
 HerbSpecification = "0.1.0"
 StatsBase = "0.34"
