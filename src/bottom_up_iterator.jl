@@ -143,7 +143,6 @@ function Base.iterate(iter::BottomUpIterator)::Union{Nothing,Tuple{RuleNode,Bott
     bank::Base.Dict{RuleNode,Int64} = Dict()
 	hashes::Set{Int128} = Set{Int128}()
 
-	println("From first iterate")
     for terminal in findall(iter.grammar.isterminal)
         current_single_program::RuleNode = RuleNode(terminal, nothing, [])
 
@@ -152,7 +151,6 @@ function Base.iterate(iter::BottomUpIterator)::Union{Nothing,Tuple{RuleNode,Bott
     end
 
     state::BottomUpState = BottomUpState(bank, hashes, current_programs)
-	println("end of first iterate")
     return _get_next_program(iter, state)
 end
 
@@ -201,13 +199,7 @@ function _get_next_program(
     end
 
     new_program::RuleNode = dequeue!(state.current_programs)
-    # println("from before bank")
     state.priority_bank[new_program] = priority_function(iter, new_program, state)
-    # state.hashed_output_bank[new_program] = _hash_outputs_for_program(new_program, iter.problem)
-    # println("from after: ", state.bank[new_program])
-    # println("Depth: ", depth(new_program))
-	# println(_hash_outputs_for_program(iter, new_program, iter.problem))
-    println(rulenode2expr(new_program, iter.grammar))
     return new_program, state
 end
 
@@ -224,7 +216,6 @@ function _contains_equivalent(
 	hashed_output = _hash_outputs_for_program(iter, program, iter.problem)
 
 	if hashed_output ∈ state.hashes
-		# println("Found equivalent", rulenode2expr(program, iter.grammar))
 		return true
 	end
 

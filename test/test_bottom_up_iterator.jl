@@ -12,7 +12,6 @@
         
         problem = Problem([IOExample(Dict(:x => (fst, snd)), min(fst, snd)) for (fst, snd) in [(4, 5), (12, 14), (13, 10), (5, 1)]])        
 
-        println("Initial ITERATOR HERE")
         iterator = BasicIterator(g, :initExpr, problem)
         solution, flag = synth(problem, iterator) 
         program = rulenode2expr(solution, g)
