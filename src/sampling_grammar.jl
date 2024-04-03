@@ -72,6 +72,7 @@ function StatsBase.sample(root::RuleNode, maxdepth::Int=typemax(Int))
     end
     x.node
 end
+
 function _sample(node::RuleNode, x::RuleNodeAndCount, maxdepth::Int)
     maxdepth < 1 && return
     x.cnt += 1
@@ -170,7 +171,7 @@ function _sample(::Type{NodeLoc}, node::RuleNode, typ::Symbol, grammar::Abstract
             if rand() <= 1/x.cnt
                 x.loc = NodeLoc(node, j)
             end
+            _sample(NodeLoc, child, typ, grammar, x, maxdepth-1)
         end
-        _sample(NodeLoc, child, typ, grammar, x, maxdepth-1)
     end
 end

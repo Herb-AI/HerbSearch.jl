@@ -21,6 +21,7 @@ Random.seed!(1234)
 
     include("test_forbidden.jl")
     include("test_ordered.jl")
+    include("test_contains.jl")
 
     # Excluded because it contains long tests
     # include("test_realistic_searches.jl")
