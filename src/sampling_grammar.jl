@@ -1,6 +1,6 @@
 using StatsBase
 """
-	Contains all function for sampling expressions and from expressions
+    Contains all function for sampling expressions and from expressions
 """
 
 
@@ -116,63 +116,61 @@ function _sample(node::RuleNode, typ::Symbol, grammar::AbstractGrammar, x::RuleN
 end
 
 mutable struct NodeLocAndCount
-	loc::NodeLoc
-	cnt::Int
+    loc::NodeLoc
+    cnt::Int
 end
 
 
 """
-	sample(::Type{NodeLoc}, root::RuleNode, maxdepth::Int=typemax(Int))
+    sample(::Type{NodeLoc}, root::RuleNode, maxdepth::Int=typemax(Int))
     
 Uniformly selects a random node in the tree no deeper than maxdepth using reservoir sampling.
 Returns a [`NodeLoc`](@ref) that specifies the location using its parent so that the subtree can be replaced.
 """
 function StatsBase.sample(::Type{NodeLoc}, root::RuleNode, maxdepth::Int=typemax(Int))
-	x = NodeLocAndCount(NodeLoc(root, 0), 1)
-	_sample(NodeLoc, root, x, maxdepth-1)
-	x.loc
+    x = NodeLocAndCount(NodeLoc(root, 0), 1)
+    _sample(NodeLoc, root, x, maxdepth-1)
+    x.loc
 end
 
 
 function _sample(::Type{NodeLoc}, node::RuleNode, x::NodeLocAndCount, maxdepth::Int)
-	maxdepth < 1 && return
-	for (j,child) in enumerate(node.children)
-	    x.cnt += 1
-	    if rand() <= 1/x.cnt
-		x.loc = NodeLoc(node, j)
-	    end
-	    _sample(NodeLoc, child, x, maxdepth-1)
-	end
+    maxdepth < 1 && return
+    for (j,child) in enumerate(node.children)
+        x.cnt += 1
+        if rand() <= 1/x.cnt
+            x.loc = NodeLoc(node, j)
+        end
+        _sample(NodeLoc, child, x, maxdepth-1)
+    end
 end
     
 """
-	sample(::Type{NodeLoc}, root::RuleNode, typ::Symbol, grammar::AbstractGrammar)
+    StatsBase.sample(::Type{NodeLoc}, root::RuleNode, typ::Symbol, grammar::AbstractGrammar, maxdepth::Int=typemax(Int))
     
 Uniformly selects a random node in the tree of a given type, specified using its parent such that the subtree can be replaced.
 Returns a [`NodeLoc`](@ref).
 """
-function StatsBase.sample(::Type{NodeLoc}, root::RuleNode, typ::Symbol, grammar::AbstractGrammar,
-			      maxdepth::Int=typemax(Int))
-	x = NodeLocAndCount(NodeLoc(root, 0)
+function StatsBase.sample(::Type{NodeLoc}, root::RuleNode, typ::Symbol, grammar::AbstractGrammar, maxdepth::Int=typemax(Int))
+    x = NodeLocAndCount(NodeLoc(root, 0)
     , 0)
-	if grammar.types[root.ind] == typ
-	    x.cnt += 1
-	end
-	_sample(NodeLoc, root, typ, grammar, x, maxdepth-1)
-	grammar.types[get(root,x.loc).ind] == typ || error("type $typ not found in RuleNode")
-	x.loc
+    if grammar.types[root.ind] == typ
+        x.cnt += 1
+    end
+    _sample(NodeLoc, root, typ, grammar, x, maxdepth-1)
+    grammar.types[get(root,x.loc).ind] == typ || error("type $typ not found in RuleNode")
+    x.loc
 end
     
-function _sample(::Type{NodeLoc}, node::RuleNode, typ::Symbol, grammar::AbstractGrammar,
-		     x::NodeLocAndCount, maxdepth::Int)
-	maxdepth < 1 && return
-	for (j,child) in enumerate(node.children)
-	    if grammar.types[child.ind] == typ
-		x.cnt += 1
-		if rand() <= 1/x.cnt
-		    x.loc = NodeLoc(node, j)
-		end
-	    end
-	    _sample(NodeLoc, child, typ, grammar, x, maxdepth-1)
-	end
+function _sample(::Type{NodeLoc}, node::RuleNode, typ::Symbol, grammar::AbstractGrammar, x::NodeLocAndCount, maxdepth::Int)
+    maxdepth < 1 && return
+    for (j,child) in enumerate(node.children)
+        if grammar.types[child.ind] == typ
+            x.cnt += 1
+            if rand() <= 1/x.cnt
+                x.loc = NodeLoc(node, j)
+            end
+        end
+        _sample(NodeLoc, child, typ, grammar, x, maxdepth-1)
+    end
 end

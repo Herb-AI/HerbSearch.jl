@@ -7,7 +7,7 @@ The [Solver](@ref) is required to be in a state without any [VariableShapedHole]
 @programiterator FixedShapedIterator()
 
 """
-    priority_function(::FixedShapedIterator, g::Grammar, tree::AbstractRuleNode, parent_value::Union{Real, Tuple{Vararg{Real}}})
+    priority_function(::FixedShapedIterator, g::AbstractGrammar, tree::AbstractRuleNode, parent_value::Union{Real, Tuple{Vararg{Real}}})
 
 Assigns a priority value to a `tree` that needs to be considered later in the search. Trees with the lowest priority value are considered first.
 
@@ -17,7 +17,7 @@ Assigns a priority value to a `tree` that needs to be considered later in the se
 """
 function priority_function(
     ::FixedShapedIterator, 
-    g::Grammar, 
+    g::AbstractGrammar, 
     tree::AbstractRuleNode, 
     parent_value::Union{Real, Tuple{Vararg{Real}}}
 )
