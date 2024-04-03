@@ -11,7 +11,7 @@ Concrete iterators may overload the following methods:
 abstract type TopDownIterator <: ProgramIterator end
 
 """
-    priority_function(::TopDownIterator, g::Grammar, tree::AbstractRuleNode, parent_value::Union{Real, Tuple{Vararg{Real}}})
+    priority_function(::TopDownIterator, g::AbstractGrammar, tree::AbstractRuleNode, parent_value::Union{Real, Tuple{Vararg{Real}}})
 
 Assigns a priority value to a `tree` that needs to be considered later in the search. Trees with the lowest priority value are considered first.
 
@@ -21,7 +21,7 @@ Assigns a priority value to a `tree` that needs to be considered later in the se
 """
 function priority_function(
     ::TopDownIterator, 
-    g::Grammar, 
+    g::AbstractGrammar, 
     tree::AbstractRuleNode, 
     parent_value::Union{Real, Tuple{Vararg{Real}}}
 )
@@ -58,13 +58,13 @@ Returns a breadth-first iterator given a grammar and a starting symbol. Returns 
 @programiterator BFSIterator() <: TopDownIterator
 
 """
-    priority_function(::BFSIterator, g::Grammar, tree::AbstractRuleNode, parent_value::Union{Real, Tuple{Vararg{Real}}})
+    priority_function(::BFSIterator, g::AbstractGrammar, tree::AbstractRuleNode, parent_value::Union{Real, Tuple{Vararg{Real}}})
 
 Assigns priority such that the search tree is traversed like in a BFS manner
 """
 function priority_function(
     ::BFSIterator, 
-    ::Grammar, 
+    ::AbstractGrammar, 
     ::AbstractRuleNode, 
     parent_value::Union{Real, Tuple{Vararg{Real}}}
 )
@@ -80,13 +80,13 @@ Returns a depth-first search enumerator given a grammar and a starting symbol. R
 @programiterator DFSIterator() <: TopDownIterator
 
 """
-    priority_function(::DFSIterator, g::Grammar, tree::AbstractRuleNode, parent_value::Union{Real, Tuple{Vararg{Real}}})
+    priority_function(::DFSIterator, g::AbstractGrammar, tree::AbstractRuleNode, parent_value::Union{Real, Tuple{Vararg{Real}}})
 
 Assigns priority such that the search tree is traversed like in a DFS manner
 """
 function priority_function(
     ::DFSIterator, 
-    ::Grammar, 
+    ::AbstractGrammar, 
     ::AbstractRuleNode, 
     parent_value::Union{Real, Tuple{Vararg{Real}}}
 )
@@ -102,13 +102,13 @@ Iterator that enumerates expressions in the grammar in decreasing order of proba
 @programiterator MLFSIterator() <: TopDownIterator
 
 """
-    priority_function(::MLFSIterator, g::Grammar, tree::AbstractRuleNode, parent_value::Union{Real, Tuple{Vararg{Real}}})
+    priority_function(::MLFSIterator, g::AbstractGrammar, tree::AbstractRuleNode, parent_value::Union{Real, Tuple{Vararg{Real}}})
 
 Calculates logit for all possible derivations for a node in a tree and returns them.
 """
 function priority_function(
     ::MLFSIterator,
-    g::Grammar, 
+    g::AbstractGrammar, 
     tree::AbstractRuleNode, 
     ::Union{Real, Tuple{Vararg{Real}}}
 )
