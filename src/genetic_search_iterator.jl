@@ -46,11 +46,11 @@ cross_over(::GeneticSearchIterator, parent_1::RuleNode, parent_2::RuleNode) = cr
 
 
 """
-    mutate!(::GeneticSearchIterator, program::RuleNode, grammar::Grammar, max_depth::Int = 2)
+    mutate!(::GeneticSearchIterator, program::RuleNode, grammar::AbstractGrammar, max_depth::Int = 2)
 
 Mutates the program of an invididual.
 """
-mutate!(::GeneticSearchIterator, program::RuleNode, grammar::Grammar, max_depth::Int = 2) = mutate_random!(program, grammar, max_depth)
+mutate!(::GeneticSearchIterator, program::RuleNode, grammar::AbstractGrammar, max_depth::Int = 2) = mutate_random!(program, grammar, max_depth)
 
 """
     select_parents(::GeneticSearchIterator, population::Array{RuleNode}, fitness_array::Array{<:Real})
