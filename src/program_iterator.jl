@@ -15,7 +15,8 @@ abstract type ProgramIterator end
 
 Base.IteratorSize(::ProgramIterator) = Base.SizeUnknown()
 
-Base.eltype(::ProgramIterator) = RuleNode
+#TODO: currently, ProgramIterator will not create `StateFixedShapedHole` yet, but this should be possible
+Base.eltype(::ProgramIterator) = Union{RuleNode, StateFixedShapedHole}
 
 """
     @programiterator
@@ -49,7 +50,7 @@ macro programiterator(ex)
     generate_iterator(__module__, ex)
 end
 
-function generate_iterator(mod::Module, ex::Expr, mut::Bool=false)
+function generate_iterator(mod::Module, ex::Expr, mut::Bool=true)
     Base.remove_linenums!(ex)
 
     @match ex begin
@@ -71,7 +72,8 @@ processdecl(mod::Module, mut::Bool, decl::Expr, super=nothing) = @match decl beg
             Expr(:kw, :(max_depth::Int), typemax(Int)), 
             Expr(:kw, :(max_size::Int), typemax(Int)), 
             Expr(:kw, :(max_time::Int), typemax(Int)), 
-            Expr(:kw, :(max_enumerations::Int), typemax(Int))
+            Expr(:kw, :(max_enumerations::Int), typemax(Int)),
+            Expr(:kw, :(solver::Union{Solver, Nothing}), nothing)
         ]
 
         head = Expr(:(<:), name, isnothing(super) ? :(HerbSearch.ProgramIterator) : :($mod.$super))
@@ -82,6 +84,7 @@ processdecl(mod::Module, mut::Bool, decl::Expr, super=nothing) = @match decl beg
             max_size::Int
             max_time::Int
             max_enumerations::Int
+            solver::Union{Solver, Nothing}
         end)
 
         map!(ex -> processkwarg!(kwargs, ex), extrafields, extrafields)        

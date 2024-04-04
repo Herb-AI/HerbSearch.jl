@@ -18,6 +18,7 @@ include("count_expressions.jl")
 include("heuristics.jl")
 
 include("bottom_up_iterator.jl")
+include("fixed_shaped_iterator.jl")
 include("top_down_iterator.jl")
 
 include("evaluate.jl")
@@ -53,6 +54,8 @@ export
   SynthResult,
   optimal_program,
   suboptimal_program,
+
+  FixedShapedIterator,
 
   TopDownIterator,
   BFSIterator,

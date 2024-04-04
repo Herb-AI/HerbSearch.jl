@@ -8,6 +8,7 @@
     ms = 5
     mt = 5
     me = 5
+    solver = nothing
     
     abstract type IteratorFamily <: ProgramIterator end
 
@@ -17,9 +18,9 @@
             f2
         )
 
-        @test fieldcount(LonelyIterator) == 8
+        @test fieldcount(LonelyIterator) == 9
         
-        lit = LonelyIterator(g, s, md, ms, mt, me, 2, :a)
+        lit = LonelyIterator(g, s, md, ms, mt, me, solver, 2, :a)
         @test lit.grammar == g && lit.f1 == 2 && lit.f2 == :a
         @test LonelyIterator <: ProgramIterator
     end
@@ -30,7 +31,7 @@
             f2
         ) <: IteratorFamily
 
-        it = ConcreteIterator(g, s, md, ms, mt, me, true, 4)
+        it = ConcreteIterator(g, s, md, ms, mt, me, solver, true, 4)
 
         @test ConcreteIterator <: IteratorFamily
         @test it.f1 && it.f2 == 4
@@ -39,7 +40,7 @@
     @testset "mutable iterator" begin
         @programiterator mutable AnotherIterator() <: IteratorFamily
 
-        it = AnotherIterator(g, s, md, ms, mt, me)
+        it = AnotherIterator(g, s, md, ms, mt, me, solver)
 
         it.max_depth = 10
 
@@ -51,7 +52,7 @@
         @programiterator mutable DefConstrIterator(
             function DefConstrIterator()
                 g = @csgrammar begin R = x end
-                new(g, :R, 5, 5, 5, 5)
+                new(g, :R, 5, 5, 5, 5, nothing)
             end
         )
 
@@ -80,15 +81,15 @@
         @programiterator mutable ComplicatedIterator(
             intfield::Int,
             deffield=nothing,
-            function ComplicatedIterator(g, s, md, ms, mt, me, i, d) 
-                new(g, s, md, ms, mt, me, i, d)
+            function ComplicatedIterator(g, s, md, ms, mt, me, solver, i, d) 
+                new(g, s, md, ms, mt, me, solver, i, d)
             end,
             function ComplicatedIterator()
                 let g = @csgrammar begin
                     R = x
                     R = 1 | 2
                 end
-                    new(g, :R, 1, 2, 3, 4, 5, 6)
+                    new(g, :R, 1, 2, 3, 4, nothing, 5, 6)
                 end
             end
         )
