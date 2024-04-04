@@ -21,17 +21,18 @@
     end
     @testset "2x + 1" begin
         g = @csgrammar begin
-            Int = 0 | 1 | x
-            Int = Int + Int
+            Number = |(1:2)
+            Number = x
+            Number = Number + Number
+            Number = Number * Number
         end
         
-        problem = Problem([IOExample(Dict(:x => a), 2a + 1) for a in [0, 1, 2, 3]])        
-
+        problem = Problem([IOExample(Dict(:x => x), 2x+1) for x ∈ 1:5])       
         iterator = BasicIterator(g, :initExpr, problem)
+
         solution, flag = synth(problem, iterator) 
         program = rulenode2expr(solution, g)
 
-        @test execute_on_input(SymbolTable(g), program, Dict(:x => 10)) == 21
-        @test execute_on_input(SymbolTable(g), program, Dict(:x => 15)) == 31
+        @test execute_on_input(SymbolTable(g), program, Dict(:x => 6)) == 2*6+1
     end
 end

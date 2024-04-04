@@ -7,7 +7,7 @@ The exploration of the search space is done by making use of the priority functi
 Concrete implementations of this iterator should implement the following methods:
 - `order(iter::BottomUpIterator, grammar::ContextSensitiveGrammar)::Vector{Int64}`: Returns the order in which the rules should be enumerated.
 - `pick(iter::BottomUpIterator, grammar::ContextSensitiveGrammar, state::BottomUpState, rule::Int64)::Vector{RuleNode}`: Returns the programs that can be created by applying the given rule.
-- `priority_function(iter::BottomUpIterator, program::RuleNode, state::BottomUpState)::Int64`: Returns the priority of the given program.
+- `priority_function(iter::BottomUpIterator, grammar::ContextSensitiveGrammar, program::RuleNode, state::BottomUpState)::Int64`: Returns the priority of the given program.
 """
 abstract type BottomUpIterator <: ProgramIterator end
 
@@ -24,7 +24,7 @@ A basic implementation of the bottom-up iterator. It will enumerate all programs
 Holds the state of the bottom-up iterator. This includes the priority bank, the hashes of the outputs of the programs, and the current programs that are being enumerated.
 """
 struct BottomUpState
-    priority_bank::Dict{RuleNode,Int64}
+    priority_bank::Dict{Symbol, Dict{RuleNode,Int64}}
     hashes::Set{UInt}
     current_programs::Queue{RuleNode}
 end
@@ -58,17 +58,18 @@ function pick(
 end
 
 """
-	priority_function(iter::BottomUpIterator, program::RuleNode, state::BottomUpState)::Int64
+	priority_function(iter::BottomUpIterator, grammar::ContextSensitiveGrammar, program::RuleNode, state::BottomUpState)::Int64
 
 Returns the priority associated with the given program.
 """
 function priority_function(
     ::BottomUpIterator,
+    grammar::ContextSensitiveGrammar,
     program::RuleNode,
     state::BottomUpState
 )
     # the default priority function is the BasicIterator's function
-    return priority_function(BasicIterator, program, state)
+    return priority_function(BasicIterator, grammar, program, state)
 end
 
 """
@@ -96,34 +97,33 @@ function pick(
 )::Vector{RuleNode}
     new_programs = []
     childtypes = grammar.childtypes[rule]
+    candidate_programs = map(symbol -> collect(keys(get(state.priority_bank, symbol, Dict{RuleNode, Int64}()))), childtypes)
 
-    permutations = Combinatorics.permutations(collect(keys(state.priority_bank)), length(childtypes))
-
-    for rulenode_permutation ∈ permutations
-        if map(rulenode -> grammar.types[rulenode.ind], rulenode_permutation) == childtypes
-            new_single_program = RuleNode(rule, nothing, rulenode_permutation)
-
-            push!(new_programs, new_single_program)
-        end
+    for combination ∈ Iterators.product(candidate_programs...)
+        program = RuleNode(rule, nothing, collect(combination))
+        push!(new_programs, program)
     end
 
     return new_programs
 end
 
 """
-	priority_function(::BasicIterator, program::RuleNode, state::BottomUpState)::Int64
+	priority_function(::BasicIterator, grammar::ContextSensitiveGrammar, program::RuleNode, state::BottomUpState)::Int64
 
 Returns the depth of the RuleNode that describes the given program.
 """
 function priority_function(
     ::BasicIterator,
+    grammar::ContextSensitiveGrammar,
     program::RuleNode,
     state::BottomUpState
 )::Int64
     max_depth::Int64 = 0
+    program_symbol::Symbol = grammar.types[program.ind]
 
     for child ∈ program.children
-        max_depth = max(max_depth, state.priority_bank[child])
+        child_symbol::Symbol = grammar.types[child.ind]
+        max_depth = max(max_depth, state.priority_bank[child_symbol][child])
     end
 
     return max_depth + 1
@@ -138,7 +138,7 @@ It also constructs the ['BottomUpState'](@ref) which will be used in future iter
 """
 function Base.iterate(iter::BottomUpIterator)::Union{Nothing,Tuple{RuleNode,BottomUpState}}
     current_programs = Queue{RuleNode}()
-    priority_bank::Base.Dict{RuleNode,Int64} = Dict()
+    priority_bank::Base.Dict{Symbol, Dict{RuleNode,Int64}} = Dict()
 	hashes::Set{UInt} = Set{UInt}()
 
     for terminal in findall(iter.grammar.isterminal)
@@ -193,7 +193,9 @@ function _get_next_program(
     end
 
     new_program::RuleNode = dequeue!(state.current_programs)
-    state.priority_bank[new_program] = priority_function(iter, new_program, state)
+    new_program_symbol::Symbol = iter.grammar.types[new_program.ind]
+    symbol_dict = get!(state.priority_bank, new_program_symbol, Dict{RuleNode, Int64}())
+    symbol_dict[new_program] = priority_function(iter, iter.grammar, new_program, state)
     return new_program, state
 end
 
