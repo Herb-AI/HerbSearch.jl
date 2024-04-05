@@ -115,26 +115,25 @@ function Base.iterate(iter::StochasticSearchIterator, iterator_state::IteratorSt
             temp $new_temperature"
 
     # remove the rule node by substituting it with a hole of the same symbol
-    original_node = get(get_tree(solver), neighbourhood_node_location)
-    path = get_node_path(get_tree(solver), original_node)
+    original_node = get(current_program, neighbourhood_node_location)
+    path = get_node_path(current_program, original_node)
+    original_state = save_state!(solver)
+
     remove_node!(solver, path)
     
-    skeleton = get_node_at_location(solver, path) #TODO: only propose programs that derive from this skeleton
-    # Example of what a skeleton could look like:
-    # skeleton = FixedShapedHole(BitVector((0, 0, 1, 1)), [
-    #     RuleNode(1), 
-    #     Hole(BitVector(1, 1, 0, 1))
-    # ])
-
     # propose new programs to consider. They are programs to put in the place of the nodelocation
-    possible_replacements = propose(iter, current_program, neighbourhood_node_location, iterator_state.dmap, dict)
+    # propose should give full programs
+    possible_programs = propose(iter, path, dict)
     
     # try to improve the program using any of the possible replacements
-    isimproved = try_improve_program!(iter, possible_replacements, neighbourhood_node_location, new_temperature, current_cost)
-    if !isimproved
-        # if all the possible replacements fail to improve the program, restore the original node
-        substitute!(solver, path, original_node)
+    improved_program = try_improve_program!(iter, possible_programs, neighbourhood_node_location, new_temperature, current_cost)
+    
+    if isnothing(improved_program)
+        load_state!(solver, original_state)
+    else 
+        new_state!(solver, improved_program)
     end
+
     @assert isfeasible(solver)
     @assert !contains_hole(get_tree(solver))
     
@@ -143,30 +142,19 @@ function Base.iterate(iter::StochasticSearchIterator, iterator_state::IteratorSt
 end
 
 
-function try_improve_program!(iter::StochasticSearchIterator, possible_replacements, neighbourhood_node_location::NodeLoc, new_temperature, current_cost)::Bool
-    solver = iter.solver
-    original_state = save_state!(solver)
-    best_state = original_state
-    root = get_tree(solver)
-    path = get_node_path(root, get(root, neighbourhood_node_location))
-    isimproved = false
-    for possible_replacement in possible_replacements
-        substitute!(solver, path, statefixedshapedhole2rulenode(possible_replacement))
+function try_improve_program!(iter::StochasticSearchIterator, possible_programs, neighbourhood_node_location::NodeLoc, new_temperature, current_cost)
+    best_program = nothing
+    for possible_program in possible_programs
+        println("Possible program", possible_program, "|",depth(possible_program))
 
-        if isfeasible(solver)
-            program_cost = calculate_cost(iter, get_tree(solver))
-            if accept(iter, current_cost, program_cost, new_temperature)
-                isimproved = true
-                best_state = get_state(solver)
-                current_cost = program_cost
-            end
+        program_cost = calculate_cost(iter, get_tree(iter.solver))
+        if accept(iter, current_cost, program_cost, new_temperature)
+            best_program = statefixedshapedhole2rulenode(possible_program)
+            current_cost = program_cost
         end
         
-        load_state!(solver, original_state)
-        original_state = save_state!(solver)
     end
-    load_state!(solver, best_state)
-    return isimproved
+    return best_program
 end
 
 """
@@ -215,7 +203,7 @@ The temperature value of the algorithm remains constant over time.
     evaluation_function::Function = execute_on_input, 
 ) <: StochasticSearchIterator
 
-propose(iter::MHSearchIterator, current_program::RuleNode, neighbourhood_node_loc::NodeLoc, dmap::AbstractVector{Int}, dict::Union{Nothing,Dict{String,Any}}) = random_fill_propose(current_program, neighbourhood_node_loc, iter.solver, dmap, dict)
+propose(iter::MHSearchIterator, path::Vector{Int}, dict::Union{Nothing,Dict{String,Any}}) = random_fill_propose(iter.solver, path, dict)
 
 temperature(::MHSearchIterator, current_temperature::Real) = const_temperature(current_temperature)
 
@@ -241,7 +229,7 @@ The temperature value of the algorithm remains constant over time.
     evaluation_function::Function = execute_on_input
 ) <: StochasticSearchIterator
 
-propose(iter::VLSNSearchIterator, current_program::RuleNode, neighbourhood_node_loc::NodeLoc, dmap::AbstractVector{Int}, dict::Union{Nothing,Dict{String,Any}}) = enumerate_neighbours_propose(iter.vlsn_neighbourhood_depth)(current_program, neighbourhood_node_loc, iter.grammar, iter.max_depth, dmap, dict)
+propose(iter::VLSNSearchIterator, path::Vector{Int}, dict::Union{Nothing,Dict{String,Any}}) = enumerate_neighbours_propose(iter.vlsn_neighbourhood_depth)(iter.solver, path, dict)
 
 temperature(::VLSNSearchIterator, current_temperature::Real) = const_temperature(current_temperature)
 
@@ -268,7 +256,7 @@ but takes into account the tempeerature too.
     evaluation_function::Function = execute_on_input
 ) <: StochasticSearchIterator
 
-propose(iter::SASearchIterator, current_program::RuleNode, neighbourhood_node_loc::NodeLoc, dmap::AbstractVector{Int}, dict::Union{Nothing,Dict{String,Any}}) = random_fill_propose(current_program, neighbourhood_node_loc, iter.solver, dmap, dict)
+propose(iter::SASearchIterator, path::Vector{Int}, dict::Union{Nothing,Dict{String,Any}}) = random_fill_propose(iter.solver, path, dict)
 
 temperature(iter::SASearchIterator, current_temperature::Real) = decreasing_temperature(iter.temperature_decreasing_factor)(current_temperature)
 
