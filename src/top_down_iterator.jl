@@ -17,7 +17,7 @@ Assigns a priority value to a `tree` that needs to be considered later in the se
 
 - `g`: The grammar used for enumeration
 - `tree`: The tree that is about to be stored in the priority queue
-- `parent_value`: The priority value of the parent [`State`](@ref)
+- `parent_value`: The priority value of the parent [`SolverState`](@ref)
 """
 function priority_function(
     ::TopDownIterator, 
@@ -135,7 +135,7 @@ Describes the iteration for a given [`TopDownIterator`](@ref) over the grammar. 
 """
 function Base.iterate(iter::TopDownIterator)
     # Priority queue with number of nodes in the program
-    pq :: PriorityQueue{State, Union{Real, Tuple{Vararg{Real}}}} = PriorityQueue()
+    pq :: PriorityQueue{SolverState, Union{Real, Tuple{Vararg{Real}}}} = PriorityQueue()
 
     #TODO: instantiating the solver should be in the program iterator macro
     if isnothing(iter.solver)
