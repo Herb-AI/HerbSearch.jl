@@ -15,9 +15,7 @@ Random.seed!(1234)
     include("test_search_procedure.jl")        
     include("test_context_free_iterators.jl") #TODO: see "probabilistic enumerator" in test_context_free_iterators.jl
     include("test_sampling.jl")
-    include("test_stochastic_functions.jl")
-    include("test_stochastic_algorithms.jl")
-    include("test_stochastic_with_constraints.jl")
+    include("test_stochastic/test_stochastic.jl")
     include("test_genetic.jl")
     include("test_programiterator_macro.jl")
 

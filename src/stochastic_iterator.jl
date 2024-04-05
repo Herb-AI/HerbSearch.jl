@@ -119,7 +119,12 @@ function Base.iterate(iter::StochasticSearchIterator, iterator_state::IteratorSt
     path = get_node_path(get_tree(solver), original_node)
     remove_node!(solver, path)
     
-    skeleton = get_node_at_location(solver, path) #TODO: only propose constraints that derive from this skeleton
+    skeleton = get_node_at_location(solver, path) #TODO: only propose programs that derive from this skeleton
+    # Example of what a skeleton could look like:
+    # skeleton = FixedShapedHole(BitVector((0, 0, 1, 1)), [
+    #     RuleNode(1), 
+    #     Hole(BitVector(1, 1, 0, 1))
+    # ])
 
     # propose new programs to consider. They are programs to put in the place of the nodelocation
     possible_replacements = propose(iter, current_program, neighbourhood_node_location, iterator_state.dmap, dict)

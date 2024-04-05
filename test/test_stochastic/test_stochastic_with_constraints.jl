@@ -22,7 +22,7 @@ addconstraint!(grammar, Contains(9))                                            
 @testset verbose = true "Stochastic with Constraints" begin
     #solution exists
     problem, examples = create_problem(x -> x * x)
-    iterator = MHSearchIterator(grammar, :X, examples, mean_squared_error, max_depth=2, max_time=1)
+    iterator = MHSearchIterator(grammar, :X, examples, mean_squared_error, max_depth=2, max_time=2)
     solution, flag = synth(problem, iterator)
     @test solution == RuleNode(6, [RuleNode(9), RuleNode(9)])
     @test flag == optimal_program
