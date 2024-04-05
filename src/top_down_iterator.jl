@@ -186,8 +186,8 @@ function Base.iterate(iter::TopDownIterator, tup::Tuple{UniformSolver, DataStruc
     # iterating over fixed shaped trees using the UniformSolver
     tree = next_solution!(tup[1])
     if !isnothing(tree)
-        #TODO: do not convert the found solution to a rulenode. but convert the StateUniformHole to an expression directly
-        return (statefixedshapedhole2rulenode(tree), tup)
+        #TODO: do not convert the found solution to a rulenode. but convert the StateFixedShapedHole to an expression directly
+        return (tree, tup)
     end
     if !isnothing(iter.solver.statistics)
         iter.solver.statistics.name = "GenericSolver" #statistics swap back from UniformSolver to GenericSolver
@@ -219,8 +219,8 @@ function _find_next_complete_tree(
                 fixed_shaped_solver = UniformSolver(get_grammar(solver), get_tree(solver), with_statistics=solver.statistics)
                 solution = next_solution!(fixed_shaped_solver)
                 if !isnothing(solution)
-                    #TODO: do not convert the found solution to a rulenode. but convert the StateUniformHole to an expression directly
-                    return (statefixedshapedhole2rulenode(solution), (fixed_shaped_solver, pq))
+                    #TODO: do not convert the found solution to a rulenode. but convert the StateFixedShapedHole to an expression directly
+                    return (solution, (fixed_shaped_solver, pq))
                 end
             else
                 fixed_shaped_iter = FixedShapedIterator(get_grammar(solver), :StartingSymbolIsIgnored, solver=solver)

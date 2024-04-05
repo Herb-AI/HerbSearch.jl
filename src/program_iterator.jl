@@ -15,7 +15,6 @@ abstract type ProgramIterator end
 
 Base.IteratorSize(::ProgramIterator) = Base.SizeUnknown()
 
-#TODO: currently, ProgramIterator will not create `StateFixedShapedHole` yet, but this should be possible
 Base.eltype(::ProgramIterator) = Union{RuleNode, StateFixedShapedHole}
 
 """

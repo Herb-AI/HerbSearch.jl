@@ -92,7 +92,7 @@
       Real = 1 | 2
       Real = Real * Real
     end
-    programs = collect(BFSIterator(g1, :Real, max_depth=2))
+    programs = [statefixedshapedhole2rulenode(p) for p ∈ BFSIterator(g1, :Real, max_depth=2)]
     @test all(map(t -> depth(t[1]) ≤ depth(t[2]), zip(programs[begin:end-1], programs[begin+1:end])))
     
     answer_programs = [

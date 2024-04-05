@@ -41,9 +41,15 @@ function synth(
         # Evaluate the expression
         score = evaluate(problem, expr, symboltable, shortcircuit=shortcircuit, allow_evaluation_errors=allow_evaluation_errors)
         if score == 1
+            if candidate_program isa StateFixedShapedHole
+                candidate_program = statefixedshapedhole2rulenode(candidate_program)
+            end
             return (candidate_program, optimal_program)
         elseif score >= best_score
             best_score = score
+            if candidate_program isa StateFixedShapedHole
+                candidate_program = statefixedshapedhole2rulenode(candidate_program)
+            end
             best_program = candidate_program
         end
 

@@ -151,7 +151,7 @@ function try_improve_program!(iter::StochasticSearchIterator, possible_replaceme
     path = get_node_path(root, get(root, neighbourhood_node_location))
     isimproved = false
     for possible_replacement in possible_replacements
-        substitute!(solver, path, possible_replacement)
+        substitute!(solver, path, statefixedshapedhole2rulenode(possible_replacement))
 
         if isfeasible(solver)
             program_cost = calculate_cost(iter, get_tree(solver))
@@ -174,7 +174,7 @@ end
 
 Returns the cost of the `program` using the examples and the `cost_function`. It first convert the program to an expression and evaluates it on all the examples.
 """
-function _calculate_cost(program::RuleNode, cost_function::Function, spec::AbstractVector{IOExample}, grammar::AbstractGrammar, evaluation_function::Function)
+function _calculate_cost(program::Union{RuleNode, StateFixedShapedHole}, cost_function::Function, spec::AbstractVector{IOExample}, grammar::AbstractGrammar, evaluation_function::Function)
     results = Tuple{<:Number,<:Number}[]
 
     expression = rulenode2expr(program, grammar)
@@ -189,11 +189,11 @@ function _calculate_cost(program::RuleNode, cost_function::Function, spec::Abstr
 end
 
 """
-    calculate_cost(iter::T, program::RuleNode) where T <: StochasticSearchIterator
+    calculate_cost(iter::T, program::Union{RuleNode, StateFixedShapedHole}) where T <: StochasticSearchIterator
 
 Wrapper around [`_calculate_cost`](@ref).
 """
-calculate_cost(iter::T, program::RuleNode) where T <: StochasticSearchIterator = _calculate_cost(program, iter.cost_function, iter.spec, iter.grammar, iter.evaluation_function)
+calculate_cost(iter::T, program::Union{RuleNode, StateFixedShapedHole}) where T <: StochasticSearchIterator = _calculate_cost(program, iter.cost_function, iter.spec, iter.grammar, iter.evaluation_function)
 
 neighbourhood(iter::T, current_program::RuleNode) where T <: StochasticSearchIterator = constructNeighbourhood(current_program, iter.grammar)
 
