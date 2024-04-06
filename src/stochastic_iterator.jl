@@ -145,14 +145,11 @@ end
 function try_improve_program!(iter::StochasticSearchIterator, possible_programs, neighbourhood_node_location::NodeLoc, new_temperature, current_cost)
     best_program = nothing
     for possible_program in possible_programs
-        println("Possible program", possible_program, "|",depth(possible_program))
-
-        program_cost = calculate_cost(iter, get_tree(iter.solver))
+        program_cost = calculate_cost(iter, possible_program)
         if accept(iter, current_cost, program_cost, new_temperature)
             best_program = statefixedshapedhole2rulenode(possible_program)
             current_cost = program_cost
         end
-        
     end
     return best_program
 end
