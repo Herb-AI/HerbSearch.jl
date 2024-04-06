@@ -26,18 +26,19 @@ function priority_function(
     parent_value::Union{Real, Tuple{Vararg{Real}}}
 )
     #the default priority function is the bfs priority function
-    priority_function(BFSIterator, g, tree, parent_value);
+    parent_value + 1;
 end
 
 """
-    derivation_heuristic(::TopDownIterator, nodes::Vector{RuleNode})::Vector{AbstractRuleNode}
+    function derivation_heuristic(::TopDownIterator)
 
-Returns an ordered sublist of `nodes`, based on which ones are most promising to fill the hole at the given `context`.
-
-- `nodes::Vector{RuleNode}`: a list of nodes the hole can be filled with
+Returns a sorted sublist of the `indices`, based on which rules are most promising to fill a hole.
+By default, this is the identity function.
 """
-function derivation_heuristic(::TopDownIterator, nodes::Vector{RuleNode})::Vector{AbstractRuleNode}
-    return nodes;
+function derivation_heuristic(::TopDownIterator)
+    return function (indices)
+        return indices;
+    end
 end
 
 """
@@ -47,6 +48,38 @@ Defines a heuristic over variable shaped holes. Returns a [`HoleReference`](@ref
 """
 function hole_heuristic(::TopDownIterator, node::AbstractRuleNode, max_depth::Int)::Union{ExpandFailureReason, HoleReference}
     return heuristic_leftmost(node, max_depth);
+end
+
+Base.@doc """
+    @programiterator RandomIterator() <: TopDownIterator
+
+Iterates trees in the grammar in a random order.
+""" RandomIterator
+@programiterator RandomIterator() <: TopDownIterator
+
+"""
+    priority_function(::RandomIterator, g::AbstractGrammar, tree::AbstractRuleNode, parent_value::Union{Real, Tuple{Vararg{Real}}})
+
+Assigns a random priority to each state.
+"""
+function priority_function(
+    ::RandomIterator, 
+    ::AbstractGrammar, 
+    ::AbstractRuleNode, 
+    ::Union{Real, Tuple{Vararg{Real}}}
+)
+    Random.rand();
+end
+
+"""
+    function derivation_heuristic(::RandomIterator)
+
+Randomly shuffles the rules.
+"""
+function derivation_heuristic(::RandomIterator)
+    return function (indices)
+        return Random.shuffle!(indices);
+    end
 end
 
 
@@ -216,11 +249,11 @@ function _find_next_complete_tree(
             track!(solver.statistics, "#FixedShapedTrees")
             if solver.use_fixedshapedsolver
                 #TODO: use_fixedshapedsolver should be the default case
-                fixed_shaped_solver = UniformSolver(get_grammar(solver), get_tree(solver), with_statistics=solver.statistics)
-                solution = next_solution!(fixed_shaped_solver)
+                uniform_solver = UniformSolver(get_grammar(solver), get_tree(solver), with_statistics=solver.statistics, derivation_heuristic=derivation_heuristic(iter))
+                solution = next_solution!(uniform_solver)
                 if !isnothing(solution)
                     #TODO: do not convert the found solution to a rulenode. but convert the StateFixedShapedHole to an expression directly
-                    return (solution, (fixed_shaped_solver, pq))
+                    return (solution, (uniform_solver, pq))
                 end
             else
                 fixed_shaped_iter = FixedShapedIterator(get_grammar(solver), :StartingSymbolIsIgnored, solver=solver)

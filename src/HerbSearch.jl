@@ -50,6 +50,8 @@ export
   heuristic_random,
   heuristic_smallest_domain,
 
+  derivation_heuristic,
+
   synth,
   SynthResult,
   optimal_program,
@@ -58,6 +60,7 @@ export
   FixedShapedIterator,
 
   TopDownIterator,
+  RandomIterator,
   BFSIterator,
   DFSIterator,
   MLFSIterator,
