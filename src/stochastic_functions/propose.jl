@@ -30,7 +30,10 @@ The return function is a function that produces a list with all the subprograms 
 """
 function enumerate_neighbours_propose(enumeration_depth::Int64)
     return (solver::Solver, path::Vector{Int}, dict::Union{Nothing,Dict{String,Any}}) -> begin
-        return BFSIterator(get_grammar(solver), :ThisIsIgnored, solver=solver)  
+        #TODO: Fix the ProgramIterator (macro)
+        # Make sure it doesn't overwrite (grammar, sym, max_depth, max_size) of the Solver.
+        # Ideally this line should be: BFSIterator(solver).
+        return BFSIterator(get_grammar(solver), :ThisIsIgnored, solver=solver, max_depth=get_max_depth(solver), max_size=get_max_size(solver))
     end
 end
     
