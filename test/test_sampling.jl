@@ -86,7 +86,7 @@ using Random
             addconstraint!(grammar, constraint)
             solver = GenericSolver(grammar, rulenode)
 
-            answer = HerbSearch.rand_with_constraints!(skeleton, solver, path_to_skeleton, mindepth_map(grammar), remaining_depth)
+            answer = HerbSearch._rand_with_constraints!(skeleton, solver, path_to_skeleton, mindepth_map(grammar), remaining_depth)
             @test check_tree(constraint, answer)
             @test depth(answer) <= remaining_depth + length(path_to_skeleton)
 
