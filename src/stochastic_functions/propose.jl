@@ -4,7 +4,6 @@ These subprograms are supposed to replace the subprogram at neighbourhood node l
 It is the responsibility of the caller to make this replacement.
 """
 
-
 """
     random_fill_propose(current_program::RuleNode, neighbourhood_node_loc::NodeLoc, grammar::AbstractGrammar, max_depth::Int, dmap::AbstractVector{Int}, dict::Union{Nothing,Dict{String,Any}})
 
@@ -18,7 +17,8 @@ Returns a list with only one proposed, completely random, subprogram.
 - `dict::Dict{String, Any}`: the dictionary with additional arguments; not used.
 """
 function random_fill_propose(solver::Solver, path::Vector{Int}, dict::Union{Nothing,Dict{String,Any}})
-    return Iterators.take(RandomSearchIterator(get_grammar(solver), :ThisIsIgnored, solver=solver, path = path),1)
+    return Iterators.take(RandomSearchIterator(get_grammar(solver), :ThisIsIgnored, solver=solver, path = path),5)
+    #return Iterators.take(RandomIterator(get_grammar(solver), :ThisIsIgnored, solver=solver, max_depth=get_max_depth(solver), max_size=get_max_size(solver)),N)
 end 
 
 """
