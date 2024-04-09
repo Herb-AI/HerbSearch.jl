@@ -2,7 +2,9 @@ Base.@doc """
     @programiterator FixedShapedIterator()
 
 Enumerates all programs that extend from the provided fixed shaped tree.
-The [Solver](@ref) is required to be in a state without any [Hole](@ref)s 
+The [Solver](@ref) is required to be in a state without any [Hole](@ref)s.
+
+!!! warning: this iterator is used as a baseline for the constraint propagation thesis. After the thesis, this iterator can (and should) be deleted.
 """ FixedShapedIterator
 @programiterator FixedShapedIterator()
 
@@ -10,10 +12,6 @@ The [Solver](@ref) is required to be in a state without any [Hole](@ref)s
     priority_function(::FixedShapedIterator, g::AbstractGrammar, tree::AbstractRuleNode, parent_value::Union{Real, Tuple{Vararg{Real}}})
 
 Assigns a priority value to a `tree` that needs to be considered later in the search. Trees with the lowest priority value are considered first.
-
-- `g`: The grammar used for enumeration
-- `tree`: The tree that is about to be stored in the priority queue
-- `parent_value`: The priority value of the parent [`SolverState`](@ref)
 """
 function priority_function(
     ::FixedShapedIterator, 
