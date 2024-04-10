@@ -19,7 +19,7 @@ Assigns a priority value to a `tree` that needs to be considered later in the se
 - `g`: The grammar used for enumeration
 - `tree`: The tree that is about to be stored in the priority queue
 - `parent_value`: The priority value of the parent [`SolverState`](@ref)
-- `isrequeued`: The same tree shape will be requeued. The next time this tree shape is considered, the `FixedShapedSolver` will produce the next complete program deriving from this shape.
+- `isrequeued`: The same tree shape will be requeued. The next time this tree shape is considered, the `UniformSolver` will produce the next complete program deriving from this shape.
 """
 function priority_function(
     ::TopDownIterator, 
@@ -180,8 +180,8 @@ Currently, there are two possible causes of the expansion failing:
 Describes the iteration for a given [`TopDownIterator`](@ref) over the grammar. The iteration constructs a [`PriorityQueue`](@ref) first and then prunes it propagating the active constraints. Recursively returns the result for the priority queue.
 """
 function Base.iterate(iter::TopDownIterator)
-    # Priority queue with `SolverState`s (for variable shaped trees) and `FixedShapedSolver`s (for fixed shaped trees)
-    pq :: PriorityQueue{Union{SolverState, FixedShapedSolver}, Union{Real, Tuple{Vararg{Real}}}} = PriorityQueue()
+    # Priority queue with `SolverState`s (for variable shaped trees) and `UniformSolver`s (for fixed shaped trees)
+    pq :: PriorityQueue{Union{SolverState, UniformSolver}, Union{Real, Tuple{Vararg{Real}}}} = PriorityQueue()
 
     #TODO: instantiating the solver should be in the program iterator macro
     if isnothing(iter.solver)
@@ -229,16 +229,6 @@ end
 
 function Base.iterate(iter::TopDownIterator, pq::DataStructures.PriorityQueue)
     track!(iter.solver.statistics, "#CompleteTrees (by UniformSolver)")
-    # # iterating over fixed shaped trees using the FixedShapedSolver
-    # tree = next_solution!(tup[1])
-    # if !isnothing(tree)
-    #     #TODO: do not convert the found solution to a rulenode. but convert the StateFixedShapedHole to an expression directly
-    #     return (tree, tup)
-    # end
-    # if !isnothing(iter.solver.statistics)
-    #     iter.solver.statistics.name = "GenericSolver" #statistics swap back from UniformSolver to GenericSolver
-    # end
-
     return _find_next_complete_tree(iter.solver, pq, iter)
 end
 
@@ -255,7 +245,7 @@ function _find_next_complete_tree(
 )#::Union{Tuple{RuleNode, Tuple{Vector{AbstractRuleNode}, PriorityQueue}}, Nothing}  #@TODO Fix this comment
     while length(pq) ≠ 0
         (item, priority_value) = dequeue_pair!(pq)
-        if item isa FixedShapedSolver
+        if item isa UniformSolver
             #the item is a fixed shaped solver, we should get the next solution and re-enqueue it with a new priority value
             fixed_shaped_solver = item
             solution = next_solution!(fixed_shaped_solver)
@@ -271,9 +261,9 @@ function _find_next_complete_tree(
             hole_res = hole_heuristic(iter, get_tree(solver), get_max_depth(solver))
             if hole_res ≡ already_complete
                 track!(solver.statistics, "#FixedShapedTrees")
-                if solver.use_fixedshapedsolver
-                    #TODO: use_fixedshapedsolver should be the default case
-                    fixed_shaped_solver = FixedShapedSolver(get_grammar(solver), get_tree(solver), with_statistics=solver.statistics, derivation_heuristic=derivation_heuristic(iter))
+                if solver.use_uniformsolver
+                    #TODO: use_uniformsolver should be the default case
+                    fixed_shaped_solver = UniformSolver(get_grammar(solver), get_tree(solver), with_statistics=solver.statistics, derivation_heuristic=derivation_heuristic(iter))
                     solution = next_solution!(fixed_shaped_solver)
                     if !isnothing(solution)
                         enqueue!(pq, fixed_shaped_solver, priority_function(iter, get_grammar(solver), solution, priority_value, true))

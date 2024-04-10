@@ -42,7 +42,7 @@ function Base.iterate(iter::FixedShapedIterator)
     pq :: PriorityQueue{SolverState, Union{Real, Tuple{Vararg{Real}}}} = PriorityQueue()
 
     solver = iter.solver
-    @assert !contains_variable_shaped_hole(get_tree(iter.solver)) "A FixedShapedIterator cannot iterate partial programs with VariableShapedHoles"
+    @assert !contains_variable_shaped_hole(get_tree(iter.solver)) "A FixedShapedIterator cannot iterate partial programs with Holes"
 
     if isfeasible(solver)
         enqueue!(pq, get_state(solver), priority_function(iter, get_grammar(solver), get_tree(solver), 0))
@@ -83,7 +83,7 @@ function _find_next_complete_tree(
             # The maximum depth is reached
             continue
         elseif hole_res isa HoleReference
-            # Uniform Hole was found
+            # UniformHole was found
             # TODO: problem. this 'hole' is tied to a target state. it should be state independent
             (; hole, path) = hole_res
     

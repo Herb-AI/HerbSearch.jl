@@ -16,7 +16,7 @@ function _rand_with_constraints!(skeleton::RuleNode,solver::Solver,path::Vector{
     return get_tree(solver)
 end
 
-function _rand_with_constraints!(hole::Hole,solver::Solver,path::Vector{Int},dmap::AbstractVector{Int}, remaining_depth::Int=10) 
+function _rand_with_constraints!(hole::AbstractHole,solver::Solver,path::Vector{Int},dmap::AbstractVector{Int}, remaining_depth::Int=10) 
     @info "The depth hole left: $remaining_depth"
 
     hole = get_hole_at_location(solver, path)

@@ -80,7 +80,7 @@ using Random
             rulenode = RuleNode(
                 5,[RuleNode(1), skeleton]
             )
-            path_to_skeleton = get_node_path(rulenode,skeleton)
+            path_to_skeleton = get_path(rulenode,skeleton)
             constraint = Contains(3)
 
             addconstraint!(grammar, constraint)

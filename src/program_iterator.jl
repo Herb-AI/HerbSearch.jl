@@ -15,7 +15,7 @@ abstract type ProgramIterator end
 
 Base.IteratorSize(::ProgramIterator) = Base.SizeUnknown()
 
-Base.eltype(::ProgramIterator) = Union{RuleNode, StateFixedShapedHole}
+Base.eltype(::ProgramIterator) = Union{RuleNode, StateHole}
 
 """
     @programiterator

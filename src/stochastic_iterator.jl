@@ -116,7 +116,7 @@ function Base.iterate(iter::StochasticSearchIterator, iterator_state::IteratorSt
 
     # remove the rule node by substituting it with a hole of the same symbol
     original_node = get(current_program, neighbourhood_node_location)
-    path = get_node_path(current_program, original_node)
+    path = get_path(current_program, original_node)
     original_state = save_state!(solver)
 
     remove_node!(solver, path)
@@ -147,7 +147,7 @@ function try_improve_program!(iter::StochasticSearchIterator, possible_programs,
     for possible_program in possible_programs
         program_cost = calculate_cost(iter, possible_program)
         if accept(iter, current_cost, program_cost, new_temperature)
-            best_program = statefixedshapedhole2rulenode(possible_program)
+            best_program = freeze_state(possible_program)
             current_cost = program_cost
         end
     end
@@ -159,7 +159,7 @@ end
 
 Returns the cost of the `program` using the examples and the `cost_function`. It first convert the program to an expression and evaluates it on all the examples.
 """
-function _calculate_cost(program::Union{RuleNode, StateFixedShapedHole}, cost_function::Function, spec::AbstractVector{IOExample}, grammar::AbstractGrammar, evaluation_function::Function)
+function _calculate_cost(program::Union{RuleNode, StateHole}, cost_function::Function, spec::AbstractVector{IOExample}, grammar::AbstractGrammar, evaluation_function::Function)
     results = Tuple{<:Number,<:Number}[]
 
     expression = rulenode2expr(program, grammar)
@@ -174,11 +174,11 @@ function _calculate_cost(program::Union{RuleNode, StateFixedShapedHole}, cost_fu
 end
 
 """
-    calculate_cost(iter::T, program::Union{RuleNode, StateFixedShapedHole}) where T <: StochasticSearchIterator
+    calculate_cost(iter::T, program::Union{RuleNode, StateHole}) where T <: StochasticSearchIterator
 
 Wrapper around [`_calculate_cost`](@ref).
 """
-calculate_cost(iter::T, program::Union{RuleNode, StateFixedShapedHole}) where T <: StochasticSearchIterator = _calculate_cost(program, iter.cost_function, iter.spec, iter.grammar, iter.evaluation_function)
+calculate_cost(iter::T, program::Union{RuleNode, StateHole}) where T <: StochasticSearchIterator = _calculate_cost(program, iter.cost_function, iter.spec, iter.grammar, iter.evaluation_function)
 
 neighbourhood(iter::T, current_program::RuleNode) where T <: StochasticSearchIterator = constructNeighbourhood(current_program, iter.grammar)
 

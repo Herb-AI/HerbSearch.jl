@@ -1,4 +1,3 @@
-using Revise
 using HerbCore
 using HerbSearch
 using HerbGrammar
