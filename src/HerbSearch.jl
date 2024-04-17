@@ -36,6 +36,8 @@ include("genetic_functions/crossover.jl")
 include("genetic_functions/select_parents.jl")
 include("genetic_search_iterator.jl")
 
+include("utils.jl")
+
 export 
   count_expressions,
   ProgramIterator,
@@ -72,4 +74,7 @@ export
   validate_iterator,
   sample,
   rand
+
+  @timed_exec
+  @timedfor
 end # module HerbSearch
