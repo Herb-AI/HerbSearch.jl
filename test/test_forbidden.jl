@@ -67,9 +67,9 @@ using HerbCore, HerbGrammar, HerbConstraints
                     RuleNode(1), 
                     RuleNode(1)
                 ]), 
-                FixedShapedHole(BitVector((1, 1, 0, 0)), [])
+                UniformHole(BitVector((1, 1, 0, 0)), [])
             ]), 
-            FixedShapedHole(BitVector((0, 0, 1, 1)), [
+            UniformHole(BitVector((0, 0, 1, 1)), [
                 RuleNode(3, [
                     RuleNode(1), 
                     RuleNode(1)
@@ -82,7 +82,7 @@ using HerbCore, HerbGrammar, HerbConstraints
         iter = BFSIterator(grammar, :Number, solver=solver)
         new_state!(solver, partial_tree)
         trees = collect(iter)
-        @test length(trees) == 3 # 3 out of the 4 combinations to fill the FixedShapedHoles are valid
+        @test length(trees) == 3 # 3 out of the 4 combinations to fill the UniformHoles are valid
     end
 
     @testset "DomainRuleNode" begin

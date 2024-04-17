@@ -181,16 +181,16 @@ function Base.iterate(iter::TopDownIterator, tup::Tuple{Vector{<:AbstractRuleNod
 end
 
 
-function Base.iterate(iter::TopDownIterator, tup::Tuple{FixedShapedSolver, DataStructures.PriorityQueue})
-    track!(iter.solver.statistics, "#CompleteTrees (by FixedShapedSolver)")
-    # iterating over fixed shaped trees using the FixedShapedSolver
+function Base.iterate(iter::TopDownIterator, tup::Tuple{UniformSolver, DataStructures.PriorityQueue})
+    track!(iter.solver.statistics, "#CompleteTrees (by UniformSolver)")
+    # iterating over fixed shaped trees using the UniformSolver
     tree = next_solution!(tup[1])
     if !isnothing(tree)
-        #TODO: do not convert the found solution to a rulenode. but convert the StateFixedShapedHole to an expression directly
+        #TODO: do not convert the found solution to a rulenode. but convert the StateUniformHole to an expression directly
         return (statefixedshapedhole2rulenode(tree), tup)
     end
     if !isnothing(iter.solver.statistics)
-        iter.solver.statistics.name = "GenericSolver" #statistics swap back from FixedShapedSolver to GenericSolver
+        iter.solver.statistics.name = "GenericSolver" #statistics swap back from UniformSolver to GenericSolver
     end
 
     return _find_next_complete_tree(iter.solver, tup[2], iter)
@@ -216,10 +216,10 @@ function _find_next_complete_tree(
             track!(solver.statistics, "#FixedShapedTrees")
             if solver.use_fixedshapedsolver
                 #TODO: use_fixedshapedsolver should be the default case
-                fixed_shaped_solver = FixedShapedSolver(get_grammar(solver), get_tree(solver), with_statistics=solver.statistics)
+                fixed_shaped_solver = UniformSolver(get_grammar(solver), get_tree(solver), with_statistics=solver.statistics)
                 solution = next_solution!(fixed_shaped_solver)
                 if !isnothing(solution)
-                    #TODO: do not convert the found solution to a rulenode. but convert the StateFixedShapedHole to an expression directly
+                    #TODO: do not convert the found solution to a rulenode. but convert the StateUniformHole to an expression directly
                     return (statefixedshapedhole2rulenode(solution), (fixed_shaped_solver, pq))
                 end
             else
@@ -233,7 +233,7 @@ function _find_next_complete_tree(
             # The maximum depth is reached
             continue
         elseif hole_res isa HoleReference
-            # Variable Shaped Hole was found
+            # Hole was found
             # TODO: problem. this 'hole' is tied to a target state. it should be state independent, so we only use the `path`
             (; hole, path) = hole_res
     

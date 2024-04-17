@@ -2,7 +2,7 @@ Base.@doc """
     @programiterator FixedShapedIterator()
 
 Enumerates all programs that extend from the provided fixed shaped tree.
-The [Solver](@ref) is required to be in a state without any [VariableShapedHole](@ref)s 
+The [Solver](@ref) is required to be in a state without any [Hole](@ref)s 
 """ FixedShapedIterator
 @programiterator FixedShapedIterator()
 
@@ -85,7 +85,7 @@ function _find_next_complete_tree(
             # The maximum depth is reached
             continue
         elseif hole_res isa HoleReference
-            # Fixed Shaped Hole was found
+            # Uniform Hole was found
             # TODO: problem. this 'hole' is tied to a target state. it should be state independent
             (; hole, path) = hole_res
     
