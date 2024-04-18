@@ -46,7 +46,7 @@ using HerbCore, HerbGrammar, HerbConstraints
 
             @test validtrees > 0
             @test validtrees < alltrees
-            @test length(collect(constraint_iter)) == validtrees
+            @test length([freeze_state(p) for p ∈ constraint_iter]) == validtrees
         end
     end
 

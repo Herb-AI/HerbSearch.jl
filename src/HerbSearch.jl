@@ -36,6 +36,8 @@ include("genetic_functions/crossover.jl")
 include("genetic_functions/select_parents.jl")
 include("genetic_search_iterator.jl")
 
+include("random_iterator.jl")
+
 export 
   count_expressions,
   ProgramIterator,
@@ -48,6 +50,8 @@ export
   heuristic_random,
   heuristic_smallest_domain,
 
+  derivation_heuristic,
+
   synth,
   SynthResult,
   optimal_program,
@@ -56,6 +60,7 @@ export
   FixedShapedIterator,
 
   TopDownIterator,
+  RandomIterator,
   BFSIterator,
   DFSIterator,
   MLFSIterator,

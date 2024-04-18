@@ -41,9 +41,11 @@ function synth(
         # Evaluate the expression
         score = evaluate(problem, expr, symboltable, shortcircuit=shortcircuit, allow_evaluation_errors=allow_evaluation_errors)
         if score == 1
+            candidate_program = freeze_state(candidate_program)
             return (candidate_program, optimal_program)
         elseif score >= best_score
             best_score = score
+            candidate_program = freeze_state(candidate_program)
             best_program = candidate_program
         end
 

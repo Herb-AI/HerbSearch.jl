@@ -82,7 +82,7 @@ using HerbCore, HerbGrammar, HerbConstraints
         iter = BFSIterator(grammar, :Number, solver=solver)
         new_state!(solver, partial_tree)
         trees = collect(iter)
-        @test length(trees) == 3 # 3 out of the 4 combinations to fill the UniformHoles are valid
+        @test length(trees) == 3 # 3 out of the 4 combinations to fill the UniformHole are valid
     end
 
     @testset "DomainRuleNode" begin
