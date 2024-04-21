@@ -1,5 +1,6 @@
 using Base.Threads
 using Configurations
+using HerbCore
 
 include("meta_arithmetic_grammar.jl")
 include("meta_grammar_definition.jl")
@@ -92,7 +93,9 @@ function fitness_function(program, _)
             end
         end
     end
-    print("Program has depth: $(depth(program))")
+
+    print("Program has depth: ", depth(program))
+
     mean_cost /= (length(problems_train) * RUNS)
     mean_running_time /= (length(problems_train) * RUNS)
     fitness_value = 1 / (mean_cost * 100 + mean_running_time)
