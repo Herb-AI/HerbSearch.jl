@@ -84,7 +84,7 @@ function fitness_function(program, _)
         for _ in 1:RUNS
             
             # get a program that needs a problem and a grammar to be able to run
-            @time "one run on problem $i" (output = @timed best_expression, best_program, program_cost = evaluate_meta_program(expression_to_evaluate, problem, arithmetic_grammar))
+            output = @timed best_expression, best_program, program_cost = evaluate_meta_program(expression_to_evaluate, problem, arithmetic_grammar)
             
             lock(lk) do
                 mean_cost += program_cost
@@ -92,6 +92,7 @@ function fitness_function(program, _)
             end
         end
     end
+    print("Program has depth: $(depth(program))")
     mean_cost /= (length(problems_train) * RUNS)
     mean_running_time /= (length(problems_train) * RUNS)
     fitness_value = 1 / (mean_cost * 100 + mean_running_time)

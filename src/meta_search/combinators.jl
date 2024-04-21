@@ -64,7 +64,6 @@ function generic_run(::Type{Sequence}, meta_search_list::Vector, max_depth::Int,
 
         current_time = time() - start_time
         if current_time > max_running_time 
-            println("Quittting because of too much seq time!")
             return best_expression, best_program, program_cost
         end
         time_left = max_running_time - current_time
