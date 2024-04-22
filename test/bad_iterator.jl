@@ -1,4 +1,4 @@
-struct BadIterator <: ExpressionIterator
+struct BadIterator <: ProgramIterator
     grammar::ContextSensitiveGrammar
 end
 

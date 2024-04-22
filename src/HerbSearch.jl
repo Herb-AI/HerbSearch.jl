@@ -7,34 +7,39 @@ using HerbGrammar
 using HerbConstraints
 using HerbSpecification
 using HerbInterpret
+using HerbSpecification
+using MLStyle
 
 include("sampling_grammar.jl")
-include("enumerator_constructors.jl")
 
-include("expression_iterator.jl")
-include("count_expressions.jl")
-
-include("csg_priority_enumerator.jl")
-include("cfg_priority_enumerator.jl")
+include("program_iterator.jl")
+include("uniform_iterator.jl")
 
 include("heuristics.jl")
 
 include("edit_distance.jl")
-include("meta_search/threads_helper.jl")
+# TODO : Move to a different file
+include("threads_helper.jl")
 include("search_procedure.jl")
 
-include("stochastic_search/stochastic_enumerators.jl")
+include("fixed_shaped_iterator.jl")
+include("top_down_iterator.jl")
+
+include("evaluate.jl")
+
+include("stochastic_iterator.jl")
 include("genetic_search/genetic_enumerators.jl")
 
 include("meta_search/meta_runner.jl")
 include("meta_search/run_algorithm.jl")
 
+include("random_iterator.jl")
+
 export 
-  count_expressions,
-  ExpressionIterator,
+  ProgramIterator,
+  @programiterator,
   
   ContextSensitivePriorityEnumerator,
-  ContextFreePriorityEnumerator,
   
   heuristic_leftmost,
   heuristic_rightmost,
@@ -46,24 +51,33 @@ export
   search_best,
   supervised_search,
   meta_search,
+  derivation_heuristic,
 
-  bfs_priority_function,
-  get_bfs_enumerator,
-  get_mh_enumerator,
-  get_vlsn_enumerator,
-  get_sa_enumerator,
-  get_genetic_enumerator,
+  synth,
+  SynthResult,
+  optimal_program,
+  suboptimal_program,
+
+  FixedShapedIterator,
+  UniformIterator,
+  next_solution!,
+
+  TopDownIterator,
+  RandomIterator,
+  BFSIterator,
+  DFSIterator,
+  MLFSIterator,
+
+  MHSearchIterator,
+  VLSNSearchIterator,
+  SASearchIterator,
+
   mean_squared_error,
   misclassification,
-  mse_error_function,
 
-  dfs_priority_function,
-  get_dfs_enumerator,
-
-  most_likely_priority_function,
-  get_most_likely_first_enumerator,
-  mutate_random!,
-  crossover_swap_children_2,
+  GeneticSearchIterator,
+  misclassification,
+  validate_iterator,
   sample,
   rand,
 

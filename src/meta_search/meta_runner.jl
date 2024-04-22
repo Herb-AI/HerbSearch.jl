@@ -21,41 +21,10 @@ end
     genetic::GeneticConfiguration
 end
 
-meta_configuration = from_toml(MetaConfiguration, "configuration.toml")
+meta_configuration::MetaConfiguration = from_toml(MetaConfiguration, "src/meta_search/configuration.toml")
 fitness_configuration = meta_configuration.fitness
 genetic_configuration = meta_configuration.genetic
 
-println("CONFIGURATION")
-println("- Number of available threads: ",Threads.nthreads())
-println("- Maximum sequence running time: $MAX_SEQUENCE_RUNNING_TIME")
-println("- Longest time maximum given to an algorithm: $LONGEST_RUNNING_ALG_TIME")
-
-dump(meta_configuration)
-println("=========================================")
-@show meta_grammar
-println("=========================================")
-println("Genetic algorithm always adds the best program so far in the population")
-
-# The estimates below do not take into account the threads
-function estimate_runtime_of_one_algorithm()
-    return 20
-end
-
-function estimate_runtime_of_fitness_function()
-    return estimate_runtime_of_one_algorithm() * length(problems_train) * fitness_configuration.number_of_runs_to_average_over
-end
-
-function estimate_runtime_of_one_genetic_iteration()
-    # hope that the each chromosome fitness computation runs in parallel
-    # add a bit of extra time to do cross over and mutation
-    return estimate_runtime_of_fitness_function() + 2
-end
-
-println("ESTIMATES")
-println("Estimate one run       : ", estimate_runtime_of_one_algorithm()) 
-println("Estimate one fitness   : ", estimate_runtime_of_fitness_function()) 
-println("Estimate one iteration : ", estimate_runtime_of_one_genetic_iteration()) 
-println("Estimates do not take into account the numeber of threads used")
 
 
 """

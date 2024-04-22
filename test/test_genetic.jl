@@ -3,21 +3,15 @@ using LegibleLambdas
 disable_logging(LogLevel(1))
 
 
-function create_problem(f, range=20)
-    examples = [IOExample(Dict(:x => x), f(x)) for x ∈ 1:range]
-    return Problem(examples), examples
-end
-
-@testset "Genetic search algorithms" verbose = true begin
-    # TODO: Test that cross_over only works if the two nodes have the same type.
-    grammar::ContextSensitiveGrammar = @csgrammar begin
-        X = |(1:5)
-        X = X * X
-        X = X + X
-        X = X - X
-        X = x
-    end
+@testset "Genetic search algorithms" verbose=true begin 
     @testset "mutate_random" begin
+        grammar::ContextSensitiveGrammar = @csgrammar begin
+            X = |(1:5)
+            X = X * X
+            X = X + X
+            X = X - X
+            X = x
+        end
         @testset "gives a different program (new mem address) after mutation" begin
             for i in 1:10
                 ruleNode = RuleNode(6, [RuleNode(1), RuleNode(2)])
@@ -28,26 +22,33 @@ end
         end
         @testset "gives a different program (new mem address) after mutating the root node" begin
             root = RuleNode(4)
-            HerbSearch.mutate_random!(root, grammar)
+            HerbSearch.mutate_random!(root,grammar,1)
             @test root !== RuleNode(4)
         end
         grammar_two_types = @csgrammar begin
             A = B | C | D
             B = G | H
         end
-        @testset "random_mutate works with more grammar variables" begin
+        @testset "random_mutate works with more grammar variables" begin 
             for i in 1:10
-                root = RuleNode(1, [RuleNode(4)]) # B->G
+                root = RuleNode(1,[RuleNode(4)]) # B->G
                 # the only way to mutate is to get the same program 
-                HerbSearch.mutate_random!(root, grammar_two_types)
+                HerbSearch.mutate_random!(root, grammar_two_types, 2)
                 # either C,D (2,3)
                 # either G,H (1->4) and (1->5)
-                @test root in [RuleNode(2), RuleNode(3), RuleNode(1, [RuleNode(4)]), RuleNode(1, [RuleNode(5)])]
+                @test root in [RuleNode(2),RuleNode(3), RuleNode(1,[RuleNode(4)]),RuleNode(1,[RuleNode(5)])]
             end
         end
     end
 
     @testset "Cross over" begin
+        grammar::ContextSensitiveGrammar = @csgrammar begin
+            X = |(1:5)
+            X = X * X
+            X = X + X
+            X = X - X
+            X = x
+        end
         @testset "outcome has 2 children" begin
             @testset "only rule nodes" begin
                 @testset "two different roots get swapped" begin
@@ -67,9 +68,9 @@ end
 
             @testset "crossing over two parents returns two different children" begin
 
-                rulenode1 = RuleNode(1, [RuleNode(2)])
-                rulenode2 = RuleNode(3, [RuleNode(4, [RuleNode(5)])])
-                child1, child2 = crossover_swap_children_2(rulenode1, rulenode2, grammar)
+                rulenode1 = RuleNode(1,[RuleNode(2)])
+                rulenode2 = RuleNode(3,[RuleNode(4,[RuleNode(5)])])
+                child1,child2 = HerbSearch.crossover_swap_children_2(rulenode1, rulenode2, grammar)
                 @test child1 !== child2
                 @test rulenode1 == RuleNode(1, [RuleNode(2)])
                 @test rulenode2 == RuleNode(3, [RuleNode(4, [RuleNode(5)])])
@@ -99,7 +100,7 @@ end
         end
     end
 
-    @testset "Syntesize simple arithmetic expressions" verbose = true begin
+    @testset "Synthesize simple arithmetic expressions" verbose = true begin
         grammar = @csgrammar begin
             X = |(1:5)
             X = X * X
@@ -114,6 +115,7 @@ end
             @λ(x -> 625),
             @λ(x -> 3 * x),
             @λ(x -> 3 * x + 10),
+            @λ(x -> 3 * x * x + (x + 2)),
         ]
         function pretty_print_lambda(lambda)
             return repr(lambda)[2:end-1]
@@ -121,53 +123,49 @@ end
 
         @testset "syntesizing expr $(pretty_print_lambda(f))" for f in functions
             problem, examples = create_problem(f)
-            enumerator = get_genetic_enumerator(examples,
-                initial_population_size=10,
-                mutation_probability=0.8,
-                maximum_initial_population_depth=3,
-            )
-            program, cost, rulenode = search_best(grammar, problem, :X, enumerator=enumerator, error_function=mse_error_function, max_depth=nothing, max_time=20)     
-            @test cost == 0
+            iterator = GeneticSearchIterator(grammar, :X, 
+                                             examples,
+                                             population_size = 10,
+                                             mutation_probability = 0.2,
+                                             maximum_initial_population_depth = 3)
+            program, error = synth(problem, iterator, max_time=3)
+            @test error == optimal_program
         end
     end
     @testset "Validation logic" begin
         grammar = @csgrammar begin
             X = |(1:5)
         end
-        function get_genetic_algorithm(examples; kwargs...)
-            outcome = get_genetic_enumerator(examples; kwargs...)
-            return outcome(grammar, 10, 10, :X)
+        function get_genetic_iterator(examples, grammar=grammar, sym=:X; kwargs...)
+            outcome = GeneticSearchIterator(grammar, sym, examples; population_size=10, max_depth=10, kwargs...)
+            return outcome
         end
 
         problem, examples = create_problem(x -> x)
         @testset "Bad fitness function throws" begin
             bad_fitness = (program) -> 1
-            enumerator = get_genetic_algorithm(examples,
-                fitness_function=bad_fitness,
-            )
-            @test_throws HerbSearch.AlgorithmStateIsInvalid HerbSearch.validate_iterator(enumerator)
+            iterator = get_genetic_iterator(examples)
+            fitness(::GeneticSearchIterator, program) = bad_fitness(program)
         end
         @testset "Bad population size throws" begin
-            enumerator = get_genetic_algorithm(examples,
-                initial_population_size=-1,
+            enumerator = get_genetic_iterator(examples, 
+                population_size = -1,
             )
             @test_throws HerbSearch.AlgorithmStateIsInvalid HerbSearch.validate_iterator(enumerator)
 
-            enumerator = get_genetic_algorithm(examples,
-                initial_population_size=0,
+            enumerator = get_genetic_iterator(examples, 
+                population_size = 0,
             )
             @test_throws HerbSearch.AlgorithmStateIsInvalid HerbSearch.validate_iterator(enumerator)
         end
 
         @testset "Bad cross_over function throws" begin
-            enumerator = get_genetic_algorithm(examples,
-                cross_over=(program1::Int, program2::Int) -> 1 # invalid crossover
-            )
-            @test_throws HerbSearch.AlgorithmStateIsInvalid HerbSearch.validate_iterator(enumerator)
+            enumerator = get_genetic_iterator(examples)
+            cross_over = (::GeneticSearchIterator, program1::Int,program2::Int) -> 1 # invalid crossover
         end
 
         @testset "Good algorithm params works" begin
-            enumerator = get_genetic_algorithm(examples)
+            enumerator = get_genetic_iterator(examples)
             # this works
             @test HerbSearch.validate_iterator(enumerator)
         end

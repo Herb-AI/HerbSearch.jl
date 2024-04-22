@@ -1,3 +1,6 @@
+using Logging
+disable_logging(LogLevel(1))
+
 function parametrized_test(argument_list, test_function::Function)
     method = methods(test_function)[begin]
     argument_names = [String(arg) for arg ∈ Base.method_argnames(method)[2:end]]
@@ -18,4 +21,7 @@ function parametrized_test(argument_list, test_function::Function)
     end
 end
 
-
+function create_problem(f, range=20)
+    examples = [IOExample(Dict(:x => x), f(x)) for x ∈ 1:range]
+    return Problem(examples), examples
+end

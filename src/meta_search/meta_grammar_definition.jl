@@ -1,10 +1,32 @@
+abstract type CombinatorType end
+abstract type SequenceCombinator <: CombinatorType end
+abstract type ParallelThreadsCombinator <: CombinatorType end
+abstract type ParallelNoThreadsCombinator <: CombinatorType end
+
+abstract type MetaSearchIterator end
+struct VannilaIterator{F1} <: MetaSearchIterator
+	iterator::ProgramIterator
+	stop_condition::F1
+	problem::Problem
+end
+# TODO: Make specific types for each combinator type. That would be nice
+struct CombinatorIterator <: MetaSearchIterator
+	combinator_type::CombinatorType
+	iterator::Vector{MetaSearchIterator}
+end
 include("combinators.jl")
 
+# TODO : Move this away from here
 LONGEST_RUNNING_ALG_TIME = 5
+MAX_SEQUENCE_RUNNING_TIME = 8 # Max sequence running time in seconds
+
+# include("combinators.jl")
+
 # input is grammar and problem
 meta_grammar = @csgrammar begin
-	S = (problemExamples,grammar) -> generic_run(COMBINATOR...;)
-	MS = A
+	S = (problem::Problem) -> generic_run(COMBINATOR...;)
+	# MS is either an algorithm or a combinator
+	MS = SimpleIterator 
 	MS = COMBINATOR
 	MAX_DEPTH = 10
 
@@ -14,17 +36,18 @@ meta_grammar = @csgrammar begin
 
 	# VLSN configuration
 	vlsn_enumeration_depth = 1|2
-
+	
+	# TODO: Fix algorithm
 	ALGORITHM = get_mh_enumerator(problemExamples, HerbSearch.mean_squared_error) | 
 				get_sa_enumerator(problemExamples, HerbSearch.mean_squared_error, sa_inital_temperature, sa_temperature_decreasing_factor) |
 				get_vlsn_enumerator(problemExamples, HerbSearch.mean_squared_error, vlsn_enumeration_depth)
-	A = (ALGORITHM, STOPFUNCTION, MAX_DEPTH, problemExamples, grammar)
+	SimpleIterator = VannilaIterator(ALGORITHM, STOPFUNCTION, problem)
 	# A = ga,STOP
 	# A = dfs,STOP
 	# A = bfs,STOP
 	# A = astar,STOP
-	COMBINATOR = (Sequence, ALIST, MAX_DEPTH, grammar)
-	COMBINATOR = (Parallel, ALIST, MAX_DEPTH, grammar)
+	COMBINATOR = CombinatorIterator(Sequence, ALIST)
+	COMBINATOR = CombinatorIterator(Parallel, ALIST)
 	ALIST = [MS; MS]
 	ALIST = [MS; ALIST]
 	# SELECT = best | crossover | mutate
