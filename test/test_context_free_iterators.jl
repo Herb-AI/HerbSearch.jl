@@ -114,8 +114,7 @@
       Real = 1 | 2
       Real = Real * Real
     end
-    programs = collect(DFSIterator(g1, :Real, max_depth=2))
-    @test length(programs) == count_expressions(g1, 2, typemax(Int), :Real)
+    @test count_expressions(g1, 2, typemax(Int), :Real) == 6
   end
 
   #TODO: fix the MLFSIterator

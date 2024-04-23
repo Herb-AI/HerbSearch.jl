@@ -174,6 +174,24 @@ Currently, there are two possible causes of the expansion failing:
 """
 @enum ExpandFailureReason limit_reached=1 already_complete=2
 
+
+"""
+    function Base.collect(iter::TopDownIterator)
+
+Return an array of all programs in the TopDownIterator. 
+!!! warning
+    This requires deepcopying programs from type StateHole to type RuleNode.
+    If it is not needed to save all programs, iterate over the iterator manually.
+"""
+function Base.collect(iter::TopDownIterator)
+    @warn "Collecting all programs of a TopDownIterator requires freeze_state"
+    programs = Vector{RuleNode}()
+    for program ∈ iter
+        push!(programs, freeze_state(program))
+    end
+    return programs
+end
+
 """
     Base.iterate(iter::TopDownIterator)
 
@@ -198,18 +216,6 @@ function Base.iterate(iter::TopDownIterator)
     end
     return _find_next_complete_tree(iter.solver, pq, iter)
 end
-
-
-# """
-#     Base.iterate(iter::TopDownIterator, pq::DataStructures.PriorityQueue)
-
-# Describes the iteration for a given [`TopDownIterator`](@ref) and a [`PriorityQueue`](@ref) over the grammar without enqueueing new items to the priority queue. Recursively returns the result for the priority queue.
-# """
-# function Base.iterate(iter::TopDownIterator, pq::DataStructures.PriorityQueue)
-#     solver, max_depth, max_size = iter.solver, iter.max_depth, iter.max_size
-
-#     return _find_next_complete_tree(solver, max_depth, max_size, pq, iter)
-# end
 
 """
     Base.iterate(iter::TopDownIterator, pq::DataStructures.PriorityQueue)

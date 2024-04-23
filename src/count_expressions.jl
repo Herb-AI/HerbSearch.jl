@@ -15,6 +15,14 @@ end
 """
     count_expressions(iter::ProgramIterator)    
 
-Counts and returns the number of possible expressions in the expression iterator. The Iterator is not modified.
+Counts and returns the number of possible expressions in the expression iterator.
+!!! warning: modifies and exhausts the iterator
 """
-count_expressions(iter::ProgramIterator) = count_expressions(iter.grammar, iter.max_depth, iter.max_size, iter.sym)
+function count_expressions(iter::ProgramIterator)
+    l = 0
+    # Calculate length without storing all expressions
+    for _ ∈ iter
+        l += 1
+    end
+    return l
+end

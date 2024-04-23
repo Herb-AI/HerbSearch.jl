@@ -16,6 +16,6 @@ using HerbCore, HerbGrammar, HerbConstraints
 
         # There are 5! = 120 permutations of 5 distinct elements
         iter = BFSIterator(grammar, :Permutation, solver=GenericSolver(grammar, :Permutation))
-        @test length(collect(iter)) == 120
+        @test count_expressions(iter) == 120
     end
 end
