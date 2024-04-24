@@ -26,3 +26,20 @@ function count_expressions(iter::ProgramIterator)
     end
     return l
 end
+
+
+"""
+    count_expressions(iter::UniformIterator)    
+
+Counts and returns the number of solutions of a uniform iterator.
+!!! warning: modifies and exhausts the iterator
+"""
+function count_expressions(iter::UniformIterator)
+    count = 0
+    s = next_solution!(iter)
+    while !isnothing(s)
+        count += 1
+        s = next_solution!(iter)
+    end
+    return count
+end
