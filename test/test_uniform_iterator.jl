@@ -9,7 +9,7 @@
             Number = x | 1 | 2 | 3
         end
 
-        fixed_shaped_tree = RuleNode(1, [
+        uniform_tree = RuleNode(1, [
             UniformHole(BitVector((1, 1, 1, 1, 0, 0, 0, 0)), [
                 UniformHole(BitVector((0, 0, 0, 0, 1, 1, 1, 1)), [])
                 UniformHole(BitVector((0, 0, 0, 0, 1, 0, 0, 1)), [])
@@ -18,28 +18,28 @@
         ])
          # 4 * 4 * 2 * 4 = 128 programs without constraints
 
-        return grammar, fixed_shaped_tree
+        return grammar, uniform_tree
     end
 
     @testset "Without constraints" begin
-        grammar, fixed_shaped_tree = create_dummy_grammar_and_tree_128programs()
-        uniform_solver = UniformSolver(grammar, fixed_shaped_tree)
+        grammar, uniform_tree = create_dummy_grammar_and_tree_128programs()
+        uniform_solver = UniformSolver(grammar, uniform_tree)
         uniform_iterator = UniformIterator(uniform_solver, nothing)
         @test count_expressions(uniform_iterator) == 128
     end
 
     @testset "Forbidden constraint" begin
         #forbid "a - a"
-        grammar, fixed_shaped_tree = create_dummy_grammar_and_tree_128programs()
+        grammar, uniform_tree = create_dummy_grammar_and_tree_128programs()
         addconstraint!(grammar, Forbidden(RuleNode(2, [VarNode(:a), VarNode(:a)])))
-        uniform_solver = UniformSolver(grammar, fixed_shaped_tree)
+        uniform_solver = UniformSolver(grammar, uniform_tree)
         uniform_iterator = UniformIterator(uniform_solver, nothing)
         @test count_expressions(uniform_iterator) == 120
 
         #forbid all rulenodes
-        grammar, fixed_shaped_tree = create_dummy_grammar_and_tree_128programs()
+        grammar, uniform_tree = create_dummy_grammar_and_tree_128programs()
         addconstraint!(grammar, Forbidden(VarNode(:a)))
-        uniform_solver = UniformSolver(grammar, fixed_shaped_tree)
+        uniform_solver = UniformSolver(grammar, uniform_tree)
         uniform_iterator = UniformIterator(uniform_solver, nothing)
         @test count_expressions(uniform_iterator) == 0
     end
