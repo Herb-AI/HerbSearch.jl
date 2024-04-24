@@ -6,8 +6,6 @@
     s  = :R
     md = 5
     ms = 5
-    mt = 5
-    me = 5
     solver = nothing
     
     abstract type IteratorFamily <: ProgramIterator end
@@ -18,9 +16,10 @@
             f2
         )
 
-        @test fieldcount(LonelyIterator) == 9
+        # 2 arguments + 1 hidden solver argument = 3
+        @test fieldcount(LonelyIterator) == 3
         
-        lit = LonelyIterator(g, s, md, ms, mt, me, solver, 2, :a)
+        lit = LonelyIterator(g, s, md, ms, solver, 2, :a)
         @test lit.grammar == g && lit.f1 == 2 && lit.f2 == :a
         @test LonelyIterator <: ProgramIterator
     end
@@ -31,7 +30,7 @@
             f2
         ) <: IteratorFamily
 
-        it = ConcreteIterator(g, s, md, ms, mt, me, solver, true, 4)
+        it = ConcreteIterator(g, s, md, ms, solver, true, 4)
 
         @test ConcreteIterator <: IteratorFamily
         @test it.f1 && it.f2 == 4
@@ -40,7 +39,7 @@
     @testset "mutable iterator" begin
         @programiterator mutable AnotherIterator() <: IteratorFamily
 
-        it = AnotherIterator(g, s, md, ms, mt, me, solver)
+        it = AnotherIterator(g, s, md, ms, solver)
 
         it.max_depth = 10
 
@@ -81,8 +80,8 @@
         @programiterator mutable ComplicatedIterator(
             intfield::Int,
             deffield=nothing,
-            function ComplicatedIterator(g, s, md, ms, mt, me, solver, i, d) 
-                new(g, s, md, ms, mt, me, solver, i, d)
+            function ComplicatedIterator(g, s, md, ms, solver, i, d) 
+                new(g, s, md, ms, solver, i, d)
             end,
             function ComplicatedIterator()
                 let g = @csgrammar begin
