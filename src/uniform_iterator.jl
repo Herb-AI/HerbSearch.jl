@@ -54,11 +54,12 @@ function generate_branches(iter::UniformIterator)::Vector{Branch}
     @assert isfeasible(iter.solver)
     function _dfs(node::Union{StateHole, RuleNode})
         if node isa StateHole && size(node.domain) > 1
-            #use the derivation_heuristic if the parent_iterator is set up 
+            #skip the derivation_heuristic if the parent_iterator is not set up
             if isnothing(iter.outeriter)
                 return [(node, rule) for rule ∈ node.domain]
             end
-            return [(node, rule) for rule ∈  derivation_heuristic(iter.outeriter, findall(node.domain))]
+            #reversing is needed because we pop and consider the rightmost branch first
+            return reverse!([(node, rule) for rule ∈ derivation_heuristic(iter.outeriter, findall(node.domain))])
         end
         for child ∈ node.children
             branches = _dfs(child)
