@@ -62,4 +62,22 @@
 
         @test it.solver.max_depth == 5
     end
+    @testset "Check if max_depth and max_size are overwritten" begin 
+
+        solver = GenericSolver(g, :R, max_size=10, max_depth=5)
+        @test solver.max_size == 10
+        @test solver.max_depth == 5
+        # will overwrite solver.max_depth from 5 to 3. But keeps solver.max_size=10.
+        iterator = BFSIterator(solver = solver, max_depth=3) 
+        @test get_max_size(solver) == 10 
+        @test get_max_depth(solver) == 3
+    end
+
+    @testset "Check default constructors with a solver" begin 
+        solver = GenericSolver(g, :R, max_size=10, max_depth=5)
+        iterator = BFSIterator(solver)
+        @test get_grammar(iterator.solver) == g 
+        @test get_max_size(iterator.solver) == 10 
+        @test get_max_depth(iterator.solver) == 5
+    end
 end

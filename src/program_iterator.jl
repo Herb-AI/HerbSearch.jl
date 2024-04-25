@@ -93,6 +93,12 @@ processdecl(mod::Module, mut::Bool, decl::Expr, super=nothing) = @match decl beg
         all_constructors = Base.remove_linenums!(
             :(
               begin 
+                # solver main constructor
+                function $(escaped_name)( $(notkwargs...) ; solver::Solver, max_size = nothing, max_depth = nothing, $(kwargs_fields...) )
+                    if !isnothing(max_size) solver.max_size = max_size end
+                    if !isnothing(max_depth) solver.max_depth = max_depth end
+                    return $(escaped_name)(solver, $(field_names...))
+                end
                 # solver with grammar and start symbol
                 function $(escaped_name)(grammar::AbstractGrammar, start_symbol::Symbol, $(notkwargs...) ; 
                                         max_size = typemax(Int), max_depth = typemax(Int), $(kwargs_fields...) )
@@ -107,16 +113,6 @@ processdecl(mod::Module, mut::Bool, decl::Expr, super=nothing) = @match decl beg
               end
             )
         )
-        # this constructor should ONLY be used when there are kwarg fields 
-        # otherwise this will overwrite the default julia struct constructor
-        solver_constructor = Base.remove_linenums!(:(
-            # solver main constructor
-            function $(escaped_name)(solver::Solver, $(notkwargs...) ; max_size = nothing, max_depth = nothing, $(kwargs_fields...) )
-                if !isnothing(max_size) solver.max_size = max_size end
-                if !isnothing(max_depth) solver.max_depth = max_depth end
-                return $(escaped_name)(solver, $(field_names...))
-            end
-        ))
 
         # create the struct declaration
         head = Expr(:(<:), name, isnothing(super) ? :(HerbSearch.ProgramIterator) : :($mod.$super))
@@ -132,12 +128,8 @@ processdecl(mod::Module, mut::Bool, decl::Expr, super=nothing) = @match decl beg
         map!(esc, constrfields.args, constrfields.args)
         struct_decl = Expr(:struct, mut, esc(head), constrfields)
 
-        # if there are kwarg fields add the "solver constructors" with kwargs, otherwise do not add it
-        if length(kwargs_fields) > 0
-            struct_decl, solver_constructor, all_constructors
-        else 
-            struct_decl, all_constructors
-        end
+        # return the expression for the struct declaration and for the constructors
+        struct_decl, all_constructors
     end
     _ => throw(ArgumentError("invalid declaration structure for the iterator"))
 end
