@@ -142,9 +142,9 @@ function Base.iterate(iter::GeneticSearchIterator)
     
     population = Vector{RuleNode}(undef,iter.population_size)
 
+    start_symbol = get_starting_symbol(iter.solver)
     for i in 1:iter.population_size
         # sample a random nodes using start symbol and grammar
-        start_symbol = get_starting_symbol(iter.solver)
         population[i] = rand(RuleNode, grammar, start_symbol, iter.maximum_initial_population_depth)
     end 
     best_program = get_best_program(population, iter)
