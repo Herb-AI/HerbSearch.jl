@@ -1,5 +1,6 @@
 using Random
 
+#TODO: Update documentation with correct function signatures!
  """
      abstract type StochasticSearchIterator <: ProgramIterator
 
@@ -35,9 +36,6 @@ using Random
 
  ----
  # Fields
- -   `grammar::ContextSensitiveGrammar` grammar that the algorithm uses
- -   `sym::Symbol` the start symbol of the algorithm `:Real` or `:Int`
-
  -   `examples::Vector{IOExample}` example used to check the program
  -   `cost_function::Function`
  -   `initial_temperature::Real` = 1 
@@ -56,30 +54,19 @@ Base.IteratorSize(::StochasticSearchIterator) = Base.SizeUnknown()
 Base.eltype(::StochasticSearchIterator) = RuleNode
 
 function Base.iterate(iter::StochasticSearchIterator)
-    grammar, max_depth = iter.grammar, iter.max_depth
-
-
-    #TODO: instantiating the solver should be in the program iterator macro
-    if isnothing(iter.solver)
-        iter.solver = GenericSolver(iter.grammar, iter.sym)
-    end
-
-    #TODO: these attributes should be part of the solver, not of the iterator
     solver = iter.solver
-    solver.max_size = iter.max_size
-    solver.max_depth = iter.max_depth
-
+    grammar, max_depth = get_grammar(solver), get_max_depth(solver)
 
     # sample a random node using start symbol and grammar
     dmap = mindepth_map(grammar)
-    sampled_program = rand(RuleNode, grammar, iter.sym, max_depth) #TODO: replace iter.sym with a domain of valid rules
+    start_symbol = get_starting_symbol(solver)
+    sampled_program = rand(RuleNode, grammar, start_symbol , max_depth) #TODO: replace iter.sym with a domain of valid rules
     substitute!(solver, Vector{Int}(), sampled_program)
     while !isfeasible(solver)
         #TODO: prevent infinite loops here. Check max_time and/or max_enumerations.
-        sampled_program = rand(RuleNode, grammar, iter.sym, max_depth) #TODO: replace iter.sym with a domain of valid rules
+        sampled_program = rand(RuleNode, grammar, start_symbol, max_depth) #TODO: replace iter.sym with a domain of valid rules
         substitute!(solver, Vector{Int}(), sampled_program)
     end
-
 
     return (sampled_program, IteratorState(sampled_program, iter.initial_temperature,dmap))  
 end
@@ -91,13 +78,13 @@ end
 The algorithm that constructs the iterator of StochasticSearchIterator. It has the following structure:
 
 1. get a random node location -> location,dict = neighbourhood(current_program)
-2. call propose on the current program getting a list of possbile replacements in the node location 
-3. iterate through all the possible replacements and perform the replacement in the current program 
-4. accept the new program by modifying the next_program or reject the new program
+2. call propose on the current program getting a list of full programs
+3. iterate through all the proposals and check if the proposed program is "better" than the previous one
+4. "accept" the new program by calling the `accept`
 5. return the new next_program
 """
 function Base.iterate(iter::StochasticSearchIterator, iterator_state::IteratorState)
-    grammar, examples, solver = iter.grammar, iter.spec, iter.solver
+    grammar, solver = get_grammar(iter.solver), iter.solver
     current_program = get_tree(solver)#iterator_state.current_program
     
     current_cost = calculate_cost(iter, current_program)
@@ -178,9 +165,9 @@ end
 
 Wrapper around [`_calculate_cost`](@ref).
 """
-calculate_cost(iter::T, program::Union{RuleNode, StateHole}) where T <: StochasticSearchIterator = _calculate_cost(program, iter.cost_function, iter.spec, iter.grammar, iter.evaluation_function)
+calculate_cost(iter::T, program::Union{RuleNode, StateHole}) where T <: StochasticSearchIterator = _calculate_cost(program, iter.cost_function, iter.spec, get_grammar(iter.solver), iter.evaluation_function)
 
-neighbourhood(iter::T, current_program::RuleNode) where T <: StochasticSearchIterator = constructNeighbourhood(current_program, iter.grammar)
+neighbourhood(iter::T, current_program::RuleNode) where T <: StochasticSearchIterator = constructNeighbourhood(current_program, get_grammar(iter.solver))
 
 Base.@doc """
     MHSearchIterator(examples::AbstractArray{<:IOExample}, cost_function::Function, evaluation_function::Function=HerbInterpret.execute_on_input)

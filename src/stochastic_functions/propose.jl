@@ -1,7 +1,5 @@
 """
-For efficiency reasons, the propose functions return the proposed subprograms.
-These subprograms are supposed to replace the subprogram at neighbourhood node location.
-It is the responsibility of the caller to make this replacement.
+The propose functions return the fully constructed proposed programs.
 """
 
 """
@@ -16,9 +14,9 @@ Returns a list with only one proposed, completely random, subprogram.
 - `dmap::AbstractVector{Int} : the minimum possible depth to reach for each rule`
 - `dict::Dict{String, Any}`: the dictionary with additional arguments; not used.
 """
+#TODO: Update documentation with correct function signature
 function random_fill_propose(solver::Solver, path::Vector{Int}, dict::Union{Nothing,Dict{String,Any}})
-    return Iterators.take(RandomSearchIterator(get_grammar(solver), :ThisIsIgnored, solver=solver, path = path),5)
-    #return Iterators.take(RandomIterator(get_grammar(solver), :ThisIsIgnored, solver=solver, max_depth=get_max_depth(solver), max_size=get_max_size(solver)),N)
+    return Iterators.take(RandomSearchIterator(solver, path),5)
 end 
 
 """
@@ -28,12 +26,13 @@ The return function is a function that produces a list with all the subprograms 
 # Arguments
 - `enumeration_depth::Int64`: the maximum enumeration depth.
 """
+# TODO: Refactor to not return functions
+# TODO: Update documentation with correct function signature
 function enumerate_neighbours_propose(enumeration_depth::Int64)
     return (solver::Solver, path::Vector{Int}, dict::Union{Nothing,Dict{String,Any}}) -> begin
-        #TODO: Fix the ProgramIterator (macro)
-        # Make sure it doesn't overwrite (grammar, sym, max_depth, max_size) of the Solver.
-        # Ideally this line should be: BFSIterator(solver).
-        return BFSIterator(get_grammar(solver), :ThisIsIgnored, solver=solver, max_depth=get_max_depth(solver), max_size=get_max_size(solver))
+        #TODO use the rule subset from the dict variable 
+        #BFSIterator(solver, allowed_rules = dict[:rule_subset])
+        return BFSIterator(solver)
     end
 end
     
