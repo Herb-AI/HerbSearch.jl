@@ -110,10 +110,12 @@ processdecl(mod::Module, mut::Bool, decl::Expr, super=nothing) = @match decl beg
         # this constructor should ONLY be used when there are kwarg fields 
         # otherwise this will overwrite the default julia struct constructor
         solver_constructor = Base.remove_linenums!(:(
-          # solver main constructor
-          function $(escaped_name)(solver::Solver, $(notkwargs...) ; $(kwargs_fields...) )
-              return $(escaped_name)(solver, $(field_names...))
-          end
+            # solver main constructor
+            function $(escaped_name)(solver::Solver, $(notkwargs...) ; max_size = nothing, max_depth = nothing, $(kwargs_fields...) )
+                if !isnothing(max_size) solver.max_size = max_size end
+                if !isnothing(max_depth) solver.max_depth = max_depth end
+                return $(escaped_name)(solver, $(field_names...))
+            end
         ))
 
         # create the struct declaration
