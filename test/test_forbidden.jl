@@ -12,14 +12,14 @@ using HerbCore, HerbGrammar, HerbConstraints
 
         #without constraints
         iter = BFSIterator(grammar, :Number, solver=GenericSolver(grammar, :Number), max_depth=3)
-        @test count_expressions(iter) == 202
+        @test length(iter) == 202
         
         constraint = Forbidden(RuleNode(4, [RuleNode(1), RuleNode(1)]))
         addconstraint!(grammar, constraint)
 
         #with constraints
         iter = BFSIterator(grammar, :Number, solver=GenericSolver(grammar, :Number), max_depth=3)
-        @test count_expressions(iter) == 163
+        @test length(iter) == 163
     end
 
     @testset "Jump Start" begin
@@ -36,7 +36,7 @@ using HerbCore, HerbGrammar, HerbConstraints
         new_state!(solver, RuleNode(3, [Hole(get_domain(grammar, :Number)), Hole(get_domain(grammar, :Number))]))
         iter = BFSIterator(grammar, :Number, solver=solver, max_depth=3)
 
-        @test count_expressions(iter) == 12
+        @test length(iter) == 12
         # 3{2,1}
         # 3{1,2}
         # 3{3{1,2}1}
@@ -81,7 +81,7 @@ using HerbCore, HerbGrammar, HerbConstraints
         solver = GenericSolver(grammar, :Number)
         iter = BFSIterator(grammar, :Number, solver=solver)
         new_state!(solver, partial_tree)
-        @test count_expressions(iter) == 3 # 3 out of the 4 combinations to fill the UniformHole are valid
+        @test length(iter) == 3 # 3 out of the 4 combinations to fill the UniformHole are valid
     end
 
     @testset "DomainRuleNode" begin
@@ -118,10 +118,10 @@ using HerbCore, HerbGrammar, HerbConstraints
         end
         
         iter1 = BFSIterator(get_grammar1(), :Int, max_depth=4, max_size=100)
-        number_of_programs1 = count_expressions(iter1)
+        number_of_programs1 = length(iter1)
 
         iter2 = BFSIterator(get_grammar2(), :Int, max_depth=4, max_size=100)
-        number_of_programs2 = count_expressions(iter2)
+        number_of_programs2 = length(iter2)
 
         @test number_of_programs1 == 26
         @test number_of_programs2 == 26

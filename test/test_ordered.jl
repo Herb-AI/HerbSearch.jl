@@ -85,6 +85,6 @@ using HerbCore, HerbGrammar, HerbConstraints
         #The number of solutions should be equal in both approaches
         iter = BFSIterator(grammar, :Number, solver=GenericSolver(grammar, :Number), max_size=6)
         iter_domainrulenode = BFSIterator(grammar_domainrulenode, :Number, solver=GenericSolver(grammar, :Number), max_size=6)
-        @test count_expressions(iter) == count_expressions(iter_domainrulenode)
+        @test length(iter) == length(iter_domainrulenode)
     end
 end

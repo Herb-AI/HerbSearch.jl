@@ -128,6 +128,24 @@ function next_solution!(iter::UniformIterator)::Union{RuleNode, StateHole, Nothi
     return nothing
 end
 
+"""
+    Base.length(iter::UniformIterator)    
+
+Counts and returns the number of programs without storing all the programs.
+!!! warning: modifies and exhausts the iterator
+"""
+function Base.length(iter::UniformIterator)
+    count = 0
+    s = next_solution!(iter)
+    while !isnothing(s)
+        count += 1
+        s = next_solution!(iter)
+    end
+    return count
+end
+
+Base.eltype(::UniformIterator) = Union{RuleNode, StateHole}
+
 function Base.iterate(iter::UniformIterator)
     solution = next_solution!(iter)
     if solution

@@ -13,7 +13,6 @@ include("sampling_grammar.jl")
 
 include("program_iterator.jl")
 include("uniform_iterator.jl")
-include("count_expressions.jl")
 
 include("heuristics.jl")
 
@@ -40,7 +39,6 @@ include("genetic_search_iterator.jl")
 include("random_iterator.jl")
 
 export 
-  count_expressions,
   ProgramIterator,
   @programiterator,
   

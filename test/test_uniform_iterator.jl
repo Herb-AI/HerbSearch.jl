@@ -25,7 +25,7 @@
         grammar, uniform_tree = create_dummy_grammar_and_tree_128programs()
         uniform_solver = UniformSolver(grammar, uniform_tree)
         uniform_iterator = UniformIterator(uniform_solver, nothing)
-        @test count_expressions(uniform_iterator) == 128
+        @test length(uniform_iterator) == 128
     end
 
     @testset "Forbidden constraint" begin
@@ -34,14 +34,14 @@
         addconstraint!(grammar, Forbidden(RuleNode(2, [VarNode(:a), VarNode(:a)])))
         uniform_solver = UniformSolver(grammar, uniform_tree)
         uniform_iterator = UniformIterator(uniform_solver, nothing)
-        @test count_expressions(uniform_iterator) == 120
+        @test length(uniform_iterator) == 120
 
         #forbid all rulenodes
         grammar, uniform_tree = create_dummy_grammar_and_tree_128programs()
         addconstraint!(grammar, Forbidden(VarNode(:a)))
         uniform_solver = UniformSolver(grammar, uniform_tree)
         uniform_iterator = UniformIterator(uniform_solver, nothing)
-        @test count_expressions(uniform_iterator) == 0
+        @test length(uniform_iterator) == 0
     end
 
     @testset "The root is the only solution" begin
