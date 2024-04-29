@@ -37,6 +37,7 @@ include("genetic_functions/select_parents.jl")
 include("genetic_search_iterator.jl")
 
 include("random_iterator.jl")
+include("probe/probe_iterator.jl")
 
 export 
   count_expressions,
@@ -68,6 +69,8 @@ export
   MHSearchIterator,
   VLSNSearchIterator,
   SASearchIterator,
+
+  ProbeSearchIterator,
 
   mean_squared_error,
   misclassification,
