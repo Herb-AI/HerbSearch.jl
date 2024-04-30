@@ -107,7 +107,6 @@ using HerbCore, HerbGrammar, HerbConstraints
         addconstraint!(grammar, constraint)
         
         s = GenericSolver(grammar, :S)
-        println(get_tree(s))
         iter = BFSIterator(grammar, :S, solver=s)
 
         # (1, 1, 1, 1)
@@ -116,5 +115,39 @@ using HerbCore, HerbGrammar, HerbConstraints
         # (1, 2, 2, 2)
         # (2, 2, 2, 2)
         @test length(iter) == 5
+    end
+
+    @testset "(a, b) and (b, a)" begin
+        grammar = @csgrammar begin
+            S = (S, S)
+            S = |(1:2)
+        end
+        
+        constraint1 = Ordered(
+            RuleNode(1, [
+                VarNode(:a),
+                VarNode(:b),
+            ]),
+            [:a, :b]
+        )
+        
+        constraint2 = Ordered(
+            RuleNode(1, [
+                VarNode(:a),
+                VarNode(:b),
+            ]),
+            [:b, :a]
+        )
+        
+        addconstraint!(grammar, constraint1)
+        addconstraint!(grammar, constraint2)
+        iter = BFSIterator(grammar, :S, max_depth=5)
+        
+        # 2x a
+        # 2x (a, a)
+        # 2x ((a, a), (a, a))
+        # 2x (((a, a), (a, a)), ((a, a), (a, a)))
+        # 2x ((((a, a), (a, a)), ((a, a), (a, a))), (((a, a), (a, a)), ((a, a), (a, a))))
+        @test length(iter)  == 10
     end
 end
