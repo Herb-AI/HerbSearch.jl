@@ -85,6 +85,36 @@ using HerbCore, HerbGrammar, HerbConstraints
         #The number of solutions should be equal in both approaches
         iter = BFSIterator(grammar, :Number, solver=GenericSolver(grammar, :Number), max_size=6)
         iter_domainrulenode = BFSIterator(grammar_domainrulenode, :Number, solver=GenericSolver(grammar, :Number), max_size=6)
-        @test length(collect(iter)) == length(collect(iter_domainrulenode))
+        @test length(iter) == length(iter_domainrulenode)
+    end
+
+    @testset "4 symbols" begin
+        grammar = @csgrammar begin
+            V = |(1:2)
+            S = (V, V, V, V)
+        end
+        
+        constraint = Ordered(
+            RuleNode(3, [
+                VarNode(:a),
+                VarNode(:b),
+                VarNode(:c),
+                VarNode(:d)
+            ]),
+            [:a, :b, :c, :d]
+        )
+        
+        addconstraint!(grammar, constraint)
+        
+        s = GenericSolver(grammar, :S)
+        println(get_tree(s))
+        iter = BFSIterator(grammar, :S, solver=s)
+
+        # (1, 1, 1, 1)
+        # (1, 1, 1, 2)
+        # (1, 1, 2, 2)
+        # (1, 2, 2, 2)
+        # (2, 2, 2, 2)
+        @test length(iter) == 5
     end
 end

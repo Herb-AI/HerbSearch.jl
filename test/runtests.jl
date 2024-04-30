@@ -18,6 +18,7 @@ Random.seed!(1234)
     include("test_genetic.jl")
     include("test_programiterator_macro.jl")
 
+    include("test_uniform_iterator.jl")
     include("test_forbidden.jl")
     include("test_ordered.jl")
     include("test_contains.jl")

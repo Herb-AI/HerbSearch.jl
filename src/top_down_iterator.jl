@@ -33,15 +33,13 @@ function priority_function(
 end
 
 """
-    function derivation_heuristic(::TopDownIterator)
+    function derivation_heuristic(::TopDownIterator, indices::Vector{Int})
 
 Returns a sorted sublist of the `indices`, based on which rules are most promising to fill a hole.
 By default, this is the identity function.
 """
-function derivation_heuristic(::TopDownIterator)
-    return function (indices)
-        return indices;
-    end
+function derivation_heuristic(::TopDownIterator, indices::Vector{Int})
+    return indices;
 end
 
 """
@@ -76,14 +74,12 @@ function priority_function(
 end
 
 """
-    function derivation_heuristic(::RandomIterator)
+    function derivation_heuristic(::RandomIterator, indices::Vector{Int})
 
 Randomly shuffles the rules.
 """
-function derivation_heuristic(::RandomIterator)
-    return function (indices)
-        return Random.shuffle!(indices);
-    end
+function derivation_heuristic(::RandomIterator, indices::Vector{Int})
+    return Random.shuffle!(indices);
 end
 
 
@@ -174,14 +170,32 @@ Currently, there are two possible causes of the expansion failing:
 """
 @enum ExpandFailureReason limit_reached=1 already_complete=2
 
+
+"""
+    function Base.collect(iter::TopDownIterator)
+
+Return an array of all programs in the TopDownIterator. 
+!!! warning
+    This requires deepcopying programs from type StateHole to type RuleNode.
+    If it is not needed to save all programs, iterate over the iterator manually.
+"""
+function Base.collect(iter::TopDownIterator)
+    @warn "Collecting all programs of a TopDownIterator requires freeze_state"
+    programs = Vector{RuleNode}()
+    for program ∈ iter
+        push!(programs, freeze_state(program))
+    end
+    return programs
+end
+
 """
     Base.iterate(iter::TopDownIterator)
 
 Describes the iteration for a given [`TopDownIterator`](@ref) over the grammar. The iteration constructs a [`PriorityQueue`](@ref) first and then prunes it propagating the active constraints. Recursively returns the result for the priority queue.
 """
 function Base.iterate(iter::TopDownIterator)
-    # Priority queue with `SolverState`s (for variable shaped trees) and `UniformSolver`s (for fixed shaped trees)
-    pq :: PriorityQueue{Union{SolverState, UniformSolver}, Union{Real, Tuple{Vararg{Real}}}} = PriorityQueue()
+    # Priority queue with `SolverState`s (for variable shaped trees) and `UniformIterator`s (for fixed shaped trees)
+    pq :: PriorityQueue{Union{SolverState, UniformIterator}, Union{Real, Tuple{Vararg{Real}}}} = PriorityQueue()
 
     #TODO: instantiating the solver should be in the program iterator macro
     if isnothing(iter.solver)
@@ -198,18 +212,6 @@ function Base.iterate(iter::TopDownIterator)
     end
     return _find_next_complete_tree(iter.solver, pq, iter)
 end
-
-
-# """
-#     Base.iterate(iter::TopDownIterator, pq::DataStructures.PriorityQueue)
-
-# Describes the iteration for a given [`TopDownIterator`](@ref) and a [`PriorityQueue`](@ref) over the grammar without enqueueing new items to the priority queue. Recursively returns the result for the priority queue.
-# """
-# function Base.iterate(iter::TopDownIterator, pq::DataStructures.PriorityQueue)
-#     solver, max_depth, max_size = iter.solver, iter.max_depth, iter.max_size
-
-#     return _find_next_complete_tree(solver, max_depth, max_size, pq, iter)
-# end
 
 """
     Base.iterate(iter::TopDownIterator, pq::DataStructures.PriorityQueue)
@@ -245,12 +247,12 @@ function _find_next_complete_tree(
 )#::Union{Tuple{RuleNode, Tuple{Vector{AbstractRuleNode}, PriorityQueue}}, Nothing}  #@TODO Fix this comment
     while length(pq) ≠ 0
         (item, priority_value) = dequeue_pair!(pq)
-        if item isa UniformSolver
+        if item isa UniformIterator
             #the item is a fixed shaped solver, we should get the next solution and re-enqueue it with a new priority value
-            fixed_shaped_solver = item
-            solution = next_solution!(fixed_shaped_solver)
+            uniform_iterator = item
+            solution = next_solution!(uniform_iterator)
             if !isnothing(solution)
-                enqueue!(pq, fixed_shaped_solver, priority_function(iter, get_grammar(solver), solution, priority_value, true))
+                enqueue!(pq, uniform_iterator, priority_function(iter, get_grammar(solver), solution, priority_value, true))
                 return (solution, pq)
             end
         elseif item isa SolverState
@@ -263,10 +265,11 @@ function _find_next_complete_tree(
                 track!(solver.statistics, "#FixedShapedTrees")
                 if solver.use_uniformsolver
                     #TODO: use_uniformsolver should be the default case
-                    fixed_shaped_solver = UniformSolver(get_grammar(solver), get_tree(solver), with_statistics=solver.statistics, derivation_heuristic=derivation_heuristic(iter))
-                    solution = next_solution!(fixed_shaped_solver)
+                    uniform_solver = UniformSolver(get_grammar(solver), get_tree(solver), with_statistics=solver.statistics)
+                    uniform_iterator = UniformIterator(uniform_solver, iter)
+                    solution = next_solution!(uniform_iterator)
                     if !isnothing(solution)
-                        enqueue!(pq, fixed_shaped_solver, priority_function(iter, get_grammar(solver), solution, priority_value, true))
+                        enqueue!(pq, uniform_iterator, priority_function(iter, get_grammar(solver), solution, priority_value, true))
                         return (solution, pq)
                     end
                 else
