@@ -12,7 +12,7 @@ using MLStyle
 include("sampling_grammar.jl")
 
 include("program_iterator.jl")
-include("count_expressions.jl")
+include("uniform_iterator.jl")
 
 include("heuristics.jl")
 
@@ -40,7 +40,6 @@ include("random_iterator.jl")
 include("probe/probe_iterator.jl")
 
 export 
-  count_expressions,
   ProgramIterator,
   @programiterator,
   
@@ -58,7 +57,9 @@ export
   optimal_program,
   suboptimal_program,
 
-  FixedShapedIterator,
+  FixedShapedIterator, #TODO: deprecated after the cp thesis
+  UniformIterator,
+  next_solution!,
 
   TopDownIterator,
   RandomIterator,
