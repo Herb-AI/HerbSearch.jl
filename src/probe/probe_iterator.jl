@@ -1,29 +1,38 @@
+struct ProgramCache
+    program::RuleNode 
+    correct_examples::Vector{Int}
+    cost::Int
+end
+
 function probe(examples::Vector{<:IOExample}, iterator::ProgramIterator, select::Function, update!::Function, max_time::Int, iteration_size::Int)
     start_time = time()
+    # store a set of all the results of evaluation programs
     eval_cache = Set()
     state = nothing
     symboltable = SymbolTable(iterator.grammar)
     # start next iteration while there is time left
     while time() - start_time < max_time
         i = 1
-        partial_sols = Vector()
+        # partial solutions stores not only the program but also evaluation info
+        psol_with_eval_cache = Vector{ProgramCache}()
         next = state === nothing ? iterate(iterator) : iterate(iterator, state)
         while next !== nothing && i < iteration_size # run one iteration
             program, state = next
 
             # evaluate program
             eval_observation = []
-            nr_correct_examples = 0
+            correct_examples = Vector{Int}()
             expr = rulenode2expr(program, iterator.grammar)
-            for example ∈ examples
+            for (example_index, example) ∈ enumerate(examples)
                 output = execute_on_input(symboltable, expr, example.in)
                 push!(eval_observation, output)
-
+                
                 if output == example.out
-                    nr_correct_examples += 1
+                    push!(correct_examples, example_index)
                 end
             end
 
+            nr_correct_examples = length(correct_examples)
             if nr_correct_examples == length(examples) # found solution
                 println("Last level: $(length(state.bank[state.level + 1])) programs")
                 return program
@@ -31,7 +40,8 @@ function probe(examples::Vector{<:IOExample}, iterator::ProgramIterator, select:
                 next = iterate(iterator, state)
                 continue
             elseif nr_correct_examples >= 1 # partial solution
-                push!(partial_sols, program)
+                program_cost = calculate_program_cost(program, iterator.grammar)
+                push!(psol_with_eval_cache, ProgramCache(program, correct_examples, program_cost))
             end
 
             push!(eval_cache, eval_observation)
@@ -45,7 +55,7 @@ function probe(examples::Vector{<:IOExample}, iterator::ProgramIterator, select:
             return nothing
         end
 
-        # partial_sols = select(partial_sols, eval_cache) # select promising partial solutions
+        partial_sols = selectpsol_largest_subset(psol_with_eval_cache) # select promising partial solutions
         # # update probabilites if any promising partial solutions
         # if !isempty(partial_sols)
         #     update!(iterator.grammar, partial_sols, eval_cache) # update probabilites
@@ -57,19 +67,73 @@ function probe(examples::Vector{<:IOExample}, iterator::ProgramIterator, select:
 
     return nothing
 end
+"""
+    selectpsol_largest_subset(partial_sols::Vector{ProgramCache}) 
 
-@programiterator GuidedSearchIterator(
-    spec::Vector{<:IOExample},
-    symboltable::SymbolTable
-)
-
-@kwdef mutable struct GuidedSearchState 
-    level::Int64
-    bank::Vector{Vector{RuleNode}}
-    eval_cache::Set
-    programs::Vector{RuleNode}
+This scheme selects a single cheapest program (first enumerated) that 
+satisfies the largest subset of examples encountered so far across all partial_sols.
+"""
+function selectpsol_largest_subset(partial_sols::Vector{ProgramCache})  
+    if isempty(partial_sols)
+        return []
+    end
+    largest_subset_length = maximum(cache -> length(cache.correct_examples), partial_sols)
+    programs_with_largest_length = filter(cache -> length(cache.correct_examples) == largest_subset_length, partial_sols)
+    # find the program with the smallest cost
+    minimum_cost = minimum(cache -> cache.cost, programs_with_largest_length)
+    best_sol = first(filter(cache -> cache.cost == minimum_cost, programs_with_largest_length))
+    return [best_sol]
 end
 
+"""
+    selectpsol_first_cheapest(partial_sols::Vector{ProgramCache}) 
+
+This scheme selects a single cheapest program (first enumerated) that 
+satisfies a unique subset of examples.
+"""
+function selectpsol_first_cheapest(partial_sols::Vector{ProgramCache})  
+    # maps subset of examples to the cheapest program 
+    mapping = Dict{Vector{Int}, ProgramCache}()
+    for sol ∈ partial_sols
+        examples = sol.correct_examples
+        if !haskey(mapping, examples)
+            mapping[examples] = sol
+        else
+            # if the cost of the new program is less than the cost of the previous program with the same subset of examples replace it
+            if sol.cost < mapping[examples].cost
+                mapping[examples] = sol
+            end
+        end
+    end
+    # get the cheapest programs that satisfy unique subsets of examples
+    return values(mapping)
+end
+
+"""
+    selectpsol_all_cheapest(partial_sols::Vector{ProgramCache}) 
+
+This scheme selects all cheapest programs that satisfies a unique subset of examples.
+"""
+function selectpsol_all_cheapest(partial_sols::Vector{ProgramCache})  
+    # maps subset of examples to the cheapest program 
+    mapping = Dict{Vector{Int}, Vector{ProgramCache}}()
+    for sol ∈ partial_sols
+        examples = sol.correct_examples
+        if !haskey(mapping, examples)
+            mapping[examples] = [sol]
+        else
+            # if the cost of the new program is less than the cost of the first program
+            if sol.cost < mapping[examples][begin].cost
+                mapping[examples] = [sol]
+            elseif sol.cost == mapping[examples][begin].cost
+                # append to the list of cheapest programs
+                push!(mapping[examples], sol)
+            end
+        end
+    end
+    # get all cheapest programs that satisfy unique subsets of examples
+    return Iterators.flatten(values(mapping))
+end
 function Base.iterate(iter::GuidedSearchIterator)
     iterate(iter, GuidedSearchState(
         level = -1,
@@ -139,6 +203,17 @@ end
 
 # TODO: Have a nice way to switch from cost_size to cost_prob using multiple dispath maybe
 calculate_rule_cost(rule_index, grammar::ContextSensitiveGrammar) = calculate_rule_cost_size(rule_index, grammar)
+
+"""
+    calculate_program_cost(program::RuleNode, grammar::ContextSensitiveGrammar)  
+Calculates the cost of a program by summing up the cost of the children and the cost of the rule
+"""
+function calculate_program_cost(program::RuleNode, grammar::ContextSensitiveGrammar)  
+    cost_children = sum([calculate_program_cost(child, grammar) for child ∈ program.children], init=0)
+    cost_rule = calculate_rule_cost(program.ind, grammar)
+    return cost_children + cost_rule
+end
+
 
 # generate in terms of increasing height
 function newprograms(grammar, level, bank)
