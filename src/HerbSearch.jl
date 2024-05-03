@@ -72,6 +72,8 @@ export
   SASearchIterator,
 
   ProbeSearchIterator,
+  GuidedSearchIterator,
+  probe,
 
   mean_squared_error,
   misclassification,
