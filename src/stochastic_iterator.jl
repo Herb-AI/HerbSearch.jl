@@ -1,6 +1,5 @@
 using Random
 
-#TODO: Update documentation with correct function signatures!
  """
      abstract type StochasticSearchIterator <: ProgramIterator
 

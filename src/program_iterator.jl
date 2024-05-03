@@ -17,6 +17,22 @@ Base.IteratorSize(::ProgramIterator) = Base.SizeUnknown()
 
 Base.eltype(::ProgramIterator) = Union{RuleNode,StateHole}
 
+
+"""
+    Base.length(iter::ProgramIterator)    
+
+Counts and returns the number of possible programs without storing all the programs.
+!!! warning: modifies and exhausts the iterator
+"""
+function Base.length(iter::ProgramIterator)
+    l = 0
+    for _ ∈ iter
+        l += 1
+    end
+    return l
+end
+
+
 """
     @programiterator
 
