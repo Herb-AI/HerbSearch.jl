@@ -123,11 +123,12 @@ function selectpsol_all_cheapest(partial_sols::Vector{ProgramCache})
             mapping[examples] = [sol]
         else
             # if the cost of the new program is less than the cost of the first program
-            if sol.cost < mapping[examples][begin].cost
+            progs = mapping[examples]
+            if sol.cost < progs[begin].cost
                 mapping[examples] = [sol]
-            elseif sol.cost == mapping[examples][begin].cost
+            elseif sol.cost == progs[begin].cost
                 # append to the list of cheapest programs
-                push!(mapping[examples], sol)
+                push!(progs, sol)
             end
         end
     end
