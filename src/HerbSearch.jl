@@ -75,6 +75,6 @@ export
   sample,
   rand
 
-  @timed_exec
+  @timed_exec,
   @timedfor
 end # module HerbSearch
