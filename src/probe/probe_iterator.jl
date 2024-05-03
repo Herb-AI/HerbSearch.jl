@@ -55,7 +55,7 @@ function probe(examples::Vector{<:IOExample}, iterator::ProgramIterator, select:
             return nothing
         end
 
-        partial_sols = selectpsol_largest_subset(psol_with_eval_cache) # select promising partial solutions
+        partial_sols = select(psol_with_eval_cache) # select promising partial solutions
         # # update probabilites if any promising partial solutions
         # if !isempty(partial_sols)
         #     update!(iterator.grammar, partial_sols, eval_cache) # update probabilites
@@ -67,21 +67,28 @@ function probe(examples::Vector{<:IOExample}, iterator::ProgramIterator, select:
 
     return nothing
 end
+
 """
     selectpsol_largest_subset(partial_sols::Vector{ProgramCache}) 
 
 This scheme selects a single cheapest program (first enumerated) that 
 satisfies the largest subset of examples encountered so far across all partial_sols.
 """
-function selectpsol_largest_subset(partial_sols::Vector{ProgramCache})  
+function selectpsol_largest_subset(partial_sols::Vector{ProgramCache})
     if isempty(partial_sols)
-        return []
+        return Vector{ProgramCache}() 
     end
-    largest_subset_length = maximum(cache -> length(cache.correct_examples), partial_sols)
-    programs_with_largest_length = filter(cache -> length(cache.correct_examples) == largest_subset_length, partial_sols)
-    # find the program with the smallest cost
-    minimum_cost = minimum(cache -> cache.cost, programs_with_largest_length)
-    best_sol = first(filter(cache -> cache.cost == minimum_cost, programs_with_largest_length))
+    largest_subset_length = 0
+    cost = typemax(Int)
+    best_sol = partial_sols[begin]
+    for psol in partial_sols
+        len = length(psol.correct_examples)
+        if len > largest_subset_length || len == largest_subset_length && psol.cost < cost
+            largest_subset_length = len
+            best_sol = psol
+            cost = psol.cost
+        end
+    end
     return [best_sol]
 end
 
@@ -134,6 +141,17 @@ function selectpsol_all_cheapest(partial_sols::Vector{ProgramCache})
     end
     # get all cheapest programs that satisfy unique subsets of examples
     return Iterators.flatten(values(mapping))
+end
+
+@programiterator GuidedSearchIterator(
+    spec::Vector{<:IOExample},
+    symboltable::SymbolTable
+)
+@kwdef mutable struct GuidedSearchState 
+    level::Int64
+    bank::Vector{Vector{RuleNode}}
+    eval_cache::Set
+    programs::Vector{RuleNode}
 end
 function Base.iterate(iter::GuidedSearchIterator)
     iterate(iter, GuidedSearchState(
