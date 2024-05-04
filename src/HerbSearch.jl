@@ -84,5 +84,6 @@ export
   rand,
 
   rules_minsize,
-  symbols_minsize
+  symbols_minsize,
+  simplifyQuick
 end # module HerbSearch

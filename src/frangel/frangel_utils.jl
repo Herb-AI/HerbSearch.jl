@@ -110,7 +110,7 @@ function rememberPrograms!(old_remembered::Dict{BitVector, Tuple{RuleNode, Int, 
             if !isSimpler
                 return nothing
             end
-        # else if it is a superset -> discard old program if worse (either more nodes, or same #nodes but less tests)
+            # else if it is a superset -> discard old program if worse (either more nodes, or same #nodes but less tests)
         elseif all(key_tests .== (key_tests .& passing_tests))
             if isSimpler || (passing_tests != key_tests && node_count == p_node_count)
                 delete!(old_remembered, key_tests)
@@ -119,6 +119,153 @@ function rememberPrograms!(old_remembered::Dict{BitVector, Tuple{RuleNode, Int, 
     end
     old_remembered[passing_tests] = (new_program, node_count, program_length)
     fragments = mineFragments(grammar, Set(values(old_remembered)))
+end
+
+"""
+    simplifyQuick(program::RuleNode, grammar::AbstractGrammar, tests::AbstractVector{<:IOExample}, passed_tests::BitVector)::RuleNode
+
+Simplifies the provided program by replacing nodes with smaller nodes that pass the same tests.
+
+# Arguments
+- `program`: The program to simplify.
+- `grammar`: An abstract grammar object.
+- `tests`: A vector of IOExamples to test the program on.
+- `passed_tests`: A BitVector representing the tests that the program has already passed.
+
+# Returns
+The simplified program.
+"""
+function simplifyQuick(program::RuleNode, grammar::AbstractGrammar, tests::AbstractVector{<:IOExample}, passed_tests::BitVector)::RuleNode
+    symboltable = SymbolTable(grammar)
+
+    simlified = _simplify_quick_once(program, program, grammar, symboltable, tests, passed_tests)
+
+    while program != simlified
+        program = simlified
+        simlified = _simplify_quick_once(program, program, grammar, symboltable, tests, passed_tests)
+    end
+
+    program
+end
+
+function _simplify_quick_once(
+    root::RuleNode,
+    node::RuleNode,
+    grammar::AbstractGrammar,
+    symboltable::SymbolTable,
+    tests::AbstractVector{<:IOExample},
+    passed_tests::BitVector
+)::RuleNode
+    for replacement in get_replacements(node, grammar)
+        initial = node
+        node = replacement
+        if !passes_the_same_tests_or_more(root, symboltable, tests, passed_tests)
+            node = initial
+        end
+        return replacement
+    end
+
+    if isterminal(grammar, node)
+        return node
+    else
+        for child in node.children
+            child = _simplify_quick_once(root, child, grammar, symboltable, tests, passed_tests)
+        end
+    end
+
+    node
+end
+
+# This could potentially go somewhere else, for instance in a generic util file
+"""
+    get_replacements(node::RuleNode, grammar::AbstractGrammar)::AbstractVector{RuleNode}
+
+Finds all the possible replacements for a given node in the AST. 
+Looks for single-node trees corresponding to all variables and constants in the grammar, and node descendants of the same symbol.
+
+# Arguments
+- `node`: The node to find replacements for.
+- `grammar`: An abstract grammar object.
+
+# Returns
+A vector of RuleNodes representing all the possible replacements for the provided node, ordered by size.
+"""
+function get_replacements(node::RuleNode, grammar::AbstractGrammar)::AbstractVector{RuleNode}
+    replacements = Set{RuleNode}([node])
+    symbol = return_type(grammar, node)
+
+    # The empty tree, if N⊤ is a statement in a block.
+    # TODO
+
+    # Single-node trees corresponding to all variables and constants in the grammar.
+    for rule_index in eachindex(grammar.rules)
+        if isterminal(grammar, rule_index) && grammar.types[rule_index] == symbol
+            push!(replacements, RuleNode(rule_index))
+        end
+    end
+
+    # D⊤ for all descendant nodes D of N.
+    get_descendant_replacements!(node, symbol, grammar, replacements)
+
+    sort!(collect(replacements), by=x -> count_nodes(x))
+end
+
+# This could potentially go somewhere else, for instance in a generic util file
+"""
+    get_descendant_replacements!(node::RuleNode, symbol::Symbol, grammar::AbstractGrammar, replacements::AbstractSet{RuleNode})
+
+Finds all the descendants of the same symbol for a given node in the AST.
+
+# Arguments
+- `node`: The node to find descendants in.
+- `symbol`: The symbol to find descendants for.
+- `grammar`: An abstract grammar object.
+- `replacements`: A set of RuleNodes to add the descendants to.
+
+# Returns
+Updates the `replacements` set with all the descendants of the same symbol for the provided node.
+"""
+function get_descendant_replacements!(node::RuleNode, symbol::Symbol, grammar::AbstractGrammar, replacements::AbstractSet{RuleNode})
+    for child in node.children
+        if return_type(grammar, child) == symbol
+            push!(replacements, deepcopy(child))
+        end
+        get_descendant_replacements!(child, symbol, grammar, replacements)
+    end
+end
+
+# This could potentially go somewhere else, for instance in a generic util file
+"""
+    passes_the_same_tests_or_more(node::RuleNode, symboltable::SymbolTable, tests::AbstractVector{<:IOExample}, passed_tests::BitVector)::Bool
+
+Checks if the provided program passes all the tests that have been marked as passed.
+
+# Arguments
+- `program`: The program to test.
+- `symboltable`: The symbol table to use for program execution.
+- `tests`: A vector of IOExamples to test the program on.
+- `passed_tests`: A BitVector representing the tests that the program has already passed.
+
+# Returns
+Returns true if the program passes all the tests that have been marked as passed, false otherwise.
+"""
+function passes_the_same_tests_or_more(program::RuleNode, symboltable::SymbolTable, tests::AbstractVector{<:IOExample}, passed_tests::BitVector)::Bool
+    for (index, test) in enumerate(tests)
+        if !passed_tests[index]
+            continue
+        end
+
+        try
+            output = execute_on_input(symboltable, program, test.in)
+            if (output != test.out)
+                return false
+            end
+        catch _
+            return false
+        end
+    end
+
+    return true
 end
 
 # This could potentially go somewhere else, for instance in a generic util file
