@@ -70,6 +70,8 @@ export
   VLSNSearchIterator,
   SASearchIterator,
 
+  frangel,
+  
   mean_squared_error,
   misclassification,
 
