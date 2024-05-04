@@ -85,7 +85,7 @@ end
             tests = [IOExample(Dict(), 7)]
             passed_tests = BitVector([true])
 
-            # @test RuleNode(8) == simplifyQuick(program, grammar, tests, passed_tests)
+            # @test RuleNode(8) == simplify_quick(program, grammar, tests, passed_tests)
         end
     end
 end

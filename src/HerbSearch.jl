@@ -38,6 +38,7 @@ include("genetic_search_iterator.jl")
 
 include("random_iterator.jl")
 
+include("frangel/frangel.jl")
 include("frangel/frangel_utils.jl")
 
 export 
@@ -88,5 +89,7 @@ export
 
   rules_minsize,
   symbols_minsize,
-  simplifyQuick
+  FrAngelConfig,
+  simplify_quick,
+  generate_random_program
 end # module HerbSearch

@@ -1,3 +1,12 @@
+struct FrAngelConfig
+    max_time::Int
+    random_generation_max_size::Int
+    random_generation_use_fragments_chance::Float16
+    use_angelic_conditions::Bool
+    similar_new_extra_size::Int # = 8
+    gen_similar_prob_new::Float16 # = 0.25
+end
+
 """
     mine_fragments(grammar::AbstractGrammar, program::RuleNode)::Set{RuleNode}
 
@@ -68,16 +77,17 @@ end
 Count the number of nodes in a given `RuleNode` program.
 
 # Arguments
+- `grammar`: An abstract grammar object.
 - `program`: The `RuleNode` program to count the nodes in.
 
 # Returns
 The number of nodes in the program's AST representation.
 """
-function count_nodes(program::RuleNode)::Int
-    if isterminal(g, program)
+function count_nodes(grammar::AbstractGrammar, program::RuleNode)::Int
+    if isterminal(grammar, program)
         return 1
     else
-        return 1 + sum(count_nodes(c) for c in program.children)
+        return 1 + sum(count_nodes(grammar, c) for c in program.children)
     end
 end
 
@@ -100,7 +110,7 @@ A set of RuleNodes representing the fragments mined from the updated `old_rememb
 """
 function remember_programs!(old_remembered::Dict{BitVector, Tuple{RuleNode, Int, Int}}, passing_tests::BitVector, new_program::RuleNode, 
     fragments::Set{RuleNode}, grammar::AbstractGrammar)
-    node_count = count_nodes(new_program)
+    node_count = count_nodes(grammar, new_program)
     program_length = length(string(rulenode2expr(new_program, grammar)))
     # Check the new program's testset over each remembered program
     for (key_tests, (_, p_node_count, p_program_length)) in old_remembered
@@ -122,7 +132,133 @@ function remember_programs!(old_remembered::Dict{BitVector, Tuple{RuleNode, Int,
 end
 
 """
-    simplifyQuick(program::RuleNode, grammar::AbstractGrammar, tests::AbstractVector{<:IOExample}, passed_tests::BitVector)::RuleNode
+    generate_random_program(grammar::AbstractGrammar, type::Symbol, fragments::Set{RuleNode}, config::FrAngelConfig, max_size=40, disabled_fragments=false)::Union{RuleNode, Nothing}
+
+Generates a random program of the provided `type` using the provided `grammar`. The program is generated with a maximum size of `max_size` and can use fragments from the provided set.
+
+# Arguments
+- `grammar`: An abstract grammar object.
+- `type`: The type of the program to generate.
+- `fragments`: A set of RuleNodes representing the fragments that can be used in the program generation.
+- `config`: A FrAngelConfig object containing the configuration for the random program generation.
+- `max_size`: The maximum size of the program to generate.
+- `disabled_fragments`: A boolean flag to disable the use of fragments in the program generation.
+
+# Returns
+A random program of the provided type, or nothing if no program can be generated.
+"""
+function generate_random_program(
+    grammar::AbstractGrammar, 
+    type::Symbol, 
+    fragments::Set{RuleNode}, 
+    config::FrAngelConfig,
+    max_size=40, 
+    disabled_fragments=false
+)::Union{RuleNode, Nothing}
+    if max_size < 0
+        return nothing
+    end
+
+    use_fragments = !disabled_fragments && rand() < config.random_generation_use_fragments_chance
+
+    if use_fragments
+        possible_fragments = filter(f -> return_type(grammar, f) == type, fragments)
+
+        if !isempty(possible_fragments)
+            fragment = deepcopy(rand(possible_fragments))
+
+            if rand(Bool)
+                return fragment
+            end
+
+            random_modify_children!(grammar, fragment, config)
+            return fragment
+        end
+    end
+
+    minsize = rules_minsize(grammar)
+    possible_rules = filter(r -> minsize[r] ≤ max_size, grammar[type])
+
+    if isempty(possible_rules)
+        return nothing
+    end
+
+    rule_index = StatsBase.sample(possible_rules)
+    rule_node = RuleNode(rule_index)
+
+    if !grammar.isterminal[rule_index]
+        symbol_minsize = symbols_minsize(grammar, minsize)
+        sizes = random_partition(grammar, rule_index, max_size, symbol_minsize)
+
+        for (index, child_type) in enumerate(child_types(grammar, rule_index))
+            push!(rule_node.children, generate_random_program(grammar, child_type, fragments, config, sizes[index], disabled_fragments))
+        end
+    end
+
+    rule_node
+end
+
+
+# This could potentially go somewhere else, for instance in a generic util file
+"""
+    random_partition(grammar::AbstractGrammar, rule_index::Int, size::Int, symbol_minsize::Dict{Symbol,Int})::AbstractVector{Int}
+
+Randomly partitions the allowed size into a vector of sizes for each child of the provided rule index.
+
+# Arguments
+- `grammar`: An abstract grammar object.
+- `rule_index`: The index of the rule to partition.
+- `size`: The size to partition.
+- `symbol_minsize`: A dictionary with the minimum size achievable for each symbol in the grammar. Can be obtained from [`symbols_minsize`](@ref).
+
+# Returns
+A vector of sizes for each child of the provided rule index.
+"""
+function random_partition(grammar::AbstractGrammar, rule_index::Int, size::Int, symbol_minsize::Dict{Symbol,Int})::AbstractVector{Int}
+    children_types = child_types(grammar, rule_index)
+
+    min_size = sum(symbol_minsize[child_type] for child_type in children_types)
+    left_to_partition = size - min_size
+
+    sizes = Vector{Int}(undef, length(children_types))
+
+    for (index, child_type) in enumerate(children_types)
+        child_min_size = symbol_minsize[child_type]
+        partition_size = rand(child_min_size:(child_min_size+left_to_partition))
+
+        sizes[index] = partition_size
+
+        left_to_partition -= (partition_size - child_min_size)
+    end
+
+    sizes
+end
+
+"""
+    random_modify_children!(grammar::AbstractGrammar, node::RuleNode, config::FrAngelConfig)
+
+Randomly modifies the children of a given node. The modification can be either a new random program or a modification of the existing children.
+
+# Arguments
+- `grammar`: An abstract grammar object.
+- `node`: The node to modify the children of.
+- `config`: A FrAngelConfig object containing the configuration for the random modification.
+
+# Returns
+Modifies the `node` directly.
+"""
+function random_modify_children!(grammar::AbstractGrammar, node::RuleNode, config::FrAngelConfig)
+    for (index, child) in enumerate(node.children)
+        if rand() < config.gen_similar_prob_new
+            node.children[index] = generate_random_program(grammar, return_type(grammar, child), Set{RuleNode}(), config, count_nodes(grammar, child) + config.similar_new_extra_size, true)
+        else
+            random_modify_children!(grammar, child, config)
+        end
+    end
+end
+
+"""
+    simplify_quick(program::RuleNode, grammar::AbstractGrammar, tests::AbstractVector{<:IOExample}, passed_tests::BitVector)::RuleNode
 
 Simplifies the provided program by replacing nodes with smaller nodes that pass the same tests.
 
@@ -135,7 +271,7 @@ Simplifies the provided program by replacing nodes with smaller nodes that pass 
 # Returns
 The simplified program.
 """
-function simplifyQuick(program::RuleNode, grammar::AbstractGrammar, tests::AbstractVector{<:IOExample}, passed_tests::BitVector)::RuleNode
+function simplify_quick(program::RuleNode, grammar::AbstractGrammar, tests::AbstractVector{<:IOExample}, passed_tests::BitVector)::RuleNode
     symboltable = SymbolTable(grammar)
 
     simlified = _simplify_quick_once(program, program, grammar, symboltable, tests, passed_tests)
@@ -207,7 +343,7 @@ function get_replacements(node::RuleNode, grammar::AbstractGrammar)::AbstractVec
     # D⊤ for all descendant nodes D of N.
     get_descendant_replacements!(node, symbol, grammar, replacements)
 
-    sort!(collect(replacements), by=x -> count_nodes(x))
+    sort!(collect(replacements), by=x -> count_nodes(grammar, x))
 end
 
 # This could potentially go somewhere else, for instance in a generic util file
