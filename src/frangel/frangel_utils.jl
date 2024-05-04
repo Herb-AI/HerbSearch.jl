@@ -1,5 +1,5 @@
 """
-    mineFragments(grammar::AbstractGrammar, program::RuleNode)::Set{RuleNode}
+    mine_fragments(grammar::AbstractGrammar, program::RuleNode)::Set{RuleNode}
 
 Finds all the fragments from the provided `program``. The result is a set of the distinct fragments found within the program. Recursively goes over all children.
 
@@ -10,7 +10,7 @@ Finds all the fragments from the provided `program``. The result is a set of the
 # Returns
 All the found fragments in the provided program.
 """
-function mineFragments(grammar::AbstractGrammar, program::RuleNode)::Set{RuleNode}
+function mine_fragments(grammar::AbstractGrammar, program::RuleNode)::Set{RuleNode}
     fragments = Set{RuleNode}()
     if isterminal(grammar, program)
         push!(fragments, program)
@@ -19,14 +19,14 @@ function mineFragments(grammar::AbstractGrammar, program::RuleNode)::Set{RuleNod
             push!(fragments, program)
         end
         for child in program.children
-            fragments = union(fragments, mineFragments(grammar, child))
+            fragments = union(fragments, mine_fragments(grammar, child))
         end
     end
     return fragments
 end
 
 """
-    mineFragments(grammar::AbstractGrammar, programs::Set{RuleNode})::Set{RuleNode}
+    mine_fragments(grammar::AbstractGrammar, programs::Set{RuleNode})::Set{RuleNode}
 
 Finds all the fragments from the provided `programs` list. The result is a set of the distinct fragments found within all programs.
 
@@ -37,14 +37,14 @@ Finds all the fragments from the provided `programs` list. The result is a set o
 # Returns
 All the found fragments in the provided programs.
 """
-function mineFragments(grammar::AbstractGrammar, programs::Set{RuleNode})::Set{RuleNode}
-    fragments = reduce(union, mineFragments(grammar, p) for p in programs)
+function mine_fragments(grammar::AbstractGrammar, programs::Set{RuleNode})::Set{RuleNode}
+    fragments = reduce(union, mine_fragments(grammar, p) for p in programs)
     for program in programs delete!(fragments, program) end
     return fragments
 end
 
 """
-    mineFragments(grammar::AbstractGrammar, programs::Set{Tuple{RuleNode, Int, Int}})::Set{RuleNode}
+    mine_fragments(grammar::AbstractGrammar, programs::Set{Tuple{RuleNode, Int, Int}})::Set{RuleNode}
 
 Finds all the fragments from the provided `programs` list. The result is a set of the distinct fragments found within all programs.
 
@@ -55,8 +55,8 @@ Finds all the fragments from the provided `programs` list. The result is a set o
 # Returns
 All the found fragments in the provided programs.
 """
-function mineFragments(grammar::AbstractGrammar, programs::Set{Tuple{RuleNode, Int, Int}})::Set{RuleNode}
-    fragments = reduce(union, mineFragments(grammar, p) for (p, _, _) in programs)
+function mine_fragments(grammar::AbstractGrammar, programs::Set{Tuple{RuleNode, Int, Int}})::Set{RuleNode}
+    fragments = reduce(union, mine_fragments(grammar, p) for (p, _, _) in programs)
     for program in programs delete!(fragments, program) end
     return fragments
 end
@@ -82,7 +82,7 @@ function count_nodes(program::RuleNode)::Int
 end
 
 """
-    rememberPrograms!(old_remembered::Dict{BitVector, Tuple{RuleNode, Int, Int}}, passing_tests::BitVector, new_program::RuleNode, 
+    remember_programs!(old_remembered::Dict{BitVector, Tuple{RuleNode, Int, Int}}, passing_tests::BitVector, new_program::RuleNode, 
         fragments::Set{RuleNode}, grammar::AbstractGrammar)::Set{RuleNode}
 
 Updates the remembered programs by including `new_program` if it is simpler than all remembered programs that pass the same subset of tests. 
@@ -98,7 +98,7 @@ Updates the remembered programs by including `new_program` if it is simpler than
 # Returns
 A set of RuleNodes representing the fragments mined from the updated `old_remembered` dictionary.
 """
-function rememberPrograms!(old_remembered::Dict{BitVector, Tuple{RuleNode, Int, Int}}, passing_tests::BitVector, new_program::RuleNode, 
+function remember_programs!(old_remembered::Dict{BitVector, Tuple{RuleNode, Int, Int}}, passing_tests::BitVector, new_program::RuleNode, 
     fragments::Set{RuleNode}, grammar::AbstractGrammar)
     node_count = count_nodes(new_program)
     program_length = length(string(rulenode2expr(new_program, grammar)))
@@ -118,7 +118,7 @@ function rememberPrograms!(old_remembered::Dict{BitVector, Tuple{RuleNode, Int, 
         end
     end
     old_remembered[passing_tests] = (new_program, node_count, program_length)
-    fragments = mineFragments(grammar, Set(values(old_remembered)))
+    fragments = mine_fragments(grammar, Set(values(old_remembered)))
 end
 
 """
