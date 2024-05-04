@@ -83,6 +83,9 @@ export
   sample,
   rand,
 
+  mine_fragments,
+  remember_programs!,
+
   rules_minsize,
   symbols_minsize,
   simplifyQuick
