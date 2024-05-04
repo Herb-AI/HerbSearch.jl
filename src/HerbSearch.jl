@@ -38,6 +38,8 @@ include("genetic_search_iterator.jl")
 
 include("random_iterator.jl")
 
+include("frangel/frangel_utils.jl")
+
 export 
   ProgramIterator,
   @programiterator,
@@ -79,5 +81,8 @@ export
   misclassification,
   validate_iterator,
   sample,
-  rand
+  rand,
+
+  rules_minsize,
+  symbols_minsize
 end # module HerbSearch

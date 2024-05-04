@@ -120,3 +120,81 @@ function rememberPrograms!(old_remembered::Dict{BitVector, Tuple{RuleNode, Int, 
     old_remembered[passing_tests] = (new_program, node_count, program_length)
     fragments = mineFragments(grammar, Set(values(old_remembered)))
 end
+
+# This could potentially go somewhere else, for instance in a generic util file
+"""
+    symbols_minsize(grammar::AbstractGrammar, typ::Symbol, minsize_map::AbstractVector{Int})::Dict{Symbol,Int}
+
+Returns a dictionary with pairs of starting symbol type and the minimum size achievable from it.
+
+# Arguments
+- `grammar`: An abstract grammar object.
+- `min_sizes`: A vector of minimum sizes for each production rule in the grammar. Can be obtained from [`rules_minsize`](@ref).
+
+# Returns
+Dictionary with the minimum size achievable for each symbol in the grammar.
+"""
+function symbols_minsize(grammar::AbstractGrammar, min_sizes::AbstractVector{Int})::Dict{Symbol,Int}
+    Dict(type => minimum(min_sizes[grammar.bytype[type]]) for type in grammar.types)
+end
+
+# This could potentially go somewhere else, for instance in a generic util file
+"""
+    rules_minsize(grammar::AbstractGrammar)::AbstractVector{Int}
+
+Returns the minimum size achievable for each production rule in the [`AbstractGrammar`](@ref).
+In other words, this function finds the size of the smallest trees that can be made 
+using each of the available production rules as a root.
+
+# Arguments
+- `grammar`: An abstract grammar object.
+
+# Returns
+The minimum size achievable for each production rule in the grammar, in the same order as the rules.
+"""
+function rules_minsize(grammar::AbstractGrammar)::AbstractVector{Int}
+    min_sizes = Int[typemax(Int) for i in eachindex(grammar.rules)]
+    visited = Dict(type => false for type in grammar.types)
+
+    for i in eachindex(grammar.rules)
+        if isterminal(grammar, i)
+            min_sizes[i] = 1
+        end
+    end
+
+    for i in eachindex(grammar.rules)
+        if !isterminal(grammar, i)
+            min_sizes[i] = _minsize!(grammar, i, min_sizes, visited)
+        end
+    end
+
+    min_sizes
+end
+
+# This could potentially go somewhere else, for instance in a generic util file
+function _minsize!(grammar::AbstractGrammar, rule_index::Int, min_sizes::AbstractVector{Int}, visited::Dict{Symbol,Bool})::Int
+    isterminal(grammar, rule_index) && return 1
+
+    size = 1
+    for ctyp in child_types(grammar, rule_index)
+        if visited[ctyp]
+            return minimum(min_sizes[i] for i in grammar.bytype[ctyp])
+        end
+        visited[ctyp] = true
+        rules = grammar.bytype[ctyp]
+        min = typemax(Int)
+        for index in rules
+            min = minimum([min, _minsize!(grammar, index, min_sizes, visited)])
+            if min == 1
+                break
+            end
+        end
+
+        visited[ctyp] = false
+        size += min
+    end
+
+    min_sizes[rule_index] = size
+
+    size
+end
