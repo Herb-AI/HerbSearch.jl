@@ -1,67 +1,66 @@
 @kwdef struct FrAngelConfig
-    max_time::Float16 = 0.1
+    max_time::Float16 = 1
+    angelic_max_time::Float16 = 0.1
+    angelic_boolean_expr_max_size::Int = 6
     random_generation_max_size::Int = 40
     random_generation_use_fragments_chance::Float16 = 0.5
-    use_angelic_conditions::Bool = false
+    use_angelic_conditions_chance::Float16 = 0
     similar_new_extra_size::Int = 8
     gen_similar_prob_new::Float16 = 0.25
     random_generation_use_entire_fragment_chance::Float16 = 0.5
 end
 
-
 @programiterator FrAngelIterator(
-    spec::Vector{<:IOExample},
+    spec::AbstractVector{<:IOExample},
     config::FrAngelConfig,
 )
 
 struct FrAngelIteratorState
-    remembered_programs::Dict{BitVector, Tuple{RuleNode, Int, Int}}
+    remembered_programs::Dict{BitVector,Tuple{RuleNode,Int,Int}}
     fragments::Set{RuleNode}
 end
 
 function Base.iterate(iter::FrAngelIterator)
     iterate(iter, FrAngelIteratorState(
-        Dict{BitVector, Tuple{RuleNode, Int, Int}}(),
+        Dict{BitVector,Tuple{RuleNode,Int,Int}}(),
         Set{RuleNode}()
     ))
 end
 
 function Base.iterate(iter::FrAngelIterator, state::FrAngelIteratorState)
     start_time = time()
-
     while time() - start_time < iter.config.max_time
-        generate_with_angelic = rand(Bool) && iter.config.use_angelic_conditions
-
+        # Generate random program
         program = generate_random_program(
             iter.grammar,
             iter.sym,
             state.fragments,
             iter.config,
-            generate_with_angelic,
+            iter.config.use_angelic_conditions,
             iter.config.random_generation_max_size
         )
-
+        # If it does not pass any tests, discard
         passed_tests = get_passed_tests(program, iter.grammar, iter.spec)
         if !any(passed_tests)
             continue
         end
-
-        # if contains_angelic(program)
-        #    TODO: implement angelic conditions
-        # end
-
+        # Contains angelic condition
+        if contains_hole(program)
+            resolve_angelic!(program, state.fragments, passed_tests, iter.grammar, iter.spec, iter.config.angelic_max_time, iter.config.angelic_boolean_expr_max_size, 1)
+            # Still contains angelic conditions -> unresolved
+            if contains_hole(program)
+                continue
+            end
+            passed_tests = get_passed_tests(program, iter.grammar, iter.spec)
+        end
         program = simplify_quick(program, iter.grammar, iter.spec, passed_tests)
-
         passed_tests = get_passed_tests(program, iter.grammar, iter.spec)
-
+        # Update iterator state (remembered programs and fragments)
         state.fragments = remember_programs!(state.remembered_programs, passed_tests, program, state.fragments, iter.grammar)
-
         if all(passed_tests)
             return program, state # simplify_slow(program), state
         end
     end
-
-    return nothing
 end
 
 function get_passed_tests(program::RuleNode, grammar::AbstractGrammar, tests::AbstractVector{<:IOExample})::BitVector
@@ -72,9 +71,9 @@ function get_passed_tests(program::RuleNode, grammar::AbstractGrammar, tests::Ab
 
     for (index, test) in enumerate(tests)
         try
-            output = execute_on_input(symboltable, expr, test.in) 
+            output = execute_on_input(symboltable, expr, test.in)
             passed_tests[index] = output == test.out
-        catch e
+        catch _
             passed_tests[index] = false
         end
     end
@@ -192,7 +191,8 @@ function remember_programs!(
     passing_tests::BitVector,
     new_program::RuleNode,
     fragments::Set{RuleNode},
-    grammar::AbstractGrammar)
+    grammar::AbstractGrammar
+)::Set{RuleNode}
     node_count = count_nodes(grammar, new_program)
     program_length = length(string(rulenode2expr(new_program, grammar)))
     # Check the new program's testset over each remembered program
@@ -237,7 +237,7 @@ function generate_random_program(
     fragments::Set{RuleNode},
     config::FrAngelConfig,
     generate_with_angelic::Bool,
-    max_size=40, 
+    max_size=40,
     disabled_fragments=false
 )::Union{RuleNode,Nothing}
     if max_size < 0
@@ -566,4 +566,63 @@ function _minsize!(grammar::AbstractGrammar, rule_index::Int, min_sizes::Abstrac
     min_sizes[rule_index] = size
 
     size
+end
+
+function resolve_angelic!(
+    program::RuleNode,
+    fragments::Set{RuleNode},
+    passing_tests::BitVector,
+    grammar::AbstractGrammar,
+    tests::AbstractVector{<:IOExample},
+    max_time::Float16,
+    boolean_expr_max_size::Int,
+    replacement_dir::Int # Direction of replacement; 1 -> top-down, -1 -> bottom-up
+)::RuleNode
+    num_holes = number_of_holes(program)
+    # Which hole to be replaced; if top-down -> first one; else -> last one
+    replacement_index = replacement_dir == 1 || (num_holes - 1)
+    while num_holes != 0
+        success = false
+        start_time = time()
+        while time() - start_time < max_time
+            boolean_expr = generate_random_program(grammar, :Bool, fragments, config, false, boolean_expr_max_size)
+            new_program = replace_next_angelic(program, boolean_expr, replacement_index)
+            new_tests = get_passed_tests(new_program, grammar, tests)
+            # If the new program passes all the tests the original program did, replacement is successful
+            if all(passing_tests .== (passing_tests .& new_tests))
+                program = new_program
+                passing_tests = new_tests
+                success = true
+                break
+            end
+        end
+        # Unresolved -> try other direction, or fail
+        if !success && replacement_dir == -1
+            return program
+        elseif !success
+            return resolve_angelic!(program, fragments, passing_tests, grammar, tests, max_time, boolean_expr_max_size, -1)
+        else
+            num_holes -= 1
+        end
+    end
+    return program
+end
+
+function replace_next_angelic(program::RuleNode, boolean_expr::RuleNode, replacement_index::Int)::RuleNode
+    queue = [program]
+    while !isempty(queue)
+        node = dequeue!(queue)
+        for (child_index, child) in enumerate(node.children)
+            if node isa AbstractHole
+                if replacement_index == 1
+                    node.children[child_index] = boolean_expr
+                    return program
+                else
+                    replacement_index -= 1
+                end
+            end
+            enqueue!(queue, child)
+        end
+    end
+    program
 end

@@ -88,10 +88,23 @@ export
   remember_programs!,
   count_nodes,
 
+  FrAngelConfig,
+  FrAngelIterator,
+  FrAngelIteratorState,
+
+  get_passed_tests,
+  generate_random_program,
+  random_partition,
+  random_modify_children!,
+
   rules_minsize,
   symbols_minsize,
-  FrAngelConfig,
   simplify_quick,
-  generate_random_program,
-  FrAngelIterator
+  _simplify_quick_once
+
+  get_replacements,
+  get_descendant_replacements!,
+  passes_the_same_tests_or_more,
+  resolve_angelic!
+
 end # module HerbSearch
