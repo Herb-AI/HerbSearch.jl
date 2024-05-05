@@ -1,8 +1,8 @@
 struct FrAngelConfig
     max_time::Int
-    random_generation_max_size::Int
     random_generation_use_fragments_chance::Float16
     use_angelic_conditions::Bool
+    random_generation_use_entire_fragment_chance::Float16 # = 0.5
     similar_new_extra_size::Int # = 8
     gen_similar_prob_new::Float16 # = 0.25
 end
@@ -31,7 +31,7 @@ function mine_fragments(grammar::AbstractGrammar, program::RuleNode)::Set{RuleNo
             fragments = union(fragments, mine_fragments(grammar, child))
         end
     end
-    return fragments
+    fragments
 end
 
 """
@@ -48,8 +48,10 @@ All the found fragments in the provided programs.
 """
 function mine_fragments(grammar::AbstractGrammar, programs::Set{RuleNode})::Set{RuleNode}
     fragments = reduce(union, mine_fragments(grammar, p) for p in programs)
-    for program in programs delete!(fragments, program) end
-    return fragments
+    for program in programs
+        delete!(fragments, program)
+    end
+    fragments
 end
 
 """
@@ -64,10 +66,12 @@ Finds all the fragments from the provided `programs` list. The result is a set o
 # Returns
 All the found fragments in the provided programs.
 """
-function mine_fragments(grammar::AbstractGrammar, programs::Set{Tuple{RuleNode, Int, Int}})::Set{RuleNode}
+function mine_fragments(grammar::AbstractGrammar, programs::Set{Tuple{RuleNode,Int,Int}})::Set{RuleNode}
     fragments = reduce(union, mine_fragments(grammar, p) for (p, _, _) in programs)
-    for program in programs delete!(fragments, program) end
-    return fragments
+    for program in programs
+        delete!(fragments, program)
+    end
+    fragments
 end
 
 # This could potentially go somewhere else, for instance in a generic util file
@@ -95,8 +99,8 @@ end
     remember_programs!(old_remembered::Dict{BitVector, Tuple{RuleNode, Int, Int}}, passing_tests::BitVector, new_program::RuleNode, 
         fragments::Set{RuleNode}, grammar::AbstractGrammar)::Set{RuleNode}
 
-Updates the remembered programs by including `new_program` if it is simpler than all remembered programs that pass the same subset of tests. 
-    It also removes any "worse" programs from the dictionary, and finally updated the set of fragments with the new remembered programs.
+Updates the remembered programs by including `new_program` if it is simpler than all remembered programs that pass the same subset of tests, and there is no simpler program 
+    passing a superset of the tests. It also removes any "worse" programs from the dictionary.
 
 # Arguments
 - `old_remembered`: A dictionary mapping BitVectors to tuples of RuleNodes, node counts, and program lengths.
@@ -106,10 +110,14 @@ Updates the remembered programs by including `new_program` if it is simpler than
 - `grammar`: An AbstractGrammar object representing the grammar used for program generation.
 
 # Returns
-A set of RuleNodes representing the fragments mined from the updated `old_remembered` dictionary.
+A set of `RuleNode`s representing the fragments mined from the updated `old_remembered` dictionary.
 """
-function remember_programs!(old_remembered::Dict{BitVector, Tuple{RuleNode, Int, Int}}, passing_tests::BitVector, new_program::RuleNode, 
-    fragments::Set{RuleNode}, grammar::AbstractGrammar)
+function remember_programs!(
+    old_remembered::Dict{BitVector,Tuple{RuleNode,Int,Int}},
+    passing_tests::BitVector,
+    new_program::RuleNode,
+    fragments::Set{RuleNode},
+    grammar::AbstractGrammar)
     node_count = count_nodes(grammar, new_program)
     program_length = length(string(rulenode2expr(new_program, grammar)))
     # Check the new program's testset over each remembered program
@@ -118,7 +126,7 @@ function remember_programs!(old_remembered::Dict{BitVector, Tuple{RuleNode, Int,
         # if the new program's passing testset is a subset of the old program's, discard new program if worse
         if all(passing_tests .== (passing_tests .& key_tests))
             if !isSimpler
-                return nothing
+                return fragments
             end
             # else if it is a superset -> discard old program if worse (either more nodes, or same #nodes but less tests)
         elseif all(key_tests .== (key_tests .& passing_tests))
@@ -128,7 +136,7 @@ function remember_programs!(old_remembered::Dict{BitVector, Tuple{RuleNode, Int,
         end
     end
     old_remembered[passing_tests] = (new_program, node_count, program_length)
-    fragments = mine_fragments(grammar, Set(values(old_remembered)))
+    mine_fragments(grammar, Set(values(old_remembered)))
 end
 
 """
@@ -148,13 +156,13 @@ Generates a random program of the provided `type` using the provided `grammar`. 
 A random program of the provided type, or nothing if no program can be generated.
 """
 function generate_random_program(
-    grammar::AbstractGrammar, 
-    type::Symbol, 
-    fragments::Set{RuleNode}, 
+    grammar::AbstractGrammar,
+    type::Symbol,
+    fragments::Set{RuleNode},
     config::FrAngelConfig,
-    max_size=40, 
+    max_size=40,
     disabled_fragments=false
-)::Union{RuleNode, Nothing}
+)::Union{RuleNode,Nothing}
     if max_size < 0
         return nothing
     end
@@ -167,7 +175,7 @@ function generate_random_program(
         if !isempty(possible_fragments)
             fragment = deepcopy(rand(possible_fragments))
 
-            if rand(Bool)
+            if rand() < config.random_generation_use_entire_fragment_chance
                 return fragment
             end
 
@@ -297,8 +305,9 @@ function _simplify_quick_once(
         node = replacement
         if !passes_the_same_tests_or_more(root, symboltable, tests, passed_tests)
             node = initial
+        else
+            return replacement
         end
-        return replacement
     end
 
     if isterminal(grammar, node)
