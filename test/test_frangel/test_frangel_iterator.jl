@@ -8,7 +8,7 @@ end
 @testset "basic_example" begin
     spec = [IOExample(Dict(:x => x), 2x+1) for x ∈ 1:5]
     problem = Problem(spec)
-    iterator = FrAngelIterator(g, :Num, max_depth=5, spec, FrAngelConfig())
+    iterator = FrAngelIterator(g, :Num, max_depth=5, spec, FrAngelConfig(), AbstractVector{Union{Nothing, Int64}}([nothing for rule in g.rules]))
 
     solution, flag = synth(problem, iterator)
     program = rulenode2expr(solution, g) # should yield 2*6 +1 

@@ -4,7 +4,7 @@
     angelic_boolean_expr_max_size::Int = 6
     random_generation_max_size::Int = 40
     random_generation_use_fragments_chance::Float16 = 0.5
-    use_angelic_conditions_chance::Float16 = 0
+    use_angelic_conditions_chance::Float16 = 0.5
     angelic_max_execute_attempts::Int = 55
     similar_new_extra_size::Int = 8
     gen_similar_prob_new::Float16 = 0.25
@@ -14,6 +14,7 @@ end
 @programiterator FrAngelIterator(
     spec::AbstractVector{<:IOExample},
     config::FrAngelConfig,
+    angelic_conditions::AbstractVector{Union{Nothing,Int}}
 )
 
 mutable struct FrAngelIteratorState
@@ -38,6 +39,7 @@ function Base.iterate(iter::FrAngelIterator, state::FrAngelIteratorState)
             state.fragments,
             iter.config,
             iter.config.use_angelic_conditions_chance,
+            iter.angelic_conditions,
             iter.config.random_generation_max_size
         )
         # If it does not pass any tests, discard

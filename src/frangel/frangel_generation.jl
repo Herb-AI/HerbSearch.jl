@@ -9,6 +9,7 @@ Generates a random program of the provided `type` using the provided `grammar`. 
 - `fragments`: A set of RuleNodes representing the fragments that can be used in the program generation.
 - `config`: A FrAngelConfig object containing the configuration for the random program generation.
 - `generate_with_angelic`: A float representing the chance to generate a program with an angelic condition. Set to 0 if no such conditions are desired.
+- `angelic_conditions`: A vector of integers representing the index of the child to replace with an angelic condition for each rule. If there is no angelic condition for a rule, the value is set to `nothing`.
 - `max_size`: The maximum size of the program to generate.
 - `disabled_fragments`: A boolean flag to disable the use of fragments in the program generation.
 
@@ -21,6 +22,7 @@ function generate_random_program(
     fragments::Set{RuleNode},
     config::FrAngelConfig,
     generate_with_angelic::Float16,
+    angelic_conditions::AbstractVector{Union{Nothing,Int}},
     max_size=40,
     disabled_fragments=false
 )::Union{RuleNode,Nothing}
@@ -36,7 +38,7 @@ function generate_random_program(
             if rand() < config.random_generation_use_entire_fragment_chance
                 return fragment
             end
-            random_modify_children!(grammar, fragment, config, generate_with_angelic)
+            random_modify_children!(grammar, fragment, config, generate_with_angelic, angelic_conditions)
             return fragment
         end
     end
@@ -50,11 +52,17 @@ function generate_random_program(
     rule_node = RuleNode(rule_index)
 
     if !grammar.isterminal[rule_index]
+        use_angelic = rand() < generate_with_angelic && angelic_conditions[rule_index] !== nothing
+
         symbol_minsize = symbols_minsize(grammar, minsize)
         sizes = random_partition(grammar, rule_index, max_size, symbol_minsize)
 
         for (index, child_type) in enumerate(child_types(grammar, rule_index))
-            push!(rule_node.children, generate_random_program(grammar, child_type, fragments, config, generate_with_angelic, sizes[index], disabled_fragments))
+            if use_angelic && angelic_conditions[rule_index] == index
+                push!(rule_node.children, Hole(grammar.domains[child_type]))
+            else
+                push!(rule_node.children, generate_random_program(grammar, child_type, fragments, config, generate_with_angelic, angelic_conditions, sizes[index], disabled_fragments))
+            end
         end
     end
 
@@ -71,16 +79,17 @@ Randomly modifies the children of a given node. The modification can be either a
 - `node`: The node to modify the children of.
 - `config`: A FrAngelConfig object containing the configuration for the random modification.
 - `generate_with_angelic`: A boolean flag to enable the use of angelic conditions in the program generation.
+- `angelic_conditions`: A vector of integers representing the index of the child to replace with an angelic condition for each rule. If there is no angelic condition for a rule, the value is set to `nothing`.
 
 # Returns
 Modifies the `node` directly.
 """
-function random_modify_children!(grammar::AbstractGrammar, node::RuleNode, config::FrAngelConfig, generate_with_angelic::Float16)
+function random_modify_children!(grammar::AbstractGrammar, node::RuleNode, config::FrAngelConfig, generate_with_angelic::Float16, angelic_conditions::AbstractVector{Union{Nothing,Int}})
     for (index, child) in enumerate(node.children)
         if rand() < config.gen_similar_prob_new
-            node.children[index] = generate_random_program(grammar, return_type(grammar, child), Set{RuleNode}(), config, generate_with_angelic, count_nodes(grammar, child) + config.similar_new_extra_size, true)
+            node.children[index] = generate_random_program(grammar, return_type(grammar, child), Set{RuleNode}(), config, generate_with_angelic, angelic_conditions, count_nodes(grammar, child) + config.similar_new_extra_size, true)
         else
-            random_modify_children!(grammar, child, config, generate_with_angelic)
+            random_modify_children!(grammar, child, config, generate_with_angelic, angelic_conditions)
         end
     end
 end

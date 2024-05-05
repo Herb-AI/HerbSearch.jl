@@ -36,7 +36,7 @@ function resolve_angelic!(
         success = false
         start_time = time()
         while time() - start_time < max_time
-            boolean_expr = generate_random_program(grammar, :Bool, fragments, config, false, boolean_expr_max_size)
+            boolean_expr = generate_random_program(grammar, :Bool, fragments, config, false, Vector{Union{Nothing, Int}}(), boolean_expr_max_size)
             new_program = replace_next_angelic(program, boolean_expr, replacement_index)
             new_tests = get_passed_tests(new_program, grammar, tests, angelic_max_execute_attempts)
             # If the new program passes all the tests the original program did, replacement is successful
