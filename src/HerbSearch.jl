@@ -91,5 +91,6 @@ export
   symbols_minsize,
   FrAngelConfig,
   simplify_quick,
-  generate_random_program
+  generate_random_program,
+  FrAngelIterator
 end # module HerbSearch

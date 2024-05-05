@@ -1,10 +1,84 @@
-struct FrAngelConfig
-    max_time::Int
-    random_generation_max_size::Int
-    random_generation_use_fragments_chance::Float16
-    use_angelic_conditions::Bool
-    similar_new_extra_size::Int # = 8
-    gen_similar_prob_new::Float16 # = 0.25
+@kwdef struct FrAngelConfig
+    max_time::Float16 = 0.1
+    random_generation_max_size::Int = 40
+    random_generation_use_fragments_chance::Float16 = 0.5
+    use_angelic_conditions::Bool = false
+    similar_new_extra_size::Int = 8
+    gen_similar_prob_new::Float16 = 0.25
+end
+
+
+@programiterator FrAngelIterator(
+    spec::Vector{<:IOExample},
+    config::FrAngelConfig,
+)
+
+struct FrAngelIteratorState
+    remembered_programs::Dict{BitVector, Tuple{RuleNode, Int, Int}}
+    fragments::Set{RuleNode}
+end
+
+function Base.iterate(iter::FrAngelIterator)
+    iterate(iter, FrAngelIteratorState(
+        Dict{BitVector, Tuple{RuleNode, Int, Int}}(),
+        Set{RuleNode}()
+    ))
+end
+
+function Base.iterate(iter::FrAngelIterator, state::FrAngelIteratorState)
+    start_time = time()
+
+    while time() - start_time < iter.config.max_time
+        generate_with_angelic = rand(Bool) && iter.config.use_angelic_conditions
+
+        program = generate_random_program(
+            iter.grammar,
+            iter.sym,
+            state.fragments,
+            iter.config,
+            generate_with_angelic,
+            iter.config.random_generation_max_size
+        )
+
+        passed_tests = get_passed_tests(program, iter.grammar, iter.spec)
+        if !any(passed_tests)
+            continue
+        end
+
+        # if contains_angelic(program)
+        #    TODO: implement angelic conditions
+        # end
+
+        program = simplify_quick(program, iter.grammar, iter.spec, passed_tests)
+
+        passed_tests = get_passed_tests(program, iter.grammar, iter.spec)
+
+        remember_programs!(state.remembered_programs, passed_tests, program, state.fragments, iter.grammar)
+
+        if all(passed_tests)
+            return program, state # simplify_slow(program), state
+        end
+    end
+
+    return nothing
+end
+
+function get_passed_tests(program::RuleNode, grammar::AbstractGrammar, tests::AbstractVector{<:IOExample})::BitVector
+    symboltable = SymbolTable(grammar)
+    expr = rulenode2expr(program, grammar)
+
+    passed_tests = BitVector([false for i in tests])
+
+    for (index, test) in enumerate(tests)
+        try
+            output = execute_on_input(symboltable, expr, test.in) 
+            passed_tests[index] = output == test.out
+        catch e
+            passed_tests[index] = false
+        end
+    end
+
+    passed_tests
 end
 
 """
@@ -132,7 +206,7 @@ function remember_programs!(old_remembered::Dict{BitVector, Tuple{RuleNode, Int,
 end
 
 """
-    generate_random_program(grammar::AbstractGrammar, type::Symbol, fragments::Set{RuleNode}, config::FrAngelConfig, max_size=40, disabled_fragments=false)::Union{RuleNode, Nothing}
+    generate_random_program(grammar::AbstractGrammar, type::Symbol, fragments::Set{RuleNode}, config::FrAngelConfig, generate_with_angelic::Bool, max_size=40, disabled_fragments=false)::Union{RuleNode, Nothing}
 
 Generates a random program of the provided `type` using the provided `grammar`. The program is generated with a maximum size of `max_size` and can use fragments from the provided set.
 
@@ -141,6 +215,7 @@ Generates a random program of the provided `type` using the provided `grammar`. 
 - `type`: The type of the program to generate.
 - `fragments`: A set of RuleNodes representing the fragments that can be used in the program generation.
 - `config`: A FrAngelConfig object containing the configuration for the random program generation.
+- `generate_with_angelic`: A boolean flag to enable the use of angelic conditions in the program generation.
 - `max_size`: The maximum size of the program to generate.
 - `disabled_fragments`: A boolean flag to disable the use of fragments in the program generation.
 
@@ -152,6 +227,7 @@ function generate_random_program(
     type::Symbol, 
     fragments::Set{RuleNode}, 
     config::FrAngelConfig,
+    generate_with_angelic::Bool,
     max_size=40, 
     disabled_fragments=false
 )::Union{RuleNode, Nothing}
@@ -171,7 +247,7 @@ function generate_random_program(
                 return fragment
             end
 
-            random_modify_children!(grammar, fragment, config)
+            random_modify_children!(grammar, fragment, config, generate_with_angelic)
             return fragment
         end
     end
@@ -191,7 +267,7 @@ function generate_random_program(
         sizes = random_partition(grammar, rule_index, max_size, symbol_minsize)
 
         for (index, child_type) in enumerate(child_types(grammar, rule_index))
-            push!(rule_node.children, generate_random_program(grammar, child_type, fragments, config, sizes[index], disabled_fragments))
+            push!(rule_node.children, generate_random_program(grammar, child_type, fragments, config, generate_with_angelic, sizes[index], disabled_fragments))
         end
     end
 
@@ -235,7 +311,7 @@ function random_partition(grammar::AbstractGrammar, rule_index::Int, size::Int, 
 end
 
 """
-    random_modify_children!(grammar::AbstractGrammar, node::RuleNode, config::FrAngelConfig)
+    random_modify_children!(grammar::AbstractGrammar, node::RuleNode, config::FrAngelConfig, generate_with_angelic::Bool)
 
 Randomly modifies the children of a given node. The modification can be either a new random program or a modification of the existing children.
 
@@ -243,16 +319,17 @@ Randomly modifies the children of a given node. The modification can be either a
 - `grammar`: An abstract grammar object.
 - `node`: The node to modify the children of.
 - `config`: A FrAngelConfig object containing the configuration for the random modification.
+- `generate_with_angelic`: A boolean flag to enable the use of angelic conditions in the program generation.
 
 # Returns
 Modifies the `node` directly.
 """
-function random_modify_children!(grammar::AbstractGrammar, node::RuleNode, config::FrAngelConfig)
+function random_modify_children!(grammar::AbstractGrammar, node::RuleNode, config::FrAngelConfig, generate_with_angelic::Bool)
     for (index, child) in enumerate(node.children)
         if rand() < config.gen_similar_prob_new
-            node.children[index] = generate_random_program(grammar, return_type(grammar, child), Set{RuleNode}(), config, count_nodes(grammar, child) + config.similar_new_extra_size, true)
+            node.children[index] = generate_random_program(grammar, return_type(grammar, child), Set{RuleNode}(), config, generate_with_angelic, count_nodes(grammar, child) + config.similar_new_extra_size, true)
         else
-            random_modify_children!(grammar, child, config)
+            random_modify_children!(grammar, child, config, generate_with_angelic)
         end
     end
 end
@@ -272,13 +349,11 @@ Simplifies the provided program by replacing nodes with smaller nodes that pass 
 The simplified program.
 """
 function simplify_quick(program::RuleNode, grammar::AbstractGrammar, tests::AbstractVector{<:IOExample}, passed_tests::BitVector)::RuleNode
-    symboltable = SymbolTable(grammar)
-
-    simlified = _simplify_quick_once(program, program, grammar, symboltable, tests, passed_tests)
+    simlified = _simplify_quick_once(program, program, grammar, tests, passed_tests)
 
     while program != simlified
         program = simlified
-        simlified = _simplify_quick_once(program, program, grammar, symboltable, tests, passed_tests)
+        simlified = _simplify_quick_once(program, program, grammar, tests, passed_tests)
     end
 
     program
@@ -288,24 +363,23 @@ function _simplify_quick_once(
     root::RuleNode,
     node::RuleNode,
     grammar::AbstractGrammar,
-    symboltable::SymbolTable,
     tests::AbstractVector{<:IOExample},
     passed_tests::BitVector
 )::RuleNode
     for replacement in get_replacements(node, grammar)
         initial = node
         node = replacement
-        if !passes_the_same_tests_or_more(root, symboltable, tests, passed_tests)
-            node = initial
+        if passes_the_same_tests_or_more(root, grammar, tests, passed_tests)
+            return replacement
         end
-        return replacement
+        node = initial
     end
 
     if isterminal(grammar, node)
         return node
     else
         for child in node.children
-            child = _simplify_quick_once(root, child, grammar, symboltable, tests, passed_tests)
+            child = _simplify_quick_once(root, child, grammar, tests, passed_tests)
         end
     end
 
@@ -372,27 +446,30 @@ end
 
 # This could potentially go somewhere else, for instance in a generic util file
 """
-    passes_the_same_tests_or_more(node::RuleNode, symboltable::SymbolTable, tests::AbstractVector{<:IOExample}, passed_tests::BitVector)::Bool
+    passes_the_same_tests_or_more(node::RuleNode, grammar::AbstractGrammar, tests::AbstractVector{<:IOExample}, passed_tests::BitVector)::Bool
 
 Checks if the provided program passes all the tests that have been marked as passed.
 
 # Arguments
 - `program`: The program to test.
-- `symboltable`: The symbol table to use for program execution.
+- `grammar`: The abstract grammar object.
 - `tests`: A vector of IOExamples to test the program on.
 - `passed_tests`: A BitVector representing the tests that the program has already passed.
 
 # Returns
 Returns true if the program passes all the tests that have been marked as passed, false otherwise.
 """
-function passes_the_same_tests_or_more(program::RuleNode, symboltable::SymbolTable, tests::AbstractVector{<:IOExample}, passed_tests::BitVector)::Bool
+function passes_the_same_tests_or_more(program::RuleNode, grammar::AbstractGrammar, tests::AbstractVector{<:IOExample}, passed_tests::BitVector)::Bool
+    symboltable = SymbolTable(grammar)
+    expr = rulenode2expr(program, grammar)
+
     for (index, test) in enumerate(tests)
         if !passed_tests[index]
             continue
         end
 
         try
-            output = execute_on_input(symboltable, program, test.in)
+            output = execute_on_input(symboltable, expr, test.in)
             if (output != test.out)
                 return false
             end
