@@ -54,7 +54,7 @@ function Base.iterate(iter::FrAngelIterator, state::FrAngelIteratorState)
 
         passed_tests = get_passed_tests(program, iter.grammar, iter.spec)
 
-        remember_programs!(state.remembered_programs, passed_tests, program, state.fragments, iter.grammar)
+        state.fragments = remember_programs!(state.remembered_programs, passed_tests, program, state.fragments, iter.grammar)
 
         if all(passed_tests)
             return program, state # simplify_slow(program), state
