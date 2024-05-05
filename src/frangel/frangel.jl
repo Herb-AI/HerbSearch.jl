@@ -1,5 +1,5 @@
 @kwdef struct FrAngelConfig
-    max_time::Float16 = 1
+    max_time::Float16 = 10
     angelic_max_time::Float16 = 0.1
     angelic_boolean_expr_max_size::Int = 6
     random_generation_max_size::Int = 40
@@ -15,7 +15,7 @@ end
     config::FrAngelConfig,
 )
 
-struct FrAngelIteratorState
+mutable struct FrAngelIteratorState
     remembered_programs::Dict{BitVector,Tuple{RuleNode,Int,Int}}
     fragments::Set{RuleNode}
 end
