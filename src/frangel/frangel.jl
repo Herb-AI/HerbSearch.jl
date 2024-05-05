@@ -5,6 +5,7 @@
     random_generation_max_size::Int = 40
     random_generation_use_fragments_chance::Float16 = 0.5
     use_angelic_conditions_chance::Float16 = 0
+    angelic_max_execute_attempts::Int = 55
     similar_new_extra_size::Int = 8
     gen_similar_prob_new::Float16 = 0.25
     random_generation_use_entire_fragment_chance::Float16 = 0.5
@@ -40,21 +41,22 @@ function Base.iterate(iter::FrAngelIterator, state::FrAngelIteratorState)
             iter.config.random_generation_max_size
         )
         # If it does not pass any tests, discard
-        passed_tests = get_passed_tests(program, iter.grammar, iter.spec)
+        passed_tests = get_passed_tests(program, iter.grammar, iter.spec, iter.config.angelic_max_execute_attempts)
         if !any(passed_tests)
             continue
         end
         # Contains angelic condition
         if contains_hole(program)
-            resolve_angelic!(program, state.fragments, passed_tests, iter.grammar, iter.spec, iter.config.angelic_max_time, iter.config.angelic_boolean_expr_max_size, 1)
+            resolve_angelic!(program, state.fragments, passed_tests, iter.grammar, iter.spec, iter.config.angelic_max_time, 
+                iter.config.angelic_boolean_expr_max_size, 1, iter.config.angelic_max_execute_attempts)
             # Still contains angelic conditions -> unresolved
             if contains_hole(program)
                 continue
             end
-            passed_tests = get_passed_tests(program, iter.grammar, iter.spec)
+            passed_tests = get_passed_tests(program, iter.grammar, iter.spec, iter.config.angelic_max_execute_attempts)
         end
         program = simplify_quick(program, iter.grammar, iter.spec, passed_tests)
-        passed_tests = get_passed_tests(program, iter.grammar, iter.spec)
+        passed_tests = get_passed_tests(program, iter.grammar, iter.spec, iter.config.angelic_max_execute_attempts)
         # Update iterator state (remembered programs and fragments)
         state.fragments = remember_programs!(state.remembered_programs, passed_tests, program, state.fragments, iter.grammar)
         if all(passed_tests)

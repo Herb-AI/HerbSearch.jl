@@ -1,6 +1,8 @@
 g = @cfgrammar begin
     Num = |(0:10)
-    Num = x | (Num + Num) | (Num - Num) | (Num * Num)
+    Num = x | (Num + Num)
+    Bool = (Num == Num)
+    Num = (if Bool ; ((Num + Num) ; Num) else Num end)
 end
 
 @testset "basic_example" begin

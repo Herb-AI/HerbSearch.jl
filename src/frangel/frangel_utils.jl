@@ -1,5 +1,5 @@
 """
-    get_passed_tests(program::RuleNode, grammar::AbstractGrammar, tests::AbstractVector{<:IOExample})::BitVector
+    get_passed_tests(program::RuleNode, grammar::AbstractGrammar, tests::AbstractVector{<:IOExample}, angelic_max_execute_attempts::Int)::BitVector
 
 Runs the program with all provided tests.
 
@@ -7,23 +7,60 @@ Runs the program with all provided tests.
 - `program`: A `RuleNode` representing the program to be tested.
 - `grammar`: An `AbstractGrammar` object containing the grammar rules.
 - `tests`: A vector of `IOExample` objects representing the input-output test cases.
+- `angelic_max_execute_attempts`: An integer representing the maximum number of attempts to execute the program with angelic evaluation.
 
 # Returns
 A `BitVector` where each element corresponds to a test case, indicating whether the test passed (`true`) or not (`false`).
 """
-function get_passed_tests(program::RuleNode, grammar::AbstractGrammar, tests::AbstractVector{<:IOExample})::BitVector
+function get_passed_tests(program::RuleNode, grammar::AbstractGrammar, tests::AbstractVector{<:IOExample}, angelic_max_execute_attempts::Int)::BitVector
     symboltable = SymbolTable(grammar)
-    expr = rulenode2expr(program, grammar)
     passed_tests = BitVector([false for i in tests])
-    for (index, test) in enumerate(tests)
-        try
-            output = execute_on_input(symboltable, expr, test.in)
-            passed_tests[index] = output == test.out
-        catch _
-            passed_tests[index] = false
+    # If angelic -> evaluate optimistically
+    if contains_hole(program)
+        for (index, test) in enumerate(tests)
+            try
+                output = execute_angelic_on_input(symboltable, program, grammar, test.in, angelic_max_execute_attempts)
+                passed_tests[index] = output == test.out
+            catch _
+                passed_tests[index] = false
+            end
+        end
+    else
+        expr = rulenode2expr(program, grammar)
+        for (index, test) in enumerate(tests)
+            try
+                output = execute_on_input(symboltable, expr, test.in)
+                passed_tests[index] = output == test.out
+            catch _
+                passed_tests[index] = false
+            end
         end
     end
     passed_tests
+end
+
+function execute_angelic_on_input(symboltable::SymbolTable, program::RuleNode, grammar::AbstractGrammar, input::Dict{Symbol,Any}, max_attempts::Int)
+    return nothing
+end
+
+function contains_if_statement(expr)
+    parsed_expr = Meta.parse(expr)
+    return contains_if(parsed_expr)
+end
+
+function contains_if(expr)
+    if expr isa Expr
+        if expr.head == :if
+            return true
+        else
+            for arg in expr.args
+                if contains_if(arg)
+                    return true
+                end
+            end
+        end
+    end
+    return false
 end
 
 # This could potentially go somewhere else, for instance in a generic util file
@@ -113,14 +150,14 @@ function _simplify_quick_once(
     grammar::AbstractGrammar,
     tests::AbstractVector{<:IOExample},
     passed_tests::BitVector,
-    path::Vector{Int} = []
+    path::Vector{Int}=[]
 )::RuleNode
     for replacement in get_replacements(node, grammar)
         if length(path) == 0
             if passes_the_same_tests_or_more(replacement, grammar, tests, passed_tests)
                 return replacement
             end
-        else 
+        else
             swap_node(root, replacement, path)
             if passes_the_same_tests_or_more(root, grammar, tests, passed_tests)
                 return replacement
@@ -129,7 +166,7 @@ function _simplify_quick_once(
         end
     end
 
-    if length(path) > 0 
+    if length(path) > 0
         swap_node(root, node, path)
     end
 
