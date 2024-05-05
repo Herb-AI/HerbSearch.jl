@@ -36,7 +36,7 @@ function Base.iterate(iter::FrAngelIterator, state::FrAngelIteratorState)
             iter.sym,
             state.fragments,
             iter.config,
-            iter.config.use_angelic_conditions,
+            iter.config.use_angelic_conditions_chance,
             iter.config.random_generation_max_size
         )
         # If it does not pass any tests, discard
