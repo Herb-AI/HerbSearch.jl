@@ -86,6 +86,7 @@ export
 
   mine_fragments,
   remember_programs!,
+  count_nodes,
 
   rules_minsize,
   symbols_minsize,
