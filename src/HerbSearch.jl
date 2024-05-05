@@ -39,6 +39,9 @@ include("genetic_search_iterator.jl")
 include("random_iterator.jl")
 
 include("frangel/frangel.jl")
+include("frangel/frangel_fragment_utils.jl")
+include("frangel/frangel_generation.jl")
+include("frangel/frangel_angelic_utils.jl")
 include("frangel/frangel_utils.jl")
 
 export 
@@ -72,8 +75,6 @@ export
   MHSearchIterator,
   VLSNSearchIterator,
   SASearchIterator,
-
-  frangel,
   
   mean_squared_error,
   misclassification,
@@ -84,27 +85,29 @@ export
   sample,
   rand,
 
-  mine_fragments,
-  remember_programs!,
-  count_nodes,
-
   FrAngelConfig,
   FrAngelIterator,
   FrAngelIteratorState,
 
-  get_passed_tests,
+  mine_fragments,
+  remember_programs!,
+  
   generate_random_program,
-  random_partition,
   random_modify_children!,
-
-  rules_minsize,
-  symbols_minsize,
-  simplify_quick,
-  _simplify_quick_once
-
   get_replacements,
   get_descendant_replacements!,
+
+  resolve_angelic!,
+  replace_next_angelic,
+
+  get_passed_tests,
+  count_nodes,
+  random_partition,
+  simplify_quick,
+  _simplify_quick_once,
   passes_the_same_tests_or_more,
-  resolve_angelic!
+  symbols_minsize,
+  _minsize!,
+  rules_minsize
 
 end # module HerbSearch
