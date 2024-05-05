@@ -97,12 +97,13 @@ Simplifies the provided program by replacing nodes with smaller nodes that pass 
 The simplified program.
 """
 function simplify_quick(program::RuleNode, grammar::AbstractGrammar, tests::AbstractVector{<:IOExample}, passed_tests::BitVector)::RuleNode
-    simlified = _simplify_quick_once(program, program, grammar, tests, passed_tests)
+    simlified = _simplify_quick_once(program, program, grammar, tests, passed_tests, Vector{Int}())
     # Continuously simplify program until unchanged
     while program != simlified
         program = simlified
-        simlified = _simplify_quick_once(program, program, grammar, tests, passed_tests)
+        simlified = _simplify_quick_once(program, program, grammar, tests, passed_tests, Vector{Int}())
     end
+
     program
 end
 
@@ -111,24 +112,35 @@ function _simplify_quick_once(
     node::RuleNode,
     grammar::AbstractGrammar,
     tests::AbstractVector{<:IOExample},
-    passed_tests::BitVector
+    passed_tests::BitVector,
+    path::Vector{Int} = []
 )::RuleNode
     for replacement in get_replacements(node, grammar)
-        initial = node
-        node = replacement
-        if passes_the_same_tests_or_more(root, grammar, tests, passed_tests)
-            return replacement
+        if length(path) == 0
+            if passes_the_same_tests_or_more(replacement, grammar, tests, passed_tests)
+                return replacement
+            end
+        else 
+            swap_node(root, replacement, path)
+            if passes_the_same_tests_or_more(root, grammar, tests, passed_tests)
+                return replacement
+            end
+            swap_node(root, node, path)
         end
-        node = initial
+    end
+
+    if length(path) > 0 
+        swap_node(root, node, path)
     end
 
     if isterminal(grammar, node)
         return node
     else
-        for child in node.children
-            child = _simplify_quick_once(root, child, grammar, tests, passed_tests)
+        for (index, child) in enumerate(node.children)
+            node.children[index] = _simplify_quick_once(root, child, grammar, tests, passed_tests, [path; index])
         end
     end
+
     node
 end
 

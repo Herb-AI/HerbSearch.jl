@@ -8,13 +8,13 @@ grammar::ContextSensitiveGrammar = @cfgrammar begin
     Num = max(Num, Num)
     Expression = Num | Variable
     Variable = x
-    InnerStatement = (global Variable = Expression) | (InnerStatement; InnerStatement)
-    Statement = (global Variable = Expression)
+    InnerStatement = (Variable = Expression) | (InnerStatement; InnerStatement)
+    Statement = (Variable = Expression)
     Statement = (
         i = 0;
         while i < Num
             InnerStatement
-            global i = i + 1
+            i = i + 1
         end)
     Statement = (Statement; Statement)
     Return = return Expression
@@ -36,12 +36,40 @@ end
     end
 end
 
-@testset "simplifyQuick" begin
-    @testset "removes unnecesarry neighbour nodes" begin
-        println(grammar)
-
+@testset "simplify_quick" begin
+    @testset "swaps node with a terminal node if possible" begin
         # program = begin
-        #     global x = 8
+        #     return (7 + (9 - 5)) - 3
+        # end
+        program = RuleNode(23, [
+            RuleNode(22, [
+                RuleNode(14, [
+                    RuleNode(12, [
+                        RuleNode(11, [
+                            RuleNode(14, [RuleNode(8)]),
+                            RuleNode(12, [
+                                RuleNode(14, [RuleNode(9)]),
+                                RuleNode(14, [RuleNode(6)])
+                            ])
+                        ])
+                        RuleNode(14, [RuleNode(3)])
+                    ])
+                ])
+            ])
+        ])
+
+        tests = [IOExample(Dict(), 8)]
+        passed_tests = BitVector([true])
+        
+        # return 7
+        expected = RuleNode(23, [RuleNode(22, [RuleNode(14, [RuleNode(9)])])])
+
+        @test expected == simplify_quick(program, grammar, tests, passed_tests)
+    end
+
+    @testset "removes unnecesarry neighbour nodes" begin   
+        # program = begin
+        #     x = 8
         #     return 7
         # end
         program = RuleNode(24, [
@@ -61,6 +89,9 @@ end
         tests = [IOExample(Dict(), 7)]
         passed_tests = BitVector([true])
 
-        # @test RuleNode(8) == simplify_quick(program, grammar, tests, passed_tests)
+        # return 7
+        expected = RuleNode(23, [RuleNode(22, [RuleNode(14, [RuleNode(8)])])])
+
+        @test expected == simplify_quick(program, grammar, tests, passed_tests)
     end
 end

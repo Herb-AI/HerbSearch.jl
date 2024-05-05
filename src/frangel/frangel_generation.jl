@@ -99,18 +99,46 @@ Looks for single-node trees corresponding to all variables and constants in the 
 A vector of RuleNodes representing all the possible replacements for the provided node, ordered by size.
 """
 function get_replacements(node::RuleNode, grammar::AbstractGrammar)::AbstractVector{RuleNode}
-    replacements = Set{RuleNode}([node])
+    replacements = Set{RuleNode}([])
     symbol = return_type(grammar, node)
+
     # The empty tree, if N⊤ is a statement in a block.
-    # TODO
+    children_types = child_types(grammar, node.ind)
+
+    for rule_index in eachindex(grammar.rules)
+        if grammar.types[rule_index] == symbol && length(child_types(grammar, rule_index)) < length(children_types)
+            possible_replacement = RuleNode(rule_index)
+
+            # TODO: possibly update it, to work regardless of the order
+            i = 1
+            for c in child_types(grammar, rule_index)
+                while i <= length(children_types) && c != children_types[i]
+                    i += 1
+                end
+
+                if i <= length(children_types)
+                    push!(possible_replacement.children, node.children[i])
+                else
+                    break
+                end
+            end
+
+            if i <= length(children_types)
+                push!(replacements, possible_replacement)
+            end
+        end
+    end
+
     # Single-node trees corresponding to all variables and constants in the grammar.
     for rule_index in eachindex(grammar.rules)
-        if isterminal(grammar, rule_index) && grammar.types[rule_index] == symbol
+        if isterminal(grammar, rule_index) && return_type(grammar, rule_index) == symbol
             push!(replacements, RuleNode(rule_index))
         end
     end
+
     # D⊤ for all descendant nodes D of N.
     get_descendant_replacements!(node, symbol, grammar, replacements)
+
     # Order by replacement size
     sort!(collect(replacements), by=x -> count_nodes(grammar, x))
 end
