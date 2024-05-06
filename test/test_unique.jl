@@ -1,7 +1,5 @@
 @testset verbose=true "Unique" begin
     @testset "Number of candidate programs" begin
-        using Revise, HerbCore, HerbGrammar, HerbConstraints, HerbSearch
-
         grammar = @csgrammar begin
             Int = 1
             Int = x

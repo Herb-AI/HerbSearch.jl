@@ -1,6 +1,5 @@
 @testset verbose=true "Forbidden Sequence" begin
     @testset "Number of candidate programs (without ignore_if)" begin
-        using Revise, HerbCore, HerbGrammar, HerbConstraints, HerbSearch
 
         grammar = @csgrammar begin
             S = (S, 1) | (S, 2) | (S, 3)
