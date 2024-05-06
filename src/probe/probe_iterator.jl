@@ -10,13 +10,12 @@ struct ProgramCache
     cost::Int
 end
 
-function probe(examples::Vector{<:IOExample}, iterator::ProgramIterator,  max_time::Int, iteration_size::Int)
+function probe(examples::Vector{<:IOExample}, iterator::ProgramIterator, select::Function, update!::Function, max_time::Int, iteration_size::Int)
     start_time = time()
     # store a set of all the results of evaluation programs
     eval_cache = Set()
     state = nothing
     symboltable = SymbolTable(iterator.grammar)
-    len_partial = 0
     # all partial solutions that were found so far
     all_selected_psols  = Set{RuleNode}()
     # start next iteration while there is time left
@@ -58,7 +57,7 @@ function probe(examples::Vector{<:IOExample}, iterator::ProgramIterator,  max_ti
             next = iterate(iterator, state)
             i += 1
         end
-        # println(i)
+
         # check if program iterator is exhausted
         if next === nothing
             return nothing
@@ -68,7 +67,7 @@ function probe(examples::Vector{<:IOExample}, iterator::ProgramIterator,  max_ti
         if !isempty(partial_sols)
             push!(all_selected_psols, map(x -> x.program, partial_sols)...)
         end
-        # # update probabilites if any promising partial solutions
+        # update probabilites if any promising partial solutions
         if !isempty(partial_sols) # && updated == true
             update_grammar(iterator.grammar, partial_sols, examples) # update probabilites
             # restart iterator
@@ -93,8 +92,8 @@ function update_grammar(grammar::ContextSensitiveGrammar, PSols_with_eval_cache:
             end
         end 
         fitnes = highest_correct_nr / length(examples)
-        println("Highest correct examples: $(highest_correct_nr)")
-        println("Fitness $(fitnes)")
+        # println("Highest correct examples: $(highest_correct_nr)")
+        # println("Fitness $(fitnes)")
         p_uniform = 1 / length(grammar.rules)
       
         # compute (log2(p_u) ^ (1 - fit)) = (1-fit) * log2(p_u)
