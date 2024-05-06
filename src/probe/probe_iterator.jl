@@ -174,7 +174,7 @@ function selectpsol_first_cheapest(partial_sols::Vector{ProgramCache})
         end
     end
     # get the cheapest programs that satisfy unique subsets of examples
-    return values(mapping)
+    return collect(values(mapping))
 end
 
 """
@@ -201,7 +201,7 @@ function selectpsol_all_cheapest(partial_sols::Vector{ProgramCache})
         end
     end
     # get all cheapest programs that satisfy unique subsets of examples
-    return Iterators.flatten(values(mapping))
+    return collect(Iterators.flatten(values(mapping)))
 end
 
 @programiterator GuidedSearchIterator(
