@@ -82,5 +82,7 @@ export
   misclassification,
   validate_iterator,
   sample,
-  rand
+  rand,
+  probe,
+  guided_search
 end # module HerbSearch

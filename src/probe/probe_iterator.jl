@@ -4,15 +4,17 @@ struct ProgramCache
     cost::Int
 end
 
-function probe(examples::Vector{<:IOExample}, iterator::ProgramIterator, select::Function, update!::Function, max_time::Int, iteration_size::Int)
+function probe(examples::Vector{<:IOExample}, iterator::ProgramIterator,  max_time::Int, iteration_size::Int)
     start_time = time()
     # store a set of all the results of evaluation programs
     eval_cache = Set()
     state = nothing
     symboltable = SymbolTable(iterator.grammar)
+    len_partial = 0
     # start next iteration while there is time left
     while time() - start_time < max_time
         i = 1
+        updated = false
         # partial solutions stores not only the program but also evaluation info
         psol_with_eval_cache = Vector{ProgramCache}()
         next = state === nothing ? iterate(iterator) : iterate(iterator, state)
@@ -49,24 +51,76 @@ function probe(examples::Vector{<:IOExample}, iterator::ProgramIterator, select:
             next = iterate(iterator, state)
             i += 1
         end
-
+        # println(i)
         # check if program iterator is exhausted
         if next === nothing
             return nothing
         end
 
-        partial_sols = select(psol_with_eval_cache) # select promising partial solutions
+        partial_sols = selectpsol_largest_subset(psol_with_eval_cache) # select promising partial solutions
+        println(length(partial_sols))
+        if len_partial < length(partial_sols)
+            len_partial = length(partial_sols)
+            updated = true
+        end
         # # update probabilites if any promising partial solutions
-        # if !isempty(partial_sols)
-        #     update!(iterator.grammar, partial_sols, eval_cache) # update probabilites
-        #     # restart iterator
-        #     eval_cache = Set() 
-        #     state = nothing
-        # end
+        if !isempty(partial_sols) && updated == true
+            update_grammar(iterator.grammar, partial_sols, examples) # update probabilites
+            # restart iterator
+            eval_cache = Set() 
+            state = nothing
+        end
     end
 
     return nothing
 end
+
+function update_grammar(grammar::ContextSensitiveGrammar, PSols_with_eval_cache::Vector{ProgramCache}, examples::Vector{<:IOExample})
+    for rule_index in eachindex(grammar.rules) # iterate for each rule_index 
+        highest_correct_nr = 0
+        for psol in PSols_with_eval_cache
+            program = psol.program 
+            len_correct_examples = length(psol.correct_examples)
+            # Asume this works
+            # check if the program tree has rule_index somewhere inside it using a recursive function
+            if contains_rule(program, rule_index)  && len_correct_examples > highest_correct_nr 
+                highest_correct_nr = len_correct_examples 
+            end
+        end 
+        fitnes = highest_correct_nr / length(examples)
+        println("Highest correct examples: $(highest_correct_nr)")
+        println("Fitness $(fitnes)")
+        p_uniform = 1 / length(grammar.rules)
+      
+        # compute (log2(p_u) ^ (1 - fit)) = (1-fit) * log2(p_u)
+        log_prob = ((1 - fitnes) * log(2, p_uniform)) #/Z figure out the Z
+        grammar.log_probabilities[rule_index] = log_prob
+    end
+    for i in 1:6
+        print(grammar.log_probabilities[i])
+    end
+    println()
+    for i in 1:6
+        print(2 ^ (-1* grammar.log_probabilities[i]))
+    end
+    println()
+end
+
+# I will asume this works
+function contains_rule(program::RuleNode, rule_index::Int)
+    if program.ind == rule_index # if the rule is good return true
+        return true 
+    else 
+        for child in program.children 
+          if contains_rule(child, rule_index)  # if a child has that rule then return true
+              return true
+          end
+        end
+        return false # if no child has that rule return false
+    end
+end
+
+
 
 """
     selectpsol_largest_subset(partial_sols::Vector{ProgramCache}) 
