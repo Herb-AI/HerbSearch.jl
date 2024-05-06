@@ -4,13 +4,17 @@
 Stores the evaluation cost and the program in a structure.
 This 
 """
-struct ProgramCache
+mutable struct ProgramCache
     program::RuleNode 
     correct_examples::Vector{Int}
     cost::Int
 end
+function Base.:(==)(a::ProgramCache, b::ProgramCache)
+    return a.program == b.program 
+end
+Base.hash(a::ProgramCache) = hash(a.program)
 
-select(partial_sols::Vector{HerbSearch.ProgramCache}) = HerbSearch.selectpsol_largest_subset(partial_sols) 
+select(partial_sols::Vector{ProgramCache}, all_selected_psols::Set{ProgramCache}) = HerbSearch.selectpsol_largest_subset(partial_sols, all_selected_psols) 
 update!(grammar::ContextSensitiveGrammar, PSols_with_eval_cache::Vector{ProgramCache}, examples::Vector{<:IOExample}) = update_grammar(grammar,PSols_with_eval_cache, examples)
 
 function probe(examples::Vector{<:IOExample}, iterator::ProgramIterator, max_time::Int, iteration_size::Int)
@@ -20,7 +24,7 @@ function probe(examples::Vector{<:IOExample}, iterator::ProgramIterator, max_tim
     state = nothing
     symboltable = SymbolTable(iterator.grammar)
     # all partial solutions that were found so far
-    all_selected_psols  = Set{RuleNode}()
+    all_selected_psols  = Set{ProgramCache}()
     # start next iteration while there is time left
     while time() - start_time < max_time
         i = 1
@@ -65,17 +69,30 @@ function probe(examples::Vector{<:IOExample}, iterator::ProgramIterator, max_tim
         if next === nothing
             return nothing
         end
-        # select promising partial solutions that did not appear before              
-        partial_sols = filter(x -> x.program ∉ all_selected_psols, select(psol_with_eval_cache))
+        # select promising partial solutions that did not appear before    
+        # if (isempty(all_selected_psols))
+        #     push!(all_selected_psols, psol_with_eval_cache...)
+        # end          
+        partial_sols = filter(x -> x ∉ all_selected_psols, select(psol_with_eval_cache, all_selected_psols))
         if !isempty(partial_sols)
-            push!(all_selected_psols, map(x -> x.program, partial_sols)...)
-        end
-        # update probabilites if any promising partial solutions
-        if !isempty(partial_sols) # && updated == true
+            print(rulenode2expr(partial_sols[1].program, iterator.grammar))
+            push!(all_selected_psols, partial_sols...)
+            # update probabilites if any promising partial solutions
             update!(iterator.grammar, partial_sols, examples) # update probabilites
             # restart iterator
             eval_cache = Set() 
             state = nothing
+
+            #for loop to update all_selected_psols
+            new_all_selected = Set{ProgramCache}()
+            for prog_with_cache ∈ all_selected_psols
+                program = prog_with_cache.program
+                new_cost = calculate_program_cost(program, iterator.grammar)
+                prog_with_cache.cost = new_cost
+                # program_cache = ProgramCache(program, prog_with_cache.correct_examples, cost)
+                # push!(new_all_selected, program_cache)
+            end
+            # all_selected_psols = new_all_selected
         end
     end
 
@@ -141,10 +158,11 @@ end
 This scheme selects a single cheapest program (first enumerated) that 
 satisfies the largest subset of examples encountered so far across all partial_sols.
 """
-function selectpsol_largest_subset(partial_sols::Vector{ProgramCache})
+function selectpsol_largest_subset( partial_sols::Vector{ProgramCache}, all_selected_psols::Set{ProgramCache})
     if isempty(partial_sols)
         return Vector{ProgramCache}() 
     end
+    push!(partial_sols, all_selected_psols...)
     largest_subset_length = 0
     cost = typemax(Int)
     best_sol = partial_sols[begin]

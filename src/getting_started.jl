@@ -20,11 +20,8 @@ examples = [
         ]
 
 iter = HerbSearch.GuidedSearchIterator(grammar, :S, examples, SymbolTable(grammar))
-# @profview program = @time probe(examples, iter, identity, identity, 3600, 10000)
-for i in 1:6
-    print(iter.grammar.log_probabilities[i])
-end
-program = @time probe(examples, iter,  3600, 100000)
+@profview program = @time probe(examples, iter, 40, 10000)
+# program = @time probe(examples, iter,  3600, 10000)
 
 rulenode2expr(program, grammar)
 
