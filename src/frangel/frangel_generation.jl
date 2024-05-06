@@ -1,5 +1,6 @@
 """
-    generate_random_program(grammar::AbstractGrammar, type::Symbol, fragments::Set{RuleNode}, config::FrAngelConfig, generate_with_angelic::Bool, max_size=40, disabled_fragments=false)::Union{RuleNode, Nothing}
+    generate_random_program(grammar::AbstractGrammar, type::Symbol, fragments::Set{RuleNode}, config::FrAngelConfig, generate_with_angelic::Bool, 
+        angelic_conditions::AbstractVector{Union{Nothing,Int}}, max_size=40, disabled_fragments=false)::Union{RuleNode, Nothing}
 
 Generates a random program of the provided `type` using the provided `grammar`. The program is generated with a maximum size of `max_size` and can use fragments from the provided set.
 
@@ -70,7 +71,8 @@ function generate_random_program(
 end
 
 """
-    random_modify_children!(grammar::AbstractGrammar, node::RuleNode, config::FrAngelConfig, generate_with_angelic::Bool)
+    random_modify_children!(grammar::AbstractGrammar, node::RuleNode, config::FrAngelConfig, generate_with_angelic::Bool, 
+        angelic_conditions::AbstractVector{Union{Nothing,Int}})
 
 Randomly modifies the children of a given node. The modification can be either a new random program or a modification of the existing children.
 
@@ -84,7 +86,13 @@ Randomly modifies the children of a given node. The modification can be either a
 # Returns
 Modifies the `node` directly.
 """
-function random_modify_children!(grammar::AbstractGrammar, node::RuleNode, config::FrAngelConfig, generate_with_angelic::Float16, angelic_conditions::AbstractVector{Union{Nothing,Int}})
+function random_modify_children!(
+    grammar::AbstractGrammar,
+    node::RuleNode,
+    config::FrAngelConfig,
+    generate_with_angelic::Float16,
+    angelic_conditions::AbstractVector{Union{Nothing,Int}}
+)::Nothing
     for (index, child) in enumerate(node.children)
         if rand() < config.gen_similar_prob_new
             node.children[index] = generate_random_program(grammar, return_type(grammar, child), Set{RuleNode}(), config, generate_with_angelic, angelic_conditions, count_nodes(grammar, child) + config.similar_new_extra_size, true)

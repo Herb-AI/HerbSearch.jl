@@ -99,6 +99,10 @@ export
 
   resolve_angelic!,
   replace_next_angelic,
+  execute_angelic_on_input,
+  get_code_paths!,
+  create_angelic_expression,
+  clear_holes!,
 
   get_passed_tests,
   count_nodes,

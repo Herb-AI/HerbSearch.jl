@@ -1,5 +1,5 @@
 @kwdef struct FrAngelConfig
-    max_time::Float16 = 10
+    max_time::Float16 = 2
     angelic_max_time::Float16 = 0.1
     angelic_boolean_expr_max_size::Int = 6
     random_generation_max_size::Int = 40
@@ -43,22 +43,22 @@ function Base.iterate(iter::FrAngelIterator, state::FrAngelIteratorState)
             iter.config.random_generation_max_size
         )
         # If it does not pass any tests, discard
-        passed_tests = get_passed_tests(program, iter.grammar, iter.spec, iter.config.angelic_max_execute_attempts)
+        passed_tests = get_passed_tests(program, iter.grammar, iter.spec, iter.config.angelic_max_execute_attempts, iter.angelic_conditions)
         if !any(passed_tests)
             continue
         end
         # Contains angelic condition
         if contains_hole(program)
-            resolve_angelic!(program, state.fragments, passed_tests, iter.grammar, iter.spec, iter.config.angelic_max_time, 
-                iter.config.angelic_boolean_expr_max_size, 1, iter.config.angelic_max_execute_attempts)
+            resolve_angelic!(program, state.fragments, passed_tests, iter.grammar, iter.spec, iter.config.angelic_max_time,
+                iter.config.angelic_boolean_expr_max_size, 1, iter.config.angelic_max_execute_attempts, iter.angelic_conditions)
             # Still contains angelic conditions -> unresolved
             if contains_hole(program)
                 continue
             end
-            passed_tests = get_passed_tests(program, iter.grammar, iter.spec, iter.config.angelic_max_execute_attempts)
+            passed_tests = get_passed_tests(program, iter.grammar, iter.spec, iter.config.angelic_max_execute_attempts, iter.angelic_conditions)
         end
         program = simplify_quick(program, iter.grammar, iter.spec, passed_tests)
-        passed_tests = get_passed_tests(program, iter.grammar, iter.spec, iter.config.angelic_max_execute_attempts)
+        passed_tests = get_passed_tests(program, iter.grammar, iter.spec, iter.config.angelic_max_execute_attempts, iter.angelic_conditions)
         # Update iterator state (remembered programs and fragments)
         state.fragments = remember_programs!(state.remembered_programs, passed_tests, program, state.fragments, iter.grammar)
         if all(passed_tests)

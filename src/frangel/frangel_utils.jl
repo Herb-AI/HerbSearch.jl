@@ -1,5 +1,6 @@
 """
-    get_passed_tests(program::RuleNode, grammar::AbstractGrammar, tests::AbstractVector{<:IOExample}, angelic_max_execute_attempts::Int)::BitVector
+    get_passed_tests(program::RuleNode, grammar::AbstractGrammar, tests::AbstractVector{<:IOExample}, angelic_max_execute_attempts::Int, 
+        angelic_conditions::AbstractVector{Union{Nothing,Int}})::BitVector
 
 Runs the program with all provided tests.
 
@@ -8,22 +9,24 @@ Runs the program with all provided tests.
 - `grammar`: An `AbstractGrammar` object containing the grammar rules.
 - `tests`: A vector of `IOExample` objects representing the input-output test cases.
 - `angelic_max_execute_attempts`: An integer representing the maximum number of attempts to execute the program with angelic evaluation.
+- `angelic_conditions`: A vector of integers representing the index of the child to replace with an angelic condition for each rule. If there is no angelic condition for a rule, the value is set to `nothing`.
 
 # Returns
 A `BitVector` where each element corresponds to a test case, indicating whether the test passed (`true`) or not (`false`).
 """
-function get_passed_tests(program::RuleNode, grammar::AbstractGrammar, tests::AbstractVector{<:IOExample}, angelic_max_execute_attempts::Int)::BitVector
+function get_passed_tests(
+    program::RuleNode,
+    grammar::AbstractGrammar,
+    tests::AbstractVector{<:IOExample},
+    angelic_max_execute_attempts::Int,
+    angelic_conditions::AbstractVector{Union{Nothing,Int}}
+)::BitVector
     symboltable = SymbolTable(grammar)
     passed_tests = BitVector([false for i in tests])
     # If angelic -> evaluate optimistically
     if contains_hole(program)
         for (index, test) in enumerate(tests)
-            try
-                output = execute_angelic_on_input(symboltable, program, grammar, test.in, angelic_max_execute_attempts)
-                passed_tests[index] = output == test.out
-            catch _
-                passed_tests[index] = false
-            end
+            passed_tests[index] = execute_angelic_on_input(symboltable, program, grammar, test.in, output, angelic_max_execute_attempts, angelic_conditions)
         end
     else
         expr = rulenode2expr(program, grammar)
@@ -37,30 +40,6 @@ function get_passed_tests(program::RuleNode, grammar::AbstractGrammar, tests::Ab
         end
     end
     passed_tests
-end
-
-function execute_angelic_on_input(symboltable::SymbolTable, program::RuleNode, grammar::AbstractGrammar, input::Dict{Symbol,Any}, max_attempts::Int)
-    return nothing
-end
-
-function contains_if_statement(expr)
-    parsed_expr = Meta.parse(expr)
-    return contains_if(parsed_expr)
-end
-
-function contains_if(expr)
-    if expr isa Expr
-        if expr.head == :if
-            return true
-        else
-            for arg in expr.args
-                if contains_if(arg)
-                    return true
-                end
-            end
-        end
-    end
-    return false
 end
 
 # This could potentially go somewhere else, for instance in a generic util file
