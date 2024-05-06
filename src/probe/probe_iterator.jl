@@ -1,3 +1,9 @@
+"""
+    struct ProgramCache 
+
+Stores the evaluation cost and the program in a structure.
+This 
+"""
 struct ProgramCache
     program::RuleNode 
     correct_examples::Vector{Int}
@@ -10,10 +16,12 @@ function probe(examples::Vector{<:IOExample}, iterator::ProgramIterator, select:
     eval_cache = Set()
     state = nothing
     symboltable = SymbolTable(iterator.grammar)
+    # all partial solutions that were found so far
+    all_partial_solution  = Set{RuleNode}()
     # start next iteration while there is time left
     while time() - start_time < max_time
         i = 1
-        # partial solutions stores not only the program but also evaluation info
+        # partial solutions for the current synthesis cycle
         psol_with_eval_cache = Vector{ProgramCache}()
         next = state === nothing ? iterate(iterator) : iterate(iterator, state)
         while next !== nothing && i < iteration_size # run one iteration
@@ -39,8 +47,9 @@ function probe(examples::Vector{<:IOExample}, iterator::ProgramIterator, select:
             elseif eval_observation in eval_cache # result already in cache
                 next = iterate(iterator, state)
                 continue
-            elseif nr_correct_examples >= 1 # partial solution
+            elseif nr_correct_examples >= 1 && !(program ∈ all_partial_solution) # partial solution that did not appear before
                 program_cost = calculate_program_cost(program, iterator.grammar)
+                push!(all_partial_solution, program)
                 push!(psol_with_eval_cache, ProgramCache(program, correct_examples, program_cost))
             end
 
@@ -55,7 +64,7 @@ function probe(examples::Vector{<:IOExample}, iterator::ProgramIterator, select:
             return nothing
         end
 
-        partial_sols = select(psol_with_eval_cache) # select promising partial solutions
+        partial_sols = select(psol_with_eval_cache) # select promising partial solutions               
         # # update probabilites if any promising partial solutions
         # if !isempty(partial_sols)
         #     update!(iterator.grammar, partial_sols, eval_cache) # update probabilites
@@ -220,8 +229,7 @@ function calculate_rule_cost_size(rule_index, grammar)
     return 1
 end
 
-# TODO: Have a nice way to switch from cost_size to cost_prob using multiple dispath maybe
-calculate_rule_cost(rule_index, grammar::ContextSensitiveGrammar) = calculate_rule_cost_size(rule_index, grammar)
+calculate_rule_cost(rule_index::Int, grammar::ContextSensitiveGrammar) = calculate_rule_cost_size(rule_index, grammar)
 
 """
     calculate_program_cost(program::RuleNode, grammar::ContextSensitiveGrammar)  
