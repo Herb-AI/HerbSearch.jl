@@ -197,15 +197,7 @@ function Base.iterate(iter::TopDownIterator)
     # Priority queue with `SolverState`s (for variable shaped trees) and `UniformIterator`s (for fixed shaped trees)
     pq :: PriorityQueue{Union{SolverState, UniformIterator}, Union{Real, Tuple{Vararg{Real}}}} = PriorityQueue()
 
-    #TODO: instantiating the solver should be in the program iterator macro
-    if isnothing(iter.solver)
-        iter.solver = GenericSolver(iter.grammar, iter.sym)
-    end
-
-    #TODO: these attributes should be part of the solver, not of the iterator
     solver = iter.solver
-    solver.max_size = iter.max_size
-    solver.max_depth = iter.max_depth
 
     if isfeasible(solver)
         enqueue!(pq, get_state(solver), priority_function(iter, get_grammar(solver), get_tree(solver), 0, false))
