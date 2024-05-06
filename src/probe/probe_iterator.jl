@@ -13,7 +13,7 @@ end
 select(partial_sols::Vector{HerbSearch.ProgramCache}) = HerbSearch.selectpsol_largest_subset(partial_sols) 
 update!(grammar::ContextSensitiveGrammar, PSols_with_eval_cache::Vector{ProgramCache}, examples::Vector{<:IOExample}) = update_grammar(grammar,PSols_with_eval_cache, examples)
 
-function probe(examples::Vector{<:IOExample}, iterator::ProgramIterator, select::Function, update!::Function, max_time::Int, iteration_size::Int)
+function probe(examples::Vector{<:IOExample}, iterator::ProgramIterator, max_time::Int, iteration_size::Int)
     start_time = time()
     # store a set of all the results of evaluation programs
     eval_cache = Set()
@@ -83,6 +83,7 @@ function probe(examples::Vector{<:IOExample}, iterator::ProgramIterator, select:
 end
 
 function update_grammar(grammar::ContextSensitiveGrammar, PSols_with_eval_cache::Vector{ProgramCache}, examples::Vector{<:IOExample})
+    sum = 0
     for rule_index in eachindex(grammar.rules) # iterate for each rule_index 
         highest_correct_nr = 0
         for psol in PSols_with_eval_cache
@@ -100,15 +101,20 @@ function update_grammar(grammar::ContextSensitiveGrammar, PSols_with_eval_cache:
         p_uniform = 1 / length(grammar.rules)
       
         # compute (log2(p_u) ^ (1 - fit)) = (1-fit) * log2(p_u)
+        sum+=p_uniform^(1-fitnes)
         log_prob = ((1 - fitnes) * log(2, p_uniform)) #/Z figure out the Z
         grammar.log_probabilities[rule_index] = log_prob
     end
+    for rule_index in eachindex(grammar.rules)
+        grammar.log_probabilities[rule_index] = grammar.log_probabilities[rule_index] - log(2, sum)
+    end
+    println(map(x -> rulenode2expr(x.program, grammar), PSols_with_eval_cache))
     for i in 1:6
-        print(grammar.log_probabilities[i])
+        print("$(grammar.log_probabilities[i])  ")
     end
     println()
     for i in 1:6
-        print(2 ^ (-1* grammar.log_probabilities[i]))
+        print("$(2 ^ (grammar.log_probabilities[i]))  ")
     end
     println()
 end
