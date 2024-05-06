@@ -43,7 +43,8 @@ function Base.iterate(iter::FrAngelIterator, state::FrAngelIteratorState)
             iter.config.random_generation_max_size
         )
         # If it does not pass any tests, discard
-        passed_tests = get_passed_tests(program, iter.grammar, iter.spec, iter.config.angelic_max_execute_attempts, iter.angelic_conditions)
+        passed_tests = get_passed_tests(program, iter.grammar, iter.spec, iter.config.angelic_max_execute_attempts, 
+            iter.angelic_conditions, iter.config.angelic_max_allowed_fails)
         if !any(passed_tests)
             continue
         end
@@ -55,11 +56,14 @@ function Base.iterate(iter::FrAngelIterator, state::FrAngelIteratorState)
             if contains_hole(program)
                 continue
             end
-            passed_tests = get_passed_tests(program, iter.grammar, iter.spec, iter.config.angelic_max_execute_attempts, iter.angelic_conditions)
+            passed_tests = get_passed_tests(program, iter.grammar, iter.spec, 
+                iter.config.angelic_max_execute_attempts, iter.angelic_conditions, iter.config.angelic_max_allowed_fails)
         end
         program = simplify_quick(program, iter.grammar, iter.spec, passed_tests)
-        passed_tests = get_passed_tests(program, iter.grammar, iter.spec, iter.config.angelic_max_execute_attempts, iter.angelic_conditions)
-        # Update iterator state (remembered programs and fragments)
+        passed_tests = get_passed_tests(program, iter.grammar, iter.spec, 
+            iter.config.angelic_max_execute_attempts, iter.angelic_conditions, iter.config.angelic_max_allowed_fails)
+        
+            # Update iterator state (remembered programs and fragments)
         state.fragments = remember_programs!(state.remembered_programs, passed_tests, program, state.fragments, iter.grammar)
         if all(passed_tests)
             return program, state # simplify_slow(program), state

@@ -1,6 +1,6 @@
 """
     get_passed_tests(program::RuleNode, grammar::AbstractGrammar, tests::AbstractVector{<:IOExample}, angelic_max_execute_attempts::Int, 
-        angelic_conditions::AbstractVector{Union{Nothing,Int}})::BitVector
+        angelic_conditions::AbstractVector{Union{Nothing,Int}}, angelic_max_allowed_fails::Float16)::BitVector
 
 Runs the program with all provided tests.
 
@@ -10,6 +10,7 @@ Runs the program with all provided tests.
 - `tests`: A vector of `IOExample` objects representing the input-output test cases.
 - `angelic_max_execute_attempts`: An integer representing the maximum number of attempts to execute the program with angelic evaluation.
 - `angelic_conditions`: A vector of integers representing the index of the child to replace with an angelic condition for each rule. If there is no angelic condition for a rule, the value is set to `nothing`.
+- `angelic_max_allowed_fails`: The maximum allowed fraction of failed tests.
 
 # Returns
 A `BitVector` where each element corresponds to a test case, indicating whether the test passed (`true`) or not (`false`).
@@ -19,14 +20,22 @@ function get_passed_tests(
     grammar::AbstractGrammar,
     tests::AbstractVector{<:IOExample},
     angelic_max_execute_attempts::Int,
-    angelic_conditions::AbstractVector{Union{Nothing,Int}}
+    angelic_conditions::AbstractVector{Union{Nothing,Int}},
+    angelic_max_allowed_fails::Float16
 )::BitVector
     symboltable = SymbolTable(grammar)
     passed_tests = BitVector([false for i in tests])
     # If angelic -> evaluate optimistically
     if contains_hole(program)
+        fails = 0
         for (index, test) in enumerate(tests)
             passed_tests[index] = execute_angelic_on_input(symboltable, program, grammar, test.in, output, angelic_max_execute_attempts, angelic_conditions)
+            if !passed_tests[index]
+                fails += 1
+                if angelic_max_allowed_fails < fails / length(tests)
+                    return BitVector([false for i in tests])
+                end
+            end
         end
     else
         expr = rulenode2expr(program, grammar)

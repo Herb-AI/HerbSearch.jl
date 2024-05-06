@@ -1,6 +1,7 @@
 """
     resolve_angelic!(program::RuleNode, fragments::Set{RuleNode}, passing_tests::BitVector, grammar::AbstractGrammar, tests::AbstractVector{<:IOExample}, 
-        max_time::Float16, boolean_expr_max_size::Int, replacement_dir::Int, angelic_max_execute_attempts::Int, angelic_conditions::AbstractVector{Union{Nothing,Int}})::RuleNode
+        max_time::Float16, boolean_expr_max_size::Int, replacement_dir::Int, angelic_max_execute_attempts::Int, 
+        angelic_conditions::AbstractVector{Union{Nothing,Int}}, angelic_max_allowed_fails::Float16)::RuleNode
 
 Resolve angelic values in the given program by generating random boolean expressions and replacing the angelic holes.
 
@@ -15,6 +16,7 @@ Resolve angelic values in the given program by generating random boolean express
 - `replacement_dir`: The direction of replacement; 1 for top-down, -1 for bottom-up.
 - `angelic_max_execute_attempts`: An integer representing the maximum number of attempts to execute the program with angelic evaluation.
 - `angelic_conditions`: A vector of integers representing the index of the child to replace, and the condition's type, with an angelic condition for each rule. If there is no angelic condition for a rule, the value is set to `nothing`.
+- `angelic_max_allowed_fails`: The maximum allowed fraction of failed tests.
 
 # Returns
 The resolved program with angelic values replaced, or an unresoled program if it times out.
@@ -29,7 +31,8 @@ function resolve_angelic!(
     boolean_expr_max_size::Int,
     replacement_dir::Int, # Direction of replacement; 1 -> top-down, -1 -> bottom-up
     angelic_max_execute_attempts::Int,
-    angelic_conditions::AbstractVector{Union{Nothing,Int}}
+    angelic_conditions::AbstractVector{Union{Nothing,Int}},
+    angelic_max_allowed_fails::Float16
 )::RuleNode
     num_holes = number_of_holes(program)
     # Which hole to be replaced; if top-down -> first one; else -> last one
@@ -40,7 +43,7 @@ function resolve_angelic!(
         while time() - start_time < max_time
             boolean_expr = generate_random_program(grammar, :Bool, fragments, config, false, Vector{Union{Nothing,Int}}(), boolean_expr_max_size)
             new_program = replace_next_angelic(program, boolean_expr, replacement_index)
-            new_tests = get_passed_tests(new_program, grammar, tests, angelic_max_execute_attempts, angelic_conditions)
+            new_tests = get_passed_tests(new_program, grammar, tests, angelic_max_execute_attempts, angelic_conditions, angelic_max_allowed_fails)
             # If the new program passes all the tests the original program did, replacement is successful
             if all(passing_tests .== (passing_tests .& new_tests))
                 program = new_program
@@ -53,7 +56,8 @@ function resolve_angelic!(
         if !success && replacement_dir == -1
             return program
         elseif !success
-            return resolve_angelic!(program, fragments, passing_tests, grammar, tests, max_time, boolean_expr_max_size, -1, angelic_max_execute_attempts, angelic_conditions)
+            return resolve_angelic!(program, fragments, passing_tests, grammar, tests, max_time, boolean_expr_max_size, -1, 
+                angelic_max_execute_attempts, angelic_conditions, angelic_max_allowed_fails)
         else
             num_holes -= 1
         end
@@ -76,6 +80,7 @@ The modified program with the replacement.
 """
 function replace_next_angelic(program::RuleNode, boolean_expr::RuleNode, replacement_index::Int)::RuleNode
     new_program = deepcopy(program)
+    # BFS traversal
     queue = [new_program]
     while !isempty(queue)
         node = dequeue!(queue)
@@ -164,7 +169,7 @@ function create_angelic_expression(
     end
     clear_holes!(new_program, angelic_conditions)
 
-    angelic_expr = rulenode2expr(new_program, angelic_grammar)
+    expr = rulenode2expr(new_program, angelic_grammar)
     update_path = :(
         function update_✝γ_path()
             # If attempted flow already completed - append `false` until return
@@ -179,13 +184,17 @@ function create_angelic_expression(
             res == "1"
         end
     )
-    final_angelic_expr = quote
+    angelic_expr = quote
         ✝γ_actual_code_path = ""
         $update_path
-        out = $angelic_expr
-        return out, ✝γ_actual_code_path
+        try
+            out = $expr
+            return out, ✝γ_actual_code_path
+        catch _
+            return nothing, ✝γ_actual_code_path
+        end
     end
-    return final_angelic_expr
+    angelic_expr
 end
 
 function clear_holes!(program::RuleNode, angelic_conditions::AbstractVector{Union{Nothing,Int}})
