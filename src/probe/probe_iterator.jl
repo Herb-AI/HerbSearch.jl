@@ -17,7 +17,7 @@ function probe(examples::Vector{<:IOExample}, iterator::ProgramIterator, select:
     state = nothing
     symboltable = SymbolTable(iterator.grammar)
     # all partial solutions that were found so far
-    all_partial_solution  = Set{RuleNode}()
+    all_selected_psols  = Set{RuleNode}()
     # start next iteration while there is time left
     while time() - start_time < max_time
         i = 1
@@ -47,9 +47,8 @@ function probe(examples::Vector{<:IOExample}, iterator::ProgramIterator, select:
             elseif eval_observation in eval_cache # result already in cache
                 next = iterate(iterator, state)
                 continue
-            elseif nr_correct_examples >= 1 && !(program ∈ all_partial_solution) # partial solution that did not appear before
+            elseif nr_correct_examples >= 1 # partial solution 
                 program_cost = calculate_program_cost(program, iterator.grammar)
-                push!(all_partial_solution, program)
                 push!(psol_with_eval_cache, ProgramCache(program, correct_examples, program_cost))
             end
 
@@ -63,8 +62,11 @@ function probe(examples::Vector{<:IOExample}, iterator::ProgramIterator, select:
         if next === nothing
             return nothing
         end
-
-        partial_sols = select(psol_with_eval_cache) # select promising partial solutions               
+        # select promising partial solutions that did not appear before              
+        partial_sols = filter(x -> x.program ∉ all_selected_psols, select(psol_with_eval_cache))
+        if !isempty(partial_sols)
+            push!(all_selected_psols, map(x -> x.program, partial_sols))
+        end
         # # update probabilites if any promising partial solutions
         # if !isempty(partial_sols)
         #     update!(iterator.grammar, partial_sols, eval_cache) # update probabilites
