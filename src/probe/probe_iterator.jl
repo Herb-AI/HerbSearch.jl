@@ -65,7 +65,7 @@ function probe(examples::Vector{<:IOExample}, iterator::ProgramIterator, select:
         # select promising partial solutions that did not appear before              
         partial_sols = filter(x -> x.program ∉ all_selected_psols, select(psol_with_eval_cache))
         if !isempty(partial_sols)
-            push!(all_selected_psols, map(x -> x.program, partial_sols))
+            push!(all_selected_psols, map(x -> x.program, partial_sols)...)
         end
         # # update probabilites if any promising partial solutions
         # if !isempty(partial_sols)
