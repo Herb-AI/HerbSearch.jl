@@ -56,7 +56,7 @@ function resolve_angelic!(
         if !success && replacement_dir == -1
             return program
         elseif !success
-            return resolve_angelic!(program, fragments, passing_tests, grammar, tests, max_time, boolean_expr_max_size, -1, 
+            return resolve_angelic!(program, fragments, passing_tests, grammar, tests, max_time, boolean_expr_max_size, -1,
                 angelic_max_execute_attempts, angelic_conditions, angelic_max_allowed_fails)
         else
             num_holes -= 1
@@ -109,23 +109,26 @@ function execute_angelic_on_input(
     angelic_conditions::AbstractVector{Union{Nothing,Int}}
 )::Any
     num_true, attempts = 0, 0
+    symboltable[:update_✝γ_path] = update_✝γ_path
     visited = DataStructures.Trie{Bool}()
     expr = create_angelic_expression(program, grammar, angelic_conditions)
     while num_true < max_attempts
-        code_paths = Vector{String}[]
+        code_paths = Vector{Vector{Char}}()
         get_code_paths!(num_true, "", visited, code_paths, max_attempts - attempts)
         for code_path in code_paths
-            final_expr = quote
+            actual_code_path = Vector{Char}()
+            angelic_expr = quote
+                ✝γ_actual_code_path = $actual_code_path
                 ✝γ_code_path = $code_path
                 $expr
             end
             try
-                output, actual_path = execute_on_input(symboltable, final_expr, input)
-                visited[actual_path] = true
+                output = execute_on_input(symboltable, angelic_expr, input)
                 if output == expected_output
                     return true
                 end
             finally
+                visited[String(actual_path)] = true
                 attempts += 1
             end
         end
@@ -136,65 +139,40 @@ end
 
 function get_code_paths!(
     num_true::Int,
-    curr::String,
+    curr::Vector{Char},
     visited::DataStructures.Trie{Bool},
     code_paths::Vector{String},
     max_attempts::Int
 )
-    if (length(curr) >= max_attempts || any(v -> v.is_key, partial_path(visited, curr)))
+    str_curr = String(curr)
+    if (length(curr) >= max_attempts || any(v -> v.is_key, partial_path(visited, str_curr)))
         return
     end
     if num_true == 0
-        push!(code_paths, "")
+        push!(code_paths, curr)
         return
     end
-    curr *= "1"
+    push!(curr, '1')
     get_code_paths!(num_true - 1, curr, visited, code_paths, max_attempts)
-    curr[length(curr)] = "0"
+    curr[length(curr)] = '0'
     get_code_paths!(num_true, curr, visited, code_paths, max_attempts)
-    chop(curr)
+    pop!(curr)
 end
 
 function create_angelic_expression(
     program::RuleNode,
     grammar::AbstractGrammar,
     angelic_conditions::AbstractVector{Union{Nothing,Int}}
-)::RuleNode
+)::Expr
     new_program = deepcopy(program)
     angelic_grammar = deepcopy(grammar)
     for child_index in angelic_conditions
         if child_index !== nothing
-            angelic_grammar.rules[rule_index][child_index] = :(update_✝γ_path())
+            angelic_grammar.rules[rule_index][child_index] = :(update_✝γ_path(✝γ_code_path, ✝γ_actual_code_path))
         end
     end
     clear_holes!(new_program, angelic_conditions)
-
-    expr = rulenode2expr(new_program, angelic_grammar)
-    update_path = :(
-        function update_✝γ_path()
-            # If attempted flow already completed - append `false` until return
-            if length(✝γ_code_path) == 0
-                ✝γ_actual_code_path *= "0"
-                return false
-            end
-            # Else take next and append to actual path
-            res = ✝γ_code_path[1]
-            ✝γ_code_path = ✝γ_code_path[2:end]
-            ✝γ_actual_code_path *= res
-            res == "1"
-        end
-    )
-    angelic_expr = quote
-        ✝γ_actual_code_path = ""
-        $update_path
-        try
-            out = $expr
-            return out, ✝γ_actual_code_path
-        catch _
-            return nothing, ✝γ_actual_code_path
-        end
-    end
-    angelic_expr
+    rulenode2expr(new_program, angelic_grammar)
 end
 
 function clear_holes!(program::RuleNode, angelic_conditions::AbstractVector{Union{Nothing,Int}})
@@ -207,4 +185,17 @@ function clear_holes!(program::RuleNode, angelic_conditions::AbstractVector{Unio
             clear_holes!(ch, angelic_conditions)
         end
     end
+end
+
+function update_✝γ_path(✝γ_code_path::Vector{Char}, ✝γ_actual_code_path::Vector{Char})::Bool
+    # If attempted flow already completed - append `false` until return
+    if length(✝γ_code_path) == 0
+        push!(✝γ_actual_code_path, '0')
+        return false
+    end
+    # Else take next and append to actual path
+    res = ✝γ_code_path[1]
+    popfirst!(✝γ_code_path)
+    push!(✝γ_actual_code_path, res)
+    res == '1'
 end
