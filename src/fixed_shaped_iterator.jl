@@ -84,7 +84,6 @@ function _find_next_complete_tree(
             continue
         elseif hole_res isa HoleReference
             # UniformHole was found
-            # TODO: problem. this 'hole' is tied to a target state. it should be state independent
             (; hole, path) = hole_res
     
             rules = findall(hole.domain)

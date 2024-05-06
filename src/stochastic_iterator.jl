@@ -59,12 +59,10 @@ function Base.iterate(iter::StochasticSearchIterator)
     grammar, max_depth = iter.grammar, iter.max_depth
 
 
-    #TODO: instantiating the solver should be in the program iterator macro
     if isnothing(iter.solver)
         iter.solver = GenericSolver(iter.grammar, iter.sym)
     end
 
-    #TODO: these attributes should be part of the solver, not of the iterator
     solver = iter.solver
     solver.max_size = iter.max_size
     solver.max_depth = iter.max_depth
