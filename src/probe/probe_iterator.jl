@@ -209,19 +209,6 @@ function Base.iterate(iter::GuidedSearchIterator, state::GuidedSearchState)
     return iterate(iter, state)
 end
 
-@programiterator ProbeSearchIterator(
-    spec::Vector{<:IOExample},
-    cost_function::Function,
-    level_limit = 8
-) 
-
-@kwdef mutable struct ProbeSearchState 
-    level::Int64
-    bank::Vector{Vector{RuleNode}}
-    eval_cache::Set
-    partial_sols::Vector{RuleNode} 
-end
-
 function calculate_rule_cost_prob(rule_index, grammar)
     log_prob = grammar.log_probabilities[rule_index]
     return convert(Int64,round(-log_prob))
@@ -286,56 +273,3 @@ function newprograms(grammar, level, bank)
 
     return arr
 end
-
-function Base.iterate(iter::ProbeSearchIterator)
-    iterate(iter, ProbeSearchState(
-        level = 0,
-        bank = Vector(),
-        eval_cache = Set(), 
-        partial_sols = Vector() 
-        )
-    )
-end
-
-function Base.iterate(iter::ProbeSearchIterator, state::ProbeSearchState)
-    # mutate state in place
-    start_level = state.level
-    start_time = time()
-    symboltable = SymbolTable(iter.grammar)
-    while state.level <= start_level + iter.level_limit
-        # add another level to the bank that is empty
-        push!(state.bank,[])
-        new_programs = newprograms(iter.grammar, state.level, state.bank)
-        if time() - start_time >= 10
-            @warn "Probe took more than 10 seconds to run..."
-            return (nothing, state)
-        end
-        for program ∈ new_programs
-            # a list with all the outputs
-            eval_observation = []
-            nr_correct_examples = 0
-            expr = rulenode2expr(program, iter.grammar)
-            for example ∈ iter.spec
-                output = execute_on_input(symboltable, expr, example.in)
-                push!(eval_observation, output)
-
-                if output == example.out
-                    nr_correct_examples += 1
-                end
-            end
-            if nr_correct_examples == length(iter.spec)
-                # done
-                return (program, state)
-            elseif eval_observation in state.eval_cache
-                continue
-            elseif nr_correct_examples >= 1
-                push!(state.partial_sols, program)
-            end
-            push!(state.bank[state.level + 1], program)
-            push!(state.eval_cache,  eval_observation)
-        end
-        state.level = state.level + 1
-    end
-    return (nothing, state)
-end
-
