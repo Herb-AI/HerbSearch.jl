@@ -209,19 +209,6 @@ function Base.iterate(iter::GuidedSearchIterator, state::GuidedSearchState)
     return iterate(iter, state)
 end
 
-@programiterator ProbeSearchIterator(
-    spec::Vector{<:IOExample},
-    cost_function::Function,
-    level_limit = 8
-) 
-
-@kwdef mutable struct ProbeSearchState 
-    level::Int64
-    bank::Vector{Vector{RuleNode}}
-    eval_cache::Set
-    partial_sols::Vector{RuleNode} 
-end
-
 function calculate_rule_cost_prob(rule_index, grammar)
     log_prob = grammar.log_probabilities[rule_index]
     return convert(Int64,round(-log_prob))
