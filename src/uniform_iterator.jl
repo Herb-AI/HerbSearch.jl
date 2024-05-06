@@ -148,7 +148,7 @@ Base.eltype(::UniformIterator) = Union{RuleNode, StateHole}
 
 function Base.iterate(iter::UniformIterator)
     solution = next_solution!(iter)
-    if solution
+    if !isnothing(solution)
         return solution, nothing
     end
     return nothing 
