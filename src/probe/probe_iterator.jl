@@ -10,6 +10,9 @@ struct ProgramCache
     cost::Int
 end
 
+select(partial_sols::Vector{HerbSearch.ProgramCache}) = HerbSearch.selectpsol_largest_subset(partial_sols) 
+update!(grammar::ContextSensitiveGrammar, PSols_with_eval_cache::Vector{ProgramCache}, examples::Vector{<:IOExample}) = update_grammar(grammar,PSols_with_eval_cache, examples)
+
 function probe(examples::Vector{<:IOExample}, iterator::ProgramIterator,  max_time::Int, iteration_size::Int)
     start_time = time()
     # store a set of all the results of evaluation programs
@@ -70,7 +73,7 @@ function probe(examples::Vector{<:IOExample}, iterator::ProgramIterator,  max_ti
         end
         # # update probabilites if any promising partial solutions
         if !isempty(partial_sols) # && updated == true
-            update_grammar(iterator.grammar, partial_sols, examples) # update probabilites
+            update!(iterator.grammar, partial_sols, examples) # update probabilites
             # restart iterator
             eval_cache = Set() 
             state = nothing
