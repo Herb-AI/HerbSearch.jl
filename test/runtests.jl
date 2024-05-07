@@ -22,6 +22,7 @@ Random.seed!(1234)
     include("test_forbidden.jl")
     include("test_ordered.jl")
     include("test_contains.jl")
+    include("test_contains_subtree.jl")
     include("test_unique.jl")
 
     # Excluded because it contains long tests
