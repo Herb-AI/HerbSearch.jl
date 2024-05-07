@@ -113,9 +113,10 @@ Returns the best program within the population with respect to the fitness funct
 function get_best_program(population::Array{RuleNode}, iter::GeneticSearchIterator)::RuleNode
     best_program = nothing
     best_fitness = 0
+    grammar = get_grammar(iter.solver)
     for index ∈ eachindex(population)
         chromosome = population[index]
-        zipped_outputs = zip([example.out for example in iter.spec], execute_on_input(iter.grammar, chromosome, [example.in for example in iter.spec]))
+        zipped_outputs = zip([example.out for example in iter.spec], execute_on_input(grammar, chromosome, [example.in for example in iter.spec]))
         fitness_value = fitness(iter, chromosome, collect(zipped_outputs))
         if isnothing(best_program) 
             best_fitness = fitness_value
@@ -137,13 +138,14 @@ Iterates the search space using a genetic algorithm. First generates a populatio
 """
 function Base.iterate(iter::GeneticSearchIterator)
     validate_iterator(iter)
-    grammar = iter.grammar
+    grammar = get_grammar(iter.solver)
     
     population = Vector{RuleNode}(undef,iter.population_size)
 
+    start_symbol = get_starting_symbol(iter.solver)
     for i in 1:iter.population_size
         # sample a random nodes using start symbol and grammar
-        population[i] = rand(RuleNode, grammar, iter.sym, iter.maximum_initial_population_depth)
+        population[i] = rand(RuleNode, grammar, start_symbol, iter.maximum_initial_population_depth)
     end 
     best_program = get_best_program(population, iter)
     return (best_program, GeneticIteratorState(population))
@@ -160,7 +162,7 @@ function Base.iterate(iter::GeneticSearchIterator, current_state::GeneticIterato
     current_population = current_state.population
 
     # Calculate fitness
-    zipped_outputs(chromosome) = zip([example.out for example in iter.spec], execute_on_input(iter.grammar, chromosome, [example.in for example in iter.spec]))
+    zipped_outputs(chromosome) = zip([example.out for example in iter.spec], execute_on_input(get_grammar(iter.solver), chromosome, [example.in for example in iter.spec]))
     fitness_array = [fitness(iter, chromosome, collect(zipped_outputs(chromosome))) for chromosome in current_population]
     
     new_population = Vector{RuleNode}(undef,iter.population_size)
@@ -187,7 +189,7 @@ function Base.iterate(iter::GeneticSearchIterator, current_state::GeneticIterato
     for chromosome in new_population
         random_number = rand()
         if random_number < iter.mutation_probability
-            mutate!(iter, chromosome, iter.grammar)
+            mutate!(iter, chromosome, get_grammar(iter.solver))
         end
     end
 

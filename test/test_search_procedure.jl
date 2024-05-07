@@ -19,8 +19,8 @@
     @testset "Search max_enumerations stopping condition" begin
         problem = Problem([IOExample(Dict(:x => x), 2x+1) for x ∈ 1:5])
 
-        iterator = BFSIterator(g₁, :Number, max_enumerations=5)
-        solution, flag = synth(problem, iterator)
+        iterator = BFSIterator(g₁, :Number)
+        solution, flag = synth(problem, iterator, max_enumerations=5)
 
         @test flag == suboptimal_program
     end
@@ -53,9 +53,9 @@
 
     @testset "Search_best max_enumerations stopping condition" begin
         problem = Problem([IOExample(Dict(:x => x), 2x-1) for x ∈ 1:5])
-        iterator = BFSIterator(g₁, :Number, max_enumerations=3)
+        iterator = BFSIterator(g₁, :Number)
 
-        solution, flag = synth(problem, iterator)
+        solution, flag = synth(problem, iterator, max_enumerations=3)
         program = rulenode2expr(solution, g₁)
 
 
