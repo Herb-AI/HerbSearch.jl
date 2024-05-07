@@ -33,7 +33,7 @@ Tests if propagating the constraint during a top-down iteration yields the corre
 
 Does two searches and tests if they have the same amount of programs:
 - without the constraint and retrospectively applying the constraint
-- propagating the constraints during search
+- propagating the constraint during search
 
 It is also assumed that the constraint on the grammar is non-trivial, that is:
 -  at least 1 program satisfies the constraint
