@@ -17,6 +17,7 @@ mutable struct UniformIterator
     solver::UniformSolver
     outeriter::Union{ProgramIterator, Nothing}
     unvisited_branches::Stack{Vector{Branch}}
+    stateholes::Vector{StateHole}
     nsolutions::Int
 end
 
@@ -26,14 +27,31 @@ end
 Constructs a new UniformIterator that traverses solutions of the [`UniformSolver`](@ref) and is an inner iterator of an outer [`ProgramIterator`](@ref).
 """
 function UniformIterator(solver::UniformSolver, outeriter::Union{ProgramIterator, Nothing})
-    iter = UniformIterator(solver, outeriter, Stack{Vector{Branch}}(), 0)
+    iter = UniformIterator(solver, outeriter, Stack{Vector{Branch}}(), Vector{StateHole}(), 0)
     if isfeasible(solver)
         # create search-branches for the root search-node
         save_state!(solver)
+        set_stateholes!(iter, get_tree(solver))
         push!(iter.unvisited_branches, generate_branches(iter))
     end
     return iter
 end
+
+
+"""
+    function set_stateholes!(iter::UniformIterator, node::Union{StateHole, RuleNode})::Vector{StateHole}
+
+Does a dfs to retrieve all unfilled state holes in the program tree and stores them in the `stateholes` vector.
+"""
+function set_stateholes!(iter::UniformIterator, node::Union{StateHole, RuleNode})
+    if node isa StateHole && size(node.domain) > 1
+        push!(iter.stateholes, node)
+    end
+    for child ∈ node.children
+        set_stateholes!(iter, child)
+    end
+end
+
 
 """
 Returns a vector of disjoint branches to expand the search tree at its current state.
@@ -51,26 +69,21 @@ If we split on the first hole, this function will create three branches.
 - `(firsthole, 5)`
 """
 function generate_branches(iter::UniformIterator)::Vector{Branch}
-    @assert isfeasible(iter.solver)
-    function _dfs(node::Union{StateHole, RuleNode})
-        if node isa StateHole && size(node.domain) > 1
+    #iterate over all the state holes in the tree
+    for hole ∈ iter.stateholes
+        #pick an unfilled state hole
+        if size(hole.domain) > 1
             #skip the derivation_heuristic if the parent_iterator is not set up
             if isnothing(iter.outeriter)
-                return [(node, rule) for rule ∈ node.domain]
+                return [(hole, rule) for rule ∈ hole.domain]
             end
             #reversing is needed because we pop and consider the rightmost branch first
-            return reverse!([(node, rule) for rule ∈ derivation_heuristic(iter.outeriter, findall(node.domain))])
+            return reverse!([(hole, rule) for rule ∈ derivation_heuristic(iter.outeriter, findall(hole.domain))])
         end
-        for child ∈ node.children
-            branches = _dfs(child)
-            if !isempty(branches)
-                return branches
-            end
-        end
-        return NOBRANCHES
     end
-    return _dfs(get_tree(iter.solver))
+    return NOBRANCHES
 end
+
 
 """
     next_solution!(iter::UniformIterator)::Union{RuleNode, StateHole, Nothing}
@@ -98,16 +111,16 @@ function next_solution!(iter::UniformIterator)::Union{RuleNode, StateHole, Nothi
                 if length(branches) == 0
                     # search node is a solution leaf node, return the solution
                     iter.nsolutions += 1
-                    track!(solver.statistics, "#CompleteTrees")
+                    track!(solver, "#CompleteTrees")
                     return solver.tree
                 else
                     # search node is an (non-root) internal node, store the branches to visit
-                    track!(solver.statistics, "#InternalSearchNodes")
+                    track!(solver, "#InternalSearchNodes")
                     push!(iter.unvisited_branches, branches)
                 end
             else
                 # search node is an infeasible leaf node, backtrack
-                track!(solver.statistics, "#InfeasibleTrees")
+                track!(solver, "#InfeasibleTrees")
                 restore!(solver)
             end
         else
@@ -121,12 +134,13 @@ function next_solution!(iter::UniformIterator)::Union{RuleNode, StateHole, Nothi
         if _isfilledrecursive(solver.tree)
             # search node is the root and the only solution, return the solution.
             iter.nsolutions += 1
-            track!(solver.statistics, "#CompleteTrees")
+            track!(solver, "#CompleteTrees")
             return solver.tree
         end
     end
     return nothing
 end
+
 
 """
     Base.length(iter::UniformIterator)    

@@ -56,7 +56,7 @@ export
   optimal_program,
   suboptimal_program,
 
-  FixedShapedIterator, #TODO: deprecated after the cp thesis
+  FixedShapedIterator,
   UniformIterator,
   next_solution!,
 
