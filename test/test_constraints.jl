@@ -1,0 +1,79 @@
+using HerbCore, HerbGrammar, HerbConstraints
+
+@testset verbose=true "Constraints" begin
+
+    function new_grammar()
+        grammar = @csgrammar begin
+            Int = 1
+            Int = x
+            Int = -Int
+            Int = Int + Int
+            Int = Int * Int
+        end
+        clearconstraints!(grammar)
+        return grammar
+    end
+
+    contains_subtree = ContainsSubtree(RuleNode(4, [
+        RuleNode(1),
+        RuleNode(1)
+    ]))
+
+    contains_subtree2 = ContainsSubtree(RuleNode(4, [
+        RuleNode(4, [
+            VarNode(:a),
+            RuleNode(2)
+        ]),
+        VarNode(:a)
+    ]))
+
+    contains = Contains(2)
+
+    forbidden_sequence = ForbiddenSequence([4, 5])
+
+    forbidden_sequence2 = ForbiddenSequence([4, 5], ignore_if=[3])
+
+    forbidden = Forbidden(RuleNode(3, [RuleNode(3, [VarNode(:a)])]))
+
+    forbidden2 = Forbidden(RuleNode(4, [
+        VarNode(:a),
+        VarNode(:a)
+    ]))
+
+    ordered = Ordered(RuleNode(5, [
+        VarNode(:a),
+        VarNode(:b)
+    ]), [:a, :b])
+
+    unique = Unique(2)
+
+    all_constraints = [
+        ("ContainsSubtree", contains_subtree),
+        ("ContainsSubtree2", contains_subtree2),
+        ("Contains", contains),
+        ("ForbiddenSequence", forbidden_sequence),
+        ("ForbiddenSequence2", forbidden_sequence2),
+        ("Forbidden", forbidden),
+        ("Forbidden2", forbidden2),
+        ("Ordered", ordered),
+        ("Unique", unique)
+    ]
+
+    @testset "1 constraint" begin
+        @testset "$name" for (name, constraint) ∈ all_constraints
+            test_constraint!(new_grammar(), constraint, max_size=6, allow_trivial=false)
+        end
+    end
+
+    @testset "$n constraints" for n ∈ 2:5
+        for _ ∈ 1:10
+            indices = randperm(length(all_constraints))[1:n]
+            names = [n for (n, _) ∈ all_constraints[indices]]
+            constraints = [c for (_, c) ∈ all_constraints[indices]]
+    
+            @testset "$names" begin
+                test_constraints!(new_grammar(), constraints, max_size=6, allow_trivial=true)
+            end
+        end
+    end
+end
