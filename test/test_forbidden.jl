@@ -11,14 +11,14 @@ using HerbCore, HerbGrammar, HerbConstraints
         end
 
         #without constraints
-        iter = BFSIterator(grammar, :Number, solver=GenericSolver(grammar, :Number), max_depth=3)
+        iter = BFSIterator(grammar, :Number, max_depth=3)
         @test length(iter) == 202
         
         constraint = Forbidden(RuleNode(4, [RuleNode(1), RuleNode(1)]))
         addconstraint!(grammar, constraint)
 
         #with constraints
-        iter = BFSIterator(grammar, :Number, solver=GenericSolver(grammar, :Number), max_depth=3)
+        iter = BFSIterator(grammar, :Number, max_depth=3)
         @test length(iter) == 163
     end
 
@@ -31,10 +31,10 @@ using HerbCore, HerbGrammar, HerbConstraints
         constraint = Forbidden(RuleNode(3, [VarNode(:x), VarNode(:x)]))
         addconstraint!(grammar, constraint)
 
-        solver = GenericSolver(grammar, :Number)
+        solver = GenericSolver(grammar, :Number, max_depth = 3)
         #jump start with new_state!
         new_state!(solver, RuleNode(3, [Hole(get_domain(grammar, :Number)), Hole(get_domain(grammar, :Number))]))
-        iter = BFSIterator(grammar, :Number, solver=solver, max_depth=3)
+        iter = BFSIterator(solver)
 
         @test length(iter) == 12
         # 3{2,1}
@@ -79,7 +79,7 @@ using HerbCore, HerbGrammar, HerbConstraints
         ])
 
         solver = GenericSolver(grammar, :Number)
-        iter = BFSIterator(grammar, :Number, solver=solver)
+        iter = BFSIterator(solver)
         new_state!(solver, partial_tree)
         @test length(iter) == 3 # 3 out of the 4 combinations to fill the UniformHole are valid
     end

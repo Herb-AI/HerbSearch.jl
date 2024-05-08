@@ -18,8 +18,8 @@ macro testmh(expression::String, max_depth=6)
         @testset "mh $($expression)" begin
         e = Meta.parse("x -> $($expression)")
         problem, examples = create_problem(eval(e))
-        iterator = MHSearchIterator(grammar, :X, examples, mean_squared_error, max_depth=$max_depth, max_time=MAX_RUNNING_TIME)
-        solution, flag = synth(problem, iterator)
+        iterator = MHSearchIterator(grammar, :X, examples, mean_squared_error, max_depth=$max_depth)
+        solution, flag = synth(problem, iterator, max_time=MAX_RUNNING_TIME)
         @test flag == optimal_program
     end
     )
@@ -31,9 +31,9 @@ macro testsa(expression::String,max_depth=6,init_temp = 2)
         @testset "sa $($expression)" begin
         e = Meta.parse("x -> $($expression)")
         problem, examples = create_problem(eval(e))
-        iterator = SASearchIterator(grammar, :X, examples, mean_squared_error, initial_temperature=$init_temp, max_depth=$max_depth, max_time=MAX_RUNNING_TIME)
+        iterator = SASearchIterator(grammar, :X, examples, mean_squared_error, initial_temperature=$init_temp, max_depth=$max_depth)
 
-        solution, flag = synth(problem, iterator)
+        solution, flag = synth(problem, iterator, max_time=MAX_RUNNING_TIME)
         @test flag == optimal_program
     end
     )
@@ -44,11 +44,11 @@ macro testvlsn(expression::String, max_depth = 6, neighbourhood_depth = 2)
         @testset "vl $($expression)" begin
         e = Meta.parse("x -> $($expression)")
         problem, examples = create_problem(eval(e))
-        iterator = VLSNSearchIterator(grammar, :X, examples, mean_squared_error, vlsn_neighbourhood_depth=$neighbourhood_depth, max_depth=$max_depth, max_time=MAX_RUNNING_TIME)
+        iterator = VLSNSearchIterator(grammar, :X, examples, mean_squared_error, vlsn_neighbourhood_depth=$neighbourhood_depth, max_depth=$max_depth)
 
         #@TODO overwrite evaluate function within synth to showcase how you may use that
 
-        solution, flag = synth(problem, iterator)
+        solution, flag = synth(problem, iterator, max_time=MAX_RUNNING_TIME)
         @test flag == optimal_program
     end
     )
