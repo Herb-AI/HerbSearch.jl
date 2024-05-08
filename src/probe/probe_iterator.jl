@@ -242,10 +242,72 @@ function calculate_program_cost(program::RuleNode, grammar::ContextSensitiveGram
     cost_rule = calculate_rule_cost(program.ind, grammar)
     return cost_children + cost_rule
 end
+"""
+struct SumIterator
+
+This struct is used to generate all possible combinations of `number_of_elements` numbers that sum up to `desired_sum`.
+The number will be in range `1:max_value` inclusive.
+
+!!! warning 
+    This iterator mutates the state in place. Deepcopying the state for each iteartion is needed to have an overview of all the possible combinations.
+
+# Example 
+```julia
+sum_iter = HerbSearch.SumIterator(number_of_elements=4, desired_sum=5, max_value=2)
+options = Vector{Vector{Int}}()
+for option ∈ sum_iter
+    # deep copy is needed because the iterator mutates the state in place
+    push!(options, deepcopy(option))
+end
+```
+"""
+@kwdef struct SumIterator
+    number_of_elements::Int 
+    desired_sum::Int
+    max_value::Int
+end
+mutable struct SumIteratorState
+    current_sum::Int
+    current_elements::Vector{Int}
+    current_index::Int
+end
+
+function Base.iterate(iter::SumIterator)
+    array::Vector{Int} = fill(0, iter.number_of_elements) 
+    iterate(iter, SumIteratorState(0, array, 1))
+end
+
+function Base.iterate(iter::SumIterator, state::SumIteratorState)
+    @assert state.current_sum == sum(state.current_elements)
+    while state.current_index >= 1
+        sum_left = iter.desired_sum - state.current_sum
+        starting = state.current_elements[state.current_index] + 1
+        # println("Starting: $starting | min(sum_left,iter.max_value) :$(min(sum_left, iter.max_value))")
+        for i ∈ starting : min(starting + sum_left - 1, iter.max_value)
+            state.current_sum += 1 # increase sum by 1
+            state.current_elements[state.current_index] = i
+            # check if we have one more element to put 
+            if state.current_index == iter.number_of_elements 
+                # we have the correct sum
+                if state.current_sum == iter.desired_sum
+                    return state.current_elements, state
+                end
+            else
+                state.current_index += 1
+                return iterate(iter, state)
+            end
+        end
+        state.current_sum -= state.current_elements[state.current_index]
+        state.current_elements[state.current_index] = 0
+        state.current_index -= 1
+    end
+    return nothing
+end
 
 
+new_programs(grammar,level,bank) = newprograms_efficient
 # generate in terms of increasing height
-function newprograms(grammar, level, bank)
+function newprograms_old(grammar, level, bank)
     arr = []
     # TODO: Use a generator instead of using arr and pushing values to it
     for rule_index ∈ 1:length(grammar.rules)
@@ -262,12 +324,13 @@ function newprograms(grammar, level, bank)
             #         for k in j:level 
             #             # ... have `nr_childre` number of nested for loops
             # create a list of nr_children iterators 
+            
             iterators = []
             for i ∈ 1:nr_children
                 push!(iterators, 1:(level - rule_cost))
             end
             options = Iterators.product(iterators...)
-            # TODO : optimize options generation 
+
             for costs ∈ options
                 if sum(costs) == level - rule_cost
                     # julia indexes from 1 that is why I add 1 here
@@ -281,6 +344,43 @@ function newprograms(grammar, level, bank)
                     end
                 end
             end
+        end
+    end
+
+    return arr
+end
+
+function newprograms_efficient(grammar, level, bank)
+    arr = []
+    # TODO: Use a generator instead of using arr and pushing values to it
+    for rule_index ∈ 1:length(grammar.rules)
+        nr_children = nchildren(grammar, rule_index)
+        rule_cost = calculate_rule_cost(rule_index, grammar)
+        if rule_cost == level && nr_children == 0
+            # if one rule is enough and has no children just return that tree
+            push!(arr, RuleNode(rule_index))
+        elseif rule_cost < level && nr_children > 0
+            # find all costs that sum up to level  - rule_cost
+            # an  efficient version using for loops 
+            # for i in 1:level 
+            #     for j in i:level 
+            #         for k in j:level 
+            #             # ... have `nr_childre` number of nested for loops
+            # create a list of nr_children iterators 
+            iterator = SumIterator(number_of_elements=nr_children, desired_sum = level - rule_cost, max_value = level - rule_cost)
+            # TODO : optimize options generation 
+            for costs ∈ iterator
+                @assert sum(costs) + rule_cost == level
+                # julia indexes from 1 that is why I add 1 here
+                bank_indexed = [bank[cost + 1] for cost ∈ costs]
+                cartesian_product = Iterators.product(bank_indexed...)
+                for program_options ∈ cartesian_product
+                    # TODO: check if the right types are good 
+                    # [program_options...] is just to convert from tuple to array
+                    rulenode = RuleNode(rule_index, [program_options...])
+                    push!(arr, rulenode)
+                end
+            end 
         end
     end
 
