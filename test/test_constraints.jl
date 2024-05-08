@@ -72,8 +72,7 @@ using HerbCore, HerbGrammar, HerbConstraints
             ])
         ])
 
-        solver = GenericSolver(grammar, partial_program)
-        iterator = BFSIterator(grammar, :ThisIsIgnored, max_size=9, solver=solver) 
+        iterator = BFSIterator(grammar, partial_program, max_size=9) 
         @test length(iterator) == 0
     end
 
