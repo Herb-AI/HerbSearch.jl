@@ -47,6 +47,36 @@ using HerbCore, HerbGrammar, HerbConstraints
 
     unique = Unique(2)
 
+    @testset "fix_point_running related bug" begin
+        # post contains_subtree2
+        # propagate contains_subtree2
+        #     schedule forbidden2
+        # propagate forbidden2
+
+        grammar = new_grammar()
+        addconstraint!(grammar, contains_subtree)
+        addconstraint!(grammar, contains_subtree2)
+        addconstraint!(grammar, forbidden2)
+
+        partial_program = UniformHole(BitVector((0, 0, 0, 1, 1)), [
+            UniformHole(BitVector((0, 0, 0, 1, 1)), [
+                UniformHole(BitVector((1, 1, 0, 0, 0)), []),
+                UniformHole(BitVector((1, 1, 0, 0, 0)), [])
+            ]),
+            UniformHole(BitVector((0, 0, 0, 1, 1)), [
+                UniformHole(BitVector((0, 0, 0, 1, 1)), [
+                    UniformHole(BitVector((1, 1, 0, 0, 0)), []),
+                    UniformHole(BitVector((1, 1, 0, 0, 0)), [])
+                ])
+                UniformHole(BitVector((1, 1, 0, 0, 0)), [])
+            ])
+        ])
+
+        solver = GenericSolver(grammar, partial_program)
+        iterator = BFSIterator(grammar, :ThisIsIgnored, max_size=9, solver=solver) 
+        @test length(iterator) == 0
+    end
+
     all_constraints = [
         ("ContainsSubtree", contains_subtree),
         ("ContainsSubtree2", contains_subtree2),
@@ -60,20 +90,32 @@ using HerbCore, HerbGrammar, HerbConstraints
     ]
 
     @testset "1 constraint" begin
+        # test all constraints individually, the constraints are chosen to prune the program space non-trivially
         @testset "$name" for (name, constraint) ∈ all_constraints
             test_constraint!(new_grammar(), constraint, max_size=6, allow_trivial=false)
         end
     end
 
     @testset "$n constraints" for n ∈ 2:5
+        # test constraint interactions by randomly sampling constraints
         for _ ∈ 1:10
             indices = randperm(length(all_constraints))[1:n]
-            names = [n for (n, _) ∈ all_constraints[indices]]
-            constraints = [c for (_, c) ∈ all_constraints[indices]]
-    
+            names = [name for (name, _) ∈ all_constraints[indices]]
+            constraints = [constraint for (_, constraint) ∈ all_constraints[indices]]
+            
             @testset "$names" begin
                 test_constraints!(new_grammar(), constraints, max_size=6, allow_trivial=true)
             end
         end
+    end
+
+    @testset "all constraints" begin
+        # all constraints combined, no valid solution exists
+        grammar = new_grammar()
+        for (_, constraint) ∈ all_constraints
+            addconstraint!(grammar, constraint)
+        end
+        iter = BFSIterator(grammar, :Int, max_size=10)
+        @test length(iter) == 0
     end
 end
