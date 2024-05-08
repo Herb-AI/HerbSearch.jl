@@ -1,3 +1,6 @@
+include("sum_iterator.jl")
+include("new_program_iterator.jl")
+include("guided_search_optimized.jl")
 """
     struct ProgramCache 
 
@@ -5,7 +8,7 @@ Stores the evaluation cost and the program in a structure.
 This 
 """
 struct ProgramCache
-    program::RuleNode 
+    program::RuleNode
     correct_examples::Vector{Int}
     cost::Int
 end
@@ -17,7 +20,7 @@ function probe(examples::Vector{<:IOExample}, iterator::ProgramIterator, select:
     state = nothing
     symboltable = SymbolTable(iterator.grammar)
     # all partial solutions that were found so far
-    all_selected_psols  = Set{RuleNode}()
+    all_selected_psols = Set{RuleNode}()
     # start next iteration while there is time left
     while time() - start_time < max_time
         i = 1
@@ -34,7 +37,7 @@ function probe(examples::Vector{<:IOExample}, iterator::ProgramIterator, select:
             for (example_index, example) ∈ enumerate(examples)
                 output = execute_on_input(symboltable, expr, example.in)
                 push!(eval_observation, output)
-                
+
                 if output == example.out
                     push!(correct_examples, example_index)
                 end
@@ -87,7 +90,7 @@ satisfies the largest subset of examples encountered so far across all partial_s
 """
 function selectpsol_largest_subset(partial_sols::Vector{ProgramCache})
     if isempty(partial_sols)
-        return Vector{ProgramCache}() 
+        return Vector{ProgramCache}()
     end
     largest_subset_length = 0
     cost = typemax(Int)
@@ -109,9 +112,9 @@ end
 This scheme selects a single cheapest program (first enumerated) that 
 satisfies a unique subset of examples.
 """
-function selectpsol_first_cheapest(partial_sols::Vector{ProgramCache})  
+function selectpsol_first_cheapest(partial_sols::Vector{ProgramCache})
     # maps subset of examples to the cheapest program 
-    mapping = Dict{Vector{Int}, ProgramCache}()
+    mapping = Dict{Vector{Int},ProgramCache}()
     for sol ∈ partial_sols
         examples = sol.correct_examples
         if !haskey(mapping, examples)
@@ -132,9 +135,9 @@ end
 
 This scheme selects all cheapest programs that satisfies a unique subset of examples.
 """
-function selectpsol_all_cheapest(partial_sols::Vector{ProgramCache})  
+function selectpsol_all_cheapest(partial_sols::Vector{ProgramCache})
     # maps subset of examples to the cheapest program 
-    mapping = Dict{Vector{Int}, Vector{ProgramCache}}()
+    mapping = Dict{Vector{Int},Vector{ProgramCache}}()
     for sol ∈ partial_sols
         examples = sol.correct_examples
         if !haskey(mapping, examples)
@@ -209,22 +212,9 @@ function Base.iterate(iter::GuidedSearchIterator, state::GuidedSearchState)
     return iterate(iter, state)
 end
 
-@programiterator ProbeSearchIterator(
-    spec::Vector{<:IOExample},
-    cost_function::Function,
-    level_limit = 8
-) 
-
-@kwdef mutable struct ProbeSearchState 
-    level::Int64
-    bank::Vector{Vector{RuleNode}}
-    eval_cache::Set
-    partial_sols::Vector{RuleNode} 
-end
-
 function calculate_rule_cost_prob(rule_index, grammar)
     log_prob = grammar.log_probabilities[rule_index]
-    return convert(Int64,round(-log_prob))
+    return convert(Int64, round(-log_prob))
 end
 
 function calculate_rule_cost_size(rule_index, grammar)
@@ -237,75 +227,18 @@ calculate_rule_cost(rule_index::Int, grammar::ContextSensitiveGrammar) = calcula
     calculate_program_cost(program::RuleNode, grammar::ContextSensitiveGrammar)  
 Calculates the cost of a program by summing up the cost of the children and the cost of the rule
 """
-function calculate_program_cost(program::RuleNode, grammar::ContextSensitiveGrammar)  
+function calculate_program_cost(program::RuleNode, grammar::ContextSensitiveGrammar)
     cost_children = sum([calculate_program_cost(child, grammar) for child ∈ program.children], init=0)
     cost_rule = calculate_rule_cost(program.ind, grammar)
     return cost_children + cost_rule
 end
-"""
-struct SumIterator
 
-This struct is used to generate all possible combinations of `number_of_elements` numbers that sum up to `desired_sum`.
-The number will be in range `1:max_value` inclusive.
-
-!!! warning 
-    This iterator mutates the state in place. Deepcopying the state for each iteartion is needed to have an overview of all the possible combinations.
-
-# Example 
-```julia
-sum_iter = HerbSearch.SumIterator(number_of_elements=4, desired_sum=5, max_value=2)
-options = Vector{Vector{Int}}()
-for option ∈ sum_iter
-    # deep copy is needed because the iterator mutates the state in place
-    push!(options, deepcopy(option))
+function newprograms(grammar::ContextSensitiveGrammar, level::Int, bank::Vector{Vector{RuleNode}})
+    return newprograms_old(grammar, level, bank)
 end
-```
-"""
-@kwdef struct SumIterator
-    number_of_elements::Int 
-    desired_sum::Int
-    max_value::Int
+function newprograms_iterator(grammar::ContextSensitiveGrammar, level::Int, bank::Vector{Vector{RuleNode}})
+    return NewProgramsIterator(level, bank, grammar)
 end
-mutable struct SumIteratorState
-    current_sum::Int
-    current_elements::Vector{Int}
-    current_index::Int
-end
-
-function Base.iterate(iter::SumIterator)
-    array::Vector{Int} = fill(0, iter.number_of_elements) 
-    iterate(iter, SumIteratorState(0, array, 1))
-end
-
-function Base.iterate(iter::SumIterator, state::SumIteratorState)
-    @assert state.current_sum == sum(state.current_elements)
-    while state.current_index >= 1
-        sum_left = iter.desired_sum - state.current_sum
-        starting = state.current_elements[state.current_index] + 1
-        # println("Starting: $starting | min(sum_left,iter.max_value) :$(min(sum_left, iter.max_value))")
-        for i ∈ starting : min(starting + sum_left - 1, iter.max_value)
-            state.current_sum += 1 # increase sum by 1
-            state.current_elements[state.current_index] = i
-            # check if we have one more element to put 
-            if state.current_index == iter.number_of_elements 
-                # we have the correct sum
-                if state.current_sum == iter.desired_sum
-                    return state.current_elements, state
-                end
-            else
-                state.current_index += 1
-                return iterate(iter, state)
-            end
-        end
-        state.current_sum -= state.current_elements[state.current_index]
-        state.current_elements[state.current_index] = 0
-        state.current_index -= 1
-    end
-    return nothing
-end
-
-
-new_programs(grammar,level,bank) = newprograms_efficient
 # generate in terms of increasing height
 function newprograms_old(grammar, level, bank)
     arr = []
@@ -324,17 +257,17 @@ function newprograms_old(grammar, level, bank)
             #         for k in j:level 
             #             # ... have `nr_childre` number of nested for loops
             # create a list of nr_children iterators 
-            
+
             iterators = []
             for i ∈ 1:nr_children
-                push!(iterators, 1:(level - rule_cost))
+                push!(iterators, 1:(level-rule_cost))
             end
             options = Iterators.product(iterators...)
 
             for costs ∈ options
                 if sum(costs) == level - rule_cost
                     # julia indexes from 1 that is why I add 1 here
-                    bank_indexed = [bank[cost + 1] for cost ∈ costs]
+                    bank_indexed = [bank[cost+1] for cost ∈ costs]
                     cartesian_product = Iterators.product(bank_indexed...)
                     for program_options ∈ cartesian_product
                         # TODO: check if the right types are good 
@@ -350,15 +283,18 @@ function newprograms_old(grammar, level, bank)
     return arr
 end
 
+"""
+This version uses the SumIterator to generate all possible combinations of `nr_children` numbers that sum up to `level - rule_cost`.
+"""
 function newprograms_efficient(grammar, level, bank)
     arr = []
-    # TODO: Use a generator instead of using arr and pushing values to it
+    # todo: use a generator instead of using arr and pushing values to it
     for rule_index ∈ 1:length(grammar.rules)
         nr_children = nchildren(grammar, rule_index)
         rule_cost = calculate_rule_cost(rule_index, grammar)
         if rule_cost == level && nr_children == 0
             # if one rule is enough and has no children just return that tree
-            push!(arr, RuleNode(rule_index))
+            push!(arr, rulenode(rule_index))
         elseif rule_cost < level && nr_children > 0
             # find all costs that sum up to level  - rule_cost
             # an  efficient version using for loops 
@@ -367,20 +303,20 @@ function newprograms_efficient(grammar, level, bank)
             #         for k in j:level 
             #             # ... have `nr_childre` number of nested for loops
             # create a list of nr_children iterators 
-            iterator = SumIterator(number_of_elements=nr_children, desired_sum = level - rule_cost, max_value = level - rule_cost)
-            # TODO : optimize options generation 
+            iterator = sumiterator(number_of_elements=nr_children, desired_sum=level - rule_cost, max_value=level - rule_cost)
+            # todo : optimize options generation 
             for costs ∈ iterator
                 @assert sum(costs) + rule_cost == level
-                # julia indexes from 1 that is why I add 1 here
-                bank_indexed = [bank[cost + 1] for cost ∈ costs]
+                # julia indexes from 1 that is why i add 1 here
+                bank_indexed = [bank[cost+1] for cost ∈ costs]
                 cartesian_product = Iterators.product(bank_indexed...)
                 for program_options ∈ cartesian_product
-                    # TODO: check if the right types are good 
+                    # todo: check if the right types are good 
                     # [program_options...] is just to convert from tuple to array
-                    rulenode = RuleNode(rule_index, [program_options...])
+                    rulenode = rulenode(rule_index, [program_options...])
                     push!(arr, rulenode)
                 end
-            end 
+            end
         end
     end
 
