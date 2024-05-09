@@ -36,26 +36,43 @@ end
 function Base.iterate(iter::SumIterator, state::SumIteratorState)
     @assert state.current_sum == sum(state.current_elements)
     while state.current_index >= 1
-        sum_left = iter.desired_sum - state.current_sum
-        starting = state.current_elements[state.current_index] + 1
-        # println("Starting: $starting | min(sum_left,iter.max_value) :$(min(sum_left, iter.max_value))")
-        for i ∈ starting:min(starting + sum_left - 1, iter.max_value)
-            state.current_sum += 1 # increase sum by 1
-            state.current_elements[state.current_index] = i
-            # check if we have one more element to put 
-            if state.current_index == iter.number_of_elements
-                # we have the correct sum
-                if state.current_sum == iter.desired_sum
-                    return state.current_elements, state
+        # if we are about to finish the last element
+        if state.current_index == iter.number_of_elements
+            # if we can put the sum_left as the last element
+            # println("last element")
+            sum_left = iter.desired_sum - state.current_sum
+            if 1 <= sum_left <= iter.max_value
+                state.current_elements[state.current_index] = sum_left
+                state.current_sum = iter.desired_sum
+                # println("Returning", state.current_elements, " ", state.current_index)
+                return state.current_elements, state
+            else 
+                # println("Resetting")
+                # we can't put it there so decrease the index
+                state.current_sum -= state.current_elements[state.current_index]
+                state.current_elements[state.current_index] = 0
+                state.current_index -= 1
+                if state.current_index == 0
+                    return nothing
                 end
-            else
-                state.current_index += 1
-                return iterate(iter, state)
             end
         end
-        state.current_sum -= state.current_elements[state.current_index]
-        state.current_elements[state.current_index] = 0
-        state.current_index -= 1
+        sum_left = iter.desired_sum - state.current_sum
+        # println(state, " ", state.current_index)
+        starting = state.current_elements[state.current_index] 
+        next_value = starting + 1 # next value to try
+        max_value = min(starting + sum_left, iter.max_value)
+        # println("next_value : $next_value, max_value: $max_value")
+        if next_value <= max_value
+            state.current_sum += 1 # increase sum by 1
+            state.current_elements[state.current_index] += 1
+            # go do the next index
+            state.current_index += 1
+        else
+            state.current_sum -= state.current_elements[state.current_index]
+            state.current_elements[state.current_index] = 0
+            state.current_index -= 1
+        end
     end
     return nothing
 end
