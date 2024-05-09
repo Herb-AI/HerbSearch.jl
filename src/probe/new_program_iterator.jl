@@ -14,7 +14,7 @@ mutable struct NewProgramsState
 end
 
 function Base.iterate(iter::NewProgramsIterator)
-    iterate(iter, NewProgramsState(1, SumIterator(0, 0, 0), nothing, Iterators.product(1:1), nothing, 1))
+    iterate(iter, NewProgramsState(1, nothing, nothing, Iterators.product(1:1), nothing, 1))
 end
 function Base.iterate(iter::NewProgramsIterator, state::NewProgramsState)
     while state.rule_index <= length(iter.grammar.rules)
