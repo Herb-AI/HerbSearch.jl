@@ -183,7 +183,8 @@ function Base.iterate(iter::GuidedSearchIterator, state::GuidedSearchState)
         push!(state.bank, [])
         state.programs = newprograms(iter.grammar, state.level, state.bank)
         if state.level > 0
-            println("Finished level $(state.level - 1) with $(length(state.bank[state.level])) programs")
+            @info ("Finished level $(state.level - 1) with $(length(state.bank[state.level])) programs")
+            @info ("Eval_cache size : $(length(state.eval_cache)) programs")
         end
     end
 

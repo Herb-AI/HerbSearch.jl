@@ -33,7 +33,8 @@ function Base.iterate(iter::GuidedSearchIteratorOptimzed, state::GuidedSearchOpt
             state.iter = NewProgramsIterator(state.level, state.bank, iter.grammar)
             state.next_iter = iterate(state.iter)
             if state.level > 0
-                println("Finished level $(state.level - 1) with $(length(state.bank[state.level])) programs")
+                @info ("Finished level $(state.level - 1) with $(length(state.bank[state.level])) programs")
+                @info ("Eval_cache size : $(length(state.eval_cache)) programs")
             end
         end
         # go over all programs in a level

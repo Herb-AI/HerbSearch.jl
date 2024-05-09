@@ -16,8 +16,6 @@ examples = [
     IOExample(Dict(:arg => "a < 4 and a > 0"), "a  4 and a  0")    # <- e0 with correct space
     IOExample(Dict(:arg => "<open and <close>"), "open and close") # <- e1
 ]
-# use size cost because that gives more programs
-HerbSearch.calculate_rule_cost(rule_index::Int, grammar::ContextSensitiveGrammar) = HerbSearch.calculate_rule_cost_size(rule_index, grammar)
 
 # benchmarks the guided search iteartor until certain level
 function time_iter(; max_level, iterator)
@@ -31,13 +29,22 @@ function time_iter(; max_level, iterator)
     end
 end
 
-println("Normal version")
-bench1 = @benchmarkable time_iter(max_level = 15, iterator = GuidedSearchIterator)
-tune!(bench1)
-run(bench1)
-println("=====================================")
+using Logging
+Logging.disable_logging(LogLevel(1000))
 
-printstyled("Optimized"; color=:green)
-bench2 = @benchmarkable time_iter(max_level = 15, iterator = GuidedSearchIteratorOptimzed)
-tune!(bench2)
-run(bench2)
+# use probability
+HerbSearch.calculate_rule_cost(rule_index::Int, grammar::ContextSensitiveGrammar) = HerbSearch.calculate_rule_cost_prob(rule_index, grammar)
+
+max_level = 30
+runs = 4
+printstyled("Optimized\n"; color=:green)
+for _ ∈ 1:runs
+    time_iter(max_level=max_level, iterator=GuidedSearchIteratorOptimzed)
+end
+
+println("=====================================")
+printstyled("Normal version\n", color=:green)
+
+for _ ∈ 1:runs
+    time_iter(max_level=max_level, iterator=GuidedSearchIterator)
+end
