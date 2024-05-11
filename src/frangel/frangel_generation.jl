@@ -1,21 +1,26 @@
 """
-    generate_random_program(grammar::AbstractGrammar, type::Symbol, fragments::Set{RuleNode}, config::FrAngelConfig, generate_with_angelic::Bool, 
-        angelic_conditions::AbstractVector{Union{Nothing,Int}}, max_size=40, disabled_fragments=false)::Union{RuleNode, Nothing}
+    generate_random_program(grammar::AbstractGrammar, type::Symbol, fragments::Set{RuleNode}, config::FrAngelConfigGeneration, generate_with_angelic::Float16, 
+        angelic_conditions::AbstractVector{Union{Nothing,Int}}, max_size, disabled_fragments=false)::Union{RuleNode, Nothing}
 
 Generates a random program of the provided `type` using the provided `grammar`. The program is generated with a maximum size of `max_size` and can use fragments from the provided set.
 
 # Arguments
-- `grammar`: An abstract grammar object.
+- `grammar`: The grammar rules of the program.
 - `type`: The type of the program to generate.
 - `fragments`: A set of RuleNodes representing the fragments that can be used in the program generation.
-- `config`: A FrAngelConfig object containing the configuration for the random program generation.
+- `config`: The configuration for program generation of FrAngel.
 - `generate_with_angelic`: A float representing the chance to generate a program with an angelic condition. Set to 0 if no such conditions are desired.
-- `angelic_conditions`: A vector of integers representing the index of the child to replace with an angelic condition for each rule. If there is no angelic condition for a rule, the value is set to `nothing`.
+- `angelic_conditions`: A vector of integers representing the index of the child to replace with an angelic condition for each rule. 
+    If there is no angelic condition for a rule, the value is set to `nothing`.
 - `max_size`: The maximum size of the program to generate.
 - `disabled_fragments`: A boolean flag to disable the use of fragments in the program generation.
 
+# Note
+The values passed as `max_size` and `generate_with_angelic` to the function will be used over the `config` values.
+
 # Returns
 A random program of the provided type, or nothing if no program can be generated.
+
 """
 function generate_random_program(
     grammar::AbstractGrammar,
@@ -71,20 +76,22 @@ function generate_random_program(
 end
 
 """
-    random_modify_children!(grammar::AbstractGrammar, node::RuleNode, config::FrAngelConfig, generate_with_angelic::Bool, 
+    random_modify_children!(grammar::AbstractGrammar, node::RuleNode, config::FrAngelConfigGeneration, generate_with_angelic::Float16, 
         angelic_conditions::AbstractVector{Union{Nothing,Int}})
 
 Randomly modifies the children of a given node. The modification can be either a new random program or a modification of the existing children.
 
 # Arguments
-- `grammar`: An abstract grammar object.
+- `grammar`: The grammar rules of the program.
 - `node`: The node to modify the children of.
-- `config`: A FrAngelConfig object containing the configuration for the random modification.
-- `generate_with_angelic`: A boolean flag to enable the use of angelic conditions in the program generation.
-- `angelic_conditions`: A vector of integers representing the index of the child to replace with an angelic condition for each rule. If there is no angelic condition for a rule, the value is set to `nothing`.
+- `config`: The configuration for program generation of FrAngel.
+- `generate_with_angelic`: A float representing the chance to generate a program with an angelic condition.
+- `angelic_conditions`: A vector of integers representing the index of the child to replace with an angelic condition for each rule. 
+    If there is no angelic condition for a rule, the value is set to `nothing`.
 
 # Returns
 Modifies the `node` directly.
+
 """
 function random_modify_children!(
     grammar::AbstractGrammar,
@@ -111,7 +118,7 @@ Looks for single-node trees corresponding to all variables and constants in the 
 
 # Arguments
 - `node`: The node to find replacements for.
-- `grammar`: An abstract grammar object.
+- `grammar`: The grammar rules of the program.
 
 # Returns
 A vector of RuleNodes representing all the possible replacements for the provided node, ordered by size.
@@ -169,7 +176,7 @@ Finds all the descendants of the same symbol for a given node in the AST.
 # Arguments
 - `node`: The node to find descendants in.
 - `symbol`: The symbol to find descendants for.
-- `grammar`: An abstract grammar object.
+- `grammar`: The grammar rules of the program.
 - `replacements`: A set of RuleNodes to add the descendants to.
 
 # Returns

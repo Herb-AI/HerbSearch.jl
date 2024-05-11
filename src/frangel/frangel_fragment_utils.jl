@@ -1,14 +1,15 @@
 """
     mine_fragments(grammar::AbstractGrammar, program::RuleNode)::Set{RuleNode}
 
-Finds all the fragments from the provided `program``. The result is a set of the distinct fragments found within the program. Recursively goes over all children.
+Finds all the fragments from the provided `program`. The result is a set of the distinct fragments, generated recursively by going over all children.
 
 # Arguments
-- `grammar`: An abstract grammar object.
-- `program`: The program to mine for fragments
+- `grammar`: The grammar rules of the program.
+- `program`: The program to mine fragments for.
 
 # Returns
 All the found fragments in the provided program.
+
 """
 function mine_fragments(grammar::AbstractGrammar, program::RuleNode)::Set{RuleNode}
     fragments = Set{RuleNode}()
@@ -31,11 +32,12 @@ end
 Finds all the fragments from the provided `programs` list. The result is a set of the distinct fragments found within all programs.
 
 # Arguments
-- `grammar`: An abstract grammar object.
-- `programs`: A set of programs to mine for fragments
+- `grammar`: The grammar rules of the program.
+- `programs`: A set of programs to mine fragments for.
 
 # Returns
 All the found fragments in the provided programs.
+
 """
 function mine_fragments(grammar::AbstractGrammar, programs::Set{RuleNode})::Set{RuleNode}
     fragments = reduce(union, mine_fragments(grammar, p) for p in programs)
@@ -45,18 +47,6 @@ function mine_fragments(grammar::AbstractGrammar, programs::Set{RuleNode})::Set{
     fragments
 end
 
-"""
-    mine_fragments(grammar::AbstractGrammar, programs::Set{Tuple{RuleNode, Int, Int}})::Set{RuleNode}
-
-Finds all the fragments from the provided `programs` list. The result is a set of the distinct fragments found within all programs.
-
-# Arguments
-- `grammar`: An abstract grammar object.
-- `programs`: A set of programs to mine for fragments
-
-# Returns
-All the found fragments in the provided programs.
-"""
 function mine_fragments(grammar::AbstractGrammar, programs::Set{Tuple{RuleNode,Int,Int}})::Set{RuleNode}
     fragments = reduce(union, mine_fragments(grammar, p) for (p, _, _) in programs)
     for program in programs
@@ -69,18 +59,19 @@ end
     remember_programs!(old_remembered::Dict{BitVector, Tuple{RuleNode, Int, Int}}, passing_tests::BitVector, new_program::RuleNode, 
         fragments::Set{RuleNode}, grammar::AbstractGrammar)::Set{RuleNode}
 
-Updates the remembered programs by including `new_program` if it is simpler than all remembered programs that pass the same subset of tests, and there is no simpler program 
-    passing a superset of the tests. It also removes any "worse" programs from the dictionary.
+Updates the remembered programs by including `new_program` if it is simpler than all remembered programs that pass the same subset of tests, 
+    and there is no simpler program passing a superset of the tests. It also removes any "worse" programs from the dictionary.
 
 # Arguments
-- `old_remembered`: A dictionary mapping BitVectors to tuples of RuleNodes, node counts, and program lengths.
+- `old_remembered`: The previously remembered programs, represented as a dictionary mapping `passed_tests` to (program's tree, the tree's `node_count`, `program_length`).
 - `passing_tests`: A BitVector representing the passing test set for the new program.
-- `new_program`: The new program to be added to the `old_remembered` dictionary.
-- `fragments`: A set of RuleNodes representing the fragments mined from the `old_remembered` dictionary.
-- `grammar`: An AbstractGrammar object representing the grammar used for program generation.
+- `new_program`: The new program to be considered for addition to the `old_remembered` dictionary.
+- `fragments`: A set the fragments mined from the `old_remembered` dictionary.
+- `grammar`: The grammar rules of the program.
 
 # Returns
-A set of `RuleNode`s representing the fragments mined from the updated `old_remembered` dictionary.
+The newly mined fragments from the updated remembered programs.
+
 """
 function remember_programs!(
     old_remembered::Dict{BitVector,Tuple{RuleNode,Int,Int}},

@@ -1,18 +1,18 @@
 """
     get_passed_tests!(program::RuleNode, grammar::AbstractGrammar, symboltable::SymbolTable, tests::AbstractVector{<:IOExample},
-        prev_passed_tests::BitVector, angelic_max_execute_attempts::Int, angelic_conditions::AbstractVector{Union{Nothing,Int}}, angelic_max_allowed_fails::Float16)
+        prev_passed_tests::BitVector, angelic_conditions::AbstractVector{Union{Nothing,Int}}, config::FrAngelConfigAngelic)
 
 Runs the program with all provided tests, and updates the `prev_passed_tests` vector with the results.
 
 # Arguments
-- `program`: A `RuleNode` representing the program to be tested.
-- `grammar`: An `AbstractGrammar` object containing the grammar rules.
+- `program`: The program to be tested.
+- `grammar`: The grammar rules of the program.
 - `symboltable`: A symbol table for the grammar.
 - `tests`: A vector of `IOExample` objects representing the input-output test cases.
 - `prev_passed_tests`: A `BitVector` representing the tests that the program has previously passed.
-- `angelic_max_execute_attempts`: An integer representing the maximum number of attempts to execute the program with angelic evaluation.
-- `angelic_conditions`: A vector of integers representing the index of the child to replace with an angelic condition for each rule. If there is no angelic condition for a rule, the value is set to `nothing`.
-- `angelic_max_allowed_fails`: The maximum allowed fraction of failed tests.
+- `angelic_conditions`: A vector of integers representing the index of the child to replace with an angelic condition for each rule. 
+    If there is no angelic condition for a rule, the value is set to `nothing`.
+- `config`: The configuration for angelic conditions of FrAngel.
 
 """
 function get_passed_tests!(
@@ -49,18 +49,18 @@ function get_passed_tests!(
     end
 end
 
-# This could potentially go somewhere else, for instance in a generic util file
 """
     count_nodes(program::RuleNode)::Int
 
 Count the number of nodes in a given `RuleNode` program.
 
 # Arguments
-- `grammar`: An abstract grammar object.
-- `program`: The `RuleNode` program to count the nodes in.
+- `grammar`: The grammar rules of the program.
+- `program`: The program to count the nodes of.
 
 # Returns
 The number of nodes in the program's AST representation.
+
 """
 function count_nodes(grammar::AbstractGrammar, program::RuleNode)::Int
     if isterminal(grammar, program)
@@ -70,20 +70,20 @@ function count_nodes(grammar::AbstractGrammar, program::RuleNode)::Int
     end
 end
 
-# This could potentially go somewhere else, for instance in a generic util file
 """
     random_partition(grammar::AbstractGrammar, rule_index::Int, size::Int, symbol_minsize::Dict{Symbol,Int})::AbstractVector{Int}
 
 Randomly partitions the allowed size into a vector of sizes for each child of the provided rule index.
 
 # Arguments
-- `grammar`: An abstract grammar object.
+- `grammar`: The grammar rules of the program.
 - `rule_index`: The index of the rule to partition.
 - `size`: The size to partition.
 - `symbol_minsize`: A dictionary with the minimum size achievable for each symbol in the grammar. Can be obtained from [`symbols_minsize`](@ref).
 
 # Returns
 A vector of sizes for each child of the provided rule index.
+
 """
 function random_partition(grammar::AbstractGrammar, rule_index::Int, size::Int, symbol_minsize::Dict{Symbol,Int})::AbstractVector{Int}
     children_types = child_types(grammar, rule_index)
@@ -112,12 +112,13 @@ Simplifies the provided program by replacing nodes with smaller nodes that pass 
 
 # Arguments
 - `program`: The program to simplify.
-- `grammar`: An abstract grammar object.
-- `tests`: A vector of IOExamples to test the program on.
+- `grammar`: The grammar rules of the program.
+- `tests`: A vector of `IOExample` objects representing the input-output test cases.
 - `passed_tests`: A BitVector representing the tests that the program has already passed.
 
 # Returns
 The simplified program.
+
 """
 function simplify_quick(program::RuleNode, grammar::AbstractGrammar, tests::AbstractVector{<:IOExample}, passed_tests::BitVector)::RuleNode
     simlified = _simplify_quick_once(program, program, grammar, tests, passed_tests, Vector{Int}())
@@ -130,6 +131,25 @@ function simplify_quick(program::RuleNode, grammar::AbstractGrammar, tests::Abst
     program
 end
 
+
+"""
+    _simplify_quick_once(root::RuleNode, node::RuleNode, grammar::AbstractGrammar, tests::AbstractVector{<:IOExample}, 
+        passed_tests::BitVector, path::Vector{Int}=[])::RuleNode
+
+The recursive one-call function for simplifying a program.
+
+# Arguments
+- `root`: The root node from which the simplification started.
+- `node`: The current node to be simplified.
+- `grammar`: The grammar rules of the program.
+- `tests`: A vector of `IOExample` objects representing the input-output test cases.
+- `passed_tests`: A `BitVector` representing the tests that the program has previously passed.
+- `path`: The path from the root node to the current node.
+
+# Returns
+The simplified program.
+
+"""
 function _simplify_quick_once(
     root::RuleNode,
     node::RuleNode,
@@ -138,7 +158,7 @@ function _simplify_quick_once(
     passed_tests::BitVector,
     path::Vector{Int}=[]
 )::RuleNode
-    for replacement in get_replacements(node, grammar)
+    for replacement in (node, grammar)
         if length(path) == 0
             if passes_the_same_tests_or_more(replacement, grammar, tests, passed_tests)
                 return replacement
@@ -167,20 +187,20 @@ function _simplify_quick_once(
     node
 end
 
-# This could potentially go somewhere else, for instance in a generic util file
 """
-    passes_the_same_tests_or_more(node::RuleNode, grammar::AbstractGrammar, tests::AbstractVector{<:IOExample}, passed_tests::BitVector)::Bool
+    passes_the_same_tests_or_more(program::RuleNode, grammar::AbstractGrammar, tests::AbstractVector{<:IOExample}, passed_tests::BitVector)::Bool
 
 Checks if the provided program passes all the tests that have been marked as passed.
 
 # Arguments
 - `program`: The program to test.
-- `grammar`: The abstract grammar object.
-- `tests`: A vector of IOExamples to test the program on.
+- `grammar`: The grammar rules of the program.
+- `tests`: A vector of `IOExample` objects representing the input-output test cases.
 - `passed_tests`: A BitVector representing the tests that the program has already passed.
 
 # Returns
 Returns true if the program passes all the tests that have been marked as passed, false otherwise.
+    
 """
 function passes_the_same_tests_or_more(program::RuleNode, grammar::AbstractGrammar, tests::AbstractVector{<:IOExample}, passed_tests::BitVector)::Bool
     symboltable = SymbolTable(grammar)
@@ -203,24 +223,23 @@ function passes_the_same_tests_or_more(program::RuleNode, grammar::AbstractGramm
     true
 end
 
-# This could potentially go somewhere else, for instance in a generic util file
 """
-    symbols_minsize(grammar::AbstractGrammar, typ::Symbol, minsize_map::AbstractVector{Int})::Dict{Symbol,Int}
+    symbols_minsize(grammar::AbstractGrammar, min_sizes::AbstractVector{Int})::Dict{Symbol,Int}
 
 Returns a dictionary with pairs of starting symbol type and the minimum size achievable from it.
 
 # Arguments
-- `grammar`: An abstract grammar object.
+- `grammar`: The grammar rules of the program.
 - `min_sizes`: A vector of minimum sizes for each production rule in the grammar. Can be obtained from [`rules_minsize`](@ref).
 
 # Returns
 Dictionary with the minimum size achievable for each symbol in the grammar.
+
 """
 function symbols_minsize(grammar::AbstractGrammar, min_sizes::AbstractVector{Int})::Dict{Symbol,Int}
     Dict(type => minimum(min_sizes[grammar.bytype[type]]) for type in grammar.types)
 end
 
-# This could potentially go somewhere else, for instance in a generic util file
 """
     rules_minsize(grammar::AbstractGrammar)::AbstractVector{Int}
 
@@ -229,10 +248,11 @@ In other words, this function finds the size of the smallest trees that can be m
 using each of the available production rules as a root.
 
 # Arguments
-- `grammar`: An abstract grammar object.
+- `grammar`: The grammar rules of the program.
 
 # Returns
 The minimum size achievable for each production rule in the grammar, in the same order as the rules.
+
 """
 function rules_minsize(grammar::AbstractGrammar)::AbstractVector{Int}
     min_sizes = Int[typemax(Int) for i in eachindex(grammar.rules)]
@@ -252,7 +272,6 @@ function rules_minsize(grammar::AbstractGrammar)::AbstractVector{Int}
     min_sizes
 end
 
-# This could potentially go somewhere else, for instance in a generic util file
 function _minsize!(grammar::AbstractGrammar, rule_index::Int, min_sizes::AbstractVector{Int}, visited::Dict{Symbol,Bool})::Int
     isterminal(grammar, rule_index) && return 1
 
