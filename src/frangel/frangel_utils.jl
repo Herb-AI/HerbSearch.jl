@@ -28,7 +28,7 @@ function get_passed_tests!(
     if contains_hole(program)
         fails = 0
         for (index, test) in enumerate(tests)
-            prev_passed_tests[index] = execute_angelic_on_input(symboltable, program, grammar, test.in, output, config.max_execute_attempts, angelic_conditions)
+            prev_passed_tests[index] = execute_angelic_on_input(symboltable, program, grammar, test.in, test.out, config.max_execute_attempts, angelic_conditions)
             if prev_passed_tests[index]
                 fails += 1
                 if config.max_allowed_fails < fails / length(tests)

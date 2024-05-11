@@ -135,7 +135,7 @@ function execute_angelic_on_input(
     expr = create_angelic_expression(program, grammar, angelic_conditions)
     while num_true < max_attempts
         code_paths = Vector{Vector{Char}}()
-        get_code_paths!(num_true, "", visited, code_paths, max_attempts - attempts)
+        get_code_paths!(num_true, Vector{Char}(), visited, code_paths, max_attempts - attempts)
         for code_path in code_paths
             # Create actual_code_path here to keep reference for simpler access later
             actual_code_path = Vector{Char}()
@@ -150,8 +150,9 @@ function execute_angelic_on_input(
                 if output == expected_output
                     return true
                 end
+            catch
             finally
-                visited[String(actual_path)] = true
+                visited[String(actual_code_path)] = true
                 attempts += 1
             end
         end
@@ -178,7 +179,7 @@ function get_code_paths!(
     num_true::Int,
     curr::Vector{Char},
     visited::DataStructures.Trie{Bool},
-    code_paths::Vector{String},
+    code_paths::Vector{Vector{Char}},
     max_length::Int
 )
     str_curr = String(curr)
@@ -220,7 +221,7 @@ function create_angelic_expression(
     angelic_grammar = deepcopy(grammar)
     for child_index in angelic_conditions
         if child_index !== nothing
-            angelic_grammar.rules[rule_index][child_index] = :(update_✝γ_path(✝γ_code_path, ✝γ_actual_code_path))
+            angelic_grammar.rules[child_index] = :(update_✝γ_path(✝γ_code_path, ✝γ_actual_code_path))
         end
     end
     clear_holes!(new_program, angelic_conditions)
@@ -239,8 +240,8 @@ Removes all subexpressions that are holes in the program, based on the angelic c
 
 """
 function clear_holes!(program::RuleNode, angelic_conditions::AbstractVector{Union{Nothing,Int}})
-    if angelic_conditions[program.index] !== nothing
-        idx = angelic_conditions[program.index]
+    if angelic_conditions[program.ind] !== nothing
+        idx = angelic_conditions[program.ind]
         if program.children[idx] isa AbstractHole
             deleteat!(program.children, angelic_conditions[program.index])
         end
