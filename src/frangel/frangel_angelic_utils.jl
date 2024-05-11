@@ -26,24 +26,24 @@ function resolve_angelic!(
     fragments::Set{RuleNode},
     passing_tests::BitVector,
     grammar::AbstractGrammar,
+    symboltable::SymbolTable,
     tests::AbstractVector{<:IOExample},
-    max_time::Float16,
-    boolean_expr_max_size::Int,
     replacement_dir::Int, # Direction of replacement; 1 -> top-down, -1 -> bottom-up
-    angelic_max_execute_attempts::Int,
     angelic_conditions::AbstractVector{Union{Nothing,Int}},
-    angelic_max_allowed_fails::Float16
+    config::FrAngelConfig
 )::RuleNode
     num_holes = number_of_holes(program)
     # Which hole to be replaced; if top-down -> first one; else -> last one
     replacement_index = replacement_dir == 1 || (num_holes - 1)
+    angelic = config.angelic
+    new_tests = BitVector([false for _ in tests])
     while num_holes != 0
         success = false
         start_time = time()
         while time() - start_time < max_time
-            boolean_expr = generate_random_program(grammar, :Bool, fragments, config, false, Vector{Union{Nothing,Int}}(), boolean_expr_max_size)
+            boolean_expr = generate_random_program(grammar, :Bool, fragments, config.generation, false, Vector{Union{Nothing,Int}}(), angelic.boolean_expr_max_size)
             new_program = replace_next_angelic(program, boolean_expr, replacement_index)
-            new_tests = get_passed_tests(new_program, grammar, tests, angelic_max_execute_attempts, angelic_conditions, angelic_max_allowed_fails)
+            get_passed_tests!(new_program, grammar, symboltable, tests, new_tests, angelic_conditions, angelic)
             # If the new program passes all the tests the original program did, replacement is successful
             if all(passing_tests .== (passing_tests .& new_tests))
                 program = new_program
@@ -56,8 +56,7 @@ function resolve_angelic!(
         if !success && replacement_dir == -1
             return program
         elseif !success
-            return resolve_angelic!(program, fragments, passing_tests, grammar, tests, max_time, boolean_expr_max_size, -1,
-                angelic_max_execute_attempts, angelic_conditions, angelic_max_allowed_fails)
+            return resolve_angelic!(program, fragments, passing_tests, grammar, symboltable, tests, -1, angelic_conditions, angelic)
         else
             num_holes -= 1
         end

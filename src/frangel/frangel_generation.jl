@@ -21,22 +21,22 @@ function generate_random_program(
     grammar::AbstractGrammar,
     type::Symbol,
     fragments::Set{RuleNode},
-    config::FrAngelConfig,
+    config::FrAngelConfigGeneration,
     generate_with_angelic::Float16,
     angelic_conditions::AbstractVector{Union{Nothing,Int}},
-    max_size=40,
+    max_size,
     disabled_fragments=false
 )::Union{RuleNode,Nothing}
     if max_size < 0
         return nothing
     end
-    use_fragments = !disabled_fragments && rand() < config.random_generation_use_fragments_chance
+    use_fragments = !disabled_fragments && rand() < config.use_fragments_chance
     if use_fragments
         possible_fragments = filter(f -> return_type(grammar, f) == type, fragments)
         if !isempty(possible_fragments)
             # Pick a fragment, either return itself or modify a child with it
             fragment = deepcopy(rand(possible_fragments))
-            if rand() < config.random_generation_use_entire_fragment_chance
+            if rand() < config.use_entire_fragment_chance
                 return fragment
             end
             random_modify_children!(grammar, fragment, config, generate_with_angelic, angelic_conditions)
@@ -53,7 +53,7 @@ function generate_random_program(
     rule_node = RuleNode(rule_index)
 
     if !grammar.isterminal[rule_index]
-        use_angelic = rand() < generate_with_angelic && angelic_conditions[rule_index] !== nothing
+        use_angelic = rand() < config.use_angelic_conditions_chance && angelic_conditions[rule_index] !== nothing
 
         symbol_minsize = symbols_minsize(grammar, minsize)
         sizes = random_partition(grammar, rule_index, max_size, symbol_minsize)
@@ -89,13 +89,14 @@ Modifies the `node` directly.
 function random_modify_children!(
     grammar::AbstractGrammar,
     node::RuleNode,
-    config::FrAngelConfig,
+    config::FrAngelConfigGeneration,
     generate_with_angelic::Float16,
     angelic_conditions::AbstractVector{Union{Nothing,Int}}
 )::Nothing
     for (index, child) in enumerate(node.children)
         if rand() < config.gen_similar_prob_new
-            node.children[index] = generate_random_program(grammar, return_type(grammar, child), Set{RuleNode}(), config, generate_with_angelic, angelic_conditions, count_nodes(grammar, child) + config.similar_new_extra_size, true)
+            node.children[index] = generate_random_program(grammar, return_type(grammar, child), Set{RuleNode}(), config,
+                generate_with_angelic, angelic_conditions, count_nodes(grammar, child) + config.similar_new_extra_size, true)
         else
             random_modify_children!(grammar, child, config, generate_with_angelic, angelic_conditions)
         end

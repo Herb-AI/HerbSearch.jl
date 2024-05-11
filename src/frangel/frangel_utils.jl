@@ -1,38 +1,37 @@
 """
-    get_passed_tests(program::RuleNode, grammar::AbstractGrammar, tests::AbstractVector{<:IOExample}, angelic_max_execute_attempts::Int, 
-        angelic_conditions::AbstractVector{Union{Nothing,Int}}, angelic_max_allowed_fails::Float16)::BitVector
+    get_passed_tests!(program::RuleNode, grammar::AbstractGrammar, symboltable::SymbolTable, tests::AbstractVector{<:IOExample},
+        prev_passed_tests::BitVector, angelic_max_execute_attempts::Int, angelic_conditions::AbstractVector{Union{Nothing,Int}}, angelic_max_allowed_fails::Float16)
 
-Runs the program with all provided tests.
+Runs the program with all provided tests, and updates the `prev_passed_tests` vector with the results.
 
 # Arguments
 - `program`: A `RuleNode` representing the program to be tested.
 - `grammar`: An `AbstractGrammar` object containing the grammar rules.
+- `symboltable`: A symbol table for the grammar.
 - `tests`: A vector of `IOExample` objects representing the input-output test cases.
+- `prev_passed_tests`: A `BitVector` representing the tests that the program has previously passed.
 - `angelic_max_execute_attempts`: An integer representing the maximum number of attempts to execute the program with angelic evaluation.
 - `angelic_conditions`: A vector of integers representing the index of the child to replace with an angelic condition for each rule. If there is no angelic condition for a rule, the value is set to `nothing`.
 - `angelic_max_allowed_fails`: The maximum allowed fraction of failed tests.
 
-# Returns
-A `BitVector` where each element corresponds to a test case, indicating whether the test passed (`true`) or not (`false`).
 """
-function get_passed_tests(
+function get_passed_tests!(
     program::RuleNode,
     grammar::AbstractGrammar,
+    symboltable::SymbolTable,
     tests::AbstractVector{<:IOExample},
-    angelic_max_execute_attempts::Int,
+    prev_passed_tests::BitVector,
     angelic_conditions::AbstractVector{Union{Nothing,Int}},
-    angelic_max_allowed_fails::Float16
-)::BitVector
-    symboltable = SymbolTable(grammar)
-    passed_tests = BitVector([false for i in tests])
+    config::FrAngelConfigAngelic
+)
     # If angelic -> evaluate optimistically
     if contains_hole(program)
         fails = 0
         for (index, test) in enumerate(tests)
-            passed_tests[index] = execute_angelic_on_input(symboltable, program, grammar, test.in, output, angelic_max_execute_attempts, angelic_conditions)
-            if !passed_tests[index]
+            prev_passed_tests[index] = execute_angelic_on_input(symboltable, program, grammar, test.in, output, config.max_execute_attempts, angelic_conditions)
+            if prev_passed_tests[index]
                 fails += 1
-                if angelic_max_allowed_fails < fails / length(tests)
+                if config.max_allowed_fails < fails / length(tests)
                     return BitVector([false for i in tests])
                 end
             end
@@ -42,13 +41,12 @@ function get_passed_tests(
         for (index, test) in enumerate(tests)
             try
                 output = execute_on_input(symboltable, expr, test.in)
-                passed_tests[index] = output == test.out
+                prev_passed_tests[index] = output == test.out
             catch _
-                passed_tests[index] = false
+                prev_passed_tests[index] = false
             end
         end
     end
-    passed_tests
 end
 
 # This could potentially go somewhere else, for instance in a generic util file

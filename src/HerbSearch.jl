@@ -86,6 +86,8 @@ export
   rand,
 
   FrAngelConfig,
+  FrAngelConfigGeneration,
+  FrAngelConfigAngelic,
   FrAngelIterator,
   FrAngelIteratorState,
 
