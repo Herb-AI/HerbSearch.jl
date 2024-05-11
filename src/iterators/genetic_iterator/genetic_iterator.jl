@@ -1,3 +1,9 @@
+# include genetic functions
+include("genetic_functions/fitness.jl")
+include("genetic_functions/mutation.jl")
+include("genetic_functions/crossover.jl")
+include("genetic_functions/select_parents.jl")
+
 using Random
 
 struct AlgorithmStateIsInvalid <: Exception

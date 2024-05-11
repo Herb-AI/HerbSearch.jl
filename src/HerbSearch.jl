@@ -10,30 +10,12 @@ using HerbInterpret
 using HerbSpecification
 using MLStyle
 
-include("sampling_grammar.jl")
-
-include("program_iterator.jl")
-include("uniform_iterator.jl")
-
-include("heuristics.jl")
-
-include("edit_distance.jl")
-# TODO : Move to a different file
-include("threads_helper.jl")
-include("search_procedure.jl")
-
-include("fixed_shaped_iterator.jl")
-include("top_down_iterator.jl")
+# import utilities first then iterators
+include("utils/utils.jl")
+include("iterators/iterators.jl")
 
 include("evaluate.jl")
-
-include("stochastic_iterator.jl")
-include("genetic_search/genetic_enumerators.jl")
-
-include("meta_search/meta_runner.jl")
-include("meta_search/run_algorithm.jl")
-
-include("random_iterator.jl")
+include("search_procedure.jl")
 
 export 
   ProgramIterator,
@@ -46,9 +28,6 @@ export
   heuristic_random,
   heuristic_smallest_domain,
 
-  search_rulenode,
-  search,
-  search_best,
   supervised_search,
   meta_search,
   derivation_heuristic,
@@ -83,7 +62,7 @@ export
 
   # meta search
   meta_grammar,
-  generic_run,
+  generic_meta_run,
   run_meta_search
 
 # TODO: Don't export crossover_swap_children_2 and mutate_random!. It's a bit awkward

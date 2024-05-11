@@ -21,7 +21,7 @@ end
     genetic::GeneticConfiguration
 end
 
-meta_configuration::MetaConfiguration = from_toml(MetaConfiguration, "src/meta_search/configuration.toml")
+meta_configuration::MetaConfiguration = from_toml(MetaConfiguration, "src/iterators/meta_search/configuration.toml")
 fitness_configuration = meta_configuration.fitness
 genetic_configuration = meta_configuration.genetic
 

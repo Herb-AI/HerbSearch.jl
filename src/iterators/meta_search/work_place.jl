@@ -7,7 +7,7 @@ using Logging
 # using PlotlyJS
 
 import Random
-include("meta_runner.jl")
+include("meta_search.jl")
 
 function print_meta_configuration()
     println("CONFIGURATION")

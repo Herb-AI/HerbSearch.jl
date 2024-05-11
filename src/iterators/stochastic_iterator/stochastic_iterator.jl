@@ -1,6 +1,6 @@
 using Random
 
-# include the functions
+# include the stochastic functions
 include("stochastic_functions/accept.jl")
 include("stochastic_functions/propose.jl")
 include("stochastic_functions/neighbourhood.jl")

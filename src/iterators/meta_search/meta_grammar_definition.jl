@@ -24,7 +24,7 @@ MAX_SEQUENCE_RUNNING_TIME = 8 # Max sequence running time in seconds
 
 # input is grammar and problem
 meta_grammar = @csgrammar begin
-	S = (problem::Problem) -> generic_run(COMBINATOR...;)
+	S = (problem::Problem) -> generic_meta_run(COMBINATOR...;)
 	# MS is either an algorithm or a combinator
 	MS = SimpleIterator 
 	MS = COMBINATOR
