@@ -7,7 +7,6 @@
     level::Int64
     bank::Vector{Vector{RuleNode}}
     eval_cache::Set
-    programs::Vector{RuleNode}
     iter::NewProgramsIterator
     next_iter::Union{Tuple{RuleNode, NewProgramsState}, Nothing}
 end
@@ -17,7 +16,6 @@ function Base.iterate(iter::GuidedSearchIteratorOptimzed)
         level=-1,
         bank=[],
         eval_cache=Set(),
-        programs=[],
         iter=NewProgramsIterator(0, [], iter.grammar),
         next_iter=nothing
     ))
