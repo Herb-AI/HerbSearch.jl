@@ -39,7 +39,7 @@ max_level = 30
 runs = 4
 printstyled("Optimized\n"; color=:green)
 for _ ∈ 1:runs
-    time_iter(max_level=max_level, iterator=GuidedSearchIteratorOptimzed)
+    time_iter(max_level=max_level, iterator=GuidedSearchIterator)
 end
 
 println("=====================================")

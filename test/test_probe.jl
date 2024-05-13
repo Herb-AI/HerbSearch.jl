@@ -145,7 +145,7 @@ end
 
         @testset "Running using size-based enumeration" begin
             HerbSearch.calculate_rule_cost(rule_index::Int, grammar::ContextSensitiveGrammar) = HerbSearch.calculate_rule_cost_size(rule_index, grammar)
-            iter = HerbSearch.GuidedSearchIteratorOptimzed(grammar, :S, examples, symboltable)
+            iter = HerbSearch.GuidedSearchIterator(grammar, :S, examples, symboltable)
 
             max_level = 10
             state = nothing
@@ -169,7 +169,7 @@ end
             ]
 
             HerbSearch.calculate_rule_cost(rule_index::Int, grammar::ContextSensitiveGrammar) = HerbSearch.calculate_rule_cost_prob(rule_index, grammar)
-            iter = HerbSearch.GuidedSearchIteratorOptimzed(grammar, :S, examples, symboltable)
+            iter = HerbSearch.GuidedSearchIterator(grammar, :S, examples, symboltable)
 
             max_level = 20
             state = nothing

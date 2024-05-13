@@ -1,9 +1,10 @@
 
-@programiterator GuidedSearchIteratorOptimzed(
+@programiterator GuidedSearchIterator(
     spec::Vector{<:IOExample},
     symboltable::SymbolTable
+
 )
-@kwdef mutable struct GuidedSearchOptimizedState
+@kwdef mutable struct GuidedSearchState
     level::Int64
     bank::Vector{Vector{RuleNode}}
     eval_cache::Set
@@ -11,8 +12,8 @@
     next_iter::Union{Tuple{RuleNode, NewProgramsState}, Nothing}
 end
 
-function Base.iterate(iter::GuidedSearchIteratorOptimzed)
-    iterate(iter, GuidedSearchOptimizedState(
+function Base.iterate(iter::GuidedSearchIterator)
+    iterate(iter, GuidedSearchState(
         level=-1,
         bank=[],
         eval_cache=Set(),
@@ -21,7 +22,7 @@ function Base.iterate(iter::GuidedSearchIteratorOptimzed)
     ))
 end
 
-function Base.iterate(iter::GuidedSearchIteratorOptimzed, state::GuidedSearchOptimizedState)::Union{Tuple{RuleNode, GuidedSearchOptimizedState}, Nothing}
+function Base.iterate(iter::GuidedSearchIterator, state::GuidedSearchState)::Union{Tuple{RuleNode, GuidedSearchState}, Nothing}
     # wrap in while true to optimize for tail call
     while true
         while state.next_iter === nothing
