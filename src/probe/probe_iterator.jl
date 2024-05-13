@@ -69,10 +69,6 @@ function probe(examples::Vector{<:IOExample}, iterator::ProgramIterator, max_tim
         if next === nothing
             return nothing
         end
-        # select promising partial solutions that did not appear before    
-        # if (isempty(all_selected_psols))
-        #     push!(all_selected_psols, psol_with_eval_cache...)
-        # end          
         partial_sols = filter(x -> x ∉ all_selected_psols, select(psol_with_eval_cache, all_selected_psols))
         if !isempty(partial_sols)
             print(rulenode2expr(partial_sols[1].program, iterator.grammar))
@@ -83,16 +79,12 @@ function probe(examples::Vector{<:IOExample}, iterator::ProgramIterator, max_tim
             eval_cache = Set() 
             state = nothing
 
-            #for loop to update all_selected_psols
-            new_all_selected = Set{ProgramCache}()
+            #for loop to update all_selected_psols with new costs
             for prog_with_cache ∈ all_selected_psols
                 program = prog_with_cache.program
                 new_cost = calculate_program_cost(program, iterator.grammar)
                 prog_with_cache.cost = new_cost
-                # program_cache = ProgramCache(program, prog_with_cache.correct_examples, cost)
-                # push!(new_all_selected, program_cache)
             end
-            # all_selected_psols = new_all_selected
         end
     end
 
