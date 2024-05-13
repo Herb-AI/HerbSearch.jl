@@ -5,17 +5,17 @@ Stores the evaluation cost and the program in a structure.
 This 
 """
 mutable struct ProgramCache
-    program::RuleNode 
+    program::RuleNode
     correct_examples::Vector{Int}
     cost::Int
 end
 function Base.:(==)(a::ProgramCache, b::ProgramCache)
-    return a.program == b.program 
+    return a.program == b.program
 end
 Base.hash(a::ProgramCache) = hash(a.program)
 
-select(partial_sols::Vector{ProgramCache}, all_selected_psols::Set{ProgramCache}) = HerbSearch.selectpsol_largest_subset(partial_sols, all_selected_psols) 
-update!(grammar::ContextSensitiveGrammar, PSols_with_eval_cache::Vector{ProgramCache}, examples::Vector{<:IOExample}) = update_grammar(grammar,PSols_with_eval_cache, examples)
+select(partial_sols::Vector{ProgramCache}, all_selected_psols::Set{ProgramCache}) = HerbSearch.selectpsol_largest_subset(partial_sols, all_selected_psols)
+update!(grammar::ContextSensitiveGrammar, PSols_with_eval_cache::Vector{ProgramCache}, examples::Vector{<:IOExample}) = update_grammar(grammar, PSols_with_eval_cache, examples)
 
 function probe(examples::Vector{<:IOExample}, iterator::ProgramIterator, max_time::Int, iteration_size::Int)
     start_time = time()
@@ -24,7 +24,7 @@ function probe(examples::Vector{<:IOExample}, iterator::ProgramIterator, max_tim
     state = nothing
     symboltable = SymbolTable(iterator.grammar)
     # all partial solutions that were found so far
-    all_selected_psols  = Set{ProgramCache}()
+    all_selected_psols = Set{ProgramCache}()
     # start next iteration while there is time left
     while time() - start_time < max_time
         i = 1
@@ -41,7 +41,7 @@ function probe(examples::Vector{<:IOExample}, iterator::ProgramIterator, max_tim
             for (example_index, example) ∈ enumerate(examples)
                 output = execute_on_input(symboltable, expr, example.in)
                 push!(eval_observation, output)
-                
+
                 if output == example.out
                     push!(correct_examples, example_index)
                 end
@@ -76,7 +76,7 @@ function probe(examples::Vector{<:IOExample}, iterator::ProgramIterator, max_tim
             # update probabilites if any promising partial solutions
             update!(iterator.grammar, partial_sols, examples) # update probabilites
             # restart iterator
-            eval_cache = Set() 
+            eval_cache = Set()
             state = nothing
 
             #for loop to update all_selected_psols with new costs
@@ -96,47 +96,47 @@ function update_grammar(grammar::ContextSensitiveGrammar, PSols_with_eval_cache:
     for rule_index in eachindex(grammar.rules) # iterate for each rule_index 
         highest_correct_nr = 0
         for psol in PSols_with_eval_cache
-            program = psol.program 
+            program = psol.program
             len_correct_examples = length(psol.correct_examples)
-            # Asume this works
             # check if the program tree has rule_index somewhere inside it using a recursive function
-            if contains_rule(program, rule_index)  && len_correct_examples > highest_correct_nr 
-                highest_correct_nr = len_correct_examples 
+            if contains_rule(program, rule_index) && len_correct_examples > highest_correct_nr
+                highest_correct_nr = len_correct_examples
             end
-        end 
+        end
         fitnes = highest_correct_nr / length(examples)
-        # println("Highest correct examples: $(highest_correct_nr)")
-        # println("Fitness $(fitnes)")
         p_uniform = 1 / length(grammar.rules)
-      
+
         # compute (log2(p_u) ^ (1 - fit)) = (1-fit) * log2(p_u)
-        sum+=p_uniform^(1-fitnes)
-        log_prob = ((1 - fitnes) * log(2, p_uniform)) #/Z figure out the Z
+        sum += p_uniform^(1 - fitnes)
+        log_prob = ((1 - fitnes) * log(2, p_uniform))
         grammar.log_probabilities[rule_index] = log_prob
     end
+    total_sum = 0
     for rule_index in eachindex(grammar.rules)
         grammar.log_probabilities[rule_index] = grammar.log_probabilities[rule_index] - log(2, sum)
+        total_sum += 2^(grammar.log_probabilities[rule_index])
     end
-    println(map(x -> rulenode2expr(x.program, grammar), PSols_with_eval_cache))
-    for i in 1:6
-        print("$(grammar.log_probabilities[i])  ")
-    end
-    println()
-    for i in 1:6
-        print("$(2 ^ (grammar.log_probabilities[i]))  ")
-    end
-    println()
+    @assert abs(total_sum - 1) <= 1e-4 "Total sum is $(total_sum) "
 end
 
-# I will asume this works
+"""
+    contains_rule(program::RuleNode, rule_index::Int)
+
+Check if a given `RuleNode` contains has used a derivation rule with the specified `rule_index`
+
+# Arguments
+- `program::RuleNode`: The `RuleNode` to check.
+- `rule_index::Int`: The index of the rule to check for.
+
+"""
 function contains_rule(program::RuleNode, rule_index::Int)
     if program.ind == rule_index # if the rule is good return true
-        return true 
-    else 
-        for child in program.children 
-          if contains_rule(child, rule_index)  # if a child has that rule then return true
-              return true
-          end
+        return true
+    else
+        for child in program.children
+            if contains_rule(child, rule_index)  # if a child has that rule then return true
+                return true
+            end
         end
         return false # if no child has that rule return false
     end
@@ -145,14 +145,14 @@ end
 
 
 """
-    selectpsol_largest_subset(partial_sols::Vector{ProgramCache}) 
+    selectpsol_largest_subset(partial_sols::Vector{ProgramCache}}, all_selected_psols::Set{ProgramCache})) 
 
 This scheme selects a single cheapest program (first enumerated) that 
 satisfies the largest subset of examples encountered so far across all partial_sols.
 """
-function selectpsol_largest_subset( partial_sols::Vector{ProgramCache}, all_selected_psols::Set{ProgramCache})
+function selectpsol_largest_subset(partial_sols::Vector{ProgramCache}, all_selected_psols::Set{ProgramCache})
     if isempty(partial_sols)
-        return Vector{ProgramCache}() 
+        return Vector{ProgramCache}()
     end
     push!(partial_sols, all_selected_psols...)
     largest_subset_length = 0
@@ -170,14 +170,14 @@ function selectpsol_largest_subset( partial_sols::Vector{ProgramCache}, all_sele
 end
 
 """
-    selectpsol_first_cheapest(partial_sols::Vector{ProgramCache}) 
+    selectpsol_first_cheapest(partial_sols::Vector{ProgramCache}}, all_selected_psols::Set{ProgramCache})) 
 
 This scheme selects a single cheapest program (first enumerated) that 
 satisfies a unique subset of examples.
 """
-function selectpsol_first_cheapest(partial_sols::Vector{ProgramCache})  
+function selectpsol_first_cheapest(partial_sols::Vector{ProgramCache}, all_selected_psol::Set{ProgramCache})
     # maps subset of examples to the cheapest program 
-    mapping = Dict{Vector{Int}, ProgramCache}()
+    mapping = Dict{Vector{Int},ProgramCache}()
     for sol ∈ partial_sols
         examples = sol.correct_examples
         if !haskey(mapping, examples)
@@ -194,13 +194,13 @@ function selectpsol_first_cheapest(partial_sols::Vector{ProgramCache})
 end
 
 """
-    selectpsol_all_cheapest(partial_sols::Vector{ProgramCache}) 
+    selectpsol_all_cheapest(partial_sols::Vector{ProgramCache}, all_selected_psol::Set{ProgramCache}) 
 
 This scheme selects all cheapest programs that satisfies a unique subset of examples.
 """
-function selectpsol_all_cheapest(partial_sols::Vector{ProgramCache})  
+function selectpsol_all_cheapest(partial_sols::Vector{ProgramCache}, all_selected_psol::Set{ProgramCache})
     # maps subset of examples to the cheapest program 
-    mapping = Dict{Vector{Int}, Vector{ProgramCache}}()
+    mapping = Dict{Vector{Int},Vector{ProgramCache}}()
     for sol ∈ partial_sols
         examples = sol.correct_examples
         if !haskey(mapping, examples)
@@ -224,7 +224,7 @@ end
     spec::Vector{<:IOExample},
     symboltable::SymbolTable
 )
-@kwdef mutable struct GuidedSearchState 
+@kwdef mutable struct GuidedSearchState
     level::Int64
     bank::Vector{Vector{RuleNode}}
     eval_cache::Set
@@ -232,10 +232,10 @@ end
 end
 function Base.iterate(iter::GuidedSearchIterator)
     iterate(iter, GuidedSearchState(
-        level = -1,
-        bank = [],
-        eval_cache = Set(),
-        programs = []
+        level=-1,
+        bank=[],
+        eval_cache=Set(),
+        programs=[]
     ))
 end
 
@@ -261,16 +261,16 @@ function Base.iterate(iter::GuidedSearchIterator, state::GuidedSearchState)
             output = execute_on_input(iter.symboltable, expr, example.in)
             push!(eval_observation, output)
         end
-        
+
         if eval_observation in state.eval_cache # program already cached
             continue
         end
 
-        push!(state.bank[state.level + 1], prog) # add program to bank
+        push!(state.bank[state.level+1], prog) # add program to bank
         push!(state.eval_cache, eval_observation) # add result to cache
-        return(prog, state) # return program
+        return (prog, state) # return program
     end
-    
+
     # current level has been exhausted, go to next level
     return iterate(iter, state)
 end
@@ -278,19 +278,19 @@ end
 @programiterator ProbeSearchIterator(
     spec::Vector{<:IOExample},
     cost_function::Function,
-    level_limit = 8
-) 
+    level_limit=8
+)
 
-@kwdef mutable struct ProbeSearchState 
+@kwdef mutable struct ProbeSearchState
     level::Int64
     bank::Vector{Vector{RuleNode}}
     eval_cache::Set
-    partial_sols::Vector{RuleNode} 
+    partial_sols::Vector{RuleNode}
 end
 
 function calculate_rule_cost_prob(rule_index, grammar)
     log_prob = grammar.log_probabilities[rule_index]
-    return convert(Int64,round(-log_prob))
+    return convert(Int64, round(-log_prob))
 end
 
 function calculate_rule_cost_size(rule_index, grammar)
@@ -303,7 +303,7 @@ calculate_rule_cost(rule_index::Int, grammar::ContextSensitiveGrammar) = calcula
     calculate_program_cost(program::RuleNode, grammar::ContextSensitiveGrammar)  
 Calculates the cost of a program by summing up the cost of the children and the cost of the rule
 """
-function calculate_program_cost(program::RuleNode, grammar::ContextSensitiveGrammar)  
+function calculate_program_cost(program::RuleNode, grammar::ContextSensitiveGrammar)
     cost_children = sum([calculate_program_cost(child, grammar) for child ∈ program.children], init=0)
     cost_rule = calculate_rule_cost(program.ind, grammar)
     return cost_children + cost_rule
@@ -330,14 +330,14 @@ function newprograms(grammar, level, bank)
             # create a list of nr_children iterators 
             iterators = []
             for i ∈ 1:nr_children
-                push!(iterators, 1:(level - rule_cost))
+                push!(iterators, 1:(level-rule_cost))
             end
             options = Iterators.product(iterators...)
             # TODO : optimize options generation 
             for costs ∈ options
                 if sum(costs) == level - rule_cost
                     # julia indexes from 1 that is why I add 1 here
-                    bank_indexed = [bank[cost + 1] for cost ∈ costs]
+                    bank_indexed = [bank[cost+1] for cost ∈ costs]
                     cartesian_product = Iterators.product(bank_indexed...)
                     for program_options ∈ cartesian_product
                         # TODO: check if the right types are good 
@@ -355,11 +355,11 @@ end
 
 function Base.iterate(iter::ProbeSearchIterator)
     iterate(iter, ProbeSearchState(
-        level = 0,
-        bank = Vector(),
-        eval_cache = Set(), 
-        partial_sols = Vector() 
-        )
+        level=0,
+        bank=Vector(),
+        eval_cache=Set(),
+        partial_sols=Vector()
+    )
     )
 end
 
@@ -370,7 +370,7 @@ function Base.iterate(iter::ProbeSearchIterator, state::ProbeSearchState)
     symboltable = SymbolTable(iter.grammar)
     while state.level <= start_level + iter.level_limit
         # add another level to the bank that is empty
-        push!(state.bank,[])
+        push!(state.bank, [])
         new_programs = newprograms(iter.grammar, state.level, state.bank)
         if time() - start_time >= 10
             @warn "Probe took more than 10 seconds to run..."
@@ -397,8 +397,8 @@ function Base.iterate(iter::ProbeSearchIterator, state::ProbeSearchState)
             elseif nr_correct_examples >= 1
                 push!(state.partial_sols, program)
             end
-            push!(state.bank[state.level + 1], program)
-            push!(state.eval_cache,  eval_observation)
+            push!(state.bank[state.level+1], program)
+            push!(state.eval_cache, eval_observation)
         end
         state.level = state.level + 1
     end
