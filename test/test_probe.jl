@@ -135,6 +135,57 @@ end
         )
     end
 
+    @testset "Running GuidedSearchIterator" begin
+        examples = [
+            IOExample(Dict(:arg => "a < 4 and a > 0"), "a  4 and a  0")    # <- e0 with correct space
+            IOExample(Dict(:arg => "<open and <close>"), "open and close") # <- e1
+        ]
+
+        symboltable = SymbolTable(grammar)
+
+        @testset "Running using size-based enumeration" begin
+            HerbSearch.calculate_rule_cost(rule_index::Int, grammar::ContextSensitiveGrammar) = HerbSearch.calculate_rule_cost_size(rule_index, grammar)
+            iter = HerbSearch.GuidedSearchIteratorOptimzed(grammar, :S, examples, symboltable)
+
+            max_level = 10
+            state = nothing
+            next = iterate(iter)
+            while next !== nothing
+                _, state = next
+                if (state.level > max_level)
+                    break
+                end
+                next = iterate(iter, state)
+            end
+            sizes = [length(level) for level in state.bank]
+            @test sizes == [0, 4, 0, 9, 6, 27, 54, 115, 349, 714, 2048, 1]
+        end
+
+        @testset "Running using prob-based enumeration" begin
+            examples = [
+                IOExample(Dict(:arg => "a < 4 and a > 0"), "a  4 and a  0")    # <- e0 with correct space
+                IOExample(Dict(:arg => "<open and <close>"), "open and close") # <- e1
+                IOExample(Dict(:arg => "<Change> <string> to <a> number"), "Change string to a number")
+            ]
+
+            HerbSearch.calculate_rule_cost(rule_index::Int, grammar::ContextSensitiveGrammar) = HerbSearch.calculate_rule_cost_prob(rule_index, grammar)
+            iter = HerbSearch.GuidedSearchIteratorOptimzed(grammar, :S, examples, symboltable)
+
+            max_level = 20
+            state = nothing
+            next = iterate(iter)
+            while next !== nothing
+                _, state = next
+                if (state.level > max_level)
+                    break
+                end
+                next = iterate(iter, state)
+            end
+            sizes = [length(level) for level in state.bank]
+            @test sizes == [0, 0, 4, 0, 0, 0, 0, 0, 15, 0, 0, 0, 0, 0, 122, 0, 0, 0, 0, 0, 1305, 0, 0, 0, 0, 0, 1]
+        end
+    end
+
     @testset "Running probe" begin
         examples = [
             IOExample(Dict(:arg => "a < 4 and a > 0"), "a  4 and a  0")    # <- e0 with correct space
