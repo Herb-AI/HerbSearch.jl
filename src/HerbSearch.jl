@@ -37,7 +37,7 @@ include("genetic_functions/select_parents.jl")
 include("genetic_search_iterator.jl")
 
 include("random_iterator.jl")
-include("probe/probe_iterator.jl")
+include("probe/probe.jl")
 
 export 
   ProgramIterator,
@@ -73,6 +73,7 @@ export
 
   ProbeSearchIterator,
   GuidedSearchIterator,
+  GuidedSearchIterator,
   probe,
 
   mean_squared_error,
@@ -82,6 +83,6 @@ export
   misclassification,
   validate_iterator,
   sample,
-  rand,
-  guided_search
+  rand
+
 end # module HerbSearch
