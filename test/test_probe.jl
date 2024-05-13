@@ -135,6 +135,57 @@ end
         )
     end
 
+    @testset "Running GuidedSearchIterator" begin
+        examples = [
+            IOExample(Dict(:arg => "a < 4 and a > 0"), "a  4 and a  0")    # <- e0 with correct space
+            IOExample(Dict(:arg => "<open and <close>"), "open and close") # <- e1
+        ]
+
+        symboltable = SymbolTable(grammar)
+
+        @testset "Running using size-based enumeration" begin
+            HerbSearch.calculate_rule_cost(rule_index::Int, grammar::ContextSensitiveGrammar) = HerbSearch.calculate_rule_cost_size(rule_index, grammar)
+            iter = HerbSearch.GuidedSearchIteratorOptimzed(grammar, :S, examples, symboltable)
+
+            max_level = 10
+            state = nothing
+            next = iterate(iter)
+            while next !== nothing
+                _, state = next
+                if (state.level > max_level)
+                    break
+                end
+                next = iterate(iter, state)
+            end
+            sizes = [length(level) for level in state.bank]
+            @test sizes == [0, 4, 0, 9, 6, 27, 54, 115, 349, 714, 2048, 1]
+        end
+
+        @testset "Running using prob-based enumeration" begin
+            examples = [
+                IOExample(Dict(:arg => "a < 4 and a > 0"), "a  4 and a  0")    # <- e0 with correct space
+                IOExample(Dict(:arg => "<open and <close>"), "open and close") # <- e1
+                IOExample(Dict(:arg => "<Change> <string> to <a> number"), "Change string to a number")
+            ]
+
+            HerbSearch.calculate_rule_cost(rule_index::Int, grammar::ContextSensitiveGrammar) = HerbSearch.calculate_rule_cost_prob(rule_index, grammar)
+            iter = HerbSearch.GuidedSearchIteratorOptimzed(grammar, :S, examples, symboltable)
+
+            max_level = 20
+            state = nothing
+            next = iterate(iter)
+            while next !== nothing
+                _, state = next
+                if (state.level > max_level)
+                    break
+                end
+                next = iterate(iter, state)
+            end
+            sizes = [length(level) for level in state.bank]
+            @test sizes == [0, 0, 4, 0, 0, 0, 0, 0, 15, 0, 0, 0, 0, 0, 122, 0, 0, 0, 0, 0, 1305, 0, 0, 0, 0, 0, 1]
+        end
+    end
+
     @testset "Running probe" begin
         examples = [
             IOExample(Dict(:arg => "a < 4 and a > 0"), "a  4 and a  0")    # <- e0 with correct space
@@ -184,68 +235,4 @@ end
             @test output == received
         end
     end
-    # TODO: Refactor tests using probe function call
-    # function get_bank_and_runtime(examples, level_limit)
-    #     # crate the probe iterator
-    #     iterator = ProbeSearchIterator(grammar, :S, examples, mean_squared_error, level_limit = level_limit)
-    #     # run iterator
-    #     timer = @timed program, state = Base.iterate(iterator)
-    #     bank = state.bank
-    #     # inspect the bank's length for each size
-    #     bank_lengths = [length(list_of_programs) for list_of_programs ∈ bank]
-    #     @show bank_lengths
-    #     return bank_lengths, program, timer.time
-    # end
-
-    # @testset "Probe finds solution using enumeration in terms of probability" begin
-
-    #     examples_1_2_3 = [
-    #         IOExample(Dict(:arg => "a < 4 and a > 0"), "a  4 and a  0")    # <- e0 with correct space
-    #         # IOExample(Dict(:arg => "a < 4 and a > 0"), "a 4 and a 0")    # <- e0 with incorrect space
-    #         IOExample(Dict(:arg => "<open and <close>"), "open and close") # <- e1
-    #         IOExample(Dict(:arg => "<Change> <string> to <a> number"), "Change string to a number")
-    #     ]
-
-
-    #     bank, program, runtime = get_bank_and_runtime(examples_1_2_3, 38)
-    #     @testset "Correct lengths" begin
-    #         # Figure 9 from research paper (Bank index is offset by one because of julia indexing)
-    #         @test bank[3] == 4
-    #         @test bank[9] == 15
-    #         @test bank[21] == 1272
-    #     end
-
-    #     @testset "Correct output and runtime" begin
-
-    #         @test !isnothing(program) # we found a solution
-    #         @test runtime <= 5
-    #     end
-    # end
-    # @testset "Probe works when using sized based enumeration" begin 
-    #     examples_1_2 = [
-    #         # IOExample(Dict(:arg => "a < 4 and a > 0"), "a  4 and a  0")    # <- e0 with correct space
-    #         IOExample(Dict(:arg => "a < 4 and a > 0"), "a 4 and a 0")    # <- e0 with incorrect space
-    #         IOExample(Dict(:arg => "<open and <close>"), "open and close") # <- e1
-    #     ]
-
-    #     bank_lengths, program, runtime, = get_bank_and_runtime(examples_1_2, 10)
-
-    #     @testset "Correct lengths" begin
-    #         # sized based assertions taken from the Probe Research paper Figure 7.
-    #         println(bank_lengths)
-    #         @test bank_lengths[1:5] == [0,4,0,9,6]
-    #         @test bank_lengths[9:11] == [349,714,2048]
-    #     end
-
-    #     #= Test the following claim for the research paper when using sized based enumeration
-    #         "This
-    #         modest change to the search algorithm yields surprising efficiency improvements: our size-based
-    #         bottom-up synthesizer is able to solve the remove-angles-short benchmark in only one second"
-    #     =#
-    #     @testset "Correct output and runtime" begin 
-    #         # @test runtime <= 1
-    #         # @test !isnothing(program) # we found a solution
-    #     end
-    # end
-
 end

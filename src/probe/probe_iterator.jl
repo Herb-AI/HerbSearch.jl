@@ -1,3 +1,6 @@
+include("sum_iterator.jl")
+include("new_program_iterator.jl")
+include("guided_search_optimized.jl")
 """
     struct ProgramCache 
 
@@ -5,7 +8,7 @@ Stores the evaluation cost and the program in a structure.
 This 
 """
 struct ProgramCache
-    program::RuleNode 
+    program::RuleNode
     correct_examples::Vector{Int}
     cost::Int
 end
@@ -17,7 +20,7 @@ function probe(examples::Vector{<:IOExample}, iterator::ProgramIterator, select:
     state = nothing
     symboltable = SymbolTable(iterator.grammar)
     # all partial solutions that were found so far
-    all_selected_psols  = Set{RuleNode}()
+    all_selected_psols = Set{RuleNode}()
     # start next iteration while there is time left
     while time() - start_time < max_time
         i = 1
@@ -34,7 +37,7 @@ function probe(examples::Vector{<:IOExample}, iterator::ProgramIterator, select:
             for (example_index, example) ∈ enumerate(examples)
                 output = execute_on_input(symboltable, expr, example.in)
                 push!(eval_observation, output)
-                
+
                 if output == example.out
                     push!(correct_examples, example_index)
                 end
@@ -87,7 +90,7 @@ satisfies the largest subset of examples encountered so far across all partial_s
 """
 function selectpsol_largest_subset(partial_sols::Vector{ProgramCache})
     if isempty(partial_sols)
-        return Vector{ProgramCache}() 
+        return Vector{ProgramCache}()
     end
     largest_subset_length = 0
     cost = typemax(Int)
@@ -109,9 +112,9 @@ end
 This scheme selects a single cheapest program (first enumerated) that 
 satisfies a unique subset of examples.
 """
-function selectpsol_first_cheapest(partial_sols::Vector{ProgramCache})  
+function selectpsol_first_cheapest(partial_sols::Vector{ProgramCache})
     # maps subset of examples to the cheapest program 
-    mapping = Dict{Vector{Int}, ProgramCache}()
+    mapping = Dict{Vector{Int},ProgramCache}()
     for sol ∈ partial_sols
         examples = sol.correct_examples
         if !haskey(mapping, examples)
@@ -132,9 +135,9 @@ end
 
 This scheme selects all cheapest programs that satisfies a unique subset of examples.
 """
-function selectpsol_all_cheapest(partial_sols::Vector{ProgramCache})  
+function selectpsol_all_cheapest(partial_sols::Vector{ProgramCache})
     # maps subset of examples to the cheapest program 
-    mapping = Dict{Vector{Int}, Vector{ProgramCache}}()
+    mapping = Dict{Vector{Int},Vector{ProgramCache}}()
     for sol ∈ partial_sols
         examples = sol.correct_examples
         if !haskey(mapping, examples)
@@ -180,7 +183,8 @@ function Base.iterate(iter::GuidedSearchIterator, state::GuidedSearchState)
         push!(state.bank, [])
         state.programs = newprograms(iter.grammar, state.level, state.bank)
         if state.level > 0
-            println("Finished level $(state.level - 1) with $(length(state.bank[state.level])) programs")
+            @info ("Finished level $(state.level - 1) with $(length(state.bank[state.level])) programs")
+            @info ("Eval_cache size : $(length(state.eval_cache)) programs")
         end
     end
 
@@ -211,7 +215,7 @@ end
 
 function calculate_rule_cost_prob(rule_index, grammar)
     log_prob = grammar.log_probabilities[rule_index]
-    return convert(Int64,round(-log_prob))
+    return convert(Int64, round(-log_prob))
 end
 
 function calculate_rule_cost_size(rule_index, grammar)
@@ -224,15 +228,20 @@ calculate_rule_cost(rule_index::Int, grammar::ContextSensitiveGrammar) = calcula
     calculate_program_cost(program::RuleNode, grammar::ContextSensitiveGrammar)  
 Calculates the cost of a program by summing up the cost of the children and the cost of the rule
 """
-function calculate_program_cost(program::RuleNode, grammar::ContextSensitiveGrammar)  
+function calculate_program_cost(program::RuleNode, grammar::ContextSensitiveGrammar)
     cost_children = sum([calculate_program_cost(child, grammar) for child ∈ program.children], init=0)
     cost_rule = calculate_rule_cost(program.ind, grammar)
     return cost_children + cost_rule
 end
 
-
+function newprograms(grammar::ContextSensitiveGrammar, level::Int, bank::Vector{Vector{RuleNode}})
+    return newprograms_old(grammar, level, bank)
+end
+function newprograms_iterator(grammar::ContextSensitiveGrammar, level::Int, bank::Vector{Vector{RuleNode}})
+    return NewProgramsIterator(level, bank, grammar)
+end
 # generate in terms of increasing height
-function newprograms(grammar, level, bank)
+function newprograms_old(grammar, level, bank)
     arr = []
     # TODO: Use a generator instead of using arr and pushing values to it
     for rule_index ∈ 1:length(grammar.rules)
@@ -249,16 +258,17 @@ function newprograms(grammar, level, bank)
             #         for k in j:level 
             #             # ... have `nr_childre` number of nested for loops
             # create a list of nr_children iterators 
+
             iterators = []
             for i ∈ 1:nr_children
-                push!(iterators, 1:(level - rule_cost))
+                push!(iterators, 1:(level-rule_cost))
             end
             options = Iterators.product(iterators...)
-            # TODO : optimize options generation 
+
             for costs ∈ options
                 if sum(costs) == level - rule_cost
                     # julia indexes from 1 that is why I add 1 here
-                    bank_indexed = [bank[cost + 1] for cost ∈ costs]
+                    bank_indexed = [bank[cost+1] for cost ∈ costs]
                     cartesian_product = Iterators.product(bank_indexed...)
                     for program_options ∈ cartesian_product
                         # TODO: check if the right types are good 
@@ -266,6 +276,46 @@ function newprograms(grammar, level, bank)
                         rulenode = RuleNode(rule_index, [program_options...])
                         push!(arr, rulenode)
                     end
+                end
+            end
+        end
+    end
+
+    return arr
+end
+
+"""
+This version uses the SumIterator to generate all possible combinations of `nr_children` numbers that sum up to `level - rule_cost`.
+"""
+function newprograms_efficient(grammar, level, bank)
+    arr = []
+    # todo: use a generator instead of using arr and pushing values to it
+    for rule_index ∈ 1:length(grammar.rules)
+        nr_children = nchildren(grammar, rule_index)
+        rule_cost = calculate_rule_cost(rule_index, grammar)
+        if rule_cost == level && nr_children == 0
+            # if one rule is enough and has no children just return that tree
+            push!(arr, rulenode(rule_index))
+        elseif rule_cost < level && nr_children > 0
+            # find all costs that sum up to level  - rule_cost
+            # an  efficient version using for loops 
+            # for i in 1:level 
+            #     for j in i:level 
+            #         for k in j:level 
+            #             # ... have `nr_childre` number of nested for loops
+            # create a list of nr_children iterators 
+            iterator = sumiterator(number_of_elements=nr_children, desired_sum=level - rule_cost, max_value=level - rule_cost)
+            # todo : optimize options generation 
+            for costs ∈ iterator
+                @assert sum(costs) + rule_cost == level
+                # julia indexes from 1 that is why i add 1 here
+                bank_indexed = [bank[cost+1] for cost ∈ costs]
+                cartesian_product = Iterators.product(bank_indexed...)
+                for program_options ∈ cartesian_product
+                    # todo: check if the right types are good 
+                    # [program_options...] is just to convert from tuple to array
+                    rulenode = rulenode(rule_index, [program_options...])
+                    push!(arr, rulenode)
                 end
             end
         end

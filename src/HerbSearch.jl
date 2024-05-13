@@ -73,6 +73,7 @@ export
 
   ProbeSearchIterator,
   GuidedSearchIterator,
+  GuidedSearchIteratorOptimzed,
   probe,
 
   mean_squared_error,
