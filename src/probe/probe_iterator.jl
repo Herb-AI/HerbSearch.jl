@@ -156,7 +156,6 @@ satisfies the largest subset of examples encountered so far across all partial_s
 function selectpsol_largest_subset(partial_sols::Vector{ProgramCache}, all_selected_psols::Set{ProgramCache})
     if isempty(partial_sols)
         return Vector{ProgramCache}()
-        return Vector{ProgramCache}()
     end
     push!(partial_sols, all_selected_psols...)
     largest_subset_length = 0
@@ -182,7 +181,6 @@ satisfies a unique subset of examples.
 function selectpsol_first_cheapest(partial_sols::Vector{ProgramCache}, all_selected_psol::Set{ProgramCache})
     # maps subset of examples to the cheapest program 
     mapping = Dict{Vector{Int},ProgramCache}()
-    mapping = Dict{Vector{Int},ProgramCache}()
     for sol ∈ partial_sols
         examples = sol.correct_examples
         if !haskey(mapping, examples)
@@ -206,7 +204,6 @@ This scheme selects all cheapest programs that satisfies a unique subset of exam
 function selectpsol_all_cheapest(partial_sols::Vector{ProgramCache}, all_selected_psol::Set{ProgramCache})
     # maps subset of examples to the cheapest program 
     mapping = Dict{Vector{Int},Vector{ProgramCache}}()
-    mapping = Dict{Vector{Int},Vector{ProgramCache}}()
     for sol ∈ partial_sols
         examples = sol.correct_examples
         if !haskey(mapping, examples)
@@ -228,7 +225,6 @@ end
 
 function calculate_rule_cost_prob(rule_index, grammar)
     log_prob = grammar.log_probabilities[rule_index]
-    return convert(Int64, round(-log_prob))
     return convert(Int64, round(-log_prob))
 end
 
