@@ -57,7 +57,7 @@ export
   optimal_program,
   suboptimal_program,
 
-  FixedShapedIterator, #TODO: deprecated after the cp thesis
+  FixedShapedIterator,
   UniformIterator,
   next_solution!,
 
@@ -83,6 +83,5 @@ export
   validate_iterator,
   sample,
   rand,
-  probe,
   guided_search
 end # module HerbSearch
