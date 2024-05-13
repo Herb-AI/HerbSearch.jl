@@ -1,18 +1,22 @@
-abstract type CombinatorType end
-abstract type SequenceCombinator <: CombinatorType end
-abstract type ParallelThreadsCombinator <: CombinatorType end
-abstract type ParallelNoThreadsCombinator <: CombinatorType end
+abstract type ParallelType end
+abstract type ParallelThreads <: ParallelType end
+abstract type ParallelNoThreads <: ParallelType end
 
 abstract type MetaSearchIterator end
-struct VannilaIterator{F1} <: MetaSearchIterator
-	iterator::ProgramIterator
-	stop_condition::F1
-	problem::Problem
+struct VannilaIterator{F1} <: MetaSearchIterator 
+    iterator::ProgramIterator
+    stop_condition::F1
+    problem::Problem
 end
 # TODO: Make specific types for each combinator type. That would be nice
-struct CombinatorIterator <: MetaSearchIterator
-	combinator_type::CombinatorType
-	iterator::Vector{MetaSearchIterator}
+Base.@kwdef struct SequenceCombinatorIterator{G} <: MetaSearchIterator where G <: AbstractGrammar
+    iterators::Vector{<:MetaSearchIterator}
+	grammar::G
+	max_depth_if_random::Int = 10
+end
+struct ParallelCombinatorIterator <: MetaSearchIterator 
+    combinator_type::Type{<:ParallelType}
+    iterators::Vector{<:MetaSearchIterator}
 end
 include("combinators.jl")
 
@@ -20,49 +24,52 @@ include("combinators.jl")
 LONGEST_RUNNING_ALG_TIME = 5
 MAX_SEQUENCE_RUNNING_TIME = 8 # Max sequence running time in seconds
 
-# include("combinators.jl")
 
 # input is grammar and problem
 meta_grammar = @csgrammar begin
-	S = (problem::Problem) -> generic_meta_run(COMBINATOR...;)
-	# MS is either an algorithm or a combinator
-	MS = SimpleIterator 
-	MS = COMBINATOR
-	MAX_DEPTH = 10
+    S = function f(input_problem::Problem, input_grammar::G) where {G<:AbstractGrammar}
+        generic_run(COMBINATOR)
+    end
+	problemExamples = input_problem.spec
 
-	# SA configuration
-	sa_inital_temperature = |(1:5)
-	sa_temperature_decreasing_factor = |(range(0.9, 1, 10))
+    # MS is either an algorithm or a combinator
+    MS = SimpleIterator
+    MS = COMBINATOR
+    MAX_DEPTH = 10
 
-	# VLSN configuration
-	vlsn_enumeration_depth = 1|2
-	
-	# TODO: Fix algorithm
-	ALGORITHM = get_mh_enumerator(problemExamples, HerbSearch.mean_squared_error) | 
-				get_sa_enumerator(problemExamples, HerbSearch.mean_squared_error, sa_inital_temperature, sa_temperature_decreasing_factor) |
-				get_vlsn_enumerator(problemExamples, HerbSearch.mean_squared_error, vlsn_enumeration_depth)
-	SimpleIterator = VannilaIterator(ALGORITHM, STOPFUNCTION, problem)
-	# A = ga,STOP
-	# A = dfs,STOP
-	# A = bfs,STOP
-	# A = astar,STOP
-	COMBINATOR = CombinatorIterator(Sequence, ALIST)
-	COMBINATOR = CombinatorIterator(Parallel, ALIST)
-	ALIST = [MS; MS]
-	ALIST = [MS; ALIST]
-	# SELECT = best | crossover | mutate
-	STOPFUNCTION = (time, iteration, cost) -> time > BIGGEST_TIME
-	ITERATION_STOP = iteration > VALUE
-	# STOPTERM = OPERAND < VALUE
-	# OPERAND = time | iteration | cost
-	BIGGEST_TIME = 2 | 3 | 4 | 5
-	VALUE = 1000 | 2000 | 3000 | 4000 | 5000
-	# VALUE = 10 * VALUE
+    # VLSN configuration
+    vlsn_enumeration_depth = 1 | 2
+
+    # SA configuration
+    sa_inital_temperature = 1 | 2 | 3 | 4 | 5
+    sa_temperature_decreasing_factor = 0.9 | 0.91 | 0.92 | 0.93 | 0.94 | 0.95 | 0.96 | 0.97 | 0.98 | 0.99 
+
+    # TODO: Fix algorithm
+    ALGORITHM = MHSearchIterator(input_grammar, :X, problemExamples, mean_squared_error, max_depth=MAX_DEPTH) |
+                SASearchIterator(input_grammar, :X, problemExamples, mean_squared_error, initial_temperature = sa_inital_temperature, temperature_decreasing_factor = sa_temperature_decreasing_factor, max_depth=MAX_DEPTH) |
+                VLSNSearchIterator(input_grammar, :X, problemExamples, mean_squared_error, vlsn_neighbourhood_depth = vlsn_enumeration_depth)
+    SimpleIterator = VannilaIterator(ALGORITHM, STOPFUNCTION, input_problem)
+    # A = ga,STOP
+    # A = dfs,STOP
+    # A = bfs,STOP
+    # A = astar,STOP
+    COMBINATOR = SequenceCombinatorIterator(iterators = ALIST, grammar = input_grammar)
+    # COMBINATOR = ParallelCombinatorIterator(ParallelNoThreads, ALIST)
+    ALIST = [MS; MS]
+    ALIST = [MS; ALIST]
+    # SELECT = best | crossover | mutate
+    STOPFUNCTION = (time, iteration, cost) -> time > BIGGEST_TIME
+    ITERATION_STOP = iteration > VALUE
+    # STOPTERM = OPERAND < VALUE
+    # OPERAND = time | iteration | cost
+    BIGGEST_TIME = 2 | 3 | 4 | 5
+    VALUE = 1000 | 2000 | 3000 | 4000 | 5000
+    # VALUE = 10 * VALUE
 end
 
-function evaluate_meta_program(meta_expression,problem, grammar)
-	# get the function (problem,examples) -> run program
-	program = eval(meta_expression)   
-	# provide the problem and the grammar for that problem 
-	return Base.@invokelatest program(problem.spec, grammar)
+function evaluate_meta_program(meta_expression, problem::Problem, grammar :: G) where G <: AbstractGrammar
+    # get the function (problem,examples) -> run program
+    program = eval(meta_expression)
+    # provide the problem and the grammar for that problem 
+    return Base.@invokelatest program(problem, grammar)
 end

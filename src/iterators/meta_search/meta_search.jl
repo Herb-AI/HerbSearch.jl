@@ -28,7 +28,7 @@ genetic_configuration = meta_configuration.genetic
 
 
 """
-    fitness_function(program, array_of_outcomes)
+    meta_search_fitness_function(program)
 
 The fitness function used for a given program from the meta-grammar.
 To evaluate a possible combinator/algorithm for the meta-search we don't have access any input and outputs examples.
@@ -39,7 +39,7 @@ The current fitness is given by:
 ```
 
 """
-function fitness_function(program, _)
+function meta_search_fitness_function(program)
     expression_to_evaluate = rulenode2expr(program, meta_grammar)
 
     # evaluate the search 3 times to account for variable time of running a program
@@ -50,7 +50,7 @@ function fitness_function(program, _)
 
     lk = Threads.ReentrantLock()
     for i ∈ eachindex(problems_train)
-        (problem,problem_text) = problems_train[i]
+        (problem, problem_text) = problems_train[i]
         for _ in 1:RUNS
             
             # get a program that needs a problem and a grammar to be able to run
@@ -72,28 +72,25 @@ function fitness_function(program, _)
 end
 
 
+HerbSearch.fitness(::GeneticSearchIterator, program::RuleNode, results::AbstractVector{<:Tuple{Any,Any}}) = meta_search_fitness_function(program)
 
 """
     run_meta_search(stopping_condition)
 
 Runs meta search with the stopping condition. 
 """
-function run_meta_search(stopping_condition:: Union{Nothing, Function})
+function run_meta_search(; max_time::Int64, max_iterations::Int64)
     # creates a genetic enumerator with no examples and with the desired fitness function 
     println("Creating initial population with random programs of maxdepth $(genetic_configuration.initial_population_size)")
-    genetic_algorithm = get_genetic_enumerator(Vector{IOExample}([]), 
-        fitness_function=fitness_function,
+    genetic_iterator = GeneticSearchIterator(
+        meta_grammar, :S,
+        Vector{IOExample}(),
         maximum_initial_population_depth = genetic_configuration.initial_program_max_depth,
-        initial_population_size          = genetic_configuration.initial_population_size
+        population_size          = genetic_configuration.initial_population_size
     )
 
     # run the meta search
-    @time best_program, best_fitness = meta_search(
-        meta_grammar, 
-        :S,
-        stopping_condition = stopping_condition,
-        enumerator = genetic_algorithm,
-    )
+    @time best_program, best_fitness = meta_search(genetic_iterator, max_time = max_time, max_iterations = max_iterations)
 
     # get the meta_program found so far.
     println("Best meta program is :", best_program)

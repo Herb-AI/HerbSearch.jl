@@ -69,33 +69,26 @@ function synth(
 end
 
 
-mse_error_function_strings(output::Char, expected_output::String) = mse_error_function_strings(string(output), expected_output)
-mse_error_function_strings(output::String, expected_output::Char) = mse_error_function_strings(output, string(expected_output))
-mse_error_function_strings(output::Char, expected_output::Char) = mse_error_function_strings(string(output), string(expected_output))
-
-function mse_error_function_strings(output::String, expected_output::String)
-    return edit_distance(output,expected_output)
-end
 
 function supervised_search(
-    problem::Problem,
-    iterator::ProgramIterator, 
-    stopping_condition::Function,
-    start_program::RuleNode;
-    error_function::Function=default_error_function,
+    vanilla_iterator;
+    start_program::Union{RuleNode,Nothing},
     stop_channel::Union{Nothing,Channel{Bool}}=nothing,
-    max_time = 0,
+    max_running_time = 0,
     )::Tuple{RuleNode, Real}
 
+    iterator = vanilla_iterator.iterator
     start_time = time()
     g = get_grammar(iterator.solver)
     symboltable :: SymbolTable = SymbolTable(g)
 
-    enumerator = Base.Iterators.rest(iterator, construct_state_from_start_program(typeof(iterator),start_program=start_program))
+    if !isnothing(start_program)
+        iterator = Base.Iterators.rest(iterator, construct_state_from_start_program(iterator, start_program))
+    end
 
     best_error = typemax(Int)
     best_rulenode = nothing
-    for (i, h) ∈ enumerate(enumerator)
+    for (i, h) ∈ enumerate(iterator)
         # check to stop or not
         if !isnothing(stop_channel) && !isempty(stop_channel)
             return best_rulenode, best_error
@@ -106,10 +99,8 @@ function supervised_search(
         
         # Evaluate the expression on the examples
         total_error = 0
-        for example ∈ problem.examples
-            example_outcome = execute_on_input(symboltable, expr, example.in)
-            total_error += error_function(example_outcome, example.out)
-        end
+        outputs = [ (example.out, execute_on_input(symboltable, expr, example.in)) for example ∈ problem.examples ]
+        total_error = mean_squared_error(outputs)
 
         if total_error == 0
             if !isnothing(stop_channel) 
@@ -125,7 +116,7 @@ function supervised_search(
 
         # Check stopping conditions
         current_time = time() - start_time
-        if stopping_condition(current_time, i, total_error) || (max_time > 0 && current_time > max_time)
+        if vanilla_iterator.stopping_condition(current_time, i, total_error) || (max_running_time > 0 && current_time > max_running_time)
             return best_rulenode, best_error
         end
     end
@@ -134,28 +125,23 @@ end
 
 
 function meta_search(
-    g::ContextSensitiveGrammar, 
-    start::Symbol;
-    stopping_condition::Function,
-    enumerator::Function,
-    )::Tuple{Any, Real}
+    iterator::ProgramIterator; 
+    max_time = typemax(Int),
+    max_iterations = typemax(Int),
+)
 
     start_time = time()
+    next = iterate(iterator)
 
-    # genetic search ignores max_depth and max_size
-    hypotheses = enumerator(
-        g, 
-        typemax(Int), 
-        typemax(Int),
-        start
-    )
 
     best_fitness = 0
     best_program = nothing
     println("Starting meta search!! ")
-    prev_time = time()
-    for (i, iteartor_value) ∈ enumerate(hypotheses)
-        rulenode = get_rulenode_from_iterator(iter, itearator_value)
+    prev_it_time = time()
+
+    while !isnothing(next)
+        rulenode, state = next 
+        fitness = state.best_fitness
         # Create expression from rulenode representation of AST
         expr = rulenode2expr(rulenode, g)
         if fitness > best_fitness
@@ -164,7 +150,7 @@ function meta_search(
         end
         # GC.gc()
 
-        timer = time() - prev_time
+        timer = time() - prev_it_time
         println("""
         Meta Search status
             - genetic iteration   : $i 
@@ -179,10 +165,10 @@ function meta_search(
         println(repeat("_",100))
         flush(stdout)
 
-        prev_time = time()
+        prev_it_time = time()
         # Evaluate the expression on the examples
         current_time = time() - start_time
-        if stopping_condition(current_time, i, fitness)
+        if current_time > max_time || i > max_iterations 
             return best_program, best_fitness
         end
     end

@@ -40,16 +40,22 @@ function print_meta_configuration()
     println("Estimate one run       : ", estimate_runtime_of_one_algorithm())
     println("Estimate one fitness   : ", estimate_runtime_of_fitness_function())
     println("Estimate one iteration : ", estimate_runtime_of_one_genetic_iteration())
-    println("Estimates do not take into account the numeber of threads used")
+    println("Estimates do not take into account the number of threads used")
 end
 
-
+function run_grammar_multiple_times()
+    program = rand(RuleNode, meta_grammar, :S, 10)
+    problem, problem_text = problems_train[begin]
+    expr = rulenode2expr(program, meta_grammar)
+    @show expr
+    evaluate_meta_program(expr, problem, arithmetic_grammar)
+end
 
 function get_meta_algorithm()
     Logging.disable_logging(Logging.LogLevel(1))
     print_meta_configuration()
 
-    @time output = run_meta_search((current_time, i, fitness) -> i > 100)
+    @time output = run_meta_search(max_time = typemax(Int), max_iterations = 4)
     println("Output of meta search is: ", output)
     return output
 end
@@ -103,4 +109,5 @@ function test_runtime_of_a_single_fitness_evaluation()
     end
 end
 
-get_meta_algorithm()
+# get_meta_algorithm()
+run_grammar_multiple_times()

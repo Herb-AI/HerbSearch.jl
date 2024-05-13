@@ -30,8 +30,6 @@ function Base.iterate(iter::BadIterator, current_state::BadIteratorState)
     return (current_state.current_program, current_state)
 end
 
-function get_bad_iterator()
-    return (grammar, _, _, _) -> begin
-        return BadIterator(grammar)
-    end
+function get_bad_iterator(grammar)
+    return BadIterator(grammar)
 end

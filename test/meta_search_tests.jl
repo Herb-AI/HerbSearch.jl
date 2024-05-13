@@ -114,9 +114,11 @@ end
 
     @testset "Sequence test" verbose=true begin 
         problemExamples = create_examples(x -> x + 1)
+        import HerbSearch: generic_run
+        import HerbSearch: SequenceCombinator, ParallelThreadsCombinator
 
         @testset "MH in Sequence is fast" begin
-            runtime_stats = @timed HerbSearch.generic_run((HerbSearch.Sequence, 
+            runtime_stats = @timed generic_run((SequenceCombinator, 
             [
                 create_mh(problemExamples, max_time = 1)
             ], 10, grammar)...;)
@@ -126,7 +128,7 @@ end
         end
 
         @testset "Runtime is sum of Bad iterators" begin
-            runtime_stats = @timed HerbSearch.generic_run((HerbSearch.Sequence, 
+            runtime_stats = @timed generic_run((SequenceCombinator, 
             [
                 create_bad_alg(problemExamples, max_time=0.5),
                 create_bad_alg(problemExamples, max_time=1.5)
@@ -137,7 +139,7 @@ end
         end
 
         @testset "once MH finds the answer the search stops" begin
-            runtime_stats = @timed HerbSearch.generic_run((HerbSearch.Sequence, 
+            runtime_stats = @timed generic_run((SequenceCombinator, 
             [
                 create_bad_alg(problemExamples, max_time=0.5),
                 create_bad_alg(problemExamples, max_time=1.5),
@@ -191,7 +193,7 @@ end
         @testset "Generic run stops on max time even though stopping condition gives more time" begin
             # the maximum time is 3 seconds but it takes 2 seconds because of the maximum running time
             specs = @timed generic_run(
-                get_bad_iterator(), 
+                get_bad_iterator(grammar), 
                 ((time, iteration, cost) -> time > 3), 
                 1, 
                 problemExamples, 
@@ -205,7 +207,7 @@ end
 
             # it stops after the stopping condition (3 seconds)
             specs = @timed generic_run(
-                get_bad_iterator(), 
+                get_bad_iterator(grammar), 
                 ((time, iteration, cost) -> time > 3), 
                 1, 
                 problemExamples, 

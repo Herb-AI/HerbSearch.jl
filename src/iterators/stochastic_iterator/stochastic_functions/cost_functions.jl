@@ -31,7 +31,15 @@ end
 function mean_squared_error_strings(results)
     cost = 0
     for (expected, actual) in results
-        cost += HerbSearch.mse_error_function_strings(expected, actual)
+        cost += HerbSearch.mse_error_function_individual_strings(expected, actual)
     end
     return cost / length(results)
+end
+
+mse_error_function_individual_strings(output::Char, expected_output::String) = mse_error_function_individual_strings(string(output), expected_output)
+mse_error_function_individual_strings(output::String, expected_output::Char) = mse_error_function_individual_strings(output, string(expected_output))
+mse_error_function_individual_strings(output::Char, expected_output::Char) = mse_error_function_individual_strings(string(output), string(expected_output))
+
+function mse_error_function_individual_strings(output::String, expected_output::String)
+    return edit_distance(output,expected_output)
 end

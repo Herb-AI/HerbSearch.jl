@@ -59,6 +59,8 @@ end
 Base.IteratorSize(::StochasticSearchIterator) = Base.SizeUnknown()
 Base.eltype(::StochasticSearchIterator) = RuleNode
 
+construct_state_from_start_program(iter::StochasticSearchIterator, start_program::RuleNode) = IteratorState(start_program, 1, mindepth_map(get_grammar(iter.solver)))
+
 function Base.iterate(iter::StochasticSearchIterator)
     solver = iter.solver
     grammar, max_depth = get_grammar(solver), get_max_depth(solver)
