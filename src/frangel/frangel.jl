@@ -64,9 +64,11 @@ function frangel(
     iter::ProgramIterator
 )
     remembered_programs = Dict{BitVector,Tuple{RuleNode,Int,Int}}()
-    fragments = Set{RuleNode}()
+    fragments = Vector{RuleNode}() # TODO: change it to vector everywhere
 
     add_fragments_prob!(iter, config.generation.use_fragments_chance)
+
+    fragments_offset = length(grammar.rules)
 
     state = nothing
 
@@ -76,7 +78,9 @@ function frangel(
     while time() - start_time < iter.config.max_time
         # Generate random program
         program = state === nothing ? iterate(iter) : iterate(iter, state)
-        # TODO: modify fragment
+
+        modify_and_replace_program_fragments!(program, fragments, fragments_offset, iter.grammar, config.generation.use_entire_fragment_chance)
+        # TODO: add angelic conditions?
 
         passed_tests = BitVector([false for _ in iter.spec])
         # If it does not pass any tests, discard
@@ -100,4 +104,83 @@ function frangel(
             return program # simplify_slow(program), state
         end
     end
+end
+
+function modify_and_replace_program_fragments!(
+    program::RuleNode, 
+    fragments::AbstractVector{RuleNode}, 
+    fragments_offset::Number, 
+    grammar::AbstractGrammar, 
+    use_entire_fragment_chance::Float16
+)::RuleNode 
+    if program.ind > fragments_offset 
+        # a fragment was found
+
+        if rand() < use_entire_fragment_chance
+            # use fragment as is
+            return fragments[program.ind - fragments_offset]
+        else
+            # modify the fragment
+            modified_fragment = deepcopy(fragments[program.ind - fragments_offset])
+            # TODO: random_modify_children!(grammar, modified_fragment, config, fragments_offset)
+            return modified_fragment
+        end
+    else
+        # traverse the tree to find fragments to replace
+        if isterminal(grammar, program.ind)
+            return program
+        end
+
+        for (index, child) in enumerate(program.children)
+            program[index] = modify_and_replace_program_fragments!(child, fragments, fragments_offset, grammar, use_entire_fragment_chance)
+        end
+
+        program
+    end
+end
+
+function random_modify_children!(
+    grammar::AbstractGrammar,
+    node::RuleNode,
+    config::FrAngelConfigGeneration,
+    fragments_offset::Number,
+)::Nothing
+    for (index, child) in enumerate(node.children)
+        if rand() < config.gen_similar_prob_new
+            node.children[index] = generate_random_program(grammar, return_type(grammar, child), config, fragments_offset, config.similar_new_extra_size)
+        else
+            random_modify_children!(grammar, child, config, fragments_offset)
+        end
+    end
+end
+
+function generate_random_program(
+    grammar::AbstractGrammar,
+    type::Symbol,
+    config::FrAngelConfigGeneration,
+    fragments_offset::Number,
+    max_size
+)::Union{RuleNode,Nothing}
+    if max_size < 0
+        return nothing
+    end
+   
+    minsize = rules_minsize(grammar) # TODO pass it instead, it shouldn't include any info about fragments, also it should exclude Fragment_ symbols
+    possible_rules = filter(r -> minsize[r] ≤ max_size && r <= fragments_offset, grammar[type])
+    if isempty(possible_rules)
+        return nothing
+    end
+    rule_index = StatsBase.sample(possible_rules)
+    rule_node = RuleNode(rule_index)
+
+    if !grammar.isterminal[rule_index]
+        symbol_minsize = symbols_minsize(grammar, minsize) # TODO: can also be passed instead
+        sizes = random_partition(grammar, rule_index, max_size, symbol_minsize)
+
+        for (index, child_type) in enumerate(child_types(grammar, rule_index))
+            push!(rule_node.children, generate_random_program(grammar, child_type, config, fragments_offset, sizes[index]))
+        end
+    end
+
+    rule_node
 end
