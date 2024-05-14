@@ -57,70 +57,45 @@ The full configuration struct for FrAngel. Includes generation and angelic sub-c
     angelic::FrAngelConfigAngelic = FrAngelConfigAngelic()
 end
 
-@programiterator FrAngelIterator(
-    spec::AbstractVector{<:IOExample},
-    config::FrAngelConfig,
-    angelic_conditions::AbstractVector{Union{Nothing,Int}}
-)
+function frangel(
+    spec::AbstractVector{<:IOExample}, 
+    config::FrAngelConfig, 
+    angelic_conditions::AbstractVector{Union{Nothing,Int}},
+    iter::ProgramIterator)
 
-"""
-    mutable struct FrAngelIteratorState
+    remembered_programs = Dict{BitVector,Tuple{RuleNode,Int,Int}}(),
+    fragments = Set{RuleNode}()
 
-A mutable struct representing the state of the FrAngel iterator.
+    state = nothing
 
-# Fields
-- `remembered_programs::Dict{BitVector,Tuple{RuleNode,Int,Int}}`: The currently stored programs, representing the best found programs so far. 
-    It uses a dictionary mapping `passed_tests` to (program's tree, the tree's `node_count`, `program_length`).
-- `fragments::Set{RuleNode}`: The currently stored fragments, used for generation of complex programs.
-
-"""
-mutable struct FrAngelIteratorState
-    remembered_programs::Dict{BitVector,Tuple{RuleNode,Int,Int}}
-    fragments::Set{RuleNode}
-end
-
-function Base.iterate(iter::FrAngelIterator)
-    iterate(iter, FrAngelIteratorState(
-        Dict{BitVector,Tuple{RuleNode,Int,Int}}(),
-        Set{RuleNode}()
-    ))
-end
-
-function Base.iterate(iter::FrAngelIterator, state::FrAngelIteratorState)
     symboltable = SymbolTable(iter.grammar)
     start_time = time()
+
     while time() - start_time < iter.config.max_time
         # Generate random program
-        program = generate_random_program(
-            iter.grammar,
-            iter.sym,
-            state.fragments,
-            iter.config.generation,
-            iter.config.generation.use_angelic_conditions_chance,
-            iter.angelic_conditions,
-            iter.config.generation.max_size
-        )
+        program = state === nothing ? iterate(iter) : iterate(iter, state)
+        # TODO: modify fragment
+
         passed_tests = BitVector([false for _ in iter.spec])
         # If it does not pass any tests, discard
-        get_passed_tests!(program, iter.grammar, symboltable, iter.spec, passed_tests, iter.angelic_conditions, iter.config.angelic)
+        get_passed_tests!(program, iter.grammar, symboltable, spec, passed_tests, angelic_conditions, config.angelic)
         if !any(passed_tests)
             continue
         end
         # Contains angelic condition
         if contains_hole(program)
-            resolve_angelic!(program, state.fragments, passed_tests, iter.grammar, symboltable, iter.spec, 1, iter.angelic_conditions, iter.config)
+            resolve_angelic!(program, fragments, passed_tests, iter.grammar, symboltable, spec, 1, angelic_conditions, config)
             # Still contains angelic conditions -> unresolved
             if contains_hole(program)
                 continue
             end
-            get_passed_tests!(program, iter.grammar, symboltable, iter.spec, passed_tests, iter.angelic_conditions, iter.config.angelic)
+            get_passed_tests!(program, iter.grammar, symboltable, spec, passed_tests, angelic_conditions, config.angelic)
         end
-        program = simplify_quick(program, iter.grammar, iter.spec, passed_tests)
-        get_passed_tests!(program, iter.grammar, symboltable, iter.spec, passed_tests, iter.angelic_conditions, iter.config.angelic)
-        state.fragments = remember_programs!(state.remembered_programs, passed_tests, program, state.fragments, iter.grammar)
+        program = simplify_quick(program, iter.grammar, spec, passed_tests)
+        get_passed_tests!(program, iter.grammar, symboltable, spec, passed_tests, angelic_conditions, config.angelic)
+        fragments = remember_programs!(remembered_programs, passed_tests, program, fragments, iter.grammar)
         if all(passed_tests)
-            return program, state # simplify_slow(program), state
+            return program # simplify_slow(program), state
         end
-        # i += 1
     end
 end
