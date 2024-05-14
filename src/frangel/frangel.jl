@@ -61,10 +61,12 @@ function frangel(
     spec::AbstractVector{<:IOExample}, 
     config::FrAngelConfig, 
     angelic_conditions::AbstractVector{Union{Nothing,Int}},
-    iter::ProgramIterator)
-
-    remembered_programs = Dict{BitVector,Tuple{RuleNode,Int,Int}}(),
+    iter::ProgramIterator
+)
+    remembered_programs = Dict{BitVector,Tuple{RuleNode,Int,Int}}()
     fragments = Set{RuleNode}()
+
+    add_fragments_prob!(iter, config.generation.use_fragments_chance)
 
     state = nothing
 

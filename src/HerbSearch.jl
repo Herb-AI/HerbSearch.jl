@@ -85,11 +85,10 @@ export
   sample,
   rand,
 
+  frangel,
   FrAngelConfig,
   FrAngelConfigGeneration,
   FrAngelConfigAngelic,
-  FrAngelIterator,
-  FrAngelIteratorState,
 
   mine_fragments,
   remember_programs!,
@@ -115,6 +114,7 @@ export
   passes_the_same_tests_or_more,
   symbols_minsize,
   _minsize!,
-  rules_minsize
+  rules_minsize,
+  add_fragments_prob!
 
 end # module HerbSearch

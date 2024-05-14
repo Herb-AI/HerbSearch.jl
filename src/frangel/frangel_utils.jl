@@ -297,3 +297,55 @@ function _minsize!(grammar::AbstractGrammar, rule_index::Int, min_sizes::Abstrac
     min_sizes[rule_index] = size
     size
 end
+
+"""
+    add_fragments_prob!(grammar::AbstractGrammar, fragments_chance::Float64)
+
+Adds the probability of using a fragment rule to the grammar rules. For a fragment rule to be found it should be named `Fragment_<symbol>`.
+It should be a terminal rule and have the same type as the symbol it is a fragment of. There should be at most one fragment rule for each symbol.
+        
+# Arguments
+- `grammar`: The grammar rules of the program. Updates its probabilities directly.
+- `fragments_chance`: The probability of using a fragment rule.
+"""
+function add_fragments_prob!(grammar::AbstractGrammar, fragments_chance::Float64)
+    bytype = Dict{Symbol,AbstractVector{Int}}()
+    fragment_rule_bytype = Dict{Symbol,Int}()
+    
+    for rule_index in eachindex(grammar.rules)
+        sym = grammar.types[rule_index]
+    
+        if !haskey(bytype, sym) 
+            bytype[sym] = Vector{Int}()
+        end
+        push!(bytype[sym], rule_index)
+    
+        if isterminal(grammar, rule_index) && grammar.rules[rule_index] == Symbol(string(:Fragment_, sym))
+            fragment_rule_bytype[sym] = rule_index
+        end
+    end
+    
+    grammar.log_probabilities = fill(1, length(grammar.rules))
+    
+    for sym in keys(fragment_rule_bytype)
+        for_rest = (1 - fragments_chance) / (length(bytype[sym]) - 1)
+    
+        for rule_index in bytype[sym] 
+            grammar.log_probabilities[rule_index] = for_rest
+        end
+    
+        grammar.log_probabilities[fragment_rule_bytype[sym]] = fragments_chance
+    end
+    
+    # normalize! from https://github.com/Herb-AI/HerbGrammar.jl/blob/8a7c25f6734a4bfc5f17311bdd80a90195ad3aab/src/csg/probabilistic_csg.jl#L93
+    probabilities = map(exp, grammar.log_probabilities)
+    for t ∈ keys(bytype)
+        total_prob = sum(probabilities[i] for i ∈ grammar.bytype[t])
+        if !(total_prob ≈ 1)
+            for i ∈ grammar.bytype[t]
+                probabilities[i] /= total_prob
+            end
+        end
+    end
+    grammar.log_probabilities = map(log, probabilities)
+end
