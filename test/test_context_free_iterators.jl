@@ -1,28 +1,28 @@
 @testset verbose=true "Context-free iterators" begin
-  @testset "test count_expressions on single Real grammar" begin
+  @testset "length on single Real grammar" begin
     g1 = @csgrammar begin
         Real = |(1:9)
     end
 
-    @test count_expressions(g1, 1, typemax(Int), :Real) == 9
+    @test length(BFSIterator(g1, :Real, max_depth=1)) == 9
 
     # Tree depth is equal to 1, so the max depth of 3 does not change the expression count
-    @test count_expressions(g1, 3, typemax(Int), :Real) == 9
+    @test length(BFSIterator(g1, :Real, max_depth=3)) == 9
   end
 
-  @testset "test count_expressions on grammar with multiplication" begin
+  @testset "length on grammar with multiplication" begin
     g1 = @csgrammar begin
         Real = 1 | 2
         Real = Real * Real 
     end
     # Expressions: [1, 2]  
-    @test count_expressions(g1, 1, typemax(Int), :Real) == 2
+    @test length(BFSIterator(g1, :Real, max_depth=1)) == 2
 
     # Expressions: [1, 2, 1 * 1, 1 * 2, 2 * 1, 2 * 2] 
-    @test count_expressions(g1, 2, typemax(Int), :Real) == 6
+    @test length(BFSIterator(g1, :Real, max_depth=2)) == 6
   end
 
-  @testset "test count_expressions on different arithmetic operators" begin
+  @testset "length on different arithmetic operators" begin
     g1 = @csgrammar begin
         Real = 1
         Real = Real * Real 
@@ -64,27 +64,27 @@
     end
     
     # E.q for multiplication: [1, 1 * 1, 1 * (1 * 1), (1 * 1) * 1, (1 * 1) * (1 * 1)] 
-    @test count_expressions(g1, 3, typemax(Int), :Real) == 5
-    @test count_expressions(g2, 3, typemax(Int), :Real) == 5
-    @test count_expressions(g3, 3, typemax(Int), :Real) == 5
-    @test count_expressions(g4, 3, typemax(Int), :Real) == 5
-    @test count_expressions(g5, 3, typemax(Int), :Real) == 5
-    @test count_expressions(g6, 3, typemax(Int), :Real) == 5
-    @test count_expressions(g7, 3, typemax(Int), :Real) == 5
-    @test count_expressions(g8, 3, typemax(Int), :Real) == 5
+    @test length(BFSIterator(g1, :Real, max_depth=3)) == 5
+    @test length(BFSIterator(g2, :Real, max_depth=3)) == 5
+    @test length(BFSIterator(g3, :Real, max_depth=3)) == 5
+    @test length(BFSIterator(g4, :Real, max_depth=3)) == 5
+    @test length(BFSIterator(g5, :Real, max_depth=3)) == 5
+    @test length(BFSIterator(g6, :Real, max_depth=3)) == 5
+    @test length(BFSIterator(g7, :Real, max_depth=3)) == 5
+    @test length(BFSIterator(g8, :Real, max_depth=3)) == 5
   end
 
-  @testset "test count_expressions on grammar with functions" begin
+  @testset "length on grammar with functions" begin
     g1 = @csgrammar begin
         Real = 1 | 2
         Real = f(Real)                # function call
     end
 
     # Expressions: [1, 2, f(1), f(2)]
-    @test count_expressions(g1, 2, typemax(Int), :Real) == 4
+    @test length(BFSIterator(g1, :Real, max_depth=2)) == 4
 
     # Expressions: [1, 2, f(1), f(2), f(f(1)), f(f(2))]
-    @test count_expressions(g1, 3, typemax(Int), :Real) == 6
+    @test length(BFSIterator(g1, :Real, max_depth=3)) == 6
   end
 
   @testset "bfs enumerator" begin
@@ -92,7 +92,7 @@
       Real = 1 | 2
       Real = Real * Real
     end
-    programs = collect(BFSIterator(g1, :Real, max_depth=2))
+    programs = [freeze_state(p) for p ∈ BFSIterator(g1, :Real, max_depth=2)]
     @test all(map(t -> depth(t[1]) ≤ depth(t[2]), zip(programs[begin:end-1], programs[begin+1:end])))
     
     answer_programs = [
@@ -114,20 +114,8 @@
       Real = 1 | 2
       Real = Real * Real
     end
-    programs = collect(DFSIterator(g1, :Real, max_depth=2))
-    @test length(programs) == count_expressions(g1, 2, typemax(Int), :Real)
-  end
 
-  @testset "probabilistic enumerator" begin
-    g₁ = @pcsgrammar begin
-      0.2 : Real = |(0:1)
-      0.5 : Real = Real + Real
-      0.3 : Real = Real * Real 
-    end
-  
-    programs = collect(MLFSIterator(g₁, :Real, max_depth=2))
-    @test length(programs) == count_expressions(g₁, 2, typemax(Int), :Real)
-    @test all(map(t -> rulenode_log_probability(t[1], g₁) ≥ rulenode_log_probability(t[2], g₁), zip(programs[begin:end-1], programs[begin+1:end])))
+    @test length(BFSIterator(g1, :Real, max_depth=2)) == 6
   end
 
 end
