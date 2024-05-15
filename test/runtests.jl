@@ -12,7 +12,7 @@ Random.seed!(1234)
 
 @testset "HerbSearch.jl" verbose=true begin
     include("test_search_procedure.jl")        
-    include("test_context_free_iterators.jl") #TODO: see "probabilistic enumerator" in test_context_free_iterators.jl
+    include("test_context_free_iterators.jl")
     include("test_sampling.jl")
     include("test_stochastic/test_stochastic.jl")
     include("test_genetic.jl")
@@ -24,6 +24,7 @@ Random.seed!(1234)
     include("test_contains.jl")
     include("test_probe.jl")
     include("test_newprograms.jl")
+    include("test_unique.jl")
 
     # Excluded because it contains long tests
     # include("test_realistic_searches.jl")

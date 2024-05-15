@@ -20,7 +20,6 @@ function heuristic_leftmost_fixed_shaped_hole(node::AbstractRuleNode, max_depth:
         return already_complete
     end
     
-    #TODO: refactor this. this method should be merged with `heuristic_leftmost`. The only difference is the `UniformHole` typing in the signature below:
     function leftmost(hole::UniformHole, max_depth::Int, path::Vector{Int})::Union{ExpandFailureReason, HoleReference}
         if max_depth == 0 return limit_reached end
         return HoleReference(hole, path)
