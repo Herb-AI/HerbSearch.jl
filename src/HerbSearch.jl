@@ -111,6 +111,7 @@ export
   random_partition,
   simplify_quick,
   _simplify_quick_once,
+  simplify_slow,
   passes_the_same_tests_or_more,
   symbols_minsize,
   _minsize!,

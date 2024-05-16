@@ -112,7 +112,8 @@ function frangel(
         get_passed_tests!(program, iter.grammar, symboltable, spec, passed_tests, angelic_conditions, config.angelic)
         fragments = remember_programs!(remembered_programs, passed_tests, program, fragments, iter.grammar)
         if all(passed_tests)
-            return program # simplify_slow(program), state
+            program = simplify_slow(program, iter.grammar, spec, (time() - start_time) / 10)
+            return simplify_quick(program, iter.grammar, spec, passed_tests)
         end
     end
 end

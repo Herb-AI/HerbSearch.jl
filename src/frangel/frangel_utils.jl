@@ -367,3 +367,8 @@ Returns true if the rule is a starting fragment rule, false otherwise.
 function is_fragment_rule(grammar::AbstractGrammar, rule_index::Int)::Bool
     grammar.rules[rule_index] == Symbol(string(:Fragment_, grammar.types[rule_index])) # TODO: possiblly cache them
 end
+
+
+function simplify_slow(program::RuleNode, grammar::AbstractGrammar, tests::AbstractVector{<:IOExample}, time_to_run)::RuleNode
+    program
+end
