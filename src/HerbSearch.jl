@@ -115,6 +115,8 @@ export
   symbols_minsize,
   _minsize!,
   rules_minsize,
-  add_fragments_prob!
+  add_fragments_prob!,
+  modify_and_replace_program_fragments!,
+  is_fragment_rule
 
 end # module HerbSearch

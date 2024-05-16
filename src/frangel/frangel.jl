@@ -75,7 +75,7 @@ function frangel(
         end
     end
 
-    symbol_minsize = symbols_minsize(grammar, minsize)
+    symbol_minsize = symbols_minsize(grammar, rule_minsize)
 
     add_fragments_prob!(iter, config.generation.use_fragments_chance)
 
@@ -126,15 +126,16 @@ function modify_and_replace_program_fragments!(
     rule_minsize::AbstractVector{Int},
     symbol_minsize::Dict{Symbol,Int}
 )::RuleNode 
-    if program.ind > fragments_offset 
+    if is_fragment_rule(grammar, program.ind)
+        fragment_rule_index = program.children[1].ind
         # a fragment was found
 
         if rand() < config.use_entire_fragment_chance
             # use fragment as is
-            return fragments[program.ind - fragments_offset]
+            return fragments[fragment_rule_index - fragments_offset]
         else
             # modify the fragment
-            modified_fragment = deepcopy(fragments[program.ind - fragments_offset])
+            modified_fragment = deepcopy(fragments[fragment_rule_index - fragments_offset])
             random_modify_children!(grammar, modified_fragment, config, fragments_offset, rule_minsize, symbol_minsize)
             return modified_fragment
         end
@@ -145,7 +146,7 @@ function modify_and_replace_program_fragments!(
         end
 
         for (index, child) in enumerate(program.children)
-            program[index] = modify_and_replace_program_fragments!(child, fragments, fragments_offset, config, grammar, rule_minsize, symbol_minsize)
+            program.children[index] = modify_and_replace_program_fragments!(child, fragments, fragments_offset, config, grammar, rule_minsize, symbol_minsize)
         end
 
         program
