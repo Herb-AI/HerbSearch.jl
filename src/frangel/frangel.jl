@@ -90,8 +90,8 @@ function frangel(
         # Generate random program
         program = state === nothing ? iterate(iter) : iterate(iter, state)
 
-        modify_and_replace_program_fragments!(program, fragments, fragments_offset, config, iter.grammar, rule_minsize, symbol_minsize)
-        # TODO: add angelic conditions?
+        program = modify_and_replace_program_fragments!(program, fragments, fragments_offset, config, iter.grammar, rule_minsize, symbol_minsize)
+        program = add_angelic_conditions!(program, grammar, angelic_conditions, config)
 
         passed_tests = BitVector([false for _ in iter.spec])
         # If it does not pass any tests, discard
@@ -182,8 +182,8 @@ function generate_random_program(
     if max_size < 0
         return nothing
     end
-   
-    possible_rules = filter(r -> rule_minsize[r] ≤ max_size && r <= fragments_offset, grammar[type])
+    
+    possible_rules = filter(r -> r <= fragments_offset && rule_minsize[r] ≤ max_size, grammar[type])
     if isempty(possible_rules)
         return nothing
     end
@@ -199,4 +199,28 @@ function generate_random_program(
     end
 
     rule_node
+end
+
+function add_angelic_conditions!(program::RuleNode, grammar::AbstractGrammar, angelic_conditions::AbstractVector{Union{Nothing,Int}}, config::FrAngelConfig) 
+    if isterminal(grammar, program.ind)
+        return program
+    end
+
+    if angelic_conditions[program.ind] !== nothing && rand() < config.generation.use_angelic_conditions_chance
+        angelic_condition_ind = angelic_conditions[program.ind]
+
+        for (index, child) in enumerate(program.children)
+            if index != angelic_condition_ind
+                program.children[index] = add_angelic_conditions!(child, grammar, angelic_conditions, config)
+            end
+        end
+
+        program.children[angelic_condition_ind] = Hole(grammar.domains[return_type(grammar, program.ind)])
+    else
+        for (index, child) in enumerate(program.children)
+            program.children[index] = add_angelic_conditions!(child, grammar, angelic_conditions, config)
+        end
+    end
+    
+    program
 end

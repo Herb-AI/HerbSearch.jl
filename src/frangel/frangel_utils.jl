@@ -335,6 +335,7 @@ function add_fragments_prob!(grammar::AbstractGrammar, fragments_chance::Float64
         end
     
         grammar.log_probabilities[fragment_rule_bytype[sym]] = fragments_chance
+        grammar.isterminal[fragment_rule_bytype[sym]] = 0
     end
     
     # normalize! from https://github.com/Herb-AI/HerbGrammar.jl/blob/8a7c25f6734a4bfc5f17311bdd80a90195ad3aab/src/csg/probabilistic_csg.jl#L93

@@ -117,6 +117,7 @@ export
   rules_minsize,
   add_fragments_prob!,
   modify_and_replace_program_fragments!,
-  is_fragment_rule
+  is_fragment_rule,
+  add_angelic_conditions!
 
 end # module HerbSearch
