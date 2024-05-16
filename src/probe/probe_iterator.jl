@@ -86,7 +86,7 @@ function probe(examples::Vector{<:IOExample}, iterator::ProgramIterator, max_tim
         if !isempty(partial_sols)
             push!(all_selected_psols, partial_sols...)
             # update probabilites if any promising partial solutions
-            update_grammar!(iterator.grammar, partial_sols, examples) # update probabilites
+            update_grammar!(grammar, partial_sols, examples) # update probabilites
             # restart iterator
             eval_cache = Set()
             state = nothing
@@ -94,7 +94,7 @@ function probe(examples::Vector{<:IOExample}, iterator::ProgramIterator, max_tim
             #for loop to update all_selected_psols with new costs
             for prog_with_cache ∈ all_selected_psols
                 program = prog_with_cache.program
-                new_cost = calculate_program_cost(program, iterator.grammar)
+                new_cost = calculate_program_cost(program, grammar)
                 prog_with_cache.cost = new_cost
             end
         end

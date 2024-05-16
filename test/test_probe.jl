@@ -199,17 +199,6 @@ end
         output = [example.out for example in examples]
 
         symboltable = SymbolTable(grammar)
-        # @testset "Running using sized based enumeration" begin
-        #     HerbSearch.calculate_rule_cost(rule_index::Int, grammar::ContextSensitiveGrammar) = HerbSearch.calculate_rule_cost_size(rule_index, grammar)
-        #     iter = HerbSearch.GuidedSearchIterator(grammar, :S, examples, symboltable)
-        #     runtime = @timed program = probe(examples, iter, 1, 10000)
-
-        #     expression = rulenode2expr(program, grammar)
-        #     @test runtime.time <= 1 
-
-        #     received = execute_on_input(symboltable, expression, input)
-        #     @test output == received
-        # end
 
         cost_functions = [HerbSearch.calculate_rule_cost_size, HerbSearch.calculate_rule_cost_prob]
         select_functions = [HerbSearch.selectpsol_all_cheapest, HerbSearch.selectpsol_first_cheapest, HerbSearch.selectpsol_largest_subset]
@@ -222,7 +211,7 @@ end
             1:S = S * S
         end
         for cost_func ∈ cost_functions
-            for select ∈ select_functions
+            for select_func ∈ select_functions
                 for grammar_to_use ∈ [uniform_grammar, grammar]
                     @testset "Uniform grammar is uniform" begin
                         sum(exp.(grammar.log_probabilities)) ≈ 1
@@ -235,7 +224,7 @@ end
                     deep_copy_grammar = deepcopy(grammar_to_use)
                     iter = HerbSearch.GuidedSearchIterator(deep_copy_grammar, :S, examples, symboltable)
                     max_time = 5
-                    runtime = @timed program = probe(examples, iter, max_time, 10000)
+                    runtime = @timed program = probe(examples, iter, max_time, 100)
                     expression = rulenode2expr(program, grammar_to_use)
                     @test runtime.time <= max_time
 
