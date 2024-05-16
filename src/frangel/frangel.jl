@@ -66,6 +66,17 @@ function frangel(
     remembered_programs = Dict{BitVector,Tuple{RuleNode,Int,Int}}()
     fragments = Vector{RuleNode}() # TODO: change it to vector everywhere
 
+    rule_minsize = rules_minsize(grammar) 
+    for rule_index in eachindex(grammar.rules)
+        sym = grammar.types[rule_index]
+    
+        if isterminal(grammar, rule_index) && grammar.rules[rule_index] == Symbol(string(:Fragment_, sym))
+            rule_minsize[rule_index] = typemax(Int)
+        end
+    end
+
+    symbol_minsize = symbols_minsize(grammar, minsize)
+
     add_fragments_prob!(iter, config.generation.use_fragments_chance)
 
     fragments_offset = length(grammar.rules)
@@ -79,7 +90,7 @@ function frangel(
         # Generate random program
         program = state === nothing ? iterate(iter) : iterate(iter, state)
 
-        modify_and_replace_program_fragments!(program, fragments, fragments_offset, iter.grammar, config.generation.use_entire_fragment_chance)
+        modify_and_replace_program_fragments!(program, fragments, fragments_offset, config, iter.grammar, rule_minsize, symbol_minsize)
         # TODO: add angelic conditions?
 
         passed_tests = BitVector([false for _ in iter.spec])
@@ -110,19 +121,21 @@ function modify_and_replace_program_fragments!(
     program::RuleNode, 
     fragments::AbstractVector{RuleNode}, 
     fragments_offset::Number, 
+    config::FrAngelConfigGeneration,
     grammar::AbstractGrammar, 
-    use_entire_fragment_chance::Float16
+    rule_minsize::AbstractVector{Int},
+    symbol_minsize::Dict{Symbol,Int}
 )::RuleNode 
     if program.ind > fragments_offset 
         # a fragment was found
 
-        if rand() < use_entire_fragment_chance
+        if rand() < config.use_entire_fragment_chance
             # use fragment as is
             return fragments[program.ind - fragments_offset]
         else
             # modify the fragment
             modified_fragment = deepcopy(fragments[program.ind - fragments_offset])
-            # TODO: random_modify_children!(grammar, modified_fragment, config, fragments_offset)
+            random_modify_children!(grammar, modified_fragment, config, fragments_offset, rule_minsize, symbol_minsize)
             return modified_fragment
         end
     else
@@ -132,7 +145,7 @@ function modify_and_replace_program_fragments!(
         end
 
         for (index, child) in enumerate(program.children)
-            program[index] = modify_and_replace_program_fragments!(child, fragments, fragments_offset, grammar, use_entire_fragment_chance)
+            program[index] = modify_and_replace_program_fragments!(child, fragments, fragments_offset, config, grammar, rule_minsize, symbol_minsize)
         end
 
         program
@@ -144,12 +157,14 @@ function random_modify_children!(
     node::RuleNode,
     config::FrAngelConfigGeneration,
     fragments_offset::Number,
+    rule_minsize::AbstractVector{Int},
+    symbol_minsize::Dict{Symbol,Int}
 )::Nothing
     for (index, child) in enumerate(node.children)
         if rand() < config.gen_similar_prob_new
-            node.children[index] = generate_random_program(grammar, return_type(grammar, child), config, fragments_offset, config.similar_new_extra_size)
+            node.children[index] = generate_random_program(grammar, return_type(grammar, child), config, fragments_offset, count_nodes(grammar, child) + config.similar_new_extra_size, rule_minsize, symbol_minsize)
         else
-            random_modify_children!(grammar, child, config, fragments_offset)
+            random_modify_children!(grammar, child, config, fragments_offset, rule_minsize, symbol_minsize)
         end
     end
 end
@@ -159,14 +174,15 @@ function generate_random_program(
     type::Symbol,
     config::FrAngelConfigGeneration,
     fragments_offset::Number,
-    max_size
+    max_size,
+    rule_minsize::AbstractVector{Int},
+    symbol_minsize::Dict{Symbol,Int}
 )::Union{RuleNode,Nothing}
     if max_size < 0
         return nothing
     end
    
-    minsize = rules_minsize(grammar) # TODO pass it instead, it shouldn't include any info about fragments, also it should exclude Fragment_ symbols
-    possible_rules = filter(r -> minsize[r] ≤ max_size && r <= fragments_offset, grammar[type])
+    possible_rules = filter(r -> rule_minsize[r] ≤ max_size && r <= fragments_offset, grammar[type])
     if isempty(possible_rules)
         return nothing
     end
@@ -174,11 +190,10 @@ function generate_random_program(
     rule_node = RuleNode(rule_index)
 
     if !grammar.isterminal[rule_index]
-        symbol_minsize = symbols_minsize(grammar, minsize) # TODO: can also be passed instead
         sizes = random_partition(grammar, rule_index, max_size, symbol_minsize)
 
         for (index, child_type) in enumerate(child_types(grammar, rule_index))
-            push!(rule_node.children, generate_random_program(grammar, child_type, config, fragments_offset, sizes[index]))
+            push!(rule_node.children, generate_random_program(grammar, child_type, config, fragments_offset, sizes[index], rule_minsize, symbol_minsize))
         end
     end
 

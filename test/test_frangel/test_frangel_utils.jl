@@ -93,5 +93,32 @@ end
         expected = RuleNode(23, [RuleNode(22, [RuleNode(14, [RuleNode(8)])])])
 
         @test expected == simplify_quick(program, grammar, tests, passed_tests)
+
+@testset "add_fragments_prob!" begin
+    @testset "finds the fragment placeholders and adds appropiate probabilities" begin
+
+        grammer_with_fragment_placeholders = @cfgrammar begin
+            Program = Return | (Statement; Return) | Fragment_Program
+            Return = return Expression
+            Statement = Expression | (Statement; Statement)
+            Expression = Num
+            Num = |(0:9) | (Num + Num) | (Num - Num) | Fragment_Num
+        end
+        
+        fragments_chance = 0.6
+
+        add_fragments_prob!(grammer_with_fragment_placeholders, fragments_chance)  
+
+        prob_grammer = @pcsgrammar begin
+            0.4 : Program = Return | (Statement; Return)
+            0.6 : Program = Fragment_Program
+            1 : Return = return Expression
+            1: Statement = Expression | (Statement; Statement)
+            1 : Expression = Num
+            0.4 : Num = |(0:9) | (Num + Num) | (Num - Num)
+            0.6 : Num = Fragment_Num
+        end
+
+        @test prob_grammer.log_probabilities == grammer_with_fragment_placeholders.log_probabilities
     end
 end
