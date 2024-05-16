@@ -17,19 +17,20 @@ function Base.iterate(iter::GuidedSearchIterator)
         level=-1,
         bank=[],
         eval_cache=Set(),
-        iter=NewProgramsIterator(0, [], iter.grammar),
+        iter=NewProgramsIterator(0, [], get_grammar(iter.solver)),
         next_iter=nothing
     ))
 end
 
 function Base.iterate(iter::GuidedSearchIterator, state::GuidedSearchState)::Union{Tuple{RuleNode, GuidedSearchState}, Nothing}
+    grammar = get_grammar(iter.solver)
     # wrap in while true to optimize for tail call
     while true
         while state.next_iter === nothing
             state.level += 1
             push!(state.bank, [])
 
-            state.iter = NewProgramsIterator(state.level, state.bank, iter.grammar)
+            state.iter = NewProgramsIterator(state.level, state.bank, grammar) 
             state.next_iter = iterate(state.iter)
             if state.level > 0
                 @info ("Finished level $(state.level - 1) with $(length(state.bank[state.level])) programs")
@@ -45,7 +46,7 @@ function Base.iterate(iter::GuidedSearchIterator, state::GuidedSearchState)::Uni
 
             # evaluate program
             eval_observation = []
-            expr = rulenode2expr(prog, iter.grammar)
+            expr = rulenode2expr(prog, grammar)
             for example ∈ iter.spec
                 output = execute_on_input(iter.symboltable, expr, example.in)
                 push!(eval_observation, output)

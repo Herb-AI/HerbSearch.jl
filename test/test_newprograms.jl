@@ -21,7 +21,7 @@ function fast_sol(nr_elements, desired_sum, maximum_value)
     end
     return array
 end
-@testset "Test that the sum itearator works" begin
+@testset "Test that the sum iterator works" begin
 
     @testset "Property based testing" begin
         max_value = 10
@@ -54,7 +54,6 @@ end
             # deep copy is needed because the iterator mutates the state in place
             push!(options, deepcopy(option))
         end
-        println("Options", options)
         @test options == [
             [1, 1, 1, 2],
             [1, 1, 2, 1],
