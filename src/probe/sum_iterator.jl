@@ -17,7 +17,7 @@ for option ∈ sum_iter
 end
 ```
 """
-@kwdef struct SumIterator
+Base.@kwdef struct SumIterator
     number_of_elements::Int
     desired_sum::Int
     max_value::Int

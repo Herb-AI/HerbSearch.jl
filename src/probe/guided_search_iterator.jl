@@ -4,7 +4,7 @@
     symboltable::SymbolTable
 
 )
-@kwdef mutable struct GuidedSearchState
+Base.@kwdef mutable struct GuidedSearchState
     level::Int64
     bank::Vector{Vector{RuleNode}}
     eval_cache::Set
