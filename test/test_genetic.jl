@@ -3,11 +3,6 @@ using LegibleLambdas
 disable_logging(LogLevel(1))
 
 
-function create_problem(f, range=20)
-    examples = [IOExample(Dict(:x => x), f(x)) for x ∈ 1:range]
-    return Problem(examples), examples
-end
-
 @testset "Genetic search algorithms" verbose=true begin 
     @testset "mutate_random" begin
         grammar::ContextSensitiveGrammar = @csgrammar begin

@@ -13,7 +13,7 @@ using MLStyle
 include("sampling_grammar.jl")
 
 include("program_iterator.jl")
-include("count_expressions.jl")
+include("uniform_iterator.jl")
 
 include("heuristics.jl")
 
@@ -38,8 +38,9 @@ include("genetic_functions/crossover.jl")
 include("genetic_functions/select_parents.jl")
 include("genetic_search_iterator.jl")
 
+include("random_iterator.jl")
+
 export 
-  count_expressions,
   ProgramIterator,
   @programiterator,
   
@@ -50,14 +51,19 @@ export
   heuristic_random,
   heuristic_smallest_domain,
 
+  derivation_heuristic,
+
   synth,
   SynthResult,
   optimal_program,
   suboptimal_program,
 
   FixedShapedIterator,
+  UniformIterator,
+  next_solution!,
 
   TopDownIterator,
+  RandomIterator,
   BFSIterator,
   DFSIterator,
   MLFSIterator,

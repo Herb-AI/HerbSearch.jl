@@ -20,8 +20,7 @@ function heuristic_leftmost_fixed_shaped_hole(node::AbstractRuleNode, max_depth:
         return already_complete
     end
     
-    #TODO: refactor this. this method should be merged with `heuristic_leftmost`. The only difference is the `FixedShapedHole` typing in the signature below:
-    function leftmost(hole::FixedShapedHole, max_depth::Int, path::Vector{Int})::Union{ExpandFailureReason, HoleReference}
+    function leftmost(hole::UniformHole, max_depth::Int, path::Vector{Int})::Union{ExpandFailureReason, HoleReference}
         if max_depth == 0 return limit_reached end
         return HoleReference(hole, path)
     end
@@ -50,7 +49,7 @@ function heuristic_leftmost(node::AbstractRuleNode, max_depth::Int)::Union{Expan
         return already_complete
     end
     
-    function leftmost(hole::VariableShapedHole, max_depth::Int, path::Vector{Int})::Union{ExpandFailureReason, HoleReference}
+    function leftmost(hole::Hole, max_depth::Int, path::Vector{Int})::Union{ExpandFailureReason, HoleReference}
         if max_depth == 0 return limit_reached end
         return HoleReference(hole, path)
     end
@@ -78,7 +77,7 @@ function heuristic_rightmost(node::AbstractRuleNode, max_depth::Int)::Union{Expa
         return already_complete
     end
     
-    function rightmost(hole::VariableShapedHole, max_depth::Int, path::Vector{Int})::Union{ExpandFailureReason, HoleReference}
+    function rightmost(hole::Hole, max_depth::Int, path::Vector{Int})::Union{ExpandFailureReason, HoleReference}
         if max_depth == 0 return limit_reached end
         return HoleReference(hole, path)
     end
@@ -107,7 +106,7 @@ function heuristic_random(node::AbstractRuleNode, max_depth::Int)::Union{ExpandF
         return already_complete
     end
     
-    function random(hole::VariableShapedHole, max_depth::Int, path::Vector{Int})::Union{ExpandFailureReason, HoleReference}
+    function random(hole::Hole, max_depth::Int, path::Vector{Int})::Union{ExpandFailureReason, HoleReference}
         if max_depth == 0 return limit_reached end
         return HoleReference(hole, path)
     end
@@ -148,7 +147,7 @@ function heuristic_smallest_domain(node::AbstractRuleNode, max_depth::Int)::Unio
         return smallest_result
     end
     
-    function smallest_domain(hole::VariableShapedHole, max_depth::Int, path::Vector{Int})::Union{ExpandFailureReason, HoleReference}
+    function smallest_domain(hole::Hole, max_depth::Int, path::Vector{Int})::Union{ExpandFailureReason, HoleReference}
         if max_depth == 0 return limit_reached end
         return HoleReference(hole, path)
     end
