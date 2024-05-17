@@ -93,6 +93,8 @@ end
         expected = RuleNode(23, [RuleNode(22, [RuleNode(14, [RuleNode(8)])])])
 
         @test expected == simplify_quick(program, grammar, tests, passed_tests)
+    end
+end
 
 @testset "add_fragments_prob!" begin
     @testset "finds the fragment placeholders and adds appropiate probabilities" begin
