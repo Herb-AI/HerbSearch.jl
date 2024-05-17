@@ -17,6 +17,7 @@ Base.hash(a::ProgramCache) = hash(a.program)
 include("sum_iterator.jl")
 include("new_program_iterator.jl")
 include("guided_search_iterator.jl")
+include("guided_trace_search_iterator.jl")
 
 include("select_partial_sols.jl")
 include("update_grammar.jl")
@@ -98,6 +99,81 @@ function probe(examples::Vector{<:IOExample}, iterator::ProgramIterator, max_tim
                 prog_with_cache.cost = new_cost
             end
         end
+    end
+
+    return nothing
+end
+
+
+evaluate_trace(program::RuleNode, grammar::ContextSensitiveGrammar) = error("Evaluate trace method should be overwritten")  
+
+"""
+
+Probe for a solution using the given `iterator` and `examples` with a time limit of `max_time` and `iteration_size`.
+"""
+function probe(traces::Vector{Trace{A}}, iterator::ProgramIterator, max_time::Int, iteration_size::Int) where A
+    start_time = time()
+    # store a set of all the results of evaluation programs
+    eval_cache = Set()
+    state = nothing
+    grammar = get_grammar(iterator.solver)
+    symboltable = SymbolTable(grammar)
+
+    best_reward = 0
+    # all partial solutions that were found so far
+    all_selected_psols = Set{ProgramCache}()
+    # start next iteration while there is time left
+    while time() - start_time < max_time
+        i = 1
+        # partial solutions for the current synthesis cycle
+        psol_with_eval_cache = Vector{ProgramCache}()
+        next = state === nothing ? iterate(iterator) : iterate(iterator, state)
+        while next !== nothing && i < iteration_size # run one iteration
+            program, state = next
+
+            # evaluate  
+            eval_observation, is_done, is_partial_sol, final_reward = evaluate_trace(program, grammar)
+            best_reward = max(best_reward, final_reward)
+            println("Best reward: $best_reward")
+
+            if is_done 
+                @info "Last level: $(length(state.bank[state.level + 1])) programs"
+                return program
+            elseif eval_observation in eval_cache # result already in cache
+                next = iterate(iterator, state)
+                continue
+            elseif is_partial_sol # partial solution 
+                program_cost = calculate_program_cost(program, grammar)
+                # push!(psol_with_eval_cache, ProgramCache(program, correct_examples, program_cost))
+            end
+
+            push!(eval_cache, eval_observation)
+
+            next = iterate(iterator, state)
+            i += 1
+        end
+
+        # check if program iterator is exhausted
+        if next === nothing
+            return nothing
+        end
+        # TODO: Implement select_partial_solution and update for traces
+        # partial_sols = filter(x -> x ∉ all_selected_psols, select_partial_solution(psol_with_eval_cache, all_selected_psols))
+        # if !isempty(partial_sols)
+        #     push!(all_selected_psols, partial_sols...)
+        #     # update probabilites if any promising partial solutions
+        #     update_grammar!(grammar, partial_sols, examples) # update probabilites
+        #     # restart iterator
+        #     eval_cache = Set()
+        #     state = nothing
+
+        #     #for loop to update all_selected_psols with new costs
+        #     for prog_with_cache ∈ all_selected_psols
+        #         program = prog_with_cache.program
+        #         new_cost = calculate_program_cost(program, grammar)
+        #         prog_with_cache.cost = new_cost
+        #     end
+        # end
     end
 
     return nothing
