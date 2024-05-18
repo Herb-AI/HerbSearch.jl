@@ -86,7 +86,7 @@ function frangel(
     while time() - start_time < config.max_time
         # Generate random program
         program, state = (state === nothing) ? iterate(iter) : iterate(iter, state)
-
+        program = deepcopy(program)
         # Generalize these two procedures at some point
         program = modify_and_replace_program_fragments!(program, fragments, fragments_offset, config.generation, grammar, rule_minsize, symbol_minsize)
         program = add_angelic_conditions!(program, grammar, angelic_conditions, config.generation)
