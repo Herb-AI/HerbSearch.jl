@@ -14,7 +14,7 @@ A configuration struct for FrAngel generation.
 """
 @kwdef struct FrAngelConfigGeneration
     max_size::Int = 40
-    use_fragments_chance::Float16 = 0.5
+    use_fragments_chance::Float64 = 0.5
     use_entire_fragment_chance::Float16 = 0.5
     use_angelic_conditions_chance::Float16 = 0.5
     similar_new_extra_size::Int = 8
@@ -113,12 +113,12 @@ function frangel(
         
         # Early return -> if it passes all tests, then final round of simplification and return
         if all(passed_tests)
-            program = simplify_slow(program, grammar, spec, (time() - start_time) / 10)
+            program = simplify_slow(program, grammar, spec, angelic_conditions, (time() - start_time) / 10)
             return simplify_quick(program, grammar, spec, passed_tests)
         end
 
         # Update grammar with fragments
-        for i in range(fragments_offset, length(grammar.rules))
+        for i in range(fragments_offset + 1, length(grammar.rules))
             remove_rule!(grammar, i)
         end
         cleanup_removed_rules!(grammar)

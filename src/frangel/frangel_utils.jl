@@ -308,7 +308,7 @@ It should be a terminal rule and have the same type as the symbol it is a fragme
 - `grammar`: The grammar rules of the program. Updates its probabilities directly.
 - `fragments_chance`: The probability of using a fragment rule.
 """
-function add_fragments_prob!(grammar::AbstractGrammar, fragments_chance::Float16)
+function add_fragments_prob!(grammar::AbstractGrammar, fragments_chance::Float64)
     bytype = Dict{Symbol,AbstractVector{Int}}()
     fragment_rule_bytype = Dict{Symbol,Int}()
     

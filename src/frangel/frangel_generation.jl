@@ -12,14 +12,14 @@ Generates a random program of the provided `type` using the provided `grammar`. 
 - `generate_with_angelic`: A float representing the chance to generate a program with an angelic condition. Set to 0 if no such conditions are desired.
 - `angelic_conditions`: A vector of integers representing the index of the child to replace with an angelic condition for each rule. 
     If there is no angelic condition for a rule, the value is set to `nothing`.
-- `max_size`: The maximum size of the program to generate.
+- `max_size`: The maximum size of the program to generate. If the value is too small, the function will use the minimum size of the type.
 - `disabled_fragments`: A boolean flag to disable the use of fragments in the program generation.
 
 # Note
 The values passed as `max_size` and `generate_with_angelic` to the function will be used over the `config` values.
 
 # Returns
-A random program of the provided type, or nothing if no program can be generated.
+A random program of the provided type.
 
 """
 function generate_random_program(
@@ -30,15 +30,11 @@ function generate_random_program(
     max_size,
     rule_minsize::AbstractVector{Int},
     symbol_minsize::Dict{Symbol,Int}
-)::Union{RuleNode,Nothing}
-    if max_size < 0
-        return nothing
-    end
+)::RuleNode
+    max_size = max(max_size, symbol_minsize[type])
     
     possible_rules = filter(r -> r <= fragments_offset && rule_minsize[r] ≤ max_size, grammar[type])
-    if isempty(possible_rules)
-        return nothing
-    end
+
     rule_index = StatsBase.sample(possible_rules)
     rule_node = RuleNode(rule_index)
 
@@ -184,7 +180,7 @@ function get_replacements(node::RuleNode, grammar::AbstractGrammar)::AbstractVec
 
     # Single-node trees corresponding to all variables and constants in the grammar.
     for rule_index in eachindex(grammar.rules)
-        if isterminal(grammar, rule_index) && return_type(grammar, rule_index) == symbol
+        if isterminal(grammar, rule_index) && return_type(grammar, rule_index) == symbol && !is_fragment_rule(grammar, rule_index)
             push!(replacements, RuleNode(rule_index))
         end
     end
