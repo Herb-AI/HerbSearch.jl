@@ -89,6 +89,20 @@ function modify_and_replace_program_fragments!(
     end
 end
 
+function modify_and_replace_program_fragments!(
+    state_hole::StateHole, 
+    fragments::AbstractVector{RuleNode}, 
+    fragments_offset::Number, 
+    config::FrAngelConfigGeneration,
+    grammar::AbstractGrammar, 
+    rule_minsize::AbstractVector{Int},
+    symbol_minsize::Dict{Symbol,Int}
+)::RuleNode 
+    program = RuleNode(findfirst(state_hole.domain))
+
+    modify_and_replace_program_fragments!(program, fragments, fragments_offset, config, grammar, rule_minsize, symbol_minsize)
+end
+
 """
     random_modify_children!(grammar::AbstractGrammar, node::RuleNode, config::FrAngelConfigGeneration, generate_with_angelic::Float16, 
         angelic_conditions::AbstractVector{Union{Nothing,Int}})
