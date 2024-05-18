@@ -142,7 +142,7 @@ end
         angelic_conditions[18] = 1
         
         # execute
-        program = add_angelic_conditions!(program, grammar, angelic_conditions, config)  
+        program = add_angelic_conditions!(program, grammar, angelic_conditions, config.generation)  
 
         # verify
         expected = RuleNode(3, [RuleNode(1, [RuleNode(4, [RuleNode(7, [RuleNode(18, [Hole(grammar.domains[return_type(grammar, 9)]), RuleNode(10)])])])])])

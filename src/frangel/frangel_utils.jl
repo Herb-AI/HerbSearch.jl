@@ -158,7 +158,7 @@ function _simplify_quick_once(
     passed_tests::BitVector,
     path::Vector{Int}=[]
 )::RuleNode
-    for replacement in (node, grammar)
+    for replacement in get_replacements(node, grammar)
         if length(path) == 0
             if passes_the_same_tests_or_more(replacement, grammar, tests, passed_tests)
                 return replacement
@@ -308,7 +308,7 @@ It should be a terminal rule and have the same type as the symbol it is a fragme
 - `grammar`: The grammar rules of the program. Updates its probabilities directly.
 - `fragments_chance`: The probability of using a fragment rule.
 """
-function add_fragments_prob!(grammar::AbstractGrammar, fragments_chance::Float64)
+function add_fragments_prob!(grammar::AbstractGrammar, fragments_chance::Float16)
     bytype = Dict{Symbol,AbstractVector{Int}}()
     fragment_rule_bytype = Dict{Symbol,Int}()
     

@@ -100,9 +100,9 @@ function remember_programs!(
     old_remembered[passing_tests] = (new_program, node_count, program_length)
     result = collect(mine_fragments(grammar, Set(values(old_remembered))))
     for fragment in result
-        typ = return_type(grammar, fragment)
+        typ = Symbol("Fragment_", return_type(grammar, fragment))
         expr = rulenode2expr(fragment, grammar)
-        add_rule!(grammar, 1, :(Fragment_$(typ) = $expr))
+        add_rule!(grammar, :($typ = $expr))
     end
     result
 end

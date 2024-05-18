@@ -163,7 +163,7 @@ end
     first_program_tests = BitVector([1, 0, 1])
     first_program_value = (first_program, count_nodes(g, first_program), length(string(rulenode2expr(first_program, g))))
     old_remembered = Dict{BitVector,Tuple{RuleNode,Int,Int}}()
-    remember_programs!(old_remembered, first_program_tests, first_program, Set{RuleNode}(), g)
+    remember_programs!(old_remembered, first_program_tests, first_program, Vector{RuleNode}(), g)
     println(old_remembered)
 
     # Second program to consider
@@ -178,7 +178,7 @@ end
 
     function one_test_case(new_program::RuleNode, passing_tests::BitVector, expected_result::Dict{BitVector,Tuple{RuleNode,Int,Int}})
         new_remembered = deepcopy(old_remembered)
-        remember_programs!(new_remembered, passing_tests, new_program, Set{RuleNode}(), g)
+        remember_programs!(new_remembered, passing_tests, new_program, Vector{RuleNode}(), g)
         @test expected_result == new_remembered
     end
 

@@ -77,21 +77,21 @@ function frangel(
     end
     
     symbol_minsize = symbols_minsize(grammar, rule_minsize)
-    add_fragments_prob!(iter, config.generation.use_fragments_chance)
+    add_fragments_prob!(grammar, config.generation.use_fragments_chance)
     fragments_offset = length(grammar.rules)
     state = nothing
     symboltable = SymbolTable(grammar)
     start_time = time()
 
-    while time() - start_time < iter.config.max_time
+    while time() - start_time < config.max_time
         # Generate random program
-        program = state === nothing ? iterate(iter) : iterate(iter, state)
+        program, state = (state === nothing) ? iterate(iter) : iterate(iter, state)
 
         # Generalize these two procedures at some point
         program = modify_and_replace_program_fragments!(program, fragments, fragments_offset, config.generation, grammar, rule_minsize, symbol_minsize)
         program = add_angelic_conditions!(program, grammar, angelic_conditions, config.generation)
 
-        passed_tests = BitVector([false for _ in iter.spec])
+        passed_tests = BitVector([false for _ in spec])
         # If it does not pass any tests, discard
         get_passed_tests!(program, grammar, symboltable, spec, passed_tests, angelic_conditions, config.angelic)
         if !any(passed_tests)
