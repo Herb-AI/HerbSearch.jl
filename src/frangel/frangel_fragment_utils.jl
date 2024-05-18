@@ -77,9 +77,9 @@ function remember_programs!(
     old_remembered::Dict{BitVector,Tuple{RuleNode,Int,Int}},
     passing_tests::BitVector,
     new_program::RuleNode,
-    fragments::Set{RuleNode},
+    fragments::AbstractVector{RuleNode},
     grammar::AbstractGrammar
-)::Set{RuleNode}
+)::AbstractVector{RuleNode}
     node_count = count_nodes(grammar, new_program)
     program_length = length(string(rulenode2expr(new_program, grammar)))
     # Check the new program's testset over each remembered program
@@ -98,5 +98,11 @@ function remember_programs!(
         end
     end
     old_remembered[passing_tests] = (new_program, node_count, program_length)
-    mine_fragments(grammar, Set(values(old_remembered)))
+    result = collect(mine_fragments(grammar, Set(values(old_remembered))))
+    for fragment in result
+        typ = return_type(grammar, fragment)
+        expr = rulenode2expr(fragment, grammar)
+        add_rule!(grammar, 1, :(Fragment_$(typ) = $expr))
+    end
+    result
 end
