@@ -65,6 +65,7 @@ function frangel(
 )
     remembered_programs = Dict{BitVector,Tuple{RuleNode,Int,Int}}()
     fragments = Vector{RuleNode}() # TODO: change it to vector everywhere
+    grammar = iter.grammar
 
     rule_minsize = rules_minsize(grammar) 
     for rule_index in eachindex(grammar.rules)
@@ -74,154 +75,53 @@ function frangel(
             rule_minsize[rule_index] = typemax(Int)
         end
     end
-
+    
     symbol_minsize = symbols_minsize(grammar, rule_minsize)
-
     add_fragments_prob!(iter, config.generation.use_fragments_chance)
-
     fragments_offset = length(grammar.rules)
-
     state = nothing
-
-    symboltable = SymbolTable(iter.grammar)
+    symboltable = SymbolTable(grammar)
     start_time = time()
 
     while time() - start_time < iter.config.max_time
         # Generate random program
         program = state === nothing ? iterate(iter) : iterate(iter, state)
 
-        program = modify_and_replace_program_fragments!(program, fragments, fragments_offset, config, iter.grammar, rule_minsize, symbol_minsize)
-        program = add_angelic_conditions!(program, grammar, angelic_conditions, config)
+        # Generalize these two procedures at some point
+        program = modify_and_replace_program_fragments!(program, fragments, fragments_offset, config.generation, grammar, rule_minsize, symbol_minsize)
+        program = add_angelic_conditions!(program, grammar, angelic_conditions, config.generation)
 
         passed_tests = BitVector([false for _ in iter.spec])
         # If it does not pass any tests, discard
-        get_passed_tests!(program, iter.grammar, symboltable, spec, passed_tests, angelic_conditions, config.angelic)
+        get_passed_tests!(program, grammar, symboltable, spec, passed_tests, angelic_conditions, config.angelic)
         if !any(passed_tests)
             continue
         end
-        # Contains angelic condition
+        # If it contains angelic conditions, resolve them
         if contains_hole(program)
-            resolve_angelic!(program, fragments, passed_tests, iter.grammar, symboltable, spec, 1, angelic_conditions, config)
+            resolve_angelic!(program, fragments, passed_tests, grammar, symboltable, spec, 1, angelic_conditions, config)
             # Still contains angelic conditions -> unresolved
             if contains_hole(program)
                 continue
             end
-            get_passed_tests!(program, iter.grammar, symboltable, spec, passed_tests, angelic_conditions, config.angelic)
+            get_passed_tests!(program, grammar, symboltable, spec, passed_tests, angelic_conditions, config.angelic)
         end
-        program = simplify_quick(program, iter.grammar, spec, passed_tests)
-        get_passed_tests!(program, iter.grammar, symboltable, spec, passed_tests, angelic_conditions, config.angelic)
-        fragments = remember_programs!(remembered_programs, passed_tests, program, fragments, iter.grammar)
+
+        # Simplify and rerun over examples
+        program = simplify_quick(program, grammar, spec, passed_tests)
+        get_passed_tests!(program, grammar, symboltable, spec, passed_tests, angelic_conditions, config.angelic)
+        
+        # Early return -> if it passes all tests, then final round of simplification and return
         if all(passed_tests)
-            program = simplify_slow(program, iter.grammar, spec, (time() - start_time) / 10)
-            return simplify_quick(program, iter.grammar, spec, passed_tests)
-        end
-    end
-end
-
-function modify_and_replace_program_fragments!(
-    program::RuleNode, 
-    fragments::AbstractVector{RuleNode}, 
-    fragments_offset::Number, 
-    config::FrAngelConfigGeneration,
-    grammar::AbstractGrammar, 
-    rule_minsize::AbstractVector{Int},
-    symbol_minsize::Dict{Symbol,Int}
-)::RuleNode 
-    if is_fragment_rule(grammar, program.ind)
-        fragment_rule_index = program.children[1].ind
-        # a fragment was found
-
-        if rand() < config.use_entire_fragment_chance
-            # use fragment as is
-            return fragments[fragment_rule_index - fragments_offset]
-        else
-            # modify the fragment
-            modified_fragment = deepcopy(fragments[fragment_rule_index - fragments_offset])
-            random_modify_children!(grammar, modified_fragment, config, fragments_offset, rule_minsize, symbol_minsize)
-            return modified_fragment
-        end
-    else
-        # traverse the tree to find fragments to replace
-        if isterminal(grammar, program.ind)
-            return program
+            program = simplify_slow(program, grammar, spec, (time() - start_time) / 10)
+            return simplify_quick(program, grammar, spec, passed_tests)
         end
 
-        for (index, child) in enumerate(program.children)
-            program.children[index] = modify_and_replace_program_fragments!(child, fragments, fragments_offset, config, grammar, rule_minsize, symbol_minsize)
+        # Update grammar with fragments
+        for i in range(fragments_offset, length(grammar.rules))
+            remove_rule!(grammar, i)
         end
-
-        program
+        cleanup_removed_rules!(grammar)
+        fragments = remember_programs!(remembered_programs, passed_tests, program, fragments, grammar)
     end
-end
-
-function random_modify_children!(
-    grammar::AbstractGrammar,
-    node::RuleNode,
-    config::FrAngelConfigGeneration,
-    fragments_offset::Number,
-    rule_minsize::AbstractVector{Int},
-    symbol_minsize::Dict{Symbol,Int}
-)::Nothing
-    for (index, child) in enumerate(node.children)
-        if rand() < config.gen_similar_prob_new
-            node.children[index] = generate_random_program(grammar, return_type(grammar, child), config, fragments_offset, count_nodes(grammar, child) + config.similar_new_extra_size, rule_minsize, symbol_minsize)
-        else
-            random_modify_children!(grammar, child, config, fragments_offset, rule_minsize, symbol_minsize)
-        end
-    end
-end
-
-function generate_random_program(
-    grammar::AbstractGrammar,
-    type::Symbol,
-    config::FrAngelConfigGeneration,
-    fragments_offset::Number,
-    max_size,
-    rule_minsize::AbstractVector{Int},
-    symbol_minsize::Dict{Symbol,Int}
-)::Union{RuleNode,Nothing}
-    if max_size < 0
-        return nothing
-    end
-    
-    possible_rules = filter(r -> r <= fragments_offset && rule_minsize[r] ≤ max_size, grammar[type])
-    if isempty(possible_rules)
-        return nothing
-    end
-    rule_index = StatsBase.sample(possible_rules)
-    rule_node = RuleNode(rule_index)
-
-    if !grammar.isterminal[rule_index]
-        sizes = random_partition(grammar, rule_index, max_size, symbol_minsize)
-
-        for (index, child_type) in enumerate(child_types(grammar, rule_index))
-            push!(rule_node.children, generate_random_program(grammar, child_type, config, fragments_offset, sizes[index], rule_minsize, symbol_minsize))
-        end
-    end
-
-    rule_node
-end
-
-function add_angelic_conditions!(program::RuleNode, grammar::AbstractGrammar, angelic_conditions::AbstractVector{Union{Nothing,Int}}, config::FrAngelConfig) 
-    if isterminal(grammar, program.ind)
-        return program
-    end
-
-    if angelic_conditions[program.ind] !== nothing && rand() < config.generation.use_angelic_conditions_chance
-        angelic_condition_ind = angelic_conditions[program.ind]
-
-        for (index, child) in enumerate(program.children)
-            if index != angelic_condition_ind
-                program.children[index] = add_angelic_conditions!(child, grammar, angelic_conditions, config)
-            end
-        end
-
-        program.children[angelic_condition_ind] = Hole(grammar.domains[return_type(grammar, program.ind)])
-    else
-        for (index, child) in enumerate(program.children)
-            program.children[index] = add_angelic_conditions!(child, grammar, angelic_conditions, config)
-        end
-    end
-    
-    program
 end

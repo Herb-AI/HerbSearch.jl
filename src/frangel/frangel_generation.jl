@@ -25,32 +25,17 @@ A random program of the provided type, or nothing if no program can be generated
 function generate_random_program(
     grammar::AbstractGrammar,
     type::Symbol,
-    fragments::Set{RuleNode},
     config::FrAngelConfigGeneration,
-    generate_with_angelic::Float16,
-    angelic_conditions::AbstractVector{Union{Nothing,Int}},
+    fragments_offset::Number,
     max_size,
-    disabled_fragments=false
+    rule_minsize::AbstractVector{Int},
+    symbol_minsize::Dict{Symbol,Int}
 )::Union{RuleNode,Nothing}
     if max_size < 0
         return nothing
     end
-    use_fragments = !disabled_fragments && rand() < config.use_fragments_chance
-    if use_fragments
-        possible_fragments = filter(f -> return_type(grammar, f) == type, fragments)
-        if !isempty(possible_fragments)
-            # Pick a fragment, either return itself or modify a child with it
-            fragment = deepcopy(rand(possible_fragments))
-            if rand() < config.use_entire_fragment_chance
-                return fragment
-            end
-            random_modify_children!(grammar, fragment, config, generate_with_angelic, angelic_conditions)
-            return fragment
-        end
-    end
-    # If not using fragments, replace node
-    minsize = rules_minsize(grammar)
-    possible_rules = filter(r -> minsize[r] ≤ max_size, grammar[type])
+    
+    possible_rules = filter(r -> r <= fragments_offset && rule_minsize[r] ≤ max_size, grammar[type])
     if isempty(possible_rules)
         return nothing
     end
@@ -58,21 +43,50 @@ function generate_random_program(
     rule_node = RuleNode(rule_index)
 
     if !grammar.isterminal[rule_index]
-        use_angelic = rand() < config.use_angelic_conditions_chance && angelic_conditions[rule_index] !== nothing
-
-        symbol_minsize = symbols_minsize(grammar, minsize)
         sizes = random_partition(grammar, rule_index, max_size, symbol_minsize)
 
         for (index, child_type) in enumerate(child_types(grammar, rule_index))
-            if use_angelic && angelic_conditions[rule_index] == index
-                push!(rule_node.children, Hole(grammar.domains[child_type]))
-            else
-                push!(rule_node.children, generate_random_program(grammar, child_type, fragments, config, generate_with_angelic, angelic_conditions, sizes[index], disabled_fragments))
-            end
+            push!(rule_node.children, generate_random_program(grammar, child_type, config, fragments_offset, sizes[index], rule_minsize, symbol_minsize))
         end
     end
 
     rule_node
+end
+
+function modify_and_replace_program_fragments!(
+    program::RuleNode, 
+    fragments::AbstractVector{RuleNode}, 
+    fragments_offset::Number, 
+    config::FrAngelConfigGeneration,
+    grammar::AbstractGrammar, 
+    rule_minsize::AbstractVector{Int},
+    symbol_minsize::Dict{Symbol,Int}
+)::RuleNode 
+    if is_fragment_rule(grammar, program.ind)
+        fragment_rule_index = program.children[1].ind
+        # a fragment was found
+
+        if rand() < config.use_entire_fragment_chance
+            # use fragment as is
+            return fragments[fragment_rule_index - fragments_offset]
+        else
+            # modify the fragment
+            modified_fragment = deepcopy(fragments[fragment_rule_index - fragments_offset])
+            random_modify_children!(grammar, modified_fragment, config, fragments_offset, rule_minsize, symbol_minsize)
+            return modified_fragment
+        end
+    else
+        # traverse the tree to find fragments to replace
+        if isterminal(grammar, program.ind)
+            return program
+        end
+
+        for (index, child) in enumerate(program.children)
+            program.children[index] = modify_and_replace_program_fragments!(child, fragments, fragments_offset, config, grammar, rule_minsize, symbol_minsize)
+        end
+
+        program
+    end
 end
 
 """
@@ -97,15 +111,15 @@ function random_modify_children!(
     grammar::AbstractGrammar,
     node::RuleNode,
     config::FrAngelConfigGeneration,
-    generate_with_angelic::Float16,
-    angelic_conditions::AbstractVector{Union{Nothing,Int}}
+    fragments_offset::Number,
+    rule_minsize::AbstractVector{Int},
+    symbol_minsize::Dict{Symbol,Int}
 )::Nothing
     for (index, child) in enumerate(node.children)
         if rand() < config.gen_similar_prob_new
-            node.children[index] = generate_random_program(grammar, return_type(grammar, child), Set{RuleNode}(), config,
-                generate_with_angelic, angelic_conditions, count_nodes(grammar, child) + config.similar_new_extra_size, true)
+            node.children[index] = generate_random_program(grammar, return_type(grammar, child), config, fragments_offset, count_nodes(grammar, child) + config.similar_new_extra_size, rule_minsize, symbol_minsize)
         else
-            random_modify_children!(grammar, child, config, generate_with_angelic, angelic_conditions)
+            random_modify_children!(grammar, child, config, fragments_offset, rule_minsize, symbol_minsize)
         end
     end
 end
@@ -189,4 +203,28 @@ function get_descendant_replacements!(node::RuleNode, symbol::Symbol, grammar::A
         end
         get_descendant_replacements!(child, symbol, grammar, replacements)
     end
+end
+
+function add_angelic_conditions!(program::RuleNode, grammar::AbstractGrammar, angelic_conditions::AbstractVector{Union{Nothing,Int}}, config::FrAngelConfigGeneration) 
+    if isterminal(grammar, program.ind)
+        return program
+    end
+
+    if angelic_conditions[program.ind] !== nothing && rand() < config.use_angelic_conditions_chance
+        angelic_condition_ind = angelic_conditions[program.ind]
+
+        for (index, child) in enumerate(program.children)
+            if index != angelic_condition_ind
+                program.children[index] = add_angelic_conditions!(child, grammar, angelic_conditions, config)
+            end
+        end
+
+        program.children[angelic_condition_ind] = Hole(grammar.domains[return_type(grammar, program.ind)])
+    else
+        for (index, child) in enumerate(program.children)
+            program.children[index] = add_angelic_conditions!(child, grammar, angelic_conditions, config)
+        end
+    end
+    
+    program
 end

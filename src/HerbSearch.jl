@@ -94,6 +94,7 @@ export
   remember_programs!,
   
   generate_random_program,
+  modify_and_replace_program_fragments!,
   random_modify_children!,
   get_replacements,
   get_descendant_replacements!,
@@ -117,7 +118,6 @@ export
   _minsize!,
   rules_minsize,
   add_fragments_prob!,
-  modify_and_replace_program_fragments!,
   is_fragment_rule,
   add_angelic_conditions!
 
