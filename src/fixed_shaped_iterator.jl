@@ -2,7 +2,9 @@ Base.@doc """
     @programiterator FixedShapedIterator()
 
 Enumerates all programs that extend from the provided fixed shaped tree.
-The [Solver](@ref) is required to be in a state without any [VariableShapedHole](@ref)s 
+The [Solver](@ref) is required to be in a state without any [Hole](@ref)s.
+
+!!! warning: this iterator is used as a baseline for the constraint propagation thesis. After the thesis, this iterator can (and should) be deleted.
 """ FixedShapedIterator
 @programiterator FixedShapedIterator()
 
@@ -10,10 +12,6 @@ The [Solver](@ref) is required to be in a state without any [VariableShapedHole]
     priority_function(::FixedShapedIterator, g::AbstractGrammar, tree::AbstractRuleNode, parent_value::Union{Real, Tuple{Vararg{Real}}})
 
 Assigns a priority value to a `tree` that needs to be considered later in the search. Trees with the lowest priority value are considered first.
-
-- `g`: The grammar used for enumeration
-- `tree`: The tree that is about to be stored in the priority queue
-- `parent_value`: The priority value of the parent [`State`](@ref)
 """
 function priority_function(
     ::FixedShapedIterator, 
@@ -41,10 +39,10 @@ Describes the iteration for a given [`TopDownIterator`](@ref) over the grammar. 
 """
 function Base.iterate(iter::FixedShapedIterator)
     # Priority queue with number of nodes in the program
-    pq :: PriorityQueue{State, Union{Real, Tuple{Vararg{Real}}}} = PriorityQueue()
+    pq :: PriorityQueue{SolverState, Union{Real, Tuple{Vararg{Real}}}} = PriorityQueue()
 
     solver = iter.solver
-    @assert !contains_variable_shaped_hole(get_tree(iter.solver)) "A FixedShapedIterator cannot iterate partial programs with VariableShapedHoles"
+    @assert !contains_nonuniform_hole(get_tree(iter.solver)) "A FixedShapedIterator cannot iterate partial programs with Holes"
 
     if isfeasible(solver)
         enqueue!(pq, get_state(solver), priority_function(iter, get_grammar(solver), get_tree(solver), 0))
@@ -85,8 +83,7 @@ function _find_next_complete_tree(
             # The maximum depth is reached
             continue
         elseif hole_res isa HoleReference
-            # Fixed Shaped Hole was found
-            # TODO: problem. this 'hole' is tied to a target state. it should be state independent
+            # UniformHole was found
             (; hole, path) = hole_res
     
             rules = findall(hole.domain)
