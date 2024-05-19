@@ -35,9 +35,6 @@ using Random
 
  ----
  # Fields
- -   `grammar::ContextSensitiveGrammar` grammar that the algorithm uses
- -   `sym::Symbol` the start symbol of the algorithm `:Real` or `:Int`
-
  -   `examples::Vector{IOExample}` example used to check the program
  -   `cost_function::Function`
  -   `initial_temperature::Real` = 1 
@@ -56,10 +53,19 @@ Base.IteratorSize(::StochasticSearchIterator) = Base.SizeUnknown()
 Base.eltype(::StochasticSearchIterator) = RuleNode
 
 function Base.iterate(iter::StochasticSearchIterator)
-    grammar, max_depth = iter.grammar, iter.max_depth
+    solver = iter.solver
+    grammar, max_depth = get_grammar(solver), get_max_depth(solver)
+
     # sample a random node using start symbol and grammar
     dmap = mindepth_map(grammar)
-    sampled_program = rand(RuleNode, grammar, iter.sym, max_depth)
+    start_symbol = get_starting_symbol(solver)
+    sampled_program = rand(RuleNode, grammar, start_symbol , max_depth) #TODO: replace iter.sym with a domain of valid rules
+    substitute!(solver, Vector{Int}(), sampled_program)
+    while !isfeasible(solver)
+        #TODO: prevent infinite loops here. Check max_time and/or max_enumerations.
+        sampled_program = rand(RuleNode, grammar, start_symbol, max_depth) #TODO: replace iter.sym with a domain of valid rules
+        substitute!(solver, Vector{Int}(), sampled_program)
+    end
 
     return (sampled_program, IteratorState(sampled_program, iter.initial_temperature,dmap))  
 end
@@ -71,21 +77,21 @@ end
 The algorithm that constructs the iterator of StochasticSearchIterator. It has the following structure:
 
 1. get a random node location -> location,dict = neighbourhood(current_program)
-2. call propose on the current program getting a list of possbile replacements in the node location 
-3. iterate through all the possible replacements and perform the replacement in the current program 
-4. accept the new program by modifying the next_program or reject the new program
+2. call propose on the current program getting a list of full programs
+3. iterate through all the proposals and check if the proposed program is "better" than the previous one
+4. "accept" the new program by calling the `accept`
 5. return the new next_program
 """
-function Base.iterate(iter::StochasticSearchIterator, current_state::IteratorState)
-    grammar, examples = iter.grammar, iter.spec
-    current_program = current_state.current_program
+function Base.iterate(iter::StochasticSearchIterator, iterator_state::IteratorState)
+    grammar, solver = get_grammar(iter.solver), iter.solver
+    current_program = get_tree(solver)#iterator_state.current_program
     
     current_cost = calculate_cost(iter, current_program)
 
-    new_temperature = temperature(iter, current_state.current_temperature)
+    new_temperature = temperature(iter, iterator_state.current_temperature)
 
     # get the neighbour node location 
-    neighbourhood_node_location, dict = neighbourhood(iter, current_state.current_program)
+    neighbourhood_node_location, dict = neighbourhood(iter, current_program)
 
     # get the subprogram pointed by node-location
     subprogram = get(current_program, neighbourhood_node_location)
@@ -94,34 +100,44 @@ function Base.iterate(iter::StochasticSearchIterator, current_state::IteratorSta
     @info "Start: $(rulenode2expr(current_program, grammar)), subexpr: $(rulenode2expr(subprogram, grammar)), cost: $current_cost
             temp $new_temperature"
 
-    # propose new programs to consider. They are programs to put in the place of the nodelocation
-    possible_replacements = propose(iter, current_program, neighbourhood_node_location, current_state.dmap, dict)
+    # remove the rule node by substituting it with a hole of the same symbol
+    original_node = get(current_program, neighbourhood_node_location)
+    path = get_path(current_program, original_node)
+    original_state = save_state!(solver)
+
+    remove_node!(solver, path)
     
-    next_program = get_next_program(iter, current_program, possible_replacements, neighbourhood_node_location, new_temperature, current_cost)
-    next_state = IteratorState(next_program,new_temperature,current_state.dmap)
-    return (next_program, next_state)
+    # propose new programs to consider. They are programs to put in the place of the nodelocation
+    # propose should give full programs
+    possible_programs = propose(iter, path, dict)
+    
+    # try to improve the program using any of the possible replacements
+    improved_program = try_improve_program!(iter, possible_programs, neighbourhood_node_location, new_temperature, current_cost)
+    
+    if isnothing(improved_program)
+        load_state!(solver, original_state)
+    else 
+        new_state!(solver, improved_program)
+    end
+
+    @assert isfeasible(solver)
+    @assert !contains_hole(get_tree(solver))
+    
+    next_state = IteratorState(get_tree(solver), new_temperature,iterator_state.dmap)
+    return (get_tree(solver), next_state)
 end
 
 
-function get_next_program(iter::StochasticSearchIterator, current_program::RuleNode, possible_replacements, neighbourhood_node_location::NodeLoc, new_temperature, current_cost)
-    next_program = deepcopy(current_program)
-    possible_program = current_program
-    for possible_replacement in possible_replacements
-        # replace node at node_location with possible_replacement 
-        if neighbourhood_node_location.i == 0
-            possible_program = possible_replacement
-        else
-            # update current_program with the subprogram generated
-            neighbourhood_node_location.parent.children[neighbourhood_node_location.i] = possible_replacement
-        end
+function try_improve_program!(iter::StochasticSearchIterator, possible_programs, neighbourhood_node_location::NodeLoc, new_temperature, current_cost)
+    best_program = nothing
+    for possible_program in possible_programs
         program_cost = calculate_cost(iter, possible_program)
-        if accept(iter, current_cost, program_cost, new_temperature) 
-            next_program = deepcopy(possible_program)
+        if accept(iter, current_cost, program_cost, new_temperature)
+            best_program = freeze_state(possible_program)
             current_cost = program_cost
         end
     end
-    return next_program
-
+    return best_program
 end
 
 """
@@ -129,7 +145,7 @@ end
 
 Returns the cost of the `program` using the examples and the `cost_function`. It first convert the program to an expression and evaluates it on all the examples.
 """
-function _calculate_cost(program::RuleNode, cost_function::Function, spec::AbstractVector{IOExample}, grammar::AbstractGrammar, evaluation_function::Function)
+function _calculate_cost(program::Union{RuleNode, StateHole}, cost_function::Function, spec::AbstractVector{IOExample}, grammar::AbstractGrammar, evaluation_function::Function)
     results = Tuple{<:Number,<:Number}[]
 
     expression = rulenode2expr(program, grammar)
@@ -144,13 +160,13 @@ function _calculate_cost(program::RuleNode, cost_function::Function, spec::Abstr
 end
 
 """
-    calculate_cost(iter::T, program::RuleNode) where T <: StochasticSearchIterator
+    calculate_cost(iter::T, program::Union{RuleNode, StateHole}) where T <: StochasticSearchIterator
 
 Wrapper around [`_calculate_cost`](@ref).
 """
-calculate_cost(iter::T, program::RuleNode) where T <: StochasticSearchIterator = _calculate_cost(program, iter.cost_function, iter.spec, iter.grammar, iter.evaluation_function)
+calculate_cost(iter::T, program::Union{RuleNode, StateHole}) where T <: StochasticSearchIterator = _calculate_cost(program, iter.cost_function, iter.spec, get_grammar(iter.solver), iter.evaluation_function)
 
-neighbourhood(iter::T, current_program::RuleNode) where T <: StochasticSearchIterator = constructNeighbourhood(current_program, iter.grammar)
+neighbourhood(iter::T, current_program::RuleNode) where T <: StochasticSearchIterator = constructNeighbourhood(current_program, get_grammar(iter.solver))
 
 Base.@doc """
     MHSearchIterator(examples::AbstractArray{<:IOExample}, cost_function::Function, evaluation_function::Function=HerbInterpret.execute_on_input)
@@ -170,7 +186,7 @@ The temperature value of the algorithm remains constant over time.
     evaluation_function::Function = execute_on_input, 
 ) <: StochasticSearchIterator
 
-propose(iter::MHSearchIterator, current_program::RuleNode, neighbourhood_node_loc::NodeLoc, dmap::AbstractVector{Int}, dict::Union{Nothing,Dict{String,Any}}) = random_fill_propose(current_program, neighbourhood_node_loc, iter.grammar, iter.max_depth, dmap, dict)
+propose(iter::MHSearchIterator, path::Vector{Int}, dict::Union{Nothing,Dict{String,Any}}) = random_fill_propose(iter.solver, path, dict)
 
 temperature(::MHSearchIterator, current_temperature::Real) = const_temperature(current_temperature)
 
@@ -196,7 +212,7 @@ The temperature value of the algorithm remains constant over time.
     evaluation_function::Function = execute_on_input
 ) <: StochasticSearchIterator
 
-propose(iter::VLSNSearchIterator, current_program::RuleNode, neighbourhood_node_loc::NodeLoc, dmap::AbstractVector{Int}, dict::Union{Nothing,Dict{String,Any}}) = enumerate_neighbours_propose(iter.vlsn_neighbourhood_depth)(current_program, neighbourhood_node_loc, iter.grammar, iter.max_depth, dmap, dict)
+propose(iter::VLSNSearchIterator, path::Vector{Int}, dict::Union{Nothing,Dict{String,Any}}) = enumerate_neighbours_propose(iter.vlsn_neighbourhood_depth)(iter.solver, path, dict)
 
 temperature(::VLSNSearchIterator, current_temperature::Real) = const_temperature(current_temperature)
 
@@ -223,7 +239,7 @@ but takes into account the tempeerature too.
     evaluation_function::Function = execute_on_input
 ) <: StochasticSearchIterator
 
-propose(iter::SASearchIterator, current_program::RuleNode, neighbourhood_node_loc::NodeLoc, dmap::AbstractVector{Int}, dict::Union{Nothing,Dict{String,Any}}) = random_fill_propose(current_program, neighbourhood_node_loc, iter.grammar, iter.max_depth, dmap, dict)
+propose(iter::SASearchIterator, path::Vector{Int}, dict::Union{Nothing,Dict{String,Any}}) = random_fill_propose(iter.solver, path, dict)
 
 temperature(iter::SASearchIterator, current_temperature::Real) = decreasing_temperature(iter.temperature_decreasing_factor)(current_temperature)
 
