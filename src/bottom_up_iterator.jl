@@ -137,15 +137,13 @@ The iterations constructs the initial set of programs, which consists of the set
 It also constructs the ['BottomUpState'](@ref) which will be used in future iterations.
 """
 function Base.iterate(iter::BottomUpIterator)::Union{Nothing,Tuple{RuleNode,BottomUpState}}
-    current_programs = Queue{RuleNode}()
     priority_bank::Base.Dict{Symbol, Dict{RuleNode,Int64}} = Dict()
 	hashes::Set{UInt} = Set{UInt}()
+    current_programs = Queue{RuleNode}()
 
-    if iter.solver == nothing 
-        iter.solver = GenericSolver(iter.grammar, iter.sym)
-    end
+    grammar::ContextSensitiveGrammar = get_grammar(iter.solver)
 
-    for terminal ∈ findall(iter.grammar.isterminal)
+    for terminal ∈ findall(grammar.isterminal)
         current_single_program::RuleNode = RuleNode(terminal, nothing, [])
         enqueue!(current_programs, current_single_program)
     end
@@ -167,9 +165,11 @@ function Base.iterate(iter::BottomUpIterator, state::BottomUpState)::Union{Nothi
         return next_program
     end
 
-    rules::Vector{Int64} = order(iter, iter.grammar)
+    grammar::ContextSensitiveGrammar = get_grammar(iter.solver)
+
+    rules::Vector{Int64} = order(iter, grammar)
     for rule in rules
-        new_programs = pick(iter, iter.grammar, state, rule)
+        new_programs = pick(iter, grammar, state, rule)
         for new_program ∈ new_programs
             enqueue!(state.current_programs, new_program)
         end
@@ -188,15 +188,17 @@ function _get_next_program(
     iter::BottomUpIterator,
     state::BottomUpState
 )::Union{Nothing,Tuple{RuleNode, BottomUpState}}
+    grammar::ContextSensitiveGrammar = get_grammar(iter.solver)
+
     while !isempty(state.current_programs) 
         current_program = dequeue!(state.current_programs)
-        if depth(current_program) > iter.max_depth || _contains_equivalent(iter, state, current_program)
+        if depth(current_program) > get_max_depth(iter.solver) || _contains_equivalent(iter, state, current_program)
             continue
         end
 
-        current_program_symbol::Symbol = iter.grammar.types[current_program.ind]
+        current_program_symbol::Symbol = grammar.types[current_program.ind]
         symbol_dict = get!(state.priority_bank, current_program_symbol, Dict{RuleNode, Int64}())
-        symbol_dict[current_program] = priority_function(iter, iter.grammar, current_program, state)
+        symbol_dict[current_program] = priority_function(iter, grammar, current_program, state)
 
         new_state!(iter.solver, current_program)
         if isfeasible(iter.solver)
@@ -237,6 +239,8 @@ function _hash_outputs_for_program(
 	program::RuleNode,
     problem::Problem{Vector{IOExample}}
 )::UInt
-    outputs = map(example -> execute_on_input(SymbolTable(iter.grammar), rulenode2expr(program, iter.grammar), example.in), problem.spec)
+    grammar::ContextSensitiveGrammar = iter.solver.grammar
+
+    outputs = map(example -> execute_on_input(SymbolTable(grammar), rulenode2expr(program, grammar), example.in), problem.spec)
     return hash(outputs)
 end
