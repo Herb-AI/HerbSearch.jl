@@ -55,11 +55,26 @@ function Base.iterate(iter::NewProgramsIterator, state::NewProgramsState)
             else
                 # save current values
                 children, _ = state.cartesian_iter_state
-                rulenode = RuleNode(state.rule_index, collect(children))
+                children = collect(children)
+
                 # move to next cartesian
                 _, next_state = state.cartesian_iter_state
                 state.cartesian_iter_state = iterate(state.cartesian_iter, next_state)
-                return rulenode, state
+
+                # check if selected programs have the correct type
+                types = child_types(iter.grammar, state.rule_index)
+                same_types = true
+                for i in 1:length(types)
+                    if return_type(iter.grammar, children[i]) != types[i]
+                        same_types = false
+                        break
+                    end
+                end
+                
+                if same_types
+                    rulenode = RuleNode(state.rule_index, children)
+                    return rulenode, state
+                end
             end
         end
         state.rule_index += 1

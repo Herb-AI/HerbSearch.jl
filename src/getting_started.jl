@@ -19,7 +19,7 @@ examples = [
             # IOExample(Dict(:arg => "<Change> <string> to <a> number"), "Change string to a number")
         ]
 
-iter = HerbSearch.GuidedSearchIterator(grammar, :S, examples, SymbolTable(grammar))
+iter = HerbSearch.GuidedSearchIterator(grammar, :S, examples, SymbolTable(grammar), :S)
 @profview program = @time probe(examples, iter, 40, 10)
 # program = @time probe(examples, iter,  3600, 10000)
 

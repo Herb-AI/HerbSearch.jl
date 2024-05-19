@@ -149,7 +149,7 @@ end
 
         @testset "Running using size-based enumeration" begin
             HerbSearch.calculate_rule_cost(rule_index::Int, grammar::ContextSensitiveGrammar) = HerbSearch.calculate_rule_cost_size(rule_index, grammar)
-            iter = HerbSearch.GuidedSearchIterator(grammar, :S, examples, symboltable)
+            iter = HerbSearch.GuidedSearchIterator(grammar, :S, examples, symboltable, :S)
 
             max_level = 10
             state = nothing
@@ -173,7 +173,7 @@ end
             ]
 
             HerbSearch.calculate_rule_cost(rule_index::Int, grammar::ContextSensitiveGrammar) = HerbSearch.calculate_rule_cost_prob(rule_index, grammar)
-            iter = HerbSearch.GuidedSearchIterator(grammar, :S, examples, symboltable)
+            iter = HerbSearch.GuidedSearchIterator(grammar, :S, examples, symboltable, :S)
 
             max_level = 20
             state = nothing
@@ -187,6 +187,37 @@ end
             end
             sizes = [length(level) for level in state.bank]
             @test sizes == [0, 0, 4, 0, 0, 0, 0, 0, 15, 0, 0, 0, 0, 0, 122, 0, 0, 0, 0, 0, 1305, 0, 0, 0, 0, 0, 1]
+        end
+
+        @testset "Multiple nonterminals" begin
+            grammar = @pcsgrammar begin
+                1 : A = 1
+                1 : A = A - B
+                1 : B = 2
+                1 : C = A + B
+            end
+
+            examples = [
+                IOExample(Dict(), 5)
+            ]
+
+            HerbSearch.calculate_rule_cost(rule_index::Int, grammar::ContextSensitiveGrammar) = HerbSearch.calculate_rule_cost_size(rule_index, grammar)
+            iter = HerbSearch.GuidedSearchIterator(grammar, :A, examples, SymbolTable(grammar), :A)
+
+            progs = []
+
+            state = nothing
+            next = iterate(iter)
+            while next !== nothing
+                prog, state = next
+                push!(progs, prog)
+                if (state.level > 1)
+                    break
+                end
+                next = iterate(iter, state)
+            end
+
+            @test progs == [RuleNode(1), RuleNode(2, [RuleNode(1), RuleNode(3)])]
         end
     end
 
@@ -222,7 +253,7 @@ end
                     HerbSearch.select_partial_solution(partial_sols::Vector{ProgramCache}, all_selected_psols::Set{ProgramCache}) = select_func(partial_sols, all_selected_psols)
 
                     deep_copy_grammar = deepcopy(grammar_to_use)
-                    iter = HerbSearch.GuidedSearchIterator(deep_copy_grammar, :S, examples, symboltable)
+                    iter = HerbSearch.GuidedSearchIterator(deep_copy_grammar, :S, examples, symboltable, :S)
                     max_time = 5
                     runtime = @timed program = probe(examples, iter, max_time, 100)
                     expression = rulenode2expr(program, grammar_to_use)
