@@ -12,13 +12,33 @@ function sample(grammar::AbstractGrammar, symbol::Symbol, rule_minsize::Abstract
     max_size = max(max_size, symbol_minsize[symbol])
     
     rules_for_symbol = grammar[symbol]
-    log_probs = grammar.log_probabilities
+    probs = exp.(grammar.log_probabilities)
     filtered_indices = filter(i -> return_type(grammar, rules_for_symbol[i]) == symbol && rule_minsize[rules_for_symbol[i]] ≤ max_size, eachindex(rules_for_symbol))
     
-    possible_rules = [rules_for_symbol[i] for i in filtered_indices]
-    weights = Weights(exp.(log_probs[filtered_indices]))
-    
-    rule_index = StatsBase.sample(possible_rules, weights)
+    rule_index = -1
+    r = rand()
+    left = r
+    sum = 0
+    for i in filtered_indices
+        sum += probs[i]
+        left -= probs[i]
+        if left ≤ 0
+            rule_index = rules_for_symbol[i]
+            break
+        end
+    end
+
+    if rule_index == -1
+        r = r * sum
+        for i in filtered_indices
+            r -= probs[i]
+            if r ≤ 0
+                rule_index = rules_for_symbol[i]
+                break
+            end
+        end    
+    end
+
     rule_node = RuleNode(rule_index)
 
     if !grammar.isterminal[rule_index]
