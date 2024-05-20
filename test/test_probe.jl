@@ -149,7 +149,7 @@ end
 
         @testset "Running using size-based enumeration" begin
             HerbSearch.calculate_rule_cost(rule_index::Int, grammar::ContextSensitiveGrammar) = HerbSearch.calculate_rule_cost_size(rule_index, grammar)
-            iter = HerbSearch.GuidedSearchIterator(grammar, :S, examples, symboltable, :S)
+            iter = HerbSearch.GuidedSearchIterator(grammar, :S, examples, symboltable)
 
             max_level = 10
             state = nothing
@@ -173,7 +173,7 @@ end
             ]
 
             HerbSearch.calculate_rule_cost(rule_index::Int, grammar::ContextSensitiveGrammar) = HerbSearch.calculate_rule_cost_prob(rule_index, grammar)
-            iter = HerbSearch.GuidedSearchIterator(grammar, :S, examples, symboltable, :S)
+            iter = HerbSearch.GuidedSearchIterator(grammar, :S, examples, symboltable)
 
             max_level = 20
             state = nothing
@@ -202,10 +202,9 @@ end
             ]
 
             HerbSearch.calculate_rule_cost(rule_index::Int, grammar::ContextSensitiveGrammar) = HerbSearch.calculate_rule_cost_size(rule_index, grammar)
-            iter = HerbSearch.GuidedSearchIterator(grammar, :A, examples, SymbolTable(grammar), :A)
+            iter = HerbSearch.GuidedSearchIterator(grammar, :A, examples, SymbolTable(grammar))
 
             progs = []
-
             state = nothing
             next = iterate(iter)
             while next !== nothing
@@ -253,7 +252,7 @@ end
                     HerbSearch.select_partial_solution(partial_sols::Vector{ProgramCache}, all_selected_psols::Set{ProgramCache}) = select_func(partial_sols, all_selected_psols)
 
                     deep_copy_grammar = deepcopy(grammar_to_use)
-                    iter = HerbSearch.GuidedSearchIterator(deep_copy_grammar, :S, examples, symboltable, :S)
+                    iter = HerbSearch.GuidedSearchIterator(deep_copy_grammar, :S, examples, symboltable)
                     max_time = 5
                     runtime = @timed program = probe(examples, iter, max_time, 100)
                     expression = rulenode2expr(program, grammar_to_use)

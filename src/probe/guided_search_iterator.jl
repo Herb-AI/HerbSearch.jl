@@ -2,7 +2,6 @@
 @programiterator GuidedSearchIterator(
     spec::Vector{<:IOExample},
     symboltable::SymbolTable,
-    start::Symbol
 )
 Base.@kwdef mutable struct GuidedSearchState
     level::Int64
@@ -24,6 +23,7 @@ end
 
 function Base.iterate(iter::GuidedSearchIterator, state::GuidedSearchState)::Union{Tuple{RuleNode, GuidedSearchState}, Nothing}
     grammar = get_grammar(iter.solver)
+    start_symbol = get_starting_symbol(iter.solver)
     # wrap in while true to optimize for tail call
     while true
         while state.next_iter === nothing
@@ -45,7 +45,7 @@ function Base.iterate(iter::GuidedSearchIterator, state::GuidedSearchState)::Uni
             state.next_iter = iterate(state.iter, next_state)
 
             # evaluate program if starting symbol
-            if return_type(grammar, prog.ind) == iter.start
+            if return_type(grammar, prog.ind) == start_symbol
                 eval_observation = []
                 expr = rulenode2expr(prog, grammar)
                 for example ∈ iter.spec
