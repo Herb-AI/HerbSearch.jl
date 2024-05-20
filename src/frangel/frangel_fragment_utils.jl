@@ -99,21 +99,39 @@ function remember_programs!(
             end
         end
     end
-
+    # Remove old fragments from grammar
     for i in range(fragments_offset + 1, length(grammar.rules))
         remove_rule!(grammar, i)
     end
     cleanup_removed_rules!(grammar)
-
+    # Add new program to remembered ones
     old_remembered[passing_tests] = (new_program, node_count, program_length)
     result = collect(mine_fragments(grammar, Set(values(old_remembered))))
-    for fragment in result
-        typ = Symbol("Fragment_", return_type(grammar, fragment))
-        expr = rulenode2expr(fragment, grammar)
-        add_rule!(grammar, :($typ = $expr))
-    end
-
+    # Add fragments to grammar
+    add_rules!(grammar, result)
     add_fragments_prob!(grammar, config.generation.use_fragments_chance)
 
     result
+end
+
+function add_rules!(g::AbstractGrammar, fragments::AbstractVector{RuleNode})
+    for fragment in fragments
+        typ = Symbol("Fragment_", return_type(g, fragment))
+        expr = rulenode2expr(fragment, g)
+        rvec = Any[]
+        parse_rule!(rvec, expr)
+        for r ∈ rvec
+            if !any(r === rule && typ === return_type(g, i) for (i, rule) ∈ enumerate(g.rules))
+                push!(g.rules, r)
+                push!(g.iseval, iseval(expr))
+                push!(g.types, typ)
+                g.bytype[typ] = push!(get(g.bytype, typ, Int[]), length(g.rules))
+            end
+        end
+    end
+    alltypes = collect(keys(g.bytype))
+    g.isterminal = [isterminal(rule, alltypes) for rule ∈ g.rules]
+    g.childtypes = [get_childtypes(rule, alltypes) for rule ∈ g.rules]
+    g.bychildtypes = [BitVector([g.childtypes[i1] == g.childtypes[i2] for i2 ∈ 1:length(g.rules)]) for i1 ∈ 1:length(g.rules)]
+    g.domains = Dict(type => BitArray(r ∈ g.bytype[type] for r ∈ 1:length(g.rules)) for type ∈ keys(g.bytype))
 end

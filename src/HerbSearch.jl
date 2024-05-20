@@ -120,6 +120,7 @@ export
   add_fragments_prob!,
   is_fragment_rule,
   add_angelic_conditions!,
+  add_rules!,
 
   Prob
 
