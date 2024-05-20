@@ -1,8 +1,7 @@
 
 @programiterator GuidedSearchIterator(
     spec::Vector{<:IOExample},
-    symboltable::SymbolTable
-
+    symboltable::SymbolTable,
 )
 Base.@kwdef mutable struct GuidedSearchState
     level::Int64
@@ -24,6 +23,7 @@ end
 
 function Base.iterate(iter::GuidedSearchIterator, state::GuidedSearchState)::Union{Tuple{RuleNode, GuidedSearchState}, Nothing}
     grammar = get_grammar(iter.solver)
+    start_symbol = get_starting_symbol(iter.solver)
     # wrap in while true to optimize for tail call
     while true
         while state.next_iter === nothing
@@ -44,21 +44,25 @@ function Base.iterate(iter::GuidedSearchIterator, state::GuidedSearchState)::Uni
             # move in advance
             state.next_iter = iterate(state.iter, next_state)
 
-            # evaluate program
-            eval_observation = []
-            expr = rulenode2expr(prog, grammar)
-            for example ∈ iter.spec
-                output = execute_on_input(iter.symboltable, expr, example.in)
-                push!(eval_observation, output)
-            end
+            # evaluate program if starting symbol
+            if return_type(grammar, prog.ind) == start_symbol
+                eval_observation = []
+                expr = rulenode2expr(prog, grammar)
+                for example ∈ iter.spec
+                    output = execute_on_input(iter.symboltable, expr, example.in)
+                    push!(eval_observation, output)
+                end
 
-            if eval_observation in state.eval_cache # program already cached
-                continue
+                if eval_observation in state.eval_cache # program already cached
+                    continue
+                end
+                
+                push!(state.eval_cache, eval_observation) # add result to cache
+                push!(state.bank[state.level+1], prog) # add program to bank
+                return (prog, state) # return program
             end
 
             push!(state.bank[state.level+1], prog) # add program to bank
-            push!(state.eval_cache, eval_observation) # add result to cache
-            return (prog, state) # return program
         end
     end
 end

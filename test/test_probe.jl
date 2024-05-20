@@ -188,6 +188,36 @@ end
             sizes = [length(level) for level in state.bank]
             @test sizes == [0, 0, 4, 0, 0, 0, 0, 0, 15, 0, 0, 0, 0, 0, 122, 0, 0, 0, 0, 0, 1305, 0, 0, 0, 0, 0, 1]
         end
+
+        @testset "Multiple nonterminals" begin
+            grammar = @pcsgrammar begin
+                1 : A = 1
+                1 : A = A - B
+                1 : B = 2
+                1 : C = A + B
+            end
+
+            examples = [
+                IOExample(Dict(), 5)
+            ]
+
+            HerbSearch.calculate_rule_cost(rule_index::Int, grammar::ContextSensitiveGrammar) = HerbSearch.calculate_rule_cost_size(rule_index, grammar)
+            iter = HerbSearch.GuidedSearchIterator(grammar, :A, examples, SymbolTable(grammar))
+
+            progs = []
+            state = nothing
+            next = iterate(iter)
+            while next !== nothing
+                prog, state = next
+                push!(progs, prog)
+                if (state.level > 1)
+                    break
+                end
+                next = iterate(iter, state)
+            end
+
+            @test progs == [RuleNode(1), RuleNode(2, [RuleNode(1), RuleNode(3)])]
+        end
     end
 
     @testset "Running probe" begin
