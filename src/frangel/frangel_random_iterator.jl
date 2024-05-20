@@ -12,31 +12,31 @@ function sample(grammar::AbstractGrammar, symbol::Symbol, rule_minsize::Abstract
     max_size = max(max_size, symbol_minsize[symbol])
     
     rules_for_symbol = grammar[symbol]
-    probs = exp.(grammar.log_probabilities)
     filtered_indices = filter(i -> return_type(grammar, rules_for_symbol[i]) == symbol && rule_minsize[rules_for_symbol[i]] ≤ max_size, eachindex(rules_for_symbol))
     
     rule_index = -1
     r = rand()
-    left = r
-    sum = 0
+    sum_prob = 0.0
+
     for i in filtered_indices
-        sum += probs[i]
-        left -= probs[i]
-        if left ≤ 0
+        prob = grammar.log_probabilities[i]
+        sum_prob += prob
+        r -= prob
+        if r ≤ 0
             rule_index = rules_for_symbol[i]
             break
         end
     end
 
     if rule_index == -1
-        r = r * sum
+        r = rand() * sum_prob
         for i in filtered_indices
-            r -= probs[i]
+            r -= grammar.log_probabilities[i]
             if r ≤ 0
                 rule_index = rules_for_symbol[i]
                 break
             end
-        end    
+        end
     end
 
     rule_node = RuleNode(rule_index)

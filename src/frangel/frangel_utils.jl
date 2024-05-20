@@ -349,7 +349,7 @@ function add_fragments_prob!(grammar::AbstractGrammar, fragments_chance::Float64
             end
         end
     end
-    grammar.log_probabilities = map(log, probabilities)
+    grammar.log_probabilities = probabilities
 end
 
 """
