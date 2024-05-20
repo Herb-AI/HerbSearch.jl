@@ -255,7 +255,7 @@ The minimum size achievable for each production rule in the grammar, in the same
 
 """
 function rules_minsize(grammar::AbstractGrammar)::AbstractVector{Int}
-    min_sizes = Int[typemax(Int) for i in eachindex(grammar.rules)]
+    min_sizes = Int[65536 for i in eachindex(grammar.rules)]
     visited = Dict(type => false for type in grammar.types)
 
     for i in eachindex(grammar.rules)
@@ -273,16 +273,17 @@ function rules_minsize(grammar::AbstractGrammar)::AbstractVector{Int}
 end
 
 function _minsize!(grammar::AbstractGrammar, rule_index::Int, min_sizes::AbstractVector{Int}, visited::Dict{Symbol,Bool})::Int
-    isterminal(grammar, rule_index) && return 1
+    isterminal(grammar, rule_index) && return min_sizes[rule_index]
 
     size = 1
     for ctyp in child_types(grammar, rule_index)
         if visited[ctyp]
-            return minimum(min_sizes[i] for i in grammar.bytype[ctyp])
-        end
+            size += minimum(min_sizes[i] for i in grammar.bytype[ctyp])
+            continue
+        end 
         visited[ctyp] = true
         rules = grammar.bytype[ctyp]
-        min = typemax(Int)
+        min = 65536
         for index in rules
             min = minimum([min, _minsize!(grammar, index, min_sizes, visited)])
             if min == 1
@@ -336,7 +337,6 @@ function add_fragments_prob!(grammar::AbstractGrammar, fragments_chance::Float64
         end
     
         grammar.log_probabilities[fragment_rule_bytype[sym]] = fragment_chance
-        grammar.isterminal[fragment_rule_bytype[sym]] = 0
     end
     
     # normalize! from https://github.com/Herb-AI/HerbGrammar.jl/blob/8a7c25f6734a4bfc5f17311bdd80a90195ad3aab/src/csg/probabilistic_csg.jl#L93
