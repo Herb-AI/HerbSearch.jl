@@ -43,6 +43,7 @@ include("frangel/frangel_fragment_utils.jl")
 include("frangel/frangel_generation.jl")
 include("frangel/frangel_angelic_utils.jl")
 include("frangel/frangel_utils.jl")
+include("frangel/frangel_random_iterator.jl")
 
 export 
   ProgramIterator,
@@ -122,6 +123,6 @@ export
   add_angelic_conditions!,
   add_rules!,
 
-  Prob
+  FrAngelRandomIterator
 
 end # module HerbSearch
