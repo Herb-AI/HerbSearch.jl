@@ -11,7 +11,7 @@ end
     config = FrAngelConfig(generation = FrAngelConfigGeneration(use_fragments_chance = 0, use_angelic_conditions_chance = 0))
     angelic_conditions = AbstractVector{Union{Nothing, Int64}}([nothing for rule in g.rules])
     
-    @time begin 
+    @profview begin 
         iterator = Prob(g, :Num, max_depth=10)
         solution = frangel(spec, config, angelic_conditions, iterator) 
     end

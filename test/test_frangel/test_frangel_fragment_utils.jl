@@ -157,13 +157,14 @@ end
         Num = |(0:10)
         Num = x | (Num + Num) | (Num - Num) | (Num * Num)
     end
+    base_g = deepcopy(g)
 
     # Add first remembered program
     first_program = RuleNode(13, [RuleNode(2), RuleNode(3)])
     first_program_tests = BitVector([1, 0, 1])
     first_program_value = (first_program, count_nodes(g, first_program), length(string(rulenode2expr(first_program, g))))
     old_remembered = Dict{BitVector,Tuple{RuleNode,Int,Int}}()
-    remember_programs!(old_remembered, first_program_tests, first_program, Vector{RuleNode}(), g, FrAngelConfig(), 20)
+    remember_programs!(old_remembered, first_program_tests, first_program, Vector{RuleNode}(), g, base_g, FrAngelConfig())
 
     # Second program to consider
     longer_program = RuleNode(13, [RuleNode(13, [RuleNode(1), RuleNode(2)]), RuleNode(1)])
@@ -177,7 +178,7 @@ end
 
     function one_test_case(new_program::RuleNode, passing_tests::BitVector, expected_result::Dict{BitVector,Tuple{RuleNode,Int,Int}})
         new_remembered = deepcopy(old_remembered)
-        remember_programs!(new_remembered, passing_tests, new_program, Vector{RuleNode}(), g, FrAngelConfig(), 20)
+        remember_programs!(new_remembered, passing_tests, new_program, Vector{RuleNode}(), g, base_g, FrAngelConfig())
         @test expected_result == new_remembered
     end
 

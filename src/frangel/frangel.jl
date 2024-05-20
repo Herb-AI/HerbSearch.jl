@@ -66,14 +66,15 @@ function frangel(
     remembered_programs = Dict{BitVector,Tuple{RuleNode,Int,Int}}()
     fragments = Vector{RuleNode}() # TODO: change it to vector everywhere
     grammar = iter.grammar
+    base_grammar = deepcopy(grammar)
+    symboltable = SymbolTable(grammar)
 
     rule_minsize = rules_minsize(grammar) 
-    
     symbol_minsize = symbols_minsize(grammar, rule_minsize)
+
     add_fragments_prob!(grammar, config.generation.use_fragments_chance)
     fragments_offset = length(grammar.rules)
     state = nothing
-    symboltable = SymbolTable(grammar)
     start_time = time()
 
     while time() - start_time < config.max_time
@@ -111,7 +112,6 @@ function frangel(
         end
 
         # Update grammar with fragments
-        fragments = remember_programs!(remembered_programs, passed_tests, program, fragments, grammar, config, fragments_offset)
+        fragments = remember_programs!(remembered_programs, passed_tests, program, fragments, grammar, base_grammar, config)
     end
-end
 end

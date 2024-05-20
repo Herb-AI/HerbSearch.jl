@@ -79,8 +79,8 @@ function remember_programs!(
     new_program::RuleNode,
     fragments::AbstractVector{RuleNode},
     grammar::AbstractGrammar,
-    config::FrAngelConfig,
-    fragments_offset::Int
+    base_grammar::AbstractGrammar,
+    config::FrAngelConfig
 )::AbstractVector{RuleNode}
     node_count = count_nodes(grammar, new_program)
     program_length = length(string(rulenode2expr(new_program, grammar)))
@@ -99,18 +99,14 @@ function remember_programs!(
             end
         end
     end
-    # Remove old fragments from grammar
-    for i in range(fragments_offset + 1, length(grammar.rules))
-        remove_rule!(grammar, i)
-    end
-    cleanup_removed_rules!(grammar)
+    # Remove old fragments from grammar (by resetting to base grammar)
+    grammar = base_grammar
     # Add new program to remembered ones
     old_remembered[passing_tests] = (new_program, node_count, program_length)
     result = collect(mine_fragments(grammar, Set(values(old_remembered))))
     # Add fragments to grammar
     add_rules!(grammar, result)
     add_fragments_prob!(grammar, config.generation.use_fragments_chance)
-
     result
 end
 
