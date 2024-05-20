@@ -115,13 +115,14 @@ function frangel(
     end
 end
 
-@programiterator Prob(
-    rule_minsize::AbstractVector{Int},
-    symbol_minsize::Dict{Symbol,Int},
-)
+@programiterator Prob()
 
 function Base.iterate(iter::Prob, state=nothing)
-    return prob_sample(iter.grammar, iter.sym, iter.rule_minsize, iter.symbol_minsize), nothing
+    rule_minsize = rules_minsize(iter.grammar) 
+    
+    symbol_minsize = symbols_minsize(iter.grammar, rule_minsize)
+
+    return prob_sample(iter.grammar, iter.sym, rule_minsize, symbol_minsize), nothing
 end
 
 function prob_sample(grammar::AbstractGrammar, symbol::Symbol, rule_minsize::AbstractVector{Int}, symbol_minsize::Dict{Symbol,Int}, max_size=40)

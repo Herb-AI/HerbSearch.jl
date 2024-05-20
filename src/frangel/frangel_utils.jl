@@ -368,39 +368,3 @@ Returns true if the rule is a starting fragment rule, false otherwise.
 function is_fragment_rule(grammar::AbstractGrammar, rule_index::Int)::Bool
     grammar.rules[rule_index] == Symbol(string(:Fragment_, grammar.types[rule_index])) # TODO: possiblly cache them
 end
-
-function simplify_slow(program::RuleNode, grammar::AbstractGrammar, tests::AbstractVector{<:IOExample}, angelic_conditions::AbstractVector{Union{Nothing,Int}}, time_to_run)::RuleNode
-
-    start_time = time()
-
-    while time() - start_time < time_to_run
-        #_simplify_slow(program, grammar, tests, angelic_conditions, time_to_run, start_time)
-    end
-
-    # control structure conditions
-
-
-    program
-end
-
-function _simplify_slow(root::RuleNode, node::RuleNode, grammar::AbstractGrammar, tests::AbstractVector{<:IOExample}, angelic_conditions::AbstractVector{Union{Nothing,Int}}, time_to_run, start_time)::RuleNode
-    index = 1
-    
-    while index <= length(program.children) && (time() - start_time) < time_to_run
-        child = program.children[index]
-
-        if !isnothing(angelic_conditions[program.ind]) && angelic_conditions[program.ind] == index
-            # replace with another simplified expssion
-        
-            program.children[index] = generate_random_program(grammar, return_type(grammar, child), 1, 1)
-
-
-        else
-            _simplify_slow(child, grammar, tests, angelic_conditions, time_to_run, start_time)
-        end
-
-        index += 1
-    end
-
-    program
-end
