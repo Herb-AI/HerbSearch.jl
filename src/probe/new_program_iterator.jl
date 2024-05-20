@@ -42,6 +42,13 @@ function Base.iterate(iter::NewProgramsIterator, state::NewProgramsState)
             if state.cartesian_iter === nothing
                 # create inner for loop
                 bank_indexed = [iter.bank[cost+1] for cost ∈ costs]
+
+                # filter out wrong types
+                types = child_types(iter.grammar, state.rule_index)
+                for i in 1:length(types)
+                    bank_indexed[i] = filter(x -> return_type(iter.grammar, x.ind) == types[i], bank_indexed[i])
+                end
+
                 state.cartesian_iter = Iterators.product(bank_indexed...)
                 state.cartesian_iter_state = iterate(state.cartesian_iter)
             end
@@ -55,26 +62,11 @@ function Base.iterate(iter::NewProgramsIterator, state::NewProgramsState)
             else
                 # save current values
                 children, _ = state.cartesian_iter_state
-                children = collect(children)
-
+                rulenode = RuleNode(state.rule_index, collect(children))
                 # move to next cartesian
                 _, next_state = state.cartesian_iter_state
                 state.cartesian_iter_state = iterate(state.cartesian_iter, next_state)
-
-                # check if selected programs have the correct type
-                types = child_types(iter.grammar, state.rule_index)
-                same_types = true
-                for i in 1:length(types)
-                    if return_type(iter.grammar, children[i]) != types[i]
-                        same_types = false
-                        break
-                    end
-                end
-                
-                if same_types
-                    rulenode = RuleNode(state.rule_index, children)
-                    return rulenode, state
-                end
+                return rulenode, state
             end
         end
         state.rule_index += 1
