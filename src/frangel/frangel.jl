@@ -58,8 +58,8 @@ The full configuration struct for FrAngel. Includes generation and angelic sub-c
 end
 
 function frangel(
-    spec::AbstractVector{<:IOExample}, 
-    config::FrAngelConfig, 
+    spec::AbstractVector{<:IOExample},
+    config::FrAngelConfig,
     angelic_conditions::AbstractVector{Union{Nothing,Int}},
     iter::ProgramIterator
 )
@@ -69,8 +69,10 @@ function frangel(
     base_grammar = deepcopy(grammar)
     symboltable = SymbolTable(grammar)
 
-    rule_minsize = rules_minsize(grammar) 
+    rule_minsize = rules_minsize(grammar)
+    base_rule_minsize = deepcopy(rule_minsize)
     symbol_minsize = symbols_minsize(grammar, rule_minsize)
+    base_symbol_minsize = deepcopy(symbol_minsize)
 
     add_fragments_prob!(grammar, config.generation.use_fragments_chance)
     fragments_offset = length(grammar.rules)
@@ -104,7 +106,7 @@ function frangel(
         # Simplify and rerun over examples
         # TODO program = simplify_quick(program, grammar, spec, passed_tests)
         get_passed_tests!(program, grammar, symboltable, spec, passed_tests, angelic_conditions, config.angelic)
-        
+
         # Early return -> if it passes all tests, then final round of simplification and return
         if all(passed_tests)
             # TODO program = simplify_slow(program, grammar, spec, angelic_conditions, (time() - start_time) / 10)
@@ -112,6 +114,17 @@ function frangel(
         end
 
         # Update grammar with fragments
-        fragments = remember_programs!(remembered_programs, passed_tests, program, fragments, grammar, base_grammar, config)
+        fragments, updatedFragments = remember_programs!(remembered_programs, passed_tests, program, fragments, grammar)
+        if updatedFragments
+            # Remove old fragments from grammar (by resetting to base grammar)
+            grammar = base_grammar
+            # Add fragments to grammar
+            add_rules!(grammar, fragments)
+            add_fragments_prob!(grammar, config.generation.use_fragments_chance)
+            # Reset rule_minsize and symbol_minsize
+            rule_minsize = base_rule_minsize
+            symbol_minsize = base_symbol_minsize
+            # update_minsizes!(grammar, fragments, rule_minsize, base_rule_minsize, symbol_minsize, base_symbol_minsize)
+        end
     end
 end

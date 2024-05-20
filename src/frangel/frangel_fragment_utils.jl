@@ -78,10 +78,8 @@ function remember_programs!(
     passing_tests::BitVector,
     new_program::RuleNode,
     fragments::AbstractVector{RuleNode},
-    grammar::AbstractGrammar,
-    base_grammar::AbstractGrammar,
-    config::FrAngelConfig
-)::AbstractVector{RuleNode}
+    grammar::AbstractGrammar
+)::Tuple{AbstractVector{RuleNode}, Bool}
     node_count = count_nodes(grammar, new_program)
     program_length = length(string(rulenode2expr(new_program, grammar)))
     # Check the new program's testset over each remembered program
@@ -90,7 +88,7 @@ function remember_programs!(
         # if the new program's passing testset is a subset of the old program's, discard new program if worse
         if all(passing_tests .== (passing_tests .& key_tests))
             if !isSimpler
-                return fragments
+                return fragments, false
             end
             # else if it is a superset -> discard old program if worse (either more nodes, or same #nodes but less tests)
         elseif all(key_tests .== (key_tests .& passing_tests))
@@ -99,15 +97,9 @@ function remember_programs!(
             end
         end
     end
-    # Remove old fragments from grammar (by resetting to base grammar)
-    grammar = base_grammar
     # Add new program to remembered ones
     old_remembered[passing_tests] = (new_program, node_count, program_length)
-    result = collect(mine_fragments(grammar, Set(values(old_remembered))))
-    # Add fragments to grammar
-    add_rules!(grammar, result)
-    add_fragments_prob!(grammar, config.generation.use_fragments_chance)
-    result
+    collect(mine_fragments(grammar, Set(values(old_remembered)))), true
 end
 
 function add_rules!(g::AbstractGrammar, fragments::AbstractVector{RuleNode})
