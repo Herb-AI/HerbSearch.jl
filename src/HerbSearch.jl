@@ -119,6 +119,8 @@ export
   rules_minsize,
   add_fragments_prob!,
   is_fragment_rule,
-  add_angelic_conditions!
+  add_angelic_conditions!,
+
+  Prob
 
 end # module HerbSearch

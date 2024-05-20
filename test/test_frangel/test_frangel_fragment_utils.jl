@@ -164,7 +164,6 @@ end
     first_program_value = (first_program, count_nodes(g, first_program), length(string(rulenode2expr(first_program, g))))
     old_remembered = Dict{BitVector,Tuple{RuleNode,Int,Int}}()
     remember_programs!(old_remembered, first_program_tests, first_program, Vector{RuleNode}(), g)
-    println(old_remembered)
 
     # Second program to consider
     longer_program = RuleNode(13, [RuleNode(13, [RuleNode(1), RuleNode(2)]), RuleNode(1)])

@@ -260,7 +260,7 @@ function rules_minsize(grammar::AbstractGrammar)::AbstractVector{Int}
 
     for i in eachindex(grammar.rules)
         if isterminal(grammar, i)
-            min_sizes[i] = 1
+            min_sizes[i] = grammar.rules[i] == Symbol(string(:Fragment_, grammar.types[i])) ? 65536 : 1
         end
     end
 
@@ -328,13 +328,14 @@ function add_fragments_prob!(grammar::AbstractGrammar, fragments_chance::Float64
     grammar.log_probabilities = fill(1, length(grammar.rules))
     
     for sym in keys(fragment_rule_bytype)
-        for_rest = (1 - fragments_chance) / (length(bytype[sym]) - 1)
+        fragment_chance = isterminal(grammar, fragment_rule_bytype[sym]) ? 0.0 : fragments_chance
+        for_rest = (1 - fragment_chance) / (length(bytype[sym]) - 1)
     
         for rule_index in bytype[sym] 
             grammar.log_probabilities[rule_index] = for_rest
         end
     
-        grammar.log_probabilities[fragment_rule_bytype[sym]] = fragments_chance
+        grammar.log_probabilities[fragment_rule_bytype[sym]] = fragment_chance
         grammar.isterminal[fragment_rule_bytype[sym]] = 0
     end
     
@@ -368,7 +369,38 @@ function is_fragment_rule(grammar::AbstractGrammar, rule_index::Int)::Bool
     grammar.rules[rule_index] == Symbol(string(:Fragment_, grammar.types[rule_index])) # TODO: possiblly cache them
 end
 
+function simplify_slow(program::RuleNode, grammar::AbstractGrammar, tests::AbstractVector{<:IOExample}, angelic_conditions::AbstractVector{Union{Nothing,Int}}, time_to_run)::RuleNode
 
-function simplify_slow(program::RuleNode, grammar::AbstractGrammar, tests::AbstractVector{<:IOExample}, time_to_run)::RuleNode
+    start_time = time()
+
+    while time() - start_time < time_to_run
+        #_simplify_slow(program, grammar, tests, angelic_conditions, time_to_run, start_time)
+    end
+
+    # control structure conditions
+
+
+    program
+end
+
+function _simplify_slow(root::RuleNode, node::RuleNode, grammar::AbstractGrammar, tests::AbstractVector{<:IOExample}, angelic_conditions::AbstractVector{Union{Nothing,Int}}, time_to_run, start_time)::RuleNode
+    index = 1
+    
+    while index <= length(program.children) && (time() - start_time) < time_to_run
+        child = program.children[index]
+
+        if !isnothing(angelic_conditions[program.ind]) && angelic_conditions[program.ind] == index
+            # replace with another simplified expssion
+        
+            program.children[index] = generate_random_program(grammar, return_type(grammar, child), 1, 1)
+
+
+        else
+            _simplify_slow(child, grammar, tests, angelic_conditions, time_to_run, start_time)
+        end
+
+        index += 1
+    end
+
     program
 end

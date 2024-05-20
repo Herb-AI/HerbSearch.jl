@@ -68,13 +68,6 @@ function frangel(
     grammar = iter.grammar
 
     rule_minsize = rules_minsize(grammar) 
-    for rule_index in eachindex(grammar.rules)
-        sym = grammar.types[rule_index]
-    
-        if isterminal(grammar, rule_index) && grammar.rules[rule_index] == Symbol(string(:Fragment_, sym))
-            rule_minsize[rule_index] = typemax(Int)
-        end
-    end
     
     symbol_minsize = symbols_minsize(grammar, rule_minsize)
     add_fragments_prob!(grammar, config.generation.use_fragments_chance)
@@ -86,7 +79,7 @@ function frangel(
     while time() - start_time < config.max_time
         # Generate random program
         program, state = (state === nothing) ? iterate(iter) : iterate(iter, state)
-        program = deepcopy(program)
+
         # Generalize these two procedures at some point
         program = modify_and_replace_program_fragments!(program, fragments, fragments_offset, config.generation, grammar, rule_minsize, symbol_minsize)
         program = add_angelic_conditions!(program, grammar, angelic_conditions, config.generation)
@@ -108,20 +101,45 @@ function frangel(
         end
 
         # Simplify and rerun over examples
-        program = simplify_quick(program, grammar, spec, passed_tests)
+        # TODO program = simplify_quick(program, grammar, spec, passed_tests)
         get_passed_tests!(program, grammar, symboltable, spec, passed_tests, angelic_conditions, config.angelic)
         
         # Early return -> if it passes all tests, then final round of simplification and return
         if all(passed_tests)
-            program = simplify_slow(program, grammar, spec, angelic_conditions, (time() - start_time) / 10)
+            # TODO program = simplify_slow(program, grammar, spec, angelic_conditions, (time() - start_time) / 10)
             return simplify_quick(program, grammar, spec, passed_tests)
         end
 
         # Update grammar with fragments
-        for i in range(fragments_offset + 1, length(grammar.rules))
-            remove_rule!(grammar, i)
-        end
-        cleanup_removed_rules!(grammar)
-        fragments = remember_programs!(remembered_programs, passed_tests, program, fragments, grammar)
+        fragments = remember_programs!(remembered_programs, passed_tests, program, fragments, grammar, config, fragments_offset)
     end
+end
+
+@programiterator Prob(
+    rule_minsize::AbstractVector{Int},
+    symbol_minsize::Dict{Symbol,Int},
+)
+
+function Base.iterate(iter::Prob, state=nothing)
+    return prob_sample(iter.grammar, iter.sym, iter.rule_minsize, iter.symbol_minsize), nothing
+end
+
+function prob_sample(grammar::AbstractGrammar, symbol::Symbol, rule_minsize::AbstractVector{Int}, symbol_minsize::Dict{Symbol,Int}, max_size=40)
+    max_size = max(max_size, symbol_minsize[symbol])
+    
+    possible_rules = filter(r -> rule_minsize[r] ≤ max_size, grammar[symbol])
+    weights = Weights(map(i -> exp(grammar.log_probabilities[i]), filter(r -> return_type(grammar, r) == symbol &&  rule_minsize[r] ≤ max_size, eachindex(grammar.log_probabilities))))
+
+    rule_index = StatsBase.sample(possible_rules, weights)
+    rule_node = RuleNode(rule_index)
+
+    if !grammar.isterminal[rule_index]
+        sizes = random_partition(grammar, rule_index, max_size, symbol_minsize)
+
+        for (index, child_type) in enumerate(child_types(grammar, rule_index))
+            push!(rule_node.children, prob_sample(grammar, child_type, rule_minsize, symbol_minsize, sizes[index]))
+        end
+    end
+
+    rule_node
 end
