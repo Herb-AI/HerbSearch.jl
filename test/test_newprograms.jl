@@ -62,3 +62,28 @@ end
         ]
     end
 end
+@testset "Test new programs iterator" begin
+    @testset "Multiple nonterminals" begin
+        HerbSearch.calculate_rule_cost(rule_index::Int, grammar::ContextSensitiveGrammar) = HerbSearch.calculate_rule_cost_size(rule_index, grammar)
+        grammar = @pcsgrammar begin
+            1 : S = A * B
+            1 : A = "a"
+            1 : B = "b"
+        end
+
+        bank = [[],[],[],[]]
+        for i in 1:3
+            iter = HerbSearch.NewProgramsIterator(i, bank, grammar)
+            for prog in iter
+                push!(bank[i+1], prog)
+            end
+        end
+
+        @test bank == [
+            [],
+            [RuleNode(2), RuleNode(3)],
+            [],
+            [RuleNode(1, [RuleNode(2), RuleNode(3)])]
+        ]
+    end
+end

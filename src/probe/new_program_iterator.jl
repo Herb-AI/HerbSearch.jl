@@ -42,6 +42,13 @@ function Base.iterate(iter::NewProgramsIterator, state::NewProgramsState)
             if state.cartesian_iter === nothing
                 # create inner for loop
                 bank_indexed = [iter.bank[cost+1] for cost ∈ costs]
+
+                # filter out wrong types
+                types = child_types(iter.grammar, state.rule_index)
+                for i in 1:length(types)
+                    bank_indexed[i] = filter(x -> return_type(iter.grammar, x.ind) == types[i], bank_indexed[i])
+                end
+
                 state.cartesian_iter = Iterators.product(bank_indexed...)
                 state.cartesian_iter_state = iterate(state.cartesian_iter)
             end
