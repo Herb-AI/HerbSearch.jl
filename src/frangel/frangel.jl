@@ -128,9 +128,13 @@ end
 function prob_sample(grammar::AbstractGrammar, symbol::Symbol, rule_minsize::AbstractVector{Int}, symbol_minsize::Dict{Symbol,Int}, max_size=40)
     max_size = max(max_size, symbol_minsize[symbol])
     
-    possible_rules = filter(r -> rule_minsize[r] ≤ max_size, grammar[symbol])
-    weights = Weights(map(i -> exp(grammar.log_probabilities[i]), filter(r -> return_type(grammar, r) == symbol &&  rule_minsize[r] ≤ max_size, eachindex(grammar.log_probabilities))))
-
+    rules_for_symbol = grammar[symbol]
+    log_probs = grammar.log_probabilities
+    filtered_indices = filter(i -> return_type(grammar, rules_for_symbol[i]) == symbol && rule_minsize[rules_for_symbol[i]] ≤ max_size, eachindex(rules_for_symbol))
+    
+    possible_rules = [rules_for_symbol[i] for i in filtered_indices]
+    weights = Weights(exp.(log_probs[filtered_indices]))
+    
     rule_index = StatsBase.sample(possible_rules, weights)
     rule_node = RuleNode(rule_index)
 
