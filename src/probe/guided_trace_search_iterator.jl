@@ -20,6 +20,7 @@ end
 
 function Base.iterate(iter::GuidedTraceSearchIterator, state::GuidedSearchState)::Union{Tuple{RuleNode, GuidedSearchState}, Nothing}
     grammar = get_grammar(iter.solver)
+    start_symbol = get_starting_symbol(iter.solver)
     # wrap in while true to optimize for tail call
     while true
         while state.next_iter === nothing
@@ -40,16 +41,20 @@ function Base.iterate(iter::GuidedTraceSearchIterator, state::GuidedSearchState)
             # move in advance
             state.next_iter = iterate(state.iter, next_state)
 
-            # evaluate program
-            eval_observation, is_done, is_partial_sol, final_reward = evaluate_trace(prog, grammar)
-
-            if eval_observation in state.eval_cache # program already cached
-                continue
+            # evaluate program if starting symbol
+            if return_type(grammar, prog.ind) == start_symbol
+                eval_observation, is_done, is_partial_sol, final_reward = evaluate_trace(prog, grammar)
+                if eval_observation in state.eval_cache # program already cached
+                    # print("Skipping this.")
+                    continue
+                end
+                
+                push!(state.eval_cache, eval_observation) # add result to cache
+                push!(state.bank[state.level+1], prog) # add program to bank
+                return (prog, state) # return program
             end
 
             push!(state.bank[state.level+1], prog) # add program to bank
-            push!(state.eval_cache, eval_observation) # add result to cache
-            return (prog, state) # return program
         end
     end
 end
