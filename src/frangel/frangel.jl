@@ -53,6 +53,7 @@ The full configuration struct for FrAngel. Includes generation and angelic sub-c
 """
 @kwdef struct FrAngelConfig
     max_time::Float16 = 5
+    try_to_simplify::Bool = false
     generation::FrAngelConfigGeneration = FrAngelConfigGeneration()
     angelic::FrAngelConfigAngelic = FrAngelConfigAngelic()
 end
@@ -75,7 +76,8 @@ function frangel(
     fragments_offset = length(grammar.rules)
     state = nothing
 
-    fragment_base_rules::Vector{Tuple{Int,Symbol}} = collect(map(i -> (i, grammar.rules[i]), filter(i -> grammar.rules[i] == Symbol(string(:Fragment_, grammar.types[i])), eachindex(grammar.rules))))
+    fragment_base_rules::Vector{Tuple{Int,Symbol}} = collect(map(i -> (i, grammar.rules[i]), 
+        filter(i -> grammar.rules[i] == Symbol(string(:Fragment_, grammar.types[i])), eachindex(grammar.rules))))
 
     visited = Set{RuleNode}()
 
@@ -89,6 +91,7 @@ function frangel(
         program = modify_and_replace_program_fragments!(program, fragments, fragments_offset, config.generation, grammar, rule_minsize, symbol_minsize)
         program = add_angelic_conditions!(program, grammar, angelic_conditions, config.generation)
 
+        # Do not check visited program space
         if program in visited
             continue
         end
@@ -96,10 +99,11 @@ function frangel(
 
         passed_tests = BitVector([false for _ in spec])
         # If it does not pass any tests, discard
-        get_passed_tests!(program, grammar, symboltable, spec, passed_tests, angelic_conditions, config.angelic)
+        program_expr = get_passed_tests!(program, grammar, symboltable, spec, passed_tests, angelic_conditions, config.angelic)
         if !any(passed_tests)
             continue
         end
+
         # If it contains angelic conditions, resolve them
         if contains_hole(program)
             resolve_angelic!(program, fragments, passed_tests, grammar, symboltable, spec, 1, angelic_conditions, config)
@@ -107,12 +111,14 @@ function frangel(
             if contains_hole(program)
                 continue
             end
-            get_passed_tests!(program, grammar, symboltable, spec, passed_tests, angelic_conditions, config.angelic)
+            program_expr = get_passed_tests!(program, grammar, symboltable, spec, passed_tests, angelic_conditions, config.angelic)
         end
 
         # Simplify and rerun over examples
-        # TODO program = simplify_quick(program, grammar, spec, passed_tests)
-        get_passed_tests!(program, grammar, symboltable, spec, passed_tests, angelic_conditions, config.angelic)
+        if config.try_to_simplify
+            program = simplify_quick(program, grammar, spec, passed_tests, fragments_offset)
+            program_expr = get_passed_tests!(program, grammar, symboltable, spec, passed_tests, angelic_conditions, config.angelic)
+        end
 
         # Early return -> if it passes all tests, then final round of simplification and return
         if all(passed_tests)
@@ -121,30 +127,37 @@ function frangel(
         end
 
         if config.generation.use_fragments_chance != 0
-        # Update grammar with fragments
-        fragments, updatedFragments = remember_programs!(remembered_programs, passed_tests, program, fragments, grammar)
-        if updatedFragments
-            # Remove old fragments from grammar (by resetting to base grammar)
-            grammar = deepcopy(base_grammar)
-            # Add fragments to grammar
-            add_rules!(grammar, fragments)
-            add_fragments_prob!(grammar, config.generation.use_fragments_chance)
-            # Update rule_minsize and symbol_minsize        
-            resize!(rule_minsize, length(grammar.rules))
-            for (i, fragment) in enumerate(fragments)
+            # Update grammar with fragments
+            fragments, updatedFragments = remember_programs!(remembered_programs, passed_tests, program, program_expr, fragments, grammar)
+            if updatedFragments
+                # Remove old fragments from grammar (by resetting to base grammar)
+                grammar = deepcopy(base_grammar)
+                # Add fragments to grammar
+                add_rules!(grammar, fragments)
+                add_fragments_prob!(grammar, config.generation.use_fragments_chance)
+                if j < step
+                    println(grammar)
+                end
+                # Update rule_minsize and symbol_minsize        
+                resize!(rule_minsize, length(grammar.rules))
+                for (i, fragment) in enumerate(fragments)
                     rule_minsize[fragments_offset+i] = count_nodes(grammar, fragment)
 
-                ret_typ = return_type(grammar, fragments_offset + i)
-                if haskey(symbol_minsize, ret_typ)
+                    ret_typ = return_type(grammar, fragments_offset + i)
+                    if haskey(symbol_minsize, ret_typ)
                         symbol_minsize[ret_typ] = min(symbol_minsize[ret_typ], rule_minsize[fragments_offset+i])
-                else 
+                    else
                         symbol_minsize[ret_typ] = rule_minsize[fragments_offset+i]
+                    end
+                end
+                for (index, key) in fragment_base_rules
+                    rule_minsize[index] = symbol_minsize[key]
+                end
+                if j < step
+                    println(rule_minsize)
+                    println(symbol_minsize)
                 end
             end
-            for (index, key) in fragment_base_rules
-                rule_minsize[index] = symbol_minsize[key]
-            end
         end
-    end
     end
 end

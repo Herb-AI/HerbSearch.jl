@@ -6,14 +6,15 @@ g = @cfgrammar begin
 end
 
 @testset "basic_example" begin
-    spec = [IOExample(Dict(:x => x), 2x+1) for x ∈ 1:5]
+    spec = [IOExample(Dict(:x => x), 3x) for x ∈ 1:5]
     problem = Problem(spec)
-    config = FrAngelConfig(generation = FrAngelConfigGeneration(use_fragments_chance = 0, use_angelic_conditions_chance = 0))
+    config = FrAngelConfig(generation = FrAngelConfigGeneration(use_fragments_chance = 0.5, use_angelic_conditions_chance = 0))
     angelic_conditions = AbstractVector{Union{Nothing, Int64}}([nothing for rule in g.rules])
-    
-    @time @profview begin 
-        rules_min = rules_minsize(g)
-        symbol_min = symbols_minsize(g, rules_min)
+    rules_min = rules_minsize(g)
+    symbol_min = symbols_minsize(g, rules_min)
+
+    @time begin     
+    # @time @profview begin     
         iterator = FrAngelRandomIterator(g, :Num, rules_min, symbol_min, max_depth = 10)
         solution = frangel(spec, config, angelic_conditions, iterator, rules_min, symbol_min) 
     end

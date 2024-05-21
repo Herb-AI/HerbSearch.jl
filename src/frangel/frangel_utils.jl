@@ -32,7 +32,7 @@ function get_passed_tests!(
             if prev_passed_tests[index]
                 fails += 1
                 if config.max_allowed_fails < fails / length(tests)
-                    return BitVector([false for i in tests])
+                    prev_passed_tests = BitVector([false for i in tests])
                 end
             end
         end
@@ -47,6 +47,7 @@ function get_passed_tests!(
             end
         end
     end
+    return expr
 end
 
 """

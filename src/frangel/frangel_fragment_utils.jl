@@ -77,11 +77,14 @@ function remember_programs!(
     old_remembered::Dict{BitVector,Tuple{RuleNode,Int,Int}},
     passing_tests::BitVector,
     new_program::RuleNode,
+    new_program_expr,
     fragments::AbstractVector{RuleNode},
     grammar::AbstractGrammar
 )::Tuple{AbstractVector{RuleNode}, Bool}
     node_count = count_nodes(grammar, new_program)
-    program_length = length(string(rulenode2expr(new_program, grammar)))
+    # Too slow?
+    # program_length = length(string(new_program_expr))
+    program_length = 0
     # Check the new program's testset over each remembered program
     for (key_tests, (_, p_node_count, p_program_length)) in old_remembered
         isSimpler = node_count < p_node_count || (node_count == p_node_count && program_length < p_program_length)
