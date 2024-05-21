@@ -85,13 +85,13 @@ Randomly partitions the allowed size into a vector of sizes for each child of th
 A vector of sizes for each child of the provided rule index.
 
 """
-function random_partition(grammar::AbstractGrammar, rule_index::Int, size::Int, symbol_minsize::Dict{Symbol,Int})::AbstractVector{Int}
+function random_partition(grammar::AbstractGrammar, rule_index::Int, size::UInt8, symbol_minsize::Dict{Symbol,UInt8})::AbstractVector{UInt8}
     children_types = child_types(grammar, rule_index)
 
     min_size = sum(symbol_minsize[child_type] for child_type in children_types)
     left_to_partition = size - min_size
 
-    sizes = Vector{Int}(undef, length(children_types))
+    sizes = Vector{UInt8}(undef, length(children_types))
 
     for (index, child_type) in enumerate(children_types)
         child_min_size = symbol_minsize[child_type]
@@ -236,7 +236,7 @@ Returns a dictionary with pairs of starting symbol type and the minimum size ach
 Dictionary with the minimum size achievable for each symbol in the grammar.
 
 """
-function symbols_minsize(grammar::AbstractGrammar, min_sizes::AbstractVector{Int})::Dict{Symbol,Int}
+function symbols_minsize(grammar::AbstractGrammar, min_sizes::AbstractVector{UInt8})::Dict{Symbol,UInt8}
     Dict(type => minimum(min_sizes[grammar.bytype[type]]) for type in grammar.types)
 end
 
@@ -254,8 +254,8 @@ using each of the available production rules as a root.
 The minimum size achievable for each production rule in the grammar, in the same order as the rules.
 
 """
-function rules_minsize(grammar::AbstractGrammar)::AbstractVector{Int}
-    min_sizes = Int[65536 for i in eachindex(grammar.rules)]
+function rules_minsize(grammar::AbstractGrammar)::AbstractVector{UInt8}
+    min_sizes = Int[255 for i in eachindex(grammar.rules)]
     visited = Dict(type => false for type in grammar.types)
 
     for i in eachindex(grammar.rules)
@@ -326,11 +326,11 @@ function add_fragments_prob!(grammar::AbstractGrammar, fragments_chance::Float64
         end
     end
     
-    grammar.log_probabilities = fill(1, length(grammar.rules))
+    grammar.log_probabilities = fill(Float16(1), length(grammar.rules))
     
     for sym in keys(fragment_rule_bytype)
-        fragment_chance = isterminal(grammar, fragment_rule_bytype[sym]) ? 0.0 : fragments_chance
-        for_rest = (1 - fragment_chance) / (length(bytype[sym]) - 1)
+        fragment_chance::Float16 = isterminal(grammar, fragment_rule_bytype[sym]) ? Float16(0.0) : Float16(fragments_chance)
+        for_rest::Float16 = (1 - fragment_chance) / (length(bytype[sym]) - 1)
     
         for rule_index in bytype[sym] 
             grammar.log_probabilities[rule_index] = for_rest

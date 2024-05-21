@@ -55,8 +55,8 @@ function modify_and_replace_program_fragments!(
     fragments_offset::Number, 
     config::FrAngelConfigGeneration,
     grammar::AbstractGrammar, 
-    rule_minsize::AbstractVector{Int},
-    symbol_minsize::Dict{Symbol,Int}
+    rule_minsize::AbstractVector{UInt8},
+    symbol_minsize::Dict{Symbol,UInt8}
 )::RuleNode 
     if is_fragment_rule(grammar, program.ind)
         fragment_rule_index = program.children[1].ind
@@ -91,8 +91,8 @@ function modify_and_replace_program_fragments!(
     fragments_offset::Number, 
     config::FrAngelConfigGeneration,
     grammar::AbstractGrammar, 
-    rule_minsize::AbstractVector{Int},
-    symbol_minsize::Dict{Symbol,Int}
+    rule_minsize::AbstractVector{UInt8},
+    symbol_minsize::Dict{Symbol,UInt8}
 )::RuleNode 
     program = RuleNode(findfirst(state_hole.domain))
 

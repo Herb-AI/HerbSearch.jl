@@ -1,25 +1,33 @@
 @programiterator FrAngelRandomIterator()
 
-function Base.iterate(iter::FrAngelRandomIterator, state=nothing)
-    rule_minsize = rules_minsize(iter.grammar) 
-    
-    symbol_minsize = symbols_minsize(iter.grammar, rule_minsize)
-
-    return sample(iter.grammar, iter.sym, rule_minsize, symbol_minsize), nothing
+struct State
+    rule_minsize::AbstractVector{UInt8}
+    symbol_minsize::Dict{Symbol,UInt8}
 end
 
-function sample(grammar::AbstractGrammar, symbol::Symbol, rule_minsize::AbstractVector{Int}, symbol_minsize::Dict{Symbol,Int}, max_size=40)
+function Base.iterate(iter::FrAngelRandomIterator)
+    rule_minsize = rules_minsize(iter.grammar)
+    state = State(rule_minsize, symbols_minsize(iter.grammar, rule_minsize))
+
+    return (sample(iter.grammar, iter.sym, state.rule_minsize, state.symbol_minsize), state)
+end
+
+function Base.iterate(iter::FrAngelRandomIterator, state::State)
+    return (sample(iter.grammar, iter.sym, state.rule_minsize, state.symbol_minsize), state)
+end
+
+function sample(grammar::AbstractGrammar, symbol::Symbol, rule_minsize::AbstractVector{UInt8}, symbol_minsize::Dict{Symbol,UInt8}, max_size::UInt8 = UInt8(40))
     max_size = max(max_size, symbol_minsize[symbol])
     
     rules_for_symbol = grammar[symbol]
     filtered_indices = filter(i -> return_type(grammar, rules_for_symbol[i]) == symbol && rule_minsize[rules_for_symbol[i]] ≤ max_size, eachindex(rules_for_symbol))
     
     rule_index = -1
-    r = rand()
-    sum_prob = 0.0
+    r = rand(Float16)
+    sum_prob = Float16(0.0)
 
     for i in filtered_indices
-        prob = grammar.log_probabilities[i]
+        prob::Float16 = grammar.log_probabilities[i]
         sum_prob += prob
         r -= prob
         if r ≤ 0
