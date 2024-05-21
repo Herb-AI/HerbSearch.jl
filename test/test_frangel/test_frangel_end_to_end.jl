@@ -11,7 +11,7 @@ end
     config = FrAngelConfig(generation = FrAngelConfigGeneration(use_fragments_chance = 0, use_angelic_conditions_chance = 0))
     angelic_conditions = AbstractVector{Union{Nothing, Int64}}([nothing for rule in g.rules])
     
-    @time begin 
+    @time @profview begin 
         rules_min = rules_minsize(g)
         symbol_min = symbols_minsize(g, rules_min)
         iterator = FrAngelRandomIterator(g, :Num, rules_min, symbol_min, max_depth = 10)

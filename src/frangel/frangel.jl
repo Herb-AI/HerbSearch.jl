@@ -75,7 +75,7 @@ function frangel(
     fragments_offset = length(grammar.rules)
     state = nothing
 
-    fragment_base_rules::Vector{Tuple{Int, Symbol}} = collect(map(i -> (i, grammar.rules[i]), filter(i -> grammar.rules[i] == Symbol(string(:Fragment_, grammar.types[i])) , eachindex(grammar.rules))))
+    fragment_base_rules::Vector{Tuple{Int,Symbol}} = collect(map(i -> (i, grammar.rules[i]), filter(i -> grammar.rules[i] == Symbol(string(:Fragment_, grammar.types[i])), eachindex(grammar.rules))))
 
     visited = Set{RuleNode}()
 
@@ -117,9 +117,10 @@ function frangel(
         # Early return -> if it passes all tests, then final round of simplification and return
         if all(passed_tests)
             # TODO program = simplify_slow(program, grammar, spec, angelic_conditions, (time() - start_time) / 10)
-            return simplify_quick(program, grammar, spec, passed_tests)
+            return simplify_quick(program, grammar, spec, passed_tests, fragments_offset)
         end
 
+        if config.generation.use_fragments_chance != 0
         # Update grammar with fragments
         fragments, updatedFragments = remember_programs!(remembered_programs, passed_tests, program, fragments, grammar)
         if updatedFragments
@@ -131,18 +132,19 @@ function frangel(
             # Update rule_minsize and symbol_minsize        
             resize!(rule_minsize, length(grammar.rules))
             for (i, fragment) in enumerate(fragments)
-                rule_minsize[fragments_offset + i] = count_nodes(grammar, fragment)
+                    rule_minsize[fragments_offset+i] = count_nodes(grammar, fragment)
 
                 ret_typ = return_type(grammar, fragments_offset + i)
                 if haskey(symbol_minsize, ret_typ)
-                    symbol_minsize[ret_typ] = min(symbol_minsize[ret_typ], rule_minsize[fragments_offset + i])
+                        symbol_minsize[ret_typ] = min(symbol_minsize[ret_typ], rule_minsize[fragments_offset+i])
                 else 
-                    symbol_minsize[ret_typ] = rule_minsize[fragments_offset + i]
+                        symbol_minsize[ret_typ] = rule_minsize[fragments_offset+i]
                 end
             end
             for (index, key) in fragment_base_rules
                 rule_minsize[index] = symbol_minsize[key]
             end
         end
+    end
     end
 end

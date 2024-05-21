@@ -120,12 +120,12 @@ Simplifies the provided program by replacing nodes with smaller nodes that pass 
 The simplified program.
 
 """
-function simplify_quick(program::RuleNode, grammar::AbstractGrammar, tests::AbstractVector{<:IOExample}, passed_tests::BitVector)::RuleNode
-    simlified = _simplify_quick_once(program, program, grammar, tests, passed_tests, Vector{Int}())
+function simplify_quick(program::RuleNode, grammar::AbstractGrammar, tests::AbstractVector{<:IOExample}, passed_tests::BitVector, fragments_offset::Int)::RuleNode
+    simlified = _simplify_quick_once(program, program, grammar, tests, passed_tests, fragments_offset, Vector{Int}())
     # Continuously simplify program until unchanged
     while program != simlified
         program = simlified
-        simlified = _simplify_quick_once(program, program, grammar, tests, passed_tests, Vector{Int}())
+        simlified = _simplify_quick_once(program, program, grammar, tests, passed_tests, fragments_offset, Vector{Int}())
     end
 
     program
@@ -156,9 +156,10 @@ function _simplify_quick_once(
     grammar::AbstractGrammar,
     tests::AbstractVector{<:IOExample},
     passed_tests::BitVector,
+    fragments_offset::Int,
     path::Vector{Int}=[]
 )::RuleNode
-    for replacement in get_replacements(node, grammar)
+    for replacement in get_replacements(node, grammar, fragments_offset)
         if length(path) == 0
             if passes_the_same_tests_or_more(replacement, grammar, tests, passed_tests)
                 return replacement
@@ -180,7 +181,7 @@ function _simplify_quick_once(
         return node
     else
         for (index, child) in enumerate(node.children)
-            node.children[index] = _simplify_quick_once(root, child, grammar, tests, passed_tests, [path; index])
+            node.children[index] = _simplify_quick_once(root, child, grammar, tests, passed_tests, fragments_offset, [path; index])
         end
     end
 

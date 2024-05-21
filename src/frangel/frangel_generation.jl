@@ -58,7 +58,7 @@ function modify_and_replace_program_fragments!(
     rule_minsize::AbstractVector{UInt8},
     symbol_minsize::Dict{Symbol,UInt8}
 )::RuleNode 
-    if is_fragment_rule(grammar, program.ind)
+    if program.ind > fragments_offset
         fragment_rule_index = program.children[1].ind
         # a fragment was found
 
@@ -147,7 +147,7 @@ Looks for single-node trees corresponding to all variables and constants in the 
 # Returns
 A vector of RuleNodes representing all the possible replacements for the provided node, ordered by size.
 """
-function get_replacements(node::RuleNode, grammar::AbstractGrammar)::AbstractVector{RuleNode}
+function get_replacements(node::RuleNode, grammar::AbstractGrammar, fragments_offset::Int)::AbstractVector{RuleNode}
     replacements = Set{RuleNode}([])
     symbol = return_type(grammar, node)
 
@@ -180,7 +180,7 @@ function get_replacements(node::RuleNode, grammar::AbstractGrammar)::AbstractVec
 
     # Single-node trees corresponding to all variables and constants in the grammar.
     for rule_index in eachindex(grammar.rules)
-        if isterminal(grammar, rule_index) && return_type(grammar, rule_index) == symbol && !is_fragment_rule(grammar, rule_index)
+        if isterminal(grammar, rule_index) && return_type(grammar, rule_index) == symbol && rule_index <= fragments_offset
             push!(replacements, RuleNode(rule_index))
         end
     end
