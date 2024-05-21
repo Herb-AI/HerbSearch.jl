@@ -102,10 +102,13 @@ end
 
 function resetPosition()
     action = env.action_space.noop()
-    action["chat"] = "/tp @a $(x_player_start[1]) $(y_player_start[1]) $(z_player_start[1])"
-    # print("Running chat ", action["chat"])
+    env.set_next_chat_message("/tp @a $(x_player_start[1]) $(y_player_start[1]) $(z_player_start[1])")
 
-    env.step(action)
+    obs = env.step(action)[1]
+    while obs["xpos"] != x_player_start || obs["ypos"] != y_player_start || obs["zpos"] != z_player_start
+        obs = env.step(action)[1]
+    end
+
     env.render()
 end
 
