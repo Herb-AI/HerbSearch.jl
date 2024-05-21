@@ -79,6 +79,8 @@ function frangel(
     state = nothing
     start_time = time()
 
+    visited = Set{RuleNode}()
+
     while time() - start_time < config.max_time
         # Generate random program
         program, state = (state === nothing) ? iterate(iter) : iterate(iter, state)
@@ -86,6 +88,11 @@ function frangel(
         # Generalize these two procedures at some point
         program = modify_and_replace_program_fragments!(program, fragments, fragments_offset, config.generation, grammar, rule_minsize, symbol_minsize)
         program = add_angelic_conditions!(program, grammar, angelic_conditions, config.generation)
+
+        if program in visited
+            continue
+        end
+        push!(visited, program)
 
         passed_tests = BitVector([false for _ in spec])
         # If it does not pass any tests, discard
