@@ -1,12 +1,5 @@
 
 @programiterator GuidedTraceSearchIterator()
-Base.@kwdef mutable struct GuidedSearchState
-    level::Int64
-    bank::Vector{Vector{RuleNode}}
-    eval_cache::Set
-    iter::NewProgramsIterator
-    next_iter::Union{Tuple{RuleNode, NewProgramsState}, Nothing}
-end
 
 function Base.iterate(iter::GuidedTraceSearchIterator)
     iterate(iter, GuidedSearchState(
@@ -43,7 +36,7 @@ function Base.iterate(iter::GuidedTraceSearchIterator, state::GuidedSearchState)
 
             # evaluate program if starting symbol
             if return_type(grammar, prog.ind) == start_symbol
-                eval_observation, is_done, is_partial_sol, final_reward = evaluate_trace(prog, grammar)
+                eval_observation, is_done, final_reward = evaluate_trace(prog, grammar)
                 if eval_observation in state.eval_cache # program already cached
                     # print("Skipping this.")
                     continue
