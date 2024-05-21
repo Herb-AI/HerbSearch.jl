@@ -73,7 +73,6 @@ end
 # make sure the probabilities are equal 
 @assert all(prob -> prob == minerl_grammar_2.log_probabilities[begin], minerl_grammar_2.log_probabilities)
 
-
 function HerbSearch.set_env_position(x, y, z)
     println("Setting env position")
     set_start_xyz(x, y, z)
