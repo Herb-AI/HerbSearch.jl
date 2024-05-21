@@ -1,6 +1,7 @@
 module HerbSearch
 
 using DataStructures
+using Combinatorics
 
 using HerbCore
 using HerbGrammar
@@ -16,6 +17,7 @@ include("uniform_iterator.jl")
 
 include("heuristics.jl")
 
+include("bottom_up_iterator.jl")
 include("fixed_shaped_iterator.jl")
 include("top_down_iterator.jl")
 
@@ -65,6 +67,9 @@ export
   BFSIterator,
   DFSIterator,
   MLFSIterator,
+
+  BottomUpIterator,
+  BasicIterator,
 
   MHSearchIterator,
   VLSNSearchIterator,
