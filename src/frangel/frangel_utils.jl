@@ -255,12 +255,12 @@ The minimum size achievable for each production rule in the grammar, in the same
 
 """
 function rules_minsize(grammar::AbstractGrammar)::AbstractVector{UInt8}
-    min_sizes = Int[255 for i in eachindex(grammar.rules)]
+    min_sizes = UInt8[255 for i in eachindex(grammar.rules)]
     visited = Dict(type => false for type in grammar.types)
 
     for i in eachindex(grammar.rules)
         if isterminal(grammar, i)
-            min_sizes[i] = grammar.rules[i] == Symbol(string(:Fragment_, grammar.types[i])) ? 65536 : 1
+            min_sizes[i] = grammar.rules[i] == Symbol(string(:Fragment_, grammar.types[i])) ? 255 : 1
         end
     end
 
@@ -272,7 +272,7 @@ function rules_minsize(grammar::AbstractGrammar)::AbstractVector{UInt8}
     min_sizes
 end
 
-function _minsize!(grammar::AbstractGrammar, rule_index::Int, min_sizes::AbstractVector{Int}, visited::Dict{Symbol,Bool})::Int
+function _minsize!(grammar::AbstractGrammar, rule_index::Int, min_sizes::AbstractVector{UInt8}, visited::Dict{Symbol,Bool})::UInt8
     isterminal(grammar, rule_index) && return min_sizes[rule_index]
 
     size = 1
@@ -283,7 +283,7 @@ function _minsize!(grammar::AbstractGrammar, rule_index::Int, min_sizes::Abstrac
         end 
         visited[ctyp] = true
         rules = grammar.bytype[ctyp]
-        min = 65536
+        min = 255
         for index in rules
             min = minimum([min, _minsize!(grammar, index, min_sizes, visited)])
             if min == 1
