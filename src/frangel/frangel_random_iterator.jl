@@ -1,19 +1,10 @@
-@programiterator FrAngelRandomIterator()
-
-struct State
-    rule_minsize::AbstractVector{UInt8}
+@programiterator FrAngelRandomIterator(
+    rule_minsize::AbstractVector{UInt8},
     symbol_minsize::Dict{Symbol,UInt8}
-end
+)
 
-function Base.iterate(iter::FrAngelRandomIterator)
-    rule_minsize = rules_minsize(iter.grammar)
-    state = State(rule_minsize, symbols_minsize(iter.grammar, rule_minsize))
-
-    return (sample(iter.grammar, iter.sym, state.rule_minsize, state.symbol_minsize), state)
-end
-
-function Base.iterate(iter::FrAngelRandomIterator, state::State)
-    return (sample(iter.grammar, iter.sym, state.rule_minsize, state.symbol_minsize), state)
+function Base.iterate(iter::FrAngelRandomIterator, state=nothing)
+    return (sample(iter.grammar, iter.sym, iter.rule_minsize, iter.symbol_minsize), state)
 end
 
 function sample(grammar::AbstractGrammar, symbol::Symbol, rule_minsize::AbstractVector{UInt8}, symbol_minsize::Dict{Symbol,UInt8}, max_size::UInt8 = UInt8(40))

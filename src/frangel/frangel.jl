@@ -61,25 +61,25 @@ function frangel(
     spec::AbstractVector{<:IOExample},
     config::FrAngelConfig,
     angelic_conditions::AbstractVector{Union{Nothing,Int}},
-    iter::ProgramIterator
+    iter::ProgramIterator,
+    rule_minsize::AbstractVector{UInt8},
+    symbol_minsize::Dict{Symbol,UInt8}
 )
     remembered_programs = Dict{BitVector,Tuple{RuleNode,Int,Int}}()
-    fragments = Vector{RuleNode}() # TODO: change it to vector everywhere
+    fragments = Vector{RuleNode}()
     grammar = iter.grammar
     base_grammar = deepcopy(grammar)
     symboltable = SymbolTable(grammar)
 
-    rule_minsize = rules_minsize(grammar)
-    base_rule_minsize = deepcopy(rule_minsize)
-    symbol_minsize = symbols_minsize(grammar, rule_minsize)
-    base_symbol_minsize = deepcopy(symbol_minsize)
-
     add_fragments_prob!(grammar, config.generation.use_fragments_chance)
     fragments_offset = length(grammar.rules)
     state = nothing
-    start_time = time()
+
+    fragment_base_rules::Vector{Tuple{Int, Symbol}} = collect(map(i -> (i, grammar.rules[i]), filter(i -> grammar.rules[i] == Symbol(string(:Fragment_, grammar.types[i])) , eachindex(grammar.rules))))
 
     visited = Set{RuleNode}()
+
+    start_time = time()
 
     while time() - start_time < config.max_time
         # Generate random program
@@ -124,14 +124,25 @@ function frangel(
         fragments, updatedFragments = remember_programs!(remembered_programs, passed_tests, program, fragments, grammar)
         if updatedFragments
             # Remove old fragments from grammar (by resetting to base grammar)
-            grammar = base_grammar
+            grammar = deepcopy(base_grammar)
             # Add fragments to grammar
             add_rules!(grammar, fragments)
             add_fragments_prob!(grammar, config.generation.use_fragments_chance)
-            # Reset rule_minsize and symbol_minsize
-            rule_minsize = base_rule_minsize
-            symbol_minsize = base_symbol_minsize
-            # update_minsizes!(grammar, fragments, rule_minsize, base_rule_minsize, symbol_minsize, base_symbol_minsize)
+            # Update rule_minsize and symbol_minsize        
+            resize!(rule_minsize, length(grammar.rules))
+            for (i, fragment) in enumerate(fragments)
+                rule_minsize[fragments_offset + i] = count_nodes(grammar, fragment)
+
+                ret_typ = return_type(grammar, fragments_offset + i)
+                if haskey(symbol_minsize, ret_typ)
+                    symbol_minsize[ret_typ] = min(symbol_minsize[ret_typ], rule_minsize[fragments_offset + i])
+                else 
+                    symbol_minsize[ret_typ] = rule_minsize[fragments_offset + i]
+                end
+            end
+            for (index, key) in fragment_base_rules
+                rule_minsize[index] = symbol_minsize[key]
+            end
         end
     end
 end

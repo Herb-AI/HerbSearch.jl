@@ -28,8 +28,8 @@ function generate_random_program(
     config::FrAngelConfigGeneration,
     fragments_offset::Number,
     max_size,
-    rule_minsize::AbstractVector{Int},
-    symbol_minsize::Dict{Symbol,Int}
+    rule_minsize::AbstractVector{UInt8},
+    symbol_minsize::Dict{Symbol,UInt8}
 )::RuleNode
     max_size = max(max_size, symbol_minsize[type])
     
@@ -122,8 +122,8 @@ function random_modify_children!(
     node::RuleNode,
     config::FrAngelConfigGeneration,
     fragments_offset::Number,
-    rule_minsize::AbstractVector{Int},
-    symbol_minsize::Dict{Symbol,Int}
+    rule_minsize::AbstractVector{UInt8},
+    symbol_minsize::Dict{Symbol,UInt8}
 )::Nothing
     for (index, child) in enumerate(node.children)
         if rand() < config.gen_similar_prob_new

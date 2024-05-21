@@ -275,7 +275,7 @@ end
 function _minsize!(grammar::AbstractGrammar, rule_index::Int, min_sizes::AbstractVector{UInt8}, visited::Dict{Symbol,Bool})::UInt8
     isterminal(grammar, rule_index) && return min_sizes[rule_index]
 
-    size = 1
+    size = UInt8(1)
     for ctyp in child_types(grammar, rule_index)
         if visited[ctyp]
             size += minimum(min_sizes[i] for i in grammar.bytype[ctyp])
