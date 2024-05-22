@@ -27,7 +27,7 @@ function generate_random_program(
     type::Symbol,
     config::FrAngelConfigGeneration,
     fragment_base_rules_offset::Int16,
-    max_size,
+    max_size::UInt8,
     rule_minsize::AbstractVector{UInt8},
     symbol_minsize::Dict{Symbol,UInt8}
 )::RuleNode
@@ -39,7 +39,7 @@ function generate_random_program(
     rule_node = RuleNode(rule_index)
 
     if !grammar.isterminal[rule_index]
-        sizes = random_partition(grammar, rule_index, max_size, symbol_minsize)
+        sizes = random_partition(grammar, Int16(rule_index), max_size, symbol_minsize)
 
         for (index, child_type) in enumerate(child_types(grammar, rule_index))
             push!(rule_node.children, generate_random_program(grammar, child_type, config, fragment_base_rules_offset, sizes[index], rule_minsize, symbol_minsize))
@@ -60,7 +60,6 @@ function modify_and_replace_program_fragments!(
     symbol_minsize::Dict{Symbol,UInt8}
 )::RuleNode 
     if program.ind > fragment_base_rules_offset && program.ind <= fragment_rules_offset
-        println(program.ind)
         fragment_rule_index = program.children[1].ind
         # a fragment was found
 
@@ -87,20 +86,6 @@ function modify_and_replace_program_fragments!(
     else
         println("Invalid rule index: ", program.ind)
     end
-end
-
-function modify_and_replace_program_fragments!(
-    state_hole::StateHole, 
-    fragments::AbstractVector{RuleNode}, 
-    fragments_offset::Number, 
-    config::FrAngelConfigGeneration,
-    grammar::AbstractGrammar, 
-    rule_minsize::AbstractVector{UInt8},
-    symbol_minsize::Dict{Symbol,UInt8}
-)::RuleNode 
-    program = RuleNode(findfirst(state_hole.domain))
-
-    modify_and_replace_program_fragments!(program, fragments, fragments_offset, config, grammar, rule_minsize, symbol_minsize)
 end
 
 """

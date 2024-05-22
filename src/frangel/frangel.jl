@@ -14,10 +14,10 @@ A configuration struct for FrAngel generation.
 """
 @kwdef struct FrAngelConfigGeneration
     max_size::Int = 40
-    use_fragments_chance::Float64 = 0.5
+    use_fragments_chance::Float16 = 0.5
     use_entire_fragment_chance::Float16 = 0.5
     use_angelic_conditions_chance::Float16 = 0.5
-    similar_new_extra_size::Int = 8
+    similar_new_extra_size::UInt8 = 8
     gen_similar_prob_new::Float16 = 0.25
 end
 
@@ -77,7 +77,6 @@ function frangel(
         rule_minsize[i] = 255
     end
     
-    base_grammar = deepcopy(grammar)
     symboltable = SymbolTable(grammar)
 
     add_fragments_prob!(grammar, config.generation.use_fragments_chance, fragment_base_rules_offset, fragment_rules_offset)
@@ -120,7 +119,7 @@ function frangel(
 
         # Simplify and rerun over examples
         if config.try_to_simplify
-            program = simplify_quick(program, grammar, spec, passed_tests, fragments_offset)
+            program = simplify_quick(program, grammar, spec, passed_tests, fragment_base_rules_offset)
             program_expr = get_passed_tests!(program, grammar, symboltable, spec, passed_tests, angelic_conditions, config.angelic)
         end
 
@@ -134,8 +133,14 @@ function frangel(
             # Update grammar with fragments
             fragments, updatedFragments = remember_programs!(remembered_programs, passed_tests, program, program_expr, fragments, grammar)
             if updatedFragments
-                # Remove old fragments from grammar (by resetting to base grammar)
-                grammar = deepcopy(base_grammar)
+                # Remove old fragments from grammar (by resetting to base grammar) / remove all rules aftere fragment_rules_offset
+                #grammar = deepcopy(base_grammar)
+
+                for i in reverse(fragment_rules_offset+1:length(grammar.rules))
+                    remove_rule!(grammar, i)
+                end
+                cleanup_removed_rules!(grammar)
+
                 # Add fragments to grammar
                 add_rules!(grammar, fragments)
                 add_fragments_prob!(grammar, config.generation.use_fragments_chance, fragment_base_rules_offset, fragment_rules_offset)

@@ -36,6 +36,8 @@ function get_passed_tests!(
                 end
             end
         end
+
+        nothing
     else
         expr = rulenode2expr(program, grammar)
         for (index, test) in enumerate(tests)
@@ -46,8 +48,9 @@ function get_passed_tests!(
                 prev_passed_tests[index] = false
             end
         end
+
+        expr
     end
-    return expr
 end
 
 """
@@ -63,7 +66,7 @@ Count the number of nodes in a given `RuleNode` program.
 The number of nodes in the program's AST representation.
 
 """
-function count_nodes(grammar::AbstractGrammar, program::RuleNode)::Int
+function count_nodes(grammar::AbstractGrammar, program::RuleNode)::UInt8
     if isterminal(grammar, program)
         return 1
     else
@@ -311,7 +314,7 @@ It should be a terminal rule and have the same type as the symbol it is a fragme
 - `grammar`: The grammar rules of the program. Updates its probabilities directly.
 - `fragments_chance`: The probability of using a fragment rule.
 """
-function add_fragments_prob!(grammar::AbstractGrammar, fragments_chance::Float64, fragment_base_rules_offset::Int16, fragment_rules_offset::Int16)
+function add_fragments_prob!(grammar::AbstractGrammar, fragments_chance::Float16, fragment_base_rules_offset::Int16, fragment_rules_offset::Int16)
     if isnothing(grammar.log_probabilities)
         grammar.log_probabilities = fill(Float16(1), length(grammar.rules))
     else 
@@ -330,8 +333,8 @@ function add_fragments_prob!(grammar::AbstractGrammar, fragments_chance::Float64
                 end
             end
         else
-            if grammar.log_probabilities[i] != Float16(fragments_chance)
-                grammar.log_probabilities[i] =  Float16(fragments_chance)
+            if grammar.log_probabilities[i] != fragments_chance
+                grammar.log_probabilities[i] =  fragments_chance
                 others_prob = Float16(1 - fragments_chance) / (length(grammar.bytype[grammar.types[i]]) - 1)
                 for j in grammar.bytype[return_type(grammar, i)]
                     if j != i
