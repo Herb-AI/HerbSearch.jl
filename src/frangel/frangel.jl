@@ -69,16 +69,20 @@ function frangel(
     remembered_programs = Dict{BitVector,Tuple{RuleNode,Int,Int}}()
     fragments = Vector{RuleNode}()
     grammar = iter.grammar
+    fragment_base_rules_offset::Int16 = length(grammar.rules)
+    add_fragment_base_rules!(grammar)
+    fragment_rules_offset::Int16 = length(grammar.rules)
+    resize!(rule_minsize, fragment_rules_offset)
+    for i in fragment_base_rules_offset+1:fragment_rules_offset
+        rule_minsize[i] = 255
+    end
+    
     base_grammar = deepcopy(grammar)
     symboltable = SymbolTable(grammar)
 
-    add_fragments_prob!(grammar, config.generation.use_fragments_chance)
-    fragments_offset = length(grammar.rules)
+    add_fragments_prob!(grammar, config.generation.use_fragments_chance, fragment_base_rules_offset, fragment_rules_offset)
+
     state = nothing
-
-    fragment_base_rules::Vector{Tuple{Int,Symbol}} = collect(map(i -> (i, grammar.rules[i]), 
-        filter(i -> grammar.rules[i] == Symbol(string(:Fragment_, grammar.types[i])), eachindex(grammar.rules))))
-
     visited = Set{RuleNode}()
 
     start_time = time()
@@ -88,7 +92,7 @@ function frangel(
         program, state = (state === nothing) ? iterate(iter) : iterate(iter, state)
 
         # Generalize these two procedures at some point
-        program = modify_and_replace_program_fragments!(program, fragments, fragments_offset, config.generation, grammar, rule_minsize, symbol_minsize)
+        program = modify_and_replace_program_fragments!(program, fragments, fragment_base_rules_offset, fragment_rules_offset, config.generation, grammar, rule_minsize, symbol_minsize)
         program = add_angelic_conditions!(program, grammar, angelic_conditions, config.generation)
 
         # Do not check visited program space
@@ -123,7 +127,7 @@ function frangel(
         # Early return -> if it passes all tests, then final round of simplification and return
         if all(passed_tests)
             # TODO program = simplify_slow(program, grammar, spec, angelic_conditions, (time() - start_time) / 10)
-            return simplify_quick(program, grammar, spec, passed_tests, fragments_offset)
+            return simplify_quick(program, grammar, spec, passed_tests, fragment_base_rules_offset)
         end
 
         if config.generation.use_fragments_chance != 0
@@ -134,28 +138,25 @@ function frangel(
                 grammar = deepcopy(base_grammar)
                 # Add fragments to grammar
                 add_rules!(grammar, fragments)
-                add_fragments_prob!(grammar, config.generation.use_fragments_chance)
-                if j < step
-                    println(grammar)
-                end
+                add_fragments_prob!(grammar, config.generation.use_fragments_chance, fragment_base_rules_offset, fragment_rules_offset)
                 # Update rule_minsize and symbol_minsize        
                 resize!(rule_minsize, length(grammar.rules))
                 for (i, fragment) in enumerate(fragments)
-                    rule_minsize[fragments_offset+i] = count_nodes(grammar, fragment)
+                        rule_minsize[fragment_rules_offset+i] = count_nodes(grammar, fragment)
 
-                    ret_typ = return_type(grammar, fragments_offset + i)
+                    ret_typ = return_type(grammar, fragment_rules_offset + i)
                     if haskey(symbol_minsize, ret_typ)
-                        symbol_minsize[ret_typ] = min(symbol_minsize[ret_typ], rule_minsize[fragments_offset+i])
-                    else
-                        symbol_minsize[ret_typ] = rule_minsize[fragments_offset+i]
+                            symbol_minsize[ret_typ] = min(symbol_minsize[ret_typ], rule_minsize[fragment_rules_offset+i])
+                    else 
+                            symbol_minsize[ret_typ] = rule_minsize[fragment_rules_offset+i]
                     end
                 end
-                for (index, key) in fragment_base_rules
-                    rule_minsize[index] = symbol_minsize[key]
-                end
-                if j < step
-                    println(rule_minsize)
-                    println(symbol_minsize)
+                for i in fragment_base_rules_offset+1:fragment_rules_offset
+                    if !isterminal(grammar, i)
+                        rule_minsize[i] = symbol_minsize[grammar.rules[i]]
+                    else
+                        rule_minsize[i] = 255
+                    end
                 end
             end
         end

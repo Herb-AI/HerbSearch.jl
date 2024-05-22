@@ -86,8 +86,8 @@ Randomly partitions the allowed size into a vector of sizes for each child of th
 A vector of sizes for each child of the provided rule index.
 
 """
-function random_partition(grammar::AbstractGrammar, rule_index::Int, size::UInt8, symbol_minsize::Dict{Symbol,UInt8})::AbstractVector{UInt8}
-    children_types = child_types(grammar, rule_index)
+function random_partition(grammar::AbstractGrammar, rule_index::Int16, size::UInt8, symbol_minsize::Dict{Symbol,UInt8})::AbstractVector{UInt8}
+    children_types = child_types(grammar, Int(rule_index))
 
     min_size = sum(symbol_minsize[child_type] for child_type in children_types)
     left_to_partition = size - min_size
@@ -121,12 +121,12 @@ Simplifies the provided program by replacing nodes with smaller nodes that pass 
 The simplified program.
 
 """
-function simplify_quick(program::RuleNode, grammar::AbstractGrammar, tests::AbstractVector{<:IOExample}, passed_tests::BitVector, fragments_offset::Int)::RuleNode
-    simlified = _simplify_quick_once(program, program, grammar, tests, passed_tests, fragments_offset, Vector{Int}())
+function simplify_quick(program::RuleNode, grammar::AbstractGrammar, tests::AbstractVector{<:IOExample}, passed_tests::BitVector, fragment_base_rules_offset::Int16)::RuleNode
+    simlified = _simplify_quick_once(program, program, grammar, tests, passed_tests, fragment_base_rules_offset, Vector{Int}())
     # Continuously simplify program until unchanged
     while program != simlified
         program = simlified
-        simlified = _simplify_quick_once(program, program, grammar, tests, passed_tests, fragments_offset, Vector{Int}())
+        simlified = _simplify_quick_once(program, program, grammar, tests, passed_tests, fragment_base_rules_offset, Vector{Int}())
     end
 
     program
@@ -157,10 +157,10 @@ function _simplify_quick_once(
     grammar::AbstractGrammar,
     tests::AbstractVector{<:IOExample},
     passed_tests::BitVector,
-    fragments_offset::Int,
+    fragment_base_rules_offset::Int16,
     path::Vector{Int}=[]
 )::RuleNode
-    for replacement in get_replacements(node, grammar, fragments_offset)
+    for replacement in get_replacements(node, grammar, fragment_base_rules_offset)
         if length(path) == 0
             if passes_the_same_tests_or_more(replacement, grammar, tests, passed_tests)
                 return replacement
@@ -182,7 +182,7 @@ function _simplify_quick_once(
         return node
     else
         for (index, child) in enumerate(node.children)
-            node.children[index] = _simplify_quick_once(root, child, grammar, tests, passed_tests, fragments_offset, [path; index])
+            node.children[index] = _simplify_quick_once(root, child, grammar, tests, passed_tests, fragment_base_rules_offset, [path; index])
         end
     end
 
@@ -262,7 +262,7 @@ function rules_minsize(grammar::AbstractGrammar)::AbstractVector{UInt8}
 
     for i in eachindex(grammar.rules)
         if isterminal(grammar, i)
-            min_sizes[i] = grammar.rules[i] == Symbol(string(:Fragment_, grammar.types[i])) ? 255 : 1
+            min_sizes[i] = 1
         end
     end
 
@@ -311,47 +311,41 @@ It should be a terminal rule and have the same type as the symbol it is a fragme
 - `grammar`: The grammar rules of the program. Updates its probabilities directly.
 - `fragments_chance`: The probability of using a fragment rule.
 """
-function add_fragments_prob!(grammar::AbstractGrammar, fragments_chance::Float64)
-    bytype = Dict{Symbol,AbstractVector{Int}}()
-    fragment_rule_bytype = Dict{Symbol,Int}()
-    
-    for rule_index in eachindex(grammar.rules)
-        sym = grammar.types[rule_index]
-    
-        if !haskey(bytype, sym) 
-            bytype[sym] = Vector{Int}()
-        end
-        push!(bytype[sym], rule_index)
-    
-        if isterminal(grammar, rule_index) && grammar.rules[rule_index] == Symbol(string(:Fragment_, sym))
-            fragment_rule_bytype[sym] = rule_index
-        end
+function add_fragments_prob!(grammar::AbstractGrammar, fragments_chance::Float64, fragment_base_rules_offset::Int16, fragment_rules_offset::Int16)
+    if isnothing(grammar.log_probabilities)
+        grammar.log_probabilities = fill(Float16(1), length(grammar.rules))
+    else 
+        resize!(grammar.log_probabilities, length(grammar.rules))
     end
     
-    grammar.log_probabilities = fill(Float16(1), length(grammar.rules))
-    
-    for sym in keys(fragment_rule_bytype)
-        fragment_chance::Float16 = isterminal(grammar, fragment_rule_bytype[sym]) ? Float16(0.0) : Float16(fragments_chance)
-        for_rest::Float16 = (1 - fragment_chance) / (length(bytype[sym]) - 1)
-    
-        for rule_index in bytype[sym] 
-            grammar.log_probabilities[rule_index] = for_rest
-        end
-    
-        grammar.log_probabilities[fragment_rule_bytype[sym]] = fragment_chance
-    end
-    
-    # normalize! from https://github.com/Herb-AI/HerbGrammar.jl/blob/8a7c25f6734a4bfc5f17311bdd80a90195ad3aab/src/csg/probabilistic_csg.jl#L93
-    probabilities = grammar.log_probabilities
-    for t ∈ keys(bytype)
-        total_prob = sum(probabilities[i] for i ∈ grammar.bytype[t])
-        if !(total_prob ≈ 1)
-            for i ∈ grammar.bytype[t]
-                probabilities[i] /= total_prob
+    for i in fragment_base_rules_offset+1:fragment_rules_offset
+        if isterminal(grammar, i)
+            if grammar.log_probabilities[i] != Float16(0) 
+                grammar.log_probabilities[i] = Float16(0)
+                others_prob = Float16(1) / (length(grammar.bytype[grammar.types[i]]) - 1)
+                for j in grammar.bytype[return_type(grammar, i)]
+                    if j != i
+                        grammar.log_probabilities[j] = others_prob
+                    end
+                end
+            end
+        else
+            if grammar.log_probabilities[i] != Float16(fragments_chance)
+                grammar.log_probabilities[i] =  Float16(fragments_chance)
+                others_prob = Float16(1 - fragments_chance) / (length(grammar.bytype[grammar.types[i]]) - 1)
+                for j in grammar.bytype[return_type(grammar, i)]
+                    if j != i
+                        grammar.log_probabilities[j] = others_prob
+                    end
+                end
+            end
+
+            fragments_prob = Float16(1) / length(grammar.bytype[grammar.rules[i]])
+            for j in grammar.bytype[grammar.rules[i]]
+                grammar.log_probabilities[j] = fragments_prob
             end
         end
     end
-    grammar.log_probabilities = probabilities
 end
 
 """

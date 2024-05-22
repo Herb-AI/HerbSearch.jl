@@ -26,14 +26,14 @@ function generate_random_program(
     grammar::AbstractGrammar,
     type::Symbol,
     config::FrAngelConfigGeneration,
-    fragments_offset::Number,
+    fragment_base_rules_offset::Int16,
     max_size,
     rule_minsize::AbstractVector{UInt8},
     symbol_minsize::Dict{Symbol,UInt8}
 )::RuleNode
     max_size = max(max_size, symbol_minsize[type])
     
-    possible_rules = filter(r -> r <= fragments_offset && rule_minsize[r] ≤ max_size, grammar[type])
+    possible_rules = filter(r -> r <= fragment_base_rules_offset && rule_minsize[r] ≤ max_size, grammar[type])
 
     rule_index = StatsBase.sample(possible_rules)
     rule_node = RuleNode(rule_index)
@@ -42,7 +42,7 @@ function generate_random_program(
         sizes = random_partition(grammar, rule_index, max_size, symbol_minsize)
 
         for (index, child_type) in enumerate(child_types(grammar, rule_index))
-            push!(rule_node.children, generate_random_program(grammar, child_type, config, fragments_offset, sizes[index], rule_minsize, symbol_minsize))
+            push!(rule_node.children, generate_random_program(grammar, child_type, config, fragment_base_rules_offset, sizes[index], rule_minsize, symbol_minsize))
         end
     end
 
@@ -52,36 +52,40 @@ end
 function modify_and_replace_program_fragments!(
     program::RuleNode, 
     fragments::AbstractVector{RuleNode}, 
-    fragments_offset::Number, 
+    fragment_base_rules_offset::Int16, 
+    fragment_rules_offset::Int16,
     config::FrAngelConfigGeneration,
     grammar::AbstractGrammar, 
     rule_minsize::AbstractVector{UInt8},
     symbol_minsize::Dict{Symbol,UInt8}
 )::RuleNode 
-    if program.ind > fragments_offset
+    if program.ind > fragment_base_rules_offset && program.ind <= fragment_rules_offset
+        println(program.ind)
         fragment_rule_index = program.children[1].ind
         # a fragment was found
 
         if rand() < config.use_entire_fragment_chance
             # use fragment as is
-            return fragments[fragment_rule_index - fragments_offset]
+            return fragments[fragment_rule_index - fragment_rules_offset]
         else
             # modify the fragment
-            modified_fragment = deepcopy(fragments[fragment_rule_index - fragments_offset])
-            random_modify_children!(grammar, modified_fragment, config, fragments_offset, rule_minsize, symbol_minsize)
+            modified_fragment = deepcopy(fragments[fragment_rule_index - fragment_rules_offset])
+            random_modify_children!(grammar, modified_fragment, config, fragment_base_rules_offset, rule_minsize, symbol_minsize)
             return modified_fragment
         end
-    else
+    elseif program.ind <= fragment_base_rules_offset
         # traverse the tree to find fragments to replace
         if isterminal(grammar, program.ind)
             return program
         end
 
         for (index, child) in enumerate(program.children)
-            program.children[index] = modify_and_replace_program_fragments!(child, fragments, fragments_offset, config, grammar, rule_minsize, symbol_minsize)
+            program.children[index] = modify_and_replace_program_fragments!(child, fragments, fragment_base_rules_offset, fragment_rules_offset, config, grammar, rule_minsize, symbol_minsize)
         end
 
         program
+    else
+        println("Invalid rule index: ", program.ind)
     end
 end
 
@@ -121,15 +125,15 @@ function random_modify_children!(
     grammar::AbstractGrammar,
     node::RuleNode,
     config::FrAngelConfigGeneration,
-    fragments_offset::Number,
+    fragment_base_rules_offset::Int16,
     rule_minsize::AbstractVector{UInt8},
     symbol_minsize::Dict{Symbol,UInt8}
 )::Nothing
     for (index, child) in enumerate(node.children)
         if rand() < config.gen_similar_prob_new
-            node.children[index] = generate_random_program(grammar, return_type(grammar, child), config, fragments_offset, count_nodes(grammar, child) + config.similar_new_extra_size, rule_minsize, symbol_minsize)
+            node.children[index] = generate_random_program(grammar, return_type(grammar, child), config, fragment_base_rules_offset, count_nodes(grammar, child) + config.similar_new_extra_size, rule_minsize, symbol_minsize)
         else
-            random_modify_children!(grammar, child, config, fragments_offset, rule_minsize, symbol_minsize)
+            random_modify_children!(grammar, child, config, fragment_base_rules_offset, rule_minsize, symbol_minsize)
         end
     end
 end
@@ -147,7 +151,7 @@ Looks for single-node trees corresponding to all variables and constants in the 
 # Returns
 A vector of RuleNodes representing all the possible replacements for the provided node, ordered by size.
 """
-function get_replacements(node::RuleNode, grammar::AbstractGrammar, fragments_offset::Int)::AbstractVector{RuleNode}
+function get_replacements(node::RuleNode, grammar::AbstractGrammar, fragment_base_rules_offset::Int16)::AbstractVector{RuleNode}
     replacements = Set{RuleNode}([])
     symbol = return_type(grammar, node)
 
@@ -180,7 +184,7 @@ function get_replacements(node::RuleNode, grammar::AbstractGrammar, fragments_of
 
     # Single-node trees corresponding to all variables and constants in the grammar.
     for rule_index in eachindex(grammar.rules)
-        if isterminal(grammar, rule_index) && return_type(grammar, rule_index) == symbol && rule_index <= fragments_offset
+        if isterminal(grammar, rule_index) && return_type(grammar, rule_index) == symbol && rule_index <= fragment_base_rules_offset
             push!(replacements, RuleNode(rule_index))
         end
     end

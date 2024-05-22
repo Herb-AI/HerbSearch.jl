@@ -102,7 +102,30 @@ function remember_programs!(
     end
     # Add new program to remembered ones
     old_remembered[passing_tests] = (new_program, node_count, program_length)
+    println("Simplest program for tests: ", passing_tests)
+    println(rulenode2expr(new_program, grammar))
     collect(mine_fragments(grammar, Set(values(old_remembered)))), true
+end
+
+function add_fragment_base_rules!(g::AbstractGrammar) 
+    for typ in keys(g.bytype)
+        expr = Symbol(string(:Fragment_, typ))
+        rvec = Any[]
+        parse_rule!(rvec, expr)
+        for r ∈ rvec
+            if !any(r === rule && typ === return_type(g, i) for (i, rule) ∈ enumerate(g.rules))
+                push!(g.rules, r)
+                push!(g.iseval, iseval(expr))
+                push!(g.types, typ)
+                g.bytype[typ] = push!(get(g.bytype, typ, Int[]), length(g.rules))
+            end
+        end
+    end
+    alltypes = collect(keys(g.bytype))
+    g.isterminal = [isterminal(rule, alltypes) for rule ∈ g.rules]
+    g.childtypes = [get_childtypes(rule, alltypes) for rule ∈ g.rules]
+    g.bychildtypes = [BitVector([g.childtypes[i1] == g.childtypes[i2] for i2 ∈ 1:length(g.rules)]) for i1 ∈ 1:length(g.rules)]
+    g.domains = Dict(type => BitArray(r ∈ g.bytype[type] for r ∈ 1:length(g.rules)) for type ∈ keys(g.bytype))
 end
 
 function add_rules!(g::AbstractGrammar, fragments::AbstractVector{RuleNode})
