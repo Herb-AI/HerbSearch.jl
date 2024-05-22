@@ -79,12 +79,14 @@ function remember_programs!(
     new_program::RuleNode,
     new_program_expr,
     fragments::AbstractVector{RuleNode},
-    grammar::AbstractGrammar
+    grammar::AbstractGrammar,
 )::Tuple{AbstractVector{RuleNode}, Bool}
     node_count = count_nodes(grammar, new_program)
-    # Too slow?
-    # program_length = length(string(new_program_expr))
-    program_length = 0
+    if new_program_expr === nothing
+        program_length = 0
+    else
+        program_length = length(string(new_program_expr))
+    end
     # Check the new program's testset over each remembered program
     for (key_tests, (_, p_node_count, p_program_length)) in old_remembered
         isSimpler = node_count < p_node_count || (node_count == p_node_count && program_length < p_program_length)
@@ -102,8 +104,8 @@ function remember_programs!(
     end
     # Add new program to remembered ones
     old_remembered[passing_tests] = (new_program, node_count, program_length)
-    println("Simplest program for tests: ", passing_tests)
-    println(rulenode2expr(new_program, grammar))
+    # println("Simplest program for tests: ", passing_tests)
+    # println(rulenode2expr(new_program, grammar))
     collect(mine_fragments(grammar, Set(values(old_remembered)))), true
 end
 

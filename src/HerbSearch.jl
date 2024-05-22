@@ -119,7 +119,6 @@ export
   _minsize!,
   rules_minsize,
   add_fragments_prob!,
-  is_fragment_rule,
   add_angelic_conditions!,
   add_fragment_base_rules!,
   add_rules!,

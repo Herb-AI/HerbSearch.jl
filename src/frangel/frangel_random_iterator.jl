@@ -11,11 +11,14 @@ end
 
 function Base.iterate(iter::FrAngelRandomIterator)
     max_size_estimate = length(iter.grammar.rules)
-    return Base.iterate(iter, FrAngelRandomIteratorState(Vector{Int16}(undef, max_size_estimate), Vector{Float16}(undef, max_size_estimate), Vector{Float16}(undef, max_size_estimate)))
+    return Base.iterate(iter, FrAngelRandomIteratorState(
+        Vector{Int16}(undef, max_size_estimate), 
+        Vector{Float16}(undef, max_size_estimate), 
+        Vector{Float16}(undef, max_size_estimate)))
 end
 
 function Base.iterate(iter::FrAngelRandomIterator, state::FrAngelRandomIteratorState)
-    return (sample!(iter.grammar, iter.sym, iter.rule_minsize, iter.symbol_minsize, state.filtered_indices, state.probabilities, state.cumulative_probs), state)
+    return (sample!(iter.grammar, iter.sym, iter.rule_minsize, iter.symbol_minsize, state.filtered_indices, state.probabilities, state.cumulative_probs, UInt8(iter.max_depth)), state)
 end
 
 function sample!(
@@ -26,7 +29,8 @@ function sample!(
     filtered_indices::Vector{Int16}, 
     probabilities::Vector{Float16}, 
     cumulative_probs::Vector{Float16},
-    max_size::UInt8 = UInt8(40))
+    max_size::UInt8 = UInt8(40)
+)
     max_size = max(max_size, symbol_minsize[symbol])
 
     empty!(filtered_indices)

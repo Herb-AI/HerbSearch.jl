@@ -6,26 +6,27 @@ g = @cfgrammar begin
 end
 
 @testset "basic_example" begin
-    spec = [IOExample(Dict(:x => x), 3x) for x ∈ 1:5]
+    spec = [IOExample(Dict(:x => x), 2x) for x ∈ 1:5]
     problem = Problem(spec)
-    config = FrAngelConfig(generation = FrAngelConfigGeneration(use_fragments_chance = 0.5, use_angelic_conditions_chance = 0))
+    config = FrAngelConfig(verbose_level = 20, generation = FrAngelConfigGeneration(use_fragments_chance = 0.5, use_angelic_conditions_chance = 0, max_size=20))
     angelic_conditions = AbstractVector{Union{Nothing, Int64}}([nothing for rule in g.rules])
     rules_min = rules_minsize(g)
     symbol_min = symbols_minsize(g, rules_min)
+    base_g = deepcopy(g)
 
     @time begin     
     # @time @profview begin     
-        iterator = FrAngelRandomIterator(g, :Num, rules_min, symbol_min, max_depth = 10)
+        iterator = FrAngelRandomIterator(g, :Num, rules_min, symbol_min, max_depth = config.generation.max_size)
         solution = frangel(spec, config, angelic_conditions, iterator, rules_min, symbol_min) 
     end
     program = rulenode2expr(solution, g) # should yield 2*6 +1 
     println(program)
 
     @time begin 
-        iterator = BFSIterator(g, :Num, max_depth=10)
+        iterator = BFSIterator(base_g, :Num, max_depth=10)
         solution, flag = synth(problem, iterator)
     end
-    program = rulenode2expr(solution, g) # should yield 2*6 +1 
+    program = rulenode2expr(solution, base_g) # should yield 2*6 +1 
     println(program)
 end
 
@@ -85,20 +86,26 @@ end
         IOExample(Dict(:start => 0, :endd => 1), [0]),
     ]
     problem = Problem(spec)
+    b_grammar = deepcopy(grammar)
 
     angelic_conditions = AbstractVector{Union{Nothing, Int64}}([nothing for rule in grammar.rules])
     angelic_conditions[6] = 1
     angelic_conditions[7] = 1
-    config = FrAngelConfig(max_time = 30, generation = FrAngelConfigGeneration(use_fragments_chance = Float16(0.5), use_angelic_conditions_chance = 0))
+    config = FrAngelConfig(max_time = 80, generation = FrAngelConfigGeneration(use_fragments_chance = Float16(0.5), use_angelic_conditions_chance = 0))
 
     rules_min = rules_minsize(grammar)
     symbol_min = symbols_minsize(grammar, rules_min)
-
     @time begin
-        iterator = FrAngelRandomIterator(grammar, :Program, rules_min, symbol_min)
+        iterator = FrAngelRandomIterator(grammar, :Program, rules_min, symbol_min, max_depth = config.generation.max_size)
         solution = frangel(spec, config, angelic_conditions, iterator, rules_min, symbol_min) 
     end
     program = rulenode2expr(solution, grammar) 
-    println("found program")
+    println(program)
+
+    @time begin 
+        iterator = BFSIterator(b_grammar, :Num, max_depth=40)
+        solution, flag = synth(problem, iterator)
+    end
+    program = rulenode2expr(solution, b_grammar) # should yield 2*6 +1 
     println(program)
 end

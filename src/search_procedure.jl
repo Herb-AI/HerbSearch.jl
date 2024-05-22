@@ -42,6 +42,7 @@ function synth(
         score = evaluate(problem, expr, symboltable, shortcircuit=shortcircuit, allow_evaluation_errors=allow_evaluation_errors)
         if score == 1
             candidate_program = freeze_state(candidate_program)
+            println(i)
             return (candidate_program, optimal_program)
         elseif score >= best_score
             best_score = score
@@ -54,7 +55,7 @@ function synth(
             break;
         end
     end
-
+    println(i)
     # The enumeration exhausted, but an optimal problem was not found
     return (best_program, suboptimal_program)
 end

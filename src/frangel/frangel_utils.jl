@@ -351,19 +351,8 @@ function add_fragments_prob!(grammar::AbstractGrammar, fragments_chance::Float16
     end
 end
 
-"""
-    is_fragment_rule(grammar::AbstractGrammar, rule_index::Int)::Bool
-
-Checks if the provided rule index is a fragment rule. Note: only starting fragment rules are counted. 
-Example: `Fragment_Num` is a fragment rule for `Num` if `Num = Fragment_Num`.
-
-# Arguments
-- `grammar`: The grammar rules of the program.
-- `rule_index`: The index of the rule to check.
-
-# Returns
-Returns true if the rule is a starting fragment rule, false otherwise.
-"""
-function is_fragment_rule(grammar::AbstractGrammar, rule_index::Int)::Bool
-    grammar.rules[rule_index] == Symbol(string(:Fragment_, grammar.types[rule_index])) # TODO: possiblly cache them
+function print_grammar(g::AbstractGrammar)
+    for i in eachindex(g.rules)
+        println(g.log_probabilities[i], "  ", i, ": ", g.types[i], " = ", g.rules[i])
+    end
 end

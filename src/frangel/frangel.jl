@@ -54,6 +54,8 @@ The full configuration struct for FrAngel. Includes generation and angelic sub-c
 @kwdef struct FrAngelConfig
     max_time::Float16 = 5
     try_to_simplify::Bool = false
+    compare_programs_by_length::Bool = false
+    verbose_level::Int = 0
     generation::FrAngelConfigGeneration = FrAngelConfigGeneration()
     angelic::FrAngelConfigAngelic = FrAngelConfigAngelic()
 end
@@ -76,19 +78,32 @@ function frangel(
     for i in fragment_base_rules_offset+1:fragment_rules_offset
         rule_minsize[i] = 255
     end
-    
     symboltable = SymbolTable(grammar)
 
     add_fragments_prob!(grammar, config.generation.use_fragments_chance, fragment_base_rules_offset, fragment_rules_offset)
 
     state = nothing
     visited = Set{RuleNode}()
-
     start_time = time()
+    verbose_level = config.verbose_level
 
+    if verbose_level > 0
+        println("Grammar:")
+        print_grammar(grammar)
+        println("Minimal sizes per rule: ", rule_minsize)
+        println("Minimal size per symbol: ", symbol_minsize)
+    end
+
+    iterationCount, checkedProgram = 0, 0
     while time() - start_time < config.max_time
+        iterationCount += 1
         # Generate random program
         program, state = (state === nothing) ? iterate(iter) : iterate(iter, state)
+
+        if checkedProgram < verbose_level
+            println("==== Iteration #", iterationCount, " ====")
+            println(program)
+        end
 
         # Generalize these two procedures at some point
         program = modify_and_replace_program_fragments!(program, fragments, fragment_base_rules_offset, fragment_rules_offset, config.generation, grammar, rule_minsize, symbol_minsize)
@@ -99,6 +114,13 @@ function frangel(
             continue
         end
         push!(visited, program)
+
+        checkedProgram += 1
+        if checkedProgram < verbose_level
+            println("Checked program #", checkedProgram)
+            println(program)
+            println(rulenode2expr(program, grammar))
+        end
 
         passed_tests = BitVector([false for _ in spec])
         # If it does not pass any tests, discard
@@ -126,32 +148,44 @@ function frangel(
         # Early return -> if it passes all tests, then final round of simplification and return
         if all(passed_tests)
             # TODO program = simplify_slow(program, grammar, spec, angelic_conditions, (time() - start_time) / 10)
+            if verbose_level > 0
+                println("Total iterations:", iterationCount)
+                println("Checked programs:", checkedProgram)
+            end
             return simplify_quick(program, grammar, spec, passed_tests, fragment_base_rules_offset)
         end
 
         if config.generation.use_fragments_chance != 0
             # Update grammar with fragments
+            if !config.compare_programs_by_length
+                program_expr = nothing
+            end
             fragments, updatedFragments = remember_programs!(remembered_programs, passed_tests, program, program_expr, fragments, grammar)
+            if checkedProgram < verbose_level
+                println("---- Fragments ----")
+                for f in fragments
+                    println(f)
+                end
+                println("--------------------")
+            end
             if updatedFragments
                 # Remove old fragments from grammar (by resetting to base grammar) / remove all rules aftere fragment_rules_offset
                 for i in reverse(fragment_rules_offset+1:length(grammar.rules))
                     remove_rule!(grammar, i)
                 end
                 cleanup_removed_rules!(grammar)
-
                 # Add fragments to grammar
                 add_rules!(grammar, fragments)
                 add_fragments_prob!(grammar, config.generation.use_fragments_chance, fragment_base_rules_offset, fragment_rules_offset)
                 # Update rule_minsize and symbol_minsize        
                 resize!(rule_minsize, length(grammar.rules))
                 for (i, fragment) in enumerate(fragments)
-                        rule_minsize[fragment_rules_offset+i] = count_nodes(grammar, fragment)
-
+                    rule_minsize[fragment_rules_offset+i] = count_nodes(grammar, fragment)
                     ret_typ = return_type(grammar, fragment_rules_offset + i)
                     if haskey(symbol_minsize, ret_typ)
-                            symbol_minsize[ret_typ] = min(symbol_minsize[ret_typ], rule_minsize[fragment_rules_offset+i])
-                    else 
-                            symbol_minsize[ret_typ] = rule_minsize[fragment_rules_offset+i]
+                        symbol_minsize[ret_typ] = min(symbol_minsize[ret_typ], rule_minsize[fragment_rules_offset+i])
+                    else
+                        symbol_minsize[ret_typ] = rule_minsize[fragment_rules_offset+i]
                     end
                 end
                 for i in fragment_base_rules_offset+1:fragment_rules_offset
@@ -161,7 +195,17 @@ function frangel(
                         rule_minsize[i] = 255
                     end
                 end
+                if checkedProgram < verbose_level
+                    println("Grammar:")
+                    print_grammar(grammar)
+                    println("Minimal sizes per rule: ", rule_minsize)
+                    println("Minimal size per symbol: ", symbol_minsize)
+                end
             end
         end
+    end
+    if verbose_level > 0
+        println("Total iterations:", iterationCount)
+        println("Checked programs:", checkedProgram)
     end
 end
