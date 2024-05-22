@@ -134,8 +134,6 @@ function frangel(
             fragments, updatedFragments = remember_programs!(remembered_programs, passed_tests, program, program_expr, fragments, grammar)
             if updatedFragments
                 # Remove old fragments from grammar (by resetting to base grammar) / remove all rules aftere fragment_rules_offset
-                #grammar = deepcopy(base_grammar)
-
                 for i in reverse(fragment_rules_offset+1:length(grammar.rules))
                     remove_rule!(grammar, i)
                 end
