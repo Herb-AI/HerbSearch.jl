@@ -11,7 +11,7 @@ function Base.iterate(iter::GuidedTraceSearchIterator)
     ))
 end
 
-function Base.iterate(iter::GuidedTraceSearchIterator, state::GuidedSearchState)::Union{Tuple{RuleNode, GuidedSearchState}, Nothing}
+function Base.iterate(iter::GuidedTraceSearchIterator, state::GuidedSearchState)
     grammar = get_grammar(iter.solver)
     start_symbol = get_starting_symbol(iter.solver)
     # wrap in while true to optimize for tail call
@@ -20,7 +20,7 @@ function Base.iterate(iter::GuidedTraceSearchIterator, state::GuidedSearchState)
             state.level += 1
             push!(state.bank, [])
 
-            state.iter = NewProgramsIterator(state.level, state.bank, grammar) 
+            state.iter = NewProgramsIterator(state.level, state.bank, grammar)
             state.next_iter = iterate(state.iter)
             if state.level > 0
                 @info ("Finished level $(state.level - 1) with $(length(state.bank[state.level])) programs")
@@ -41,10 +41,11 @@ function Base.iterate(iter::GuidedTraceSearchIterator, state::GuidedSearchState)
                     # print("Skipping this.")
                     continue
                 end
-                
+
                 push!(state.eval_cache, eval_observation) # add result to cache
                 push!(state.bank[state.level+1], prog) # add program to bank
-                return (prog, state) # return program
+
+                return ((prog, (eval_observation, is_done, final_reward)), state) # return program
             end
 
             push!(state.bank[state.level+1], prog) # add program to bank

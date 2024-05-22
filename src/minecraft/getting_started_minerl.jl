@@ -60,6 +60,9 @@ function evaluate_trace_minerl(prog, grammar, env, show_moves)
                 break
             end
         end
+        if is_done
+            break
+        end
     end
     println("Reward $sum_of_rewards")
     if sum_of_rewards <= 0.2
@@ -78,7 +81,7 @@ function HerbSearch.set_env_position(x, y, z)
     set_start_xyz(x, y, z)
 end
 #  overwrite the evaluate trace function
-HerbSearch.evaluate_trace(prog::RuleNode, grammar::ContextSensitiveGrammar; show_moves = false) = evaluate_trace_minerl(prog, grammar, env, show_moves)
+HerbSearch.evaluate_trace(prog::RuleNode, grammar::ContextSensitiveGrammar; show_moves=false) = evaluate_trace_minerl(prog, grammar, env, show_moves)
 HerbSearch.calculate_rule_cost(rule_index::Int, grammar::ContextSensitiveGrammar) = HerbSearch.calculate_rule_cost_prob(rule_index, grammar)
 
 # resetEnv()

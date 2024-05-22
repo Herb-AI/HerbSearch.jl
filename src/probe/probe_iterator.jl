@@ -36,6 +36,12 @@ include("update_grammar.jl")
 select_partial_solution(partial_sols::Vector{ProgramCache}, all_selected_psols::Set{ProgramCache}) = HerbSearch.selectpsol_largest_subset(partial_sols, all_selected_psols)
 update_grammar!(grammar::ContextSensitiveGrammar, PSols_with_eval_cache::Vector{ProgramCache}, examples::Vector{<:IOExample}) = update_grammar(grammar, PSols_with_eval_cache, examples)
 
+get_prog_eval(::ProgramIterator, prog::RuleNode) = (prog, [])
+
+get_prog_eval(::GuidedSearchIterator, prog::Tuple{RuleNode,Vector{Any}}) = prog
+
+get_prog_eval(::GuidedTraceSearchIterator, prog::Tuple{RuleNode,Tuple{Any,Bool,Number}}) = prog
+
 """
     probe(examples::Vector{<:IOExample}, iterator::ProgramIterator, max_time::Int, iteration_size::Int)
 
@@ -60,15 +66,23 @@ function probe(examples::Vector{<:IOExample}, iterator::ProgramIterator, max_tim
             program, state = next
 
             # evaluate program
-            eval_observation = []
+            program, eval_observation = get_prog_eval(iterator, program)
             correct_examples = Vector{Int}()
-            expr = rulenode2expr(program, grammar)
-            for (example_index, example) ∈ enumerate(examples)
-                output = execute_on_input(symboltable, expr, example.in)
-                push!(eval_observation, output)
+            if isempty(eval_observation)
+                expr = rulenode2expr(program, grammar)
+                for (example_index, example) ∈ enumerate(examples)
+                    output = execute_on_input(symboltable, expr, example.in)
+                    push!(eval_observation, output)
 
-                if output == example.out
-                    push!(correct_examples, example_index)
+                    if output == example.out
+                        push!(correct_examples, example_index)
+                    end
+                end
+            else
+                for i in 1:length(eval_observation)
+                    if eval_observation[i] == examples[i].out
+                        push!(correct_examples, i)
+                    end
                 end
             end
 
@@ -128,7 +142,7 @@ function select_partial_solution(partial_sols::Vector{ProgramCacheTrace}, all_se
     # sort partial solutions by reward
     sort!(partial_sols, by=x -> x.reward, rev=true)
     to_select = 5
-    return partial_sols[1 : min(to_select, length(partial_sols))]
+    return partial_sols[1:min(to_select, length(partial_sols))]
 end
 
 """
@@ -156,11 +170,12 @@ function probe(traces::Vector{Trace}, iterator::ProgramIterator, max_time::Int, 
         while next !== nothing && i < iteration_size # run one iteration
             program, state = next
 
-            # evaluate  
-            eval_observation, is_done, reward = evaluate_trace(program, grammar, show_moves = true)
+            # evaluate
+            program, evaluation = get_prog_eval(iterator, program)
+            eval_observation, is_done, reward = isempty(evaluation) ? evaluate_trace(program, grammar, show_moves=true) : evaluation
             is_partial_sol = false
-            if reward > best_reward 
-                best_reward = reward 
+            if reward > best_reward
+                best_reward = reward
                 best_eval_obs = eval_observation
                 printstyled("Best reward: $best_reward\n", color=:red)
                 is_partial_sol = true
@@ -193,7 +208,7 @@ function probe(traces::Vector{Trace}, iterator::ProgramIterator, max_time::Int, 
         partial_sols = filter(x -> x ∉ all_selected_psols, select_partial_solution(psol_with_eval_cache, all_selected_psols))
         if !isempty(partial_sols)
             printstyled("Restarting!\n", color=:magenta)
-            
+
             # set the player position to the best position so far
             set_env_position(best_eval_obs[1], best_eval_obs[2], best_eval_obs[3])
 
