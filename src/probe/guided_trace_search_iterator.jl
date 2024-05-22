@@ -37,12 +37,14 @@ function Base.iterate(iter::GuidedTraceSearchIterator, state::GuidedSearchState)
             # evaluate program if starting symbol
             if return_type(grammar, prog.ind) == start_symbol
                 eval_observation, is_done, final_reward = evaluate_trace(prog, grammar)
-                if eval_observation in state.eval_cache # program already cached
+                eval_observation_rounded = round.(eval_observation, digits=1)
+                if eval_observation_rounded in state.eval_cache # program already cached
                     # print("Skipping this.")
+                    @info "Skipping program"
                     continue
                 end
 
-                push!(state.eval_cache, eval_observation) # add result to cache
+                push!(state.eval_cache, eval_observation_rounded) # add result to cache
                 push!(state.bank[state.level+1], prog) # add program to bank
 
                 return ((prog, (eval_observation, is_done, final_reward)), state) # return program

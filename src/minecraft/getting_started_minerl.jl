@@ -28,9 +28,6 @@ function evaluate_trace_minerl(prog, grammar, env, show_moves)
     expr = rulenode2expr(prog, grammar)
 
     sequence_of_actions = eval(expr)
-    if isempty(sequence_of_actions)
-        return (0, 0, 0), false, 0
-    end
 
     sum_of_rewards = 0
     is_done = false
@@ -68,16 +65,14 @@ function evaluate_trace_minerl(prog, grammar, env, show_moves)
     if sum_of_rewards <= 0.2
         return (0, 0, 0), false, 0
     end
-    obsx, obsy, obsz = get_xyz_from_env(obs)
-    eval_observation = (round(obsx, digits=1), round(obsy, digits=1), round(obsz, digits=1))
-    return eval_observation, is_done, sum_of_rewards
+    return get_xyz_from_env(obs), is_done, sum_of_rewards
 end
 
 # make sure the probabilities are equal 
 @assert all(prob -> prob == minerl_grammar_2.log_probabilities[begin], minerl_grammar_2.log_probabilities)
 
 function HerbSearch.set_env_position(x, y, z)
-    println("Setting env position")
+    println("Setting env position: ($x, $y, $z)")
     set_start_xyz(x, y, z)
 end
 #  overwrite the evaluate trace function
@@ -87,4 +82,3 @@ HerbSearch.calculate_rule_cost(rule_index::Int, grammar::ContextSensitiveGrammar
 # resetEnv()
 iter = HerbSearch.GuidedTraceSearchIterator(minerl_grammar_2, :sequence_actions)
 program = probe(Vector{Trace}(), iter, 3000000, 3)
-

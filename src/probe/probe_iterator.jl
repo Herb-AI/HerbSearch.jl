@@ -173,6 +173,7 @@ function probe(traces::Vector{Trace}, iterator::ProgramIterator, max_time::Int, 
             # evaluate
             program, evaluation = get_prog_eval(iterator, program)
             eval_observation, is_done, reward = isempty(evaluation) ? evaluate_trace(program, grammar, show_moves=true) : evaluation
+            eval_observation_rounded = round.(eval_observation, digits=1)
             is_partial_sol = false
             if reward > best_reward
                 best_reward = reward
@@ -183,7 +184,7 @@ function probe(traces::Vector{Trace}, iterator::ProgramIterator, max_time::Int, 
             if is_done
                 @info "Last level: $(length(state.bank[state.level + 1])) programs"
                 return program
-            elseif eval_observation in eval_cache # result already in cache
+            elseif eval_observation_rounded in eval_cache # result already in cache
                 next = iterate(iterator, state)
                 continue
             elseif is_partial_sol # partial solution 
@@ -194,10 +195,12 @@ function probe(traces::Vector{Trace}, iterator::ProgramIterator, max_time::Int, 
                 # end
             end
 
-            push!(eval_cache, eval_observation)
+            push!(eval_cache, eval_observation_rounded)
 
-            next = iterate(iterator, state)
             i += 1
+            if i < iteration_size
+                next = iterate(iterator, state)
+            end
         end
 
         # check if program iterator is exhausted
@@ -205,7 +208,7 @@ function probe(traces::Vector{Trace}, iterator::ProgramIterator, max_time::Int, 
             return nothing
         end
 
-        partial_sols = filter(x -> x ∉ all_selected_psols, select_partial_solution(psol_with_eval_cache, all_selected_psols))
+        partial_sols = select_partial_solution(psol_with_eval_cache, all_selected_psols)
         if !isempty(partial_sols)
             printstyled("Restarting!\n", color=:magenta)
 
