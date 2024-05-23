@@ -129,25 +129,3 @@ function add_fragment_base_rules!(g::AbstractGrammar)
     g.bychildtypes = [BitVector([g.childtypes[i1] == g.childtypes[i2] for i2 ∈ 1:length(g.rules)]) for i1 ∈ 1:length(g.rules)]
     g.domains = Dict(type => BitArray(r ∈ g.bytype[type] for r ∈ 1:length(g.rules)) for type ∈ keys(g.bytype))
 end
-
-function add_rules!(g::AbstractGrammar, fragments::AbstractVector{RuleNode})
-    for fragment in fragments
-        typ = Symbol("Fragment_", return_type(g, fragment))
-        expr = rulenode2expr(fragment, g)
-        rvec = Any[]
-        parse_rule!(rvec, expr)
-        for r ∈ rvec
-            if !any(r === rule && typ === return_type(g, i) for (i, rule) ∈ enumerate(g.rules))
-                push!(g.rules, r)
-                push!(g.iseval, iseval(expr))
-                push!(g.types, typ)
-                g.bytype[typ] = push!(get(g.bytype, typ, Int[]), length(g.rules))
-            end
-        end
-    end
-    alltypes = collect(keys(g.bytype))
-    g.isterminal = [isterminal(rule, alltypes) for rule ∈ g.rules]
-    g.childtypes = [get_childtypes(rule, alltypes) for rule ∈ g.rules]
-    g.bychildtypes = [BitVector([g.childtypes[i1] == g.childtypes[i2] for i2 ∈ 1:length(g.rules)]) for i1 ∈ 1:length(g.rules)]
-    g.domains = Dict(type => BitArray(r ∈ g.bytype[type] for r ∈ 1:length(g.rules)) for type ∈ keys(g.bytype))
-end

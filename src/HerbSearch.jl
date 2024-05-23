@@ -39,11 +39,12 @@ include("genetic_search_iterator.jl")
 include("random_iterator.jl")
 
 include("frangel/frangel.jl")
+include("frangel/frangel_utils.jl")
 include("frangel/frangel_fragment_utils.jl")
 include("frangel/frangel_generation.jl")
 include("frangel/frangel_angelic_utils.jl")
-include("frangel/frangel_utils.jl")
 include("frangel/frangel_random_iterator.jl")
+include("frangel/frangel_grammar_utils.jl")
 
 export 
   ProgramIterator,
@@ -123,6 +124,8 @@ export
   add_fragment_base_rules!,
   add_rules!,
 
-  FrAngelRandomIterator
+  buildProgrammingProblemGrammar,
+  FrAngelRandomIterator,
+  FrAngelRandomIteratorState
 
 end # module HerbSearch
