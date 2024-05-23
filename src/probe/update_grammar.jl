@@ -43,7 +43,7 @@ function update_grammar!(grammar::ContextSensitiveGrammar, PSols_with_eval_cache
     for rule_index in eachindex(grammar.rules)
         best_reward = 0
         for psol in PSols_with_eval_cache
-            program = psol.program
+            program = psol.program.children[end]
             reward = psol.reward
             # check if the program tree has rule_index somewhere inside it using a recursive function
             if contains_rule(program, rule_index) && reward > best_reward
@@ -52,7 +52,7 @@ function update_grammar!(grammar::ContextSensitiveGrammar, PSols_with_eval_cache
         end
         # fitness higher is better
         # TODO: think about better thing here
-        fitness = best_reward / 64
+        fitness = min(best_reward / 100, 1)
 
         p_current = 2 ^ (grammar.log_probabilities[rule_index])
 
@@ -65,6 +65,8 @@ function update_grammar!(grammar::ContextSensitiveGrammar, PSols_with_eval_cache
         grammar.log_probabilities[rule_index] = grammar.log_probabilities[rule_index] - log(2, sum)
         total_sum += 2^(grammar.log_probabilities[rule_index])
     end
+    expr = rulenode2expr(PSols_with_eval_cache[begin].program, grammar)
+    grammar.rules[9] = :([$expr; action])
     @assert abs(total_sum - 1) <= 1e-4 "Total sum is $(total_sum) "
 end
 

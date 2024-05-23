@@ -15,6 +15,24 @@ function resetEnv()
     obs = env.reset()
     global x_player_start, y_player_start, z_player_start = get_xyz_from_env(obs)
     print(x_player_start, y_player_start, z_player_start)
+
+    action = env.action_space.noop()
+    action["forward"] = 1
+
+    # infinite health
+    env.set_next_chat_message("/effect @a minecraft:instant_health 1000000 100 true")
+    env.step(action)
+
+    # infinite food
+    env.set_next_chat_message("/effect @a minecraft:saturation 1000000 255 true")
+    env.step(action)
+
+    # disable mobs
+    env.set_next_chat_message("/gamerule doMobSpawning false")
+    env.step(action)
+    env.set_next_chat_message("/kill @e[type=!player]")
+    env.step(action)
+
     printstyled("Environment created. x: $x_player_start, y: $y_player_start, z: $z_player_start\n", color=:green)
 end
 
@@ -34,13 +52,11 @@ function resetPosition()
 
     obs = env.step(action)[1]
     obsx, obsy, obsz = get_xyz_from_env(obs)
-    while abs(obsx - x_player_start) > 0.1 || abs(obsy - y_player_start) >= 0.1 || abs(obsz - z_player_start) > 0.1
+    while obsx != x_player_start || obsy != y_player_start || obsz != z_player_start
         obs = env.step(action)[1]
         obsx, obsy, obsz = get_xyz_from_env(obs)
-        env.render()
     end
-
-    env.render()
+    println((obsx, obsy, obsz))
 end
 
 if !@isdefined env

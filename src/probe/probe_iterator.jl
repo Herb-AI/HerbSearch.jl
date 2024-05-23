@@ -158,7 +158,6 @@ function probe(traces::Vector{Trace}, iterator::ProgramIterator, max_time::Int, 
     symboltable = SymbolTable(grammar)
 
     best_reward = 0
-    best_eval_obs = nothing
     # all partial solutions that were found so far
     all_selected_psols = Set{ProgramCacheTrace}()
     # start next iteration while there is time left
@@ -175,9 +174,8 @@ function probe(traces::Vector{Trace}, iterator::ProgramIterator, max_time::Int, 
             eval_observation, is_done, reward = isempty(evaluation) ? evaluate_trace(program, grammar, show_moves=true) : evaluation
             eval_observation_rounded = round.(eval_observation, digits=1)
             is_partial_sol = false
-            if reward > best_reward
+            if reward > best_reward + 0.2
                 best_reward = reward
-                best_eval_obs = eval_observation
                 printstyled("Best reward: $best_reward\n", color=:red)
                 is_partial_sol = true
             end
@@ -212,29 +210,11 @@ function probe(traces::Vector{Trace}, iterator::ProgramIterator, max_time::Int, 
         if !isempty(partial_sols)
             printstyled("Restarting!\n", color=:magenta)
 
-            # set the player position to the best position so far
-            set_env_position(best_eval_obs[1], best_eval_obs[2], best_eval_obs[3])
-
-            push!(all_selected_psols, partial_sols...)
-            for psol in partial_sols
-                println("Partial solution: ", rulenode2expr(psol.program, grammar))
-            end
-            # update probabilites if any promising partial solutions
-            # Idk if the update grammar call makes sense in our context now
-            # update_grammar!(grammar, partial_sols) # update probabilites
-
-            # print the grammar 
-            # rule_costs = [(grammar.rules[rule_index], calculate_rule_cost(rule_index, grammar)) for rule_index in eachindex(grammar.rules)]
-            # for (rule, cost) in rule_costs
-            #     println("Rule: $rule : cost $cost")
-            # end
-            # println("====================")
+            update_grammar!(grammar, partial_sols) # update probabilites
 
             # restart iterator
             eval_cache = Set()
             state = nothing
-            best_reward = 0
-
 
             #for loop to update all_selected_psols with new costs
             # for prog_with_cache ∈ all_selected_psols

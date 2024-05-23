@@ -18,9 +18,9 @@ end
 
 minerl_grammar_2 = @pcsgrammar begin
     8:DIR = 0b0001 | 0b0010 | 0b0100 | 0b1000 | 0b0101 | 0b1001 | 0b0110 | 0b1010 # forward | back | left | right | forward-left | forward-right | back-left | back-right
-    2:sequence_actions = [sequence_actions; action] | [action]
-    1:action = (25 * TIMES, DIR)
-    6:TIMES = |(1:6)
+    1:sequence_actions = [action]
+    1:action = (TIMES, DIR)
+    6:TIMES = 5 | 10 | 25 | 50 | 75 | 100
 end
 
 function evaluate_trace_minerl(prog, grammar, env, show_moves)
@@ -40,9 +40,8 @@ function evaluate_trace_minerl(prog, grammar, env, show_moves)
         new_action["back"] = dir >> 1 & 1
         new_action["left"] = dir >> 2 & 1
         new_action["right"] = dir >> 3
+        new_action["sprint"] = 1
         new_action["jump"] = 1
-        # set player health such that he can never die :)
-        new_action["chat"] = "/effect @a minecraft:instant_health 1 10000 true"
 
         for i in 1:times
             obs, reward, done, _ = env.step(new_action)
@@ -62,9 +61,6 @@ function evaluate_trace_minerl(prog, grammar, env, show_moves)
         end
     end
     println("Reward $sum_of_rewards")
-    if sum_of_rewards <= 0.2
-        return (0, 0, 0), false, 0
-    end
     return get_xyz_from_env(obs), is_done, sum_of_rewards
 end
 
@@ -81,4 +77,4 @@ HerbSearch.calculate_rule_cost(rule_index::Int, grammar::ContextSensitiveGrammar
 
 # resetEnv()
 iter = HerbSearch.GuidedTraceSearchIterator(minerl_grammar_2, :sequence_actions)
-program = probe(Vector{Trace}(), iter, 3000000, 3)
+program = @time probe(Vector{Trace}(), iter, 3000000, 6)
