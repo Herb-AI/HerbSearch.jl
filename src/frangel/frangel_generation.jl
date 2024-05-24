@@ -218,7 +218,7 @@ function add_angelic_conditions!(program::RuleNode, grammar::AbstractGrammar, an
             end
         end
 
-        program.children[angelic_condition_ind] = Hole(grammar.domains[return_type(grammar, program.ind)])
+        program.children[angelic_condition_ind] = Hole(grammar.domains[return_type(grammar, program.children[angelic_condition_ind].ind)])
     else
         for (index, child) in enumerate(program.children)
             program.children[index] = add_angelic_conditions!(child, grammar, angelic_conditions, config)
