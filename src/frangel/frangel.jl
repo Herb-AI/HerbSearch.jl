@@ -35,9 +35,10 @@ A configuration struct for the angelic mode of FrAngel.
 """
 @kwdef struct FrAngelConfigAngelic
     max_time::Float16 = 0.1
-    boolean_expr_max_size::Int = 6
+    boolean_expr_max_size::UInt8 = 6
     max_execute_attempts::Int = 55
     max_allowed_fails::Float16 = 0.3
+    truthy_tree::Union{Nothing,RuleNode} = nothing
 end
 
 """
@@ -87,6 +88,18 @@ function frangel(
     start_time = time()
     verbose_level = config.verbose_level
 
+    if isnothing(config.angelic.truthy_tree)
+        res = false
+        while !res
+            program = generate_random_program(grammar, :Bool, config.generation, fragment_base_rules_offset, config.angelic.boolean_expr_max_size, rule_minsize, symbol_minsize)
+            try
+                res = execute_on_input(symboltable, rulenode2expr(program, grammar), Dict())
+            catch
+                res = false
+            end
+        end
+    end
+
     if verbose_level > 0
         println("Grammar:")
         print_grammar(grammar)
@@ -131,7 +144,7 @@ function frangel(
 
         # If it contains angelic conditions, resolve them
         if contains_hole(program)
-            resolve_angelic!(program, fragments, passed_tests, grammar, symboltable, spec, 1, angelic_conditions, config)
+            resolve_angelic!(program, passed_tests, grammar, symboltable, spec, 1, angelic_conditions, config, fragment_base_rules_offset, rule_minsize, symbol_minsize)
             # Still contains angelic conditions -> unresolved
             if contains_hole(program)
                 continue

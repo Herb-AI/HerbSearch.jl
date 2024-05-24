@@ -22,25 +22,27 @@ The resolved program with angelic values replaced, or an unresolved program if i
 """
 function resolve_angelic!(
     program::RuleNode,
-    fragments::Set{RuleNode},
     passing_tests::BitVector,
     grammar::AbstractGrammar,
     symboltable::SymbolTable,
     tests::AbstractVector{<:IOExample},
     replacement_dir::Int, # Direction of replacement; 1 -> top-down, -1 -> bottom-up
     angelic_conditions::AbstractVector{Union{Nothing,Int}},
-    config::FrAngelConfig
+    config::FrAngelConfig,
+    fragment_base_rules_offset::Int16,
+    rule_minsize::AbstractVector{UInt8},
+    symbol_minsize::Dict{Symbol,UInt8}
 )::RuleNode
     num_holes = number_of_holes(program)
     # Which hole to be replaced; if top-down -> first one; else -> last one
-    replacement_index = replacement_dir == 1 || (num_holes - 1)
+    replacement_index = (replacement_dir == 1) ? 1 : (num_holes - 1)
     angelic = config.angelic
     new_tests = BitVector([false for _ in tests])
     while num_holes != 0
         success = false
         start_time = time()
         while time() - start_time < max_time
-            boolean_expr = generate_random_program(grammar, :Bool, fragments, config.generation, false, Vector{Union{Nothing,Int}}(), angelic.boolean_expr_max_size)
+            boolean_expr = generate_random_program(grammar, :Bool, config.generation, fragment_base_rules_offset, angelic.boolean_expr_max_size, rule_minsize, symbol_minsize)
             new_program = replace_next_angelic(program, boolean_expr, replacement_index)
             get_passed_tests!(new_program, grammar, symboltable, tests, new_tests, angelic_conditions, angelic)
             # If the new program passes all the tests the original program did, replacement is successful
@@ -55,7 +57,7 @@ function resolve_angelic!(
         if !success && replacement_dir == -1
             return program
         elseif !success
-            return resolve_angelic!(program, fragments, passing_tests, grammar, symboltable, tests, -1, angelic_conditions, angelic)
+            return resolve_angelic!(program, passing_tests, grammar, symboltable, tests, -1, angelic_conditions, config, fragment_base_rules_offset, rule_minsize, symbol_minsize)
         else
             num_holes -= 1
         end
@@ -80,22 +82,24 @@ The modified program with the replacement.
 function replace_next_angelic(program::RuleNode, boolean_expr::RuleNode, replacement_index::Int)::RuleNode
     new_program = deepcopy(program)
     # BFS traversal
-    queue = [new_program]
+    queue = DataStructures.Queue{AbstractRuleNode}()
+    enqueue!(queue, new_program)
     while !isempty(queue)
         node = dequeue!(queue)
         for (child_index, child) in enumerate(node.children)
-            if node isa AbstractHole
+            if child isa AbstractHole
                 if replacement_index == 1
                     node.children[child_index] = boolean_expr
-                    return program
+                    return new_program
                 else
                     replacement_index -= 1
                 end
+            else
+                enqueue!(queue, child)
             end
-            enqueue!(queue, child)
         end
     end
-    program
+    new_program
 end
 
 """
@@ -125,28 +129,24 @@ function execute_angelic_on_input(
     grammar::AbstractGrammar,
     input::Dict{Symbol,Any},
     expected_output::Any,
+    truthy::RuleNode,
     max_attempts::Int,
     angelic_conditions::AbstractVector{Union{Nothing,Int}}
 )::Bool
     num_true, attempts = 0, 0
-    symboltable[:update_✝γ_path] = update_✝γ_path
     # We check traversed code paths by prefix -> trie is efficient for this
     visited = DataStructures.Trie{Bool}()
-    expr = create_angelic_expression(program, grammar, angelic_conditions)
+    expr = create_angelic_expression(program, grammar, truthy, angelic_conditions)
     while num_true < max_attempts
         code_paths = Vector{Vector{Char}}()
         get_code_paths!(num_true, Vector{Char}(), visited, code_paths, max_attempts - attempts)
         for code_path in code_paths
+            # println("Attempt: ", code_path)
             # Create actual_code_path here to keep reference for simpler access later
             actual_code_path = Vector{Char}()
-            # The angelic expression is the same as original, but with two "global" variables for code path control
-            angelic_expr = quote
-                ✝γ_actual_code_path = $actual_code_path
-                ✝γ_code_path = $code_path
-                $expr
-            end
             try
-                output = execute_on_input(symboltable, angelic_expr, input)
+                output = execute_on_input(symboltable, expr, input, code_path, actual_code_path)
+                # println("Actual path: ", actual_code_path)
                 if output == expected_output
                     return true
                 end
@@ -215,17 +215,25 @@ The generated angelic expression.
 function create_angelic_expression(
     program::RuleNode,
     grammar::AbstractGrammar,
+    truthy::RuleNode,
     angelic_conditions::AbstractVector{Union{Nothing,Int}}
 )::Expr
     new_program = deepcopy(program)
-    angelic_grammar = deepcopy(grammar)
-    for child_index in angelic_conditions
-        if child_index !== nothing
-            angelic_grammar.rules[child_index] = :(update_✝γ_path(✝γ_code_path, ✝γ_actual_code_path))
+    # BFS traversal
+    queue = DataStructures.Queue{AbstractRuleNode}()
+    enqueue!(queue, new_program)
+    while !isempty(queue)
+        node = dequeue!(queue)
+        angelic_idx = angelic_conditions[node.ind]
+        for (child_index, child) in enumerate(node.children)
+            if angelic_idx == child_index
+                node.children[child_index] = truthy
+            else
+                enqueue!(queue, child)
+            end
         end
     end
-    clear_holes!(new_program, angelic_conditions)
-    rulenode2expr(new_program, angelic_grammar)
+    rulenode2expr(new_program, grammar)
 end
 
 """
@@ -249,31 +257,4 @@ function clear_holes!(program::RuleNode, angelic_conditions::AbstractVector{Unio
             clear_holes!(ch, angelic_conditions)
         end
     end
-end
-
-
-"""
-    update_✝γ_path(✝γ_code_path::Vector{Char}, ✝γ_actual_code_path::Vector{Char})
-
-The injected function call that goes into where previously were the holes/angelic conditions. It updates the actual path taken during angelic evaluation.
-
-# Arguments
-- `✝γ_code_path`: The `attempted` code path. Values are removed until empty.
-- `✝γ_actual_code_path`: The actual code path - Values from `✝γ_code_path` are appended until it is empty, then only the `false` path is taken.
-
-# Returns
-The next path to be taken in this control statement - either the first value of `✝γ_code_path`, or `false`.
-
-"""
-function update_✝γ_path(✝γ_code_path::Vector{Char}, ✝γ_actual_code_path::Vector{Char})::Bool
-    # If attempted flow already completed - append `false` until return
-    if length(✝γ_code_path) == 0
-        push!(✝γ_actual_code_path, '0')
-        return false
-    end
-    # Else take next and append to actual path
-    res = ✝γ_code_path[1]
-    popfirst!(✝γ_code_path)
-    push!(✝γ_actual_code_path, res)
-    res == '1'
 end
