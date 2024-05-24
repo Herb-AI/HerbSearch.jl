@@ -122,7 +122,7 @@ processdecl(mod::Module, mut::Bool, decl::Expr, super=nothing) = @match decl beg
                 end
 
                 # solver with grammar and initial rulenode to start with
-                function $(escaped_name)(grammar::AbstractGrammar, initial_node::RuleNode, $(notkwargs...) ;
+                function $(escaped_name)(grammar::AbstractGrammar, initial_node::AbstractRuleNode, $(notkwargs...) ;
                                         max_size = typemax(Int), max_depth = typemax(Int), $(kwargs_fields...) )
                     return $(escaped_name)(GenericSolver(grammar, initial_node, max_size = max_size, max_depth = max_depth), $(field_names...))
                 end

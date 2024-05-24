@@ -3,7 +3,7 @@ using LegibleLambdas
 disable_logging(LogLevel(1))
 
 
-@testset "Genetic search algorithms" verbose = true begin
+@testset "Genetic search algorithms" verbose=true begin 
     @testset "mutate_random" begin
         grammar::ContextSensitiveGrammar = @csgrammar begin
             X = |(1:5)

@@ -21,9 +21,6 @@ end
     genetic::GeneticConfiguration
 end
 
-meta_configuration::MetaConfiguration = from_toml(MetaConfiguration, "src/iterators/meta_search/configuration.toml")
-fitness_configuration = meta_configuration.fitness
-genetic_configuration = meta_configuration.genetic
 
 
 
@@ -72,8 +69,7 @@ function meta_search_fitness_function(program)
 end
 
 
-HerbSearch.fitness(::GeneticSearchIterator, program::RuleNode, results::AbstractVector{<:Tuple{Any,Any}}) = meta_search_fitness_function(program)
-
+# HerbSearch.fitness(::GeneticSearchIterator, program::RuleNode, results::AbstractVector{<:Tuple{Any,Any}}) = meta_search_fitness_function(program)
 """
     run_meta_search(stopping_condition)
 

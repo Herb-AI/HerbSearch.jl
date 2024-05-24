@@ -1,0 +1,47 @@
+Seed 958129
+
+steps = 5 | 25 | 50 | 75 | 100
+update_grammar = True 
+Sprint, Jump    = True 
+nr_iterations = 3
+equiv_step    = 0.2
+
+Iteration_time = 26 seconds
+===================================
+
+steps = 5 | 25 | 50 | 75 | 100
+update_grammar = True 
+Sprint, Jump    = True 
+nr_iterations = 3
+equiv_step    = 0.2
+
+Iteration_time = 20 seconds
+===================================
+
+steps = 5 | 25 | 50 | 75 | 100
+update_grammar = True 
+Sprint, Jump    = True 
+nr_iterations = 5
+equiv_step    = 0.4
+
+Iteration_time = 50 seconds
+
+===================================
+steps = 5 | 25 | 50 | 75 | 100
+update_grammar = True 
+Sprint, Jump    = True 
+nr_iterations = 3
+equiv_step    = 0.4
+threshold_good_programs = 2
+
+Iteration_time = 22 seconds
+
+===================================
+steps = 5 | 25 | 50 | 75 | 100
+update_grammar = True 
+Sprint, Jump    = True 
+nr_iterations = 3
+equiv_step    = 0.4
+threshold_good_programs = 2
+
+Iteration_time = 22 seconds

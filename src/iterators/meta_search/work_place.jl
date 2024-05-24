@@ -9,7 +9,14 @@ using Logging
 import Random
 include("meta_search.jl")
 
+function read_configuration()
+    global meta_configuration::MetaConfiguration = from_toml(MetaConfiguration, "src/iterators/meta_search/configuration.toml")
+    global fitness_configuration = meta_configuration.fitness
+    global genetic_configuration = meta_configuration.genetic
+end
+
 function print_meta_configuration()
+    read_configuration()
     println("CONFIGURATION")
     println("- Number of available threads: ", Threads.nthreads())
     println("- Maximum sequence running time: $MAX_SEQUENCE_RUNNING_TIME")
