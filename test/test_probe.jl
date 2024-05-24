@@ -191,10 +191,10 @@ end
 
         @testset "Multiple nonterminals" begin
             grammar = @pcsgrammar begin
-                1 : A = 1
-                1 : A = A - B
-                1 : B = 2
-                1 : C = A + B
+                1:A = 1
+                1:A = A - B
+                1:B = 2
+                1:C = A + B
             end
 
             examples = [
@@ -209,7 +209,7 @@ end
             next = iterate(iter)
             while next !== nothing
                 prog, state = next
-                push!(progs, prog)
+                push!(progs, prog[1])
                 if (state.level > 1)
                     break
                 end

@@ -8,7 +8,7 @@ Base.@kwdef mutable struct GuidedSearchState
     bank::Vector{Vector{RuleNode}}
     eval_cache::Set
     iter::NewProgramsIterator
-    next_iter::Union{Tuple{RuleNode, NewProgramsState}, Nothing}
+    next_iter::Union{Tuple{RuleNode,NewProgramsState},Nothing}
 end
 
 function Base.iterate(iter::GuidedSearchIterator)
@@ -21,7 +21,7 @@ function Base.iterate(iter::GuidedSearchIterator)
     ))
 end
 
-function Base.iterate(iter::GuidedSearchIterator, state::GuidedSearchState)::Union{Tuple{RuleNode, GuidedSearchState}, Nothing}
+function Base.iterate(iter::GuidedSearchIterator, state::GuidedSearchState)::Union{Tuple{Tuple{RuleNode,Vector{Any}},GuidedSearchState},Nothing}
     grammar = get_grammar(iter.solver)
     start_symbol = get_starting_symbol(iter.solver)
     # wrap in while true to optimize for tail call
@@ -30,7 +30,7 @@ function Base.iterate(iter::GuidedSearchIterator, state::GuidedSearchState)::Uni
             state.level += 1
             push!(state.bank, [])
 
-            state.iter = NewProgramsIterator(state.level, state.bank, grammar) 
+            state.iter = NewProgramsIterator(state.level, state.bank, grammar)
             state.next_iter = iterate(state.iter)
             if state.level > 0
                 @info ("Finished level $(state.level - 1) with $(length(state.bank[state.level])) programs")
@@ -56,10 +56,11 @@ function Base.iterate(iter::GuidedSearchIterator, state::GuidedSearchState)::Uni
                 if eval_observation in state.eval_cache # program already cached
                     continue
                 end
-                
+
                 push!(state.eval_cache, eval_observation) # add result to cache
                 push!(state.bank[state.level+1], prog) # add program to bank
-                return (prog, state) # return program
+
+                return ((prog, eval_observation), state) # return program
             end
 
             push!(state.bank[state.level+1], prog) # add program to bank

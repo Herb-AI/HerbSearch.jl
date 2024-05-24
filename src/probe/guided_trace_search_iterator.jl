@@ -1,12 +1,5 @@
 
 @programiterator GuidedTraceSearchIterator()
-Base.@kwdef mutable struct GuidedSearchState
-    level::Int64
-    bank::Vector{Vector{RuleNode}}
-    eval_cache::Set
-    iter::NewProgramsIterator
-    next_iter::Union{Tuple{RuleNode, NewProgramsState}, Nothing}
-end
 
 function Base.iterate(iter::GuidedTraceSearchIterator)
     iterate(iter, GuidedSearchState(
@@ -18,7 +11,7 @@ function Base.iterate(iter::GuidedTraceSearchIterator)
     ))
 end
 
-function Base.iterate(iter::GuidedTraceSearchIterator, state::GuidedSearchState)::Union{Tuple{RuleNode, GuidedSearchState}, Nothing}
+function Base.iterate(iter::GuidedTraceSearchIterator, state::GuidedSearchState)
     grammar = get_grammar(iter.solver)
     start_symbol = get_starting_symbol(iter.solver)
     # wrap in while true to optimize for tail call
@@ -27,7 +20,7 @@ function Base.iterate(iter::GuidedTraceSearchIterator, state::GuidedSearchState)
             state.level += 1
             push!(state.bank, [])
 
-            state.iter = NewProgramsIterator(state.level, state.bank, grammar) 
+            state.iter = NewProgramsIterator(state.level, state.bank, grammar)
             state.next_iter = iterate(state.iter)
             if state.level > 0
                 @info ("Finished level $(state.level - 1) with $(length(state.bank[state.level])) programs")
@@ -43,15 +36,18 @@ function Base.iterate(iter::GuidedTraceSearchIterator, state::GuidedSearchState)
 
             # evaluate program if starting symbol
             if return_type(grammar, prog.ind) == start_symbol
-                eval_observation, is_done, is_partial_sol, final_reward = evaluate_trace(prog, grammar)
-                if eval_observation in state.eval_cache # program already cached
+                eval_observation, is_done, final_reward = evaluate_trace(prog, grammar)
+                eval_observation_rounded = round.(eval_observation, digits=1)
+                if eval_observation_rounded in state.eval_cache # program already cached
                     # print("Skipping this.")
+                    @info "Skipping program"
                     continue
                 end
-                
-                push!(state.eval_cache, eval_observation) # add result to cache
+
+                push!(state.eval_cache, eval_observation_rounded) # add result to cache
                 push!(state.bank[state.level+1], prog) # add program to bank
-                return (prog, state) # return program
+
+                return ((prog, (eval_observation, is_done, final_reward)), state) # return program
             end
 
             push!(state.bank[state.level+1], prog) # add program to bank
