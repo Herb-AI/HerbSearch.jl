@@ -3,7 +3,7 @@ function buildProgrammingProblemGrammar(
     return_type::Symbol,
     intermediate_variables_count::Int=0
 )::ContextSensitiveGrammar
-    base_grammar = @cfgrammar begin
+    base_grammar = deepcopy(@cfgrammar begin
         
         Program = (VariableDefintion ; Statement ; Return) | (Statement ; Return) | Return
         VariableDefintion = ListVariable = List
@@ -29,7 +29,7 @@ function buildProgrammingProblemGrammar(
         List = [] | ListVariable
 
         ListVariable = list
-    end
+    end)
 
     # add return type constraint
     add_rule!(base_grammar, :(Return = return $return_type))
@@ -73,9 +73,9 @@ function add_fragments_prob!(grammar::AbstractGrammar, fragments_chance::Float16
             if grammar.log_probabilities[i] != Float16(0) 
                 grammar.log_probabilities[i] = Float16(0)
                 others_prob = Float16(1) / (length(grammar.bytype[grammar.types[i]]) - 1)
-                for j in grammar.bytype[return_type(grammar, i)]
-                    if j != i
-                        grammar.log_probabilities[j] = others_prob
+                    for j in grammar.bytype[return_type(grammar, i)]
+                        if j != i
+                            grammar.log_probabilities[j] = others_prob
                     end
                 end
             end
