@@ -54,9 +54,9 @@ function update_grammar!(grammar::ContextSensitiveGrammar, PSols_with_eval_cache
         # TODO: think about better thing here
         fitness = min(best_reward / 100, 1)
 
-        p_current = 2 ^ (grammar.log_probabilities[rule_index])
+        p_current = 2^(grammar.log_probabilities[rule_index])
 
-        sum +=  p_current^(1 - fitness)
+        sum += p_current^(1 - fitness)
         log_prob = ((1 - fitness) * log(2, p_current))
         grammar.log_probabilities[rule_index] = log_prob
     end
@@ -66,7 +66,7 @@ function update_grammar!(grammar::ContextSensitiveGrammar, PSols_with_eval_cache
         total_sum += 2^(grammar.log_probabilities[rule_index])
     end
     expr = rulenode2expr(PSols_with_eval_cache[begin].program, grammar)
-    grammar.rules[9] = :([$expr; action])
+    grammar.rules[1] = :([$expr; ACT])
     @assert abs(total_sum - 1) <= 1e-4 "Total sum is $(total_sum) "
 end
 
