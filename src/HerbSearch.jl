@@ -107,7 +107,6 @@ export
   get_code_paths!,
   create_angelic_expression,
   clear_holes!,
-  update_✝γ_path,
 
   get_passed_tests,
   count_nodes,
@@ -123,6 +122,7 @@ export
   add_angelic_conditions!,
   add_fragment_base_rules!,
   add_rules!,
+  print_grammar,
 
   buildProgrammingProblemGrammar,
   FrAngelRandomIterator,

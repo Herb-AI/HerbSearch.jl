@@ -9,7 +9,6 @@ grammar::ContextSensitiveGrammar = @cfgrammar begin
     Expression = Num | Variable
     Variable = x
     InnerStatement = (Variable = Expression) | (InnerStatement; InnerStatement)
-    Statement = (Variable = Expression)
     Statement = (
         i = 0;
         while i < Num
@@ -23,14 +22,14 @@ end
 
 @testset "minsize_map" begin
     @testset "returns the correct minimum size for each rule" begin
-        @test [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 3, 3, 3, 2, 2, 1, 4, 9, 4, 6, 9, 3, 4, 8] == rules_minsize(grammar)
+        @test [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 3, 3, 3, 2, 2, 1, 4, 9, 6, 13, 3, 4, 10] == rules_minsize(grammar)
     end
 end
 
 @testset "symbols_minsize" begin
     @testset "returns the correct minimum size for each symbol, based on the rules minsizes" begin
-        rules_minsizes = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 3, 3, 3, 2, 2, 1, 4, 9, 4, 6, 9, 3, 4, 8]
-        expected_symbol_minsizes = Dict(:Expression => 2, :Num => 1, :Statement => 4, :Variable => 1, :InnerStatement => 4, :Return => 3, :Program => 4)
+        rules_minsizes = Vector{UInt8}([1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 3, 3, 3, 2, 2, 1, 4, 9, 6, 13, 3, 4, 10])
+        expected_symbol_minsizes = Dict(:Expression => 2, :Num => 1, :Statement => 6, :Variable => 1, :InnerStatement => 4, :Return => 3, :Program => 4)
 
         @test expected_symbol_minsizes == symbols_minsize(grammar, rules_minsizes)
     end
@@ -61,10 +60,10 @@ end
         tests = [IOExample(Dict(), 8)]
         passed_tests = BitVector([true])
         
-        # return 7
+        # return 8
         expected = RuleNode(23, [RuleNode(22, [RuleNode(14, [RuleNode(9)])])])
 
-        @test expected == simplify_quick(program, grammar, tests, passed_tests)
+        @test expected == simplify_quick(program, grammar, tests, passed_tests, Int16(24))
     end
 
     @testset "removes unnecesarry neighbour nodes" begin   
@@ -92,35 +91,31 @@ end
         # return 7
         expected = RuleNode(23, [RuleNode(22, [RuleNode(14, [RuleNode(8)])])])
 
-        @test expected == simplify_quick(program, grammar, tests, passed_tests)
+        @test expected == simplify_quick(program, grammar, tests, passed_tests, Int16(24))
     end
 end
 
 @testset "add_fragments_prob!" begin
     @testset "finds the fragment placeholders and adds appropiate probabilities" begin
 
-        grammer_with_fragment_placeholders = @cfgrammar begin
-            Program = Return | (Statement; Return) | Fragment_Program
+        grammar_with_fragment_placeholders = @cfgrammar begin
+            Program = Return | (Statement; Return)
             Return = return Expression
             Statement = Expression | (Statement; Statement)
             Expression = Num
-            Num = |(0:9) | (Num + Num) | (Num - Num) | Fragment_Num
+            Num = |(0:9) | (Num + Num) | (Num - Num)
+            Program = Fragment_Program
+            Num = Fragment_Num
+            
         end
+        add_rules!(grammar_with_fragment_placeholders, [RuleNode(8), RuleNode(9)])
+        add_fragments_prob!(grammar_with_fragment_placeholders, Float16(0.6), Int16(18), Int16(20))  
         
-        fragments_chance = 0.6
+        expected_probabilities = Vector{Real}([0.5, 0.5])
+        expected_probabilities = vcat(expected_probabilities, fill(1, 4))
+        expected_probabilities = vcat(expected_probabilities, fill(Float16(1/30), 12))
+        append!(expected_probabilities, 0, Float16(0.6), 0.5, 0.5)
 
-        add_fragments_prob!(grammer_with_fragment_placeholders, fragments_chance)  
-
-        prob_grammer = @pcsgrammar begin
-            0.4 : Program = Return | (Statement; Return)
-            0.6 : Program = Fragment_Program
-            1 : Return = return Expression
-            1: Statement = Expression | (Statement; Statement)
-            1 : Expression = Num
-            0.4 : Num = |(0:9) | (Num + Num) | (Num - Num)
-            0.6 : Num = Fragment_Num
-        end
-
-        @test prob_grammer.log_probabilities == grammer_with_fragment_placeholders.log_probabilities
+        @test all(expected_probabilities .== grammar_with_fragment_placeholders.log_probabilities)
     end
 end

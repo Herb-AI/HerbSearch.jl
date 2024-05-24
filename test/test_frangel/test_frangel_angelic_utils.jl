@@ -62,7 +62,7 @@ end
     end
 end
 
-st = SymbolTable(g)
+st = SymbolTable(grammar)
 st[:update_✝γ_path] = update_✝γ_path
 
 @testset "test_expression_angelic_modification_basic" begin

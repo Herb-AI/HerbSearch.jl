@@ -10,11 +10,8 @@ struct FrAngelRandomIteratorState
 end
 
 function Base.iterate(iter::FrAngelRandomIterator)
-    max_size_estimate = length(iter.grammar.rules)
-    return Base.iterate(iter, FrAngelRandomIteratorState(
-        Vector{Int16}(undef, max_size_estimate), 
-        Vector{Float16}(undef, max_size_estimate), 
-        Vector{Float16}(undef, max_size_estimate)))
+    # max_size_estimate = length(iter.grammar.rules)
+    return Base.iterate(iter, FrAngelRandomIteratorState(Vector{Int16}(), Vector{Float16}(), Vector{Float16}()))
 end
 
 function Base.iterate(iter::FrAngelRandomIterator, state::FrAngelRandomIteratorState)

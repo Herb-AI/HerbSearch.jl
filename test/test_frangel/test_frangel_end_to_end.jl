@@ -60,14 +60,12 @@ end
 
 @testset "getRange" begin
     grammar = buildProgrammingProblemGrammar([(:endd, :Num), (:start, :Num)], :List)
-
     spec = [
         IOExample(Dict(:start => 10, :endd => 15), [10, 11, 12, 13, 14]),
         IOExample(Dict(:start => 10, :endd => 11), [10]),
         IOExample(Dict(:start => 0, :endd => 1), [0]),
     ]
     problem = Problem(spec)
-    b_grammar = deepcopy(grammar)
 
     angelic_conditions = AbstractVector{Union{Nothing,Int64}}([nothing for rule in grammar.rules])
     angelic_conditions[6] = 1
@@ -82,11 +80,4 @@ end
     end
     program = rulenode2expr(solution, grammar)
     println(program)
-
-    # @time begin 
-    #     iterator = BFSIterator(b_grammar, :Program, max_depth=40)
-    #     solution, flag = synth(problem, iterator)
-    # end
-    # program = rulenode2expr(solution, b_grammar) # should yield 2*6 +1 
-    # println(program)
 end

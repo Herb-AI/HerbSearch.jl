@@ -164,7 +164,7 @@ end
     first_program_tests = BitVector([1, 0, 1])
     first_program_value = (first_program, count_nodes(g, first_program), length(string(rulenode2expr(first_program, g))))
     old_remembered = Dict{BitVector,Tuple{RuleNode,Int,Int}}()
-    remember_programs!(old_remembered, first_program_tests, first_program, Vector{RuleNode}(), g, base_g, FrAngelConfig())
+    remember_programs!(old_remembered, first_program_tests, first_program, rulenode2expr(first_program, g), Vector{RuleNode}(), g)
 
     # Second program to consider
     longer_program = RuleNode(13, [RuleNode(13, [RuleNode(1), RuleNode(2)]), RuleNode(1)])
@@ -178,7 +178,7 @@ end
 
     function one_test_case(new_program::RuleNode, passing_tests::BitVector, expected_result::Dict{BitVector,Tuple{RuleNode,Int,Int}})
         new_remembered = deepcopy(old_remembered)
-        remember_programs!(new_remembered, passing_tests, new_program, Vector{RuleNode}(), g, base_g, FrAngelConfig())
+        remember_programs!(new_remembered, passing_tests, new_program, rulenode2expr(new_program, g), Vector{RuleNode}(), g)
         @test expected_result == new_remembered
     end
 
@@ -259,7 +259,6 @@ end
         Expression = Num
         Num = |(0:9) | (Num + Num) | (Num - Num) | Fragment_Num
     end
-    println(grammar)
     old_size = length(grammar.rules)
     add_rules!(grammar, [RuleNode(15)])
 

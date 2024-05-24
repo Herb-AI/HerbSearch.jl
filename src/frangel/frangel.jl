@@ -33,7 +33,7 @@ A configuration struct for the angelic mode of FrAngel.
 - `max_allowed_fails::Float16`: The maximum allowed fraction of failed tests during evaluation before short-circuit failure.
 
 """
-@kwdef struct FrAngelConfigAngelic
+@kwdef mutable struct FrAngelConfigAngelic
     max_time::Float16 = 0.1
     boolean_expr_max_size::UInt8 = 6
     max_execute_attempts::Int = 55
@@ -90,14 +90,16 @@ function frangel(
 
     if isnothing(config.angelic.truthy_tree)
         res = false
+        truthy_tree = nothing
         while !res
-            program = generate_random_program(grammar, :Bool, config.generation, fragment_base_rules_offset, config.angelic.boolean_expr_max_size, rule_minsize, symbol_minsize)
+            truthy_tree = generate_random_program(grammar, :Bool, config.generation, fragment_base_rules_offset, config.angelic.boolean_expr_max_size, rule_minsize, symbol_minsize)
             try
-                res = execute_on_input(symboltable, rulenode2expr(program, grammar), Dict())
+                res = execute_on_input(symboltable, rulenode2expr(truthy_tree, grammar), spec[1].in)
             catch
                 res = false
             end
         end
+        config.angelic.truthy_tree = truthy_tree
     end
 
     if verbose_level > 0
@@ -129,7 +131,7 @@ function frangel(
         push!(visited, program)
 
         checkedProgram += 1
-        if checkedProgram < verbose_level
+        if checkedProgram <= verbose_level
             println("Checked program #", checkedProgram)
             println(program)
             println(rulenode2expr(program, grammar))
@@ -174,7 +176,7 @@ function frangel(
                 program_expr = nothing
             end
             fragments, updatedFragments = remember_programs!(remembered_programs, passed_tests, program, program_expr, fragments, grammar)
-            if checkedProgram < verbose_level
+            if checkedProgram <= verbose_level
                 println("---- Fragments ----")
                 for f in fragments
                     println(f)
@@ -208,7 +210,7 @@ function frangel(
                         rule_minsize[i] = 255
                     end
                 end
-                if checkedProgram < verbose_level
+                if checkedProgram <= verbose_level
                     println("Grammar:")
                     print_grammar(grammar)
                     println("Minimal sizes per rule: ", rule_minsize)
