@@ -8,7 +8,8 @@ grammar::ContextSensitiveGrammar = @cfgrammar begin
     Num = max(Num, Num)
     Expression = Num | Variable
     Variable = x
-    InnerStatement = (Variable = Expression) | (InnerStatement; InnerStatement)
+    Statement = (Variable = Expression)
+    InnerStatement = (Variable = Expression1) | (InnerStatement; InnerStatement)
     Statement = (
         i = 0;
         while i < Num
@@ -20,16 +21,16 @@ grammar::ContextSensitiveGrammar = @cfgrammar begin
     Program = Return | (Statement; Return)
 end
 
-@testset "minsize_map" begin
+@testset "rules_minsize" begin
     @testset "returns the correct minimum size for each rule" begin
-        @test [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 3, 3, 3, 2, 2, 1, 4, 9, 6, 13, 3, 4, 10] == rules_minsize(grammar)
+        @test Vector{UInt8}([0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x03, 0x03, 0x03, 0x02, 0x02, 0x01, 0x04, 0x02, 0x05, 0x04, 0x09, 0x03, 0x04, 0x08]) == rules_minsize(grammar)
     end
 end
 
 @testset "symbols_minsize" begin
     @testset "returns the correct minimum size for each symbol, based on the rules minsizes" begin
-        rules_minsizes = Vector{UInt8}([1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 3, 3, 3, 2, 2, 1, 4, 9, 6, 13, 3, 4, 10])
-        expected_symbol_minsizes = Dict(:Expression => 2, :Num => 1, :Statement => 6, :Variable => 1, :InnerStatement => 4, :Return => 3, :Program => 4)
+        rules_minsizes = Vector{UInt8}([0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x03, 0x03, 0x03, 0x02, 0x02, 0x01, 0x04, 0x02, 0x05, 0x04, 0x09, 0x03, 0x04, 0x08])
+        expected_symbol_minsizes = Dict(:Expression => 2, :Num => 1, :Statement => 4, :Variable => 1, :InnerStatement => 2, :Return => 3, :Program => 4)
 
         @test expected_symbol_minsizes == symbols_minsize(grammar, rules_minsizes)
     end
@@ -63,7 +64,7 @@ end
         # return 8
         expected = RuleNode(23, [RuleNode(22, [RuleNode(14, [RuleNode(9)])])])
 
-        @test expected == simplify_quick(program, grammar, tests, passed_tests, Int16(24))
+        @test expected == simplify_quick(program, grammar, tests, passed_tests, Int16(23))
     end
 
     @testset "removes unnecesarry neighbour nodes" begin   
