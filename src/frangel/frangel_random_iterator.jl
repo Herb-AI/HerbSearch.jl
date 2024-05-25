@@ -4,7 +4,7 @@
 )
 
 struct FrAngelRandomIteratorState
-    filtered_indices::Vector{Int16} 
+    filtered_indices::Vector{Int16}
     probabilities::Vector{Float16}
     cumulative_probs::Vector{Float16}
 end
@@ -19,14 +19,14 @@ function Base.iterate(iter::FrAngelRandomIterator, state::FrAngelRandomIteratorS
 end
 
 function sample!(
-    grammar::AbstractGrammar, 
-    symbol::Symbol, 
-    rule_minsize::AbstractVector{UInt8}, 
-    symbol_minsize::Dict{Symbol,UInt8}, 
-    filtered_indices::Vector{Int16}, 
-    probabilities::Vector{Float16}, 
+    grammar::AbstractGrammar,
+    symbol::Symbol,
+    rule_minsize::AbstractVector{UInt8},
+    symbol_minsize::Dict{Symbol,UInt8},
+    filtered_indices::Vector{Int16},
+    probabilities::Vector{Float16},
     cumulative_probs::Vector{Float16},
-    max_size::UInt8 = UInt8(40)
+    max_size::UInt8=UInt8(40)
 )
     max_size = max(max_size, symbol_minsize[symbol])
 
@@ -60,12 +60,12 @@ function sample!(
     if !grammar.isterminal[rule_index]
         sizes = random_partition(grammar, rule_index, max_size, symbol_minsize)
         children_types = child_types(grammar, Int(rule_index))
-        
+
         rule_node.children = Vector{RuleNode}(undef, length(children_types))
 
         for (index, child_type) in enumerate(children_types)
             rule_node.children[index] = sample!(
-                grammar, child_type, rule_minsize, symbol_minsize, 
+                grammar, child_type, rule_minsize, symbol_minsize,
                 filtered_indices, probabilities, cumulative_probs, sizes[index]
             )
         end

@@ -32,7 +32,7 @@ function generate_random_program(
     symbol_minsize::Dict{Symbol,UInt8}
 )::RuleNode
     max_size = max(max_size, symbol_minsize[type])
-    
+
     possible_rules = filter(r -> r <= fragment_base_rules_offset && rule_minsize[r] ≤ max_size, grammar[type])
 
     rule_index = StatsBase.sample(possible_rules)
@@ -50,25 +50,25 @@ function generate_random_program(
 end
 
 function modify_and_replace_program_fragments!(
-    program::RuleNode, 
-    fragments::AbstractVector{RuleNode}, 
-    fragment_base_rules_offset::Int16, 
+    program::RuleNode,
+    fragments::AbstractVector{RuleNode},
+    fragment_base_rules_offset::Int16,
     fragment_rules_offset::Int16,
     config::FrAngelConfigGeneration,
-    grammar::AbstractGrammar, 
+    grammar::AbstractGrammar,
     rule_minsize::AbstractVector{UInt8},
     symbol_minsize::Dict{Symbol,UInt8}
-)::RuleNode 
+)::RuleNode
     if program.ind > fragment_base_rules_offset && program.ind <= fragment_rules_offset
         fragment_rule_index = program.children[1].ind
         # a fragment was found
 
         if rand() < config.use_entire_fragment_chance
             # use fragment as is
-            return fragments[fragment_rule_index - fragment_rules_offset]
+            return fragments[fragment_rule_index-fragment_rules_offset]
         else
             # modify the fragment
-            modified_fragment = deepcopy(fragments[fragment_rule_index - fragment_rules_offset])
+            modified_fragment = deepcopy(fragments[fragment_rule_index-fragment_rules_offset])
             random_modify_children!(grammar, modified_fragment, config, fragment_base_rules_offset, rule_minsize, symbol_minsize)
             return modified_fragment
         end
@@ -204,7 +204,7 @@ function get_descendant_replacements!(node::RuleNode, symbol::Symbol, grammar::A
     end
 end
 
-function add_angelic_conditions!(program::RuleNode, grammar::AbstractGrammar, angelic_conditions::AbstractVector{Union{Nothing,Int}}, config::FrAngelConfigGeneration) 
+function add_angelic_conditions!(program::RuleNode, grammar::AbstractGrammar, angelic_conditions::AbstractVector{Union{Nothing,Int}}, config::FrAngelConfigGeneration)
     if isterminal(grammar, program.ind)
         return program
     end
@@ -224,6 +224,6 @@ function add_angelic_conditions!(program::RuleNode, grammar::AbstractGrammar, an
             program.children[index] = add_angelic_conditions!(child, grammar, angelic_conditions, config)
         end
     end
-    
+
     program
 end

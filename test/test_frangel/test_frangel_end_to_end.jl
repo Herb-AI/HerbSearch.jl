@@ -2,7 +2,13 @@ g = @cfgrammar begin
     Num = |(0:10)
     Num = x | (Num + Num)
     Bool = (Num == Num)
-    Num = (if Bool ; Num else Num end)
+    Num = (
+        if Bool
+            Num
+        else
+            Num
+        end
+    )
 end
 
 @testset "basic_example" begin

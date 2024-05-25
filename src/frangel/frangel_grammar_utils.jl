@@ -1,26 +1,30 @@
 function buildProgrammingProblemGrammar(
-    input_parameters::AbstractVector{Tuple{Symbol, Symbol}}, 
+    input_parameters::AbstractVector{Tuple{Symbol,Symbol}},
     return_type::Symbol,
     intermediate_variables_count::Int=0
 )::ContextSensitiveGrammar
     base_grammar = deepcopy(@cfgrammar begin
-        
-        Program = (VariableDefintion ; Statement ; Return) | (Statement ; Return) | Return
+
+        Program = (VariableDefintion; Statement; Return) | (Statement; Return) | Return
         VariableDefintion = ListVariable = List
 
-        Statement = (Statement ; Statement)
+        Statement = (Statement; Statement)
         Statement = (
             i = 0;
             while i < Num
                 InnerStatement
                 i = i + 1
             end)
-        Statement = (if Bool Statement end)
+        Statement = (
+            if Bool
+                Statement
+            end
+        )
         Statement = push!(ListVariable, Num)
 
         InnerNum = Num | i | (InnerNum + InnerNum)
         InnerStatement = push!(ListVariable, InnerNum)
-        
+
         Num = |(0:9) | (Num + Num) | (Num - Num)
         Num = getindex(ListVariable, Num)
 
@@ -35,7 +39,7 @@ function buildProgrammingProblemGrammar(
     add_rule!(base_grammar, :(Return = return $return_type))
 
     # add input parameters constraints
-    for input_parameter in input_parameters 
+    for input_parameter in input_parameters
         add_rule!(base_grammar, :($(input_parameter[2]) = $(input_parameter[1])))
     end
 
@@ -64,24 +68,24 @@ It should be a terminal rule and have the same type as the symbol it is a fragme
 function add_fragments_prob!(grammar::AbstractGrammar, fragments_chance::Float16, fragment_base_rules_offset::Int16, fragment_rules_offset::Int16)
     if isnothing(grammar.log_probabilities)
         grammar.log_probabilities = fill(Float16(1), length(grammar.rules))
-    else 
+    else
         resize!(grammar.log_probabilities, length(grammar.rules))
     end
-    
+
     for i in fragment_base_rules_offset+1:fragment_rules_offset
         if isterminal(grammar, i)
-            if grammar.log_probabilities[i] != Float16(0) 
+            if grammar.log_probabilities[i] != Float16(0)
                 grammar.log_probabilities[i] = Float16(0)
                 others_prob = Float16(1) / (length(grammar.bytype[grammar.types[i]]) - 1)
-                    for j in grammar.bytype[return_type(grammar, i)]
-                        if j != i
-                            grammar.log_probabilities[j] = others_prob
+                for j in grammar.bytype[return_type(grammar, i)]
+                    if j != i
+                        grammar.log_probabilities[j] = others_prob
                     end
                 end
             end
         else
             if grammar.log_probabilities[i] != fragments_chance
-                grammar.log_probabilities[i] =  fragments_chance
+                grammar.log_probabilities[i] = fragments_chance
                 others_prob = Float16(1 - fragments_chance) / (length(grammar.bytype[grammar.types[i]]) - 1)
                 for j in grammar.bytype[return_type(grammar, i)]
                     if j != i

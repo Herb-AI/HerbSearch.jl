@@ -2,7 +2,13 @@ grammar = @cfgrammar begin
     Num = |(0:10)
     Num = x | (Num + Num)
     Bool = Num == Num
-    Num = (if Bool ; Num else Num end)
+    Num = (
+        if Bool
+            Num
+        else
+            Num
+        end
+    )
 end
 
 @testset "angelic_utils" begin
@@ -66,7 +72,13 @@ st = SymbolTable(grammar)
 st[:update_✝γ_path] = update_✝γ_path
 
 @testset "test_expression_angelic_modification_basic" begin
-    expr = :(if update_✝γ_path(✝γ_code_path, ✝γ_actual_code_path) 3 else 2 end)
+    expr = :(
+        if update_✝γ_path(✝γ_code_path, ✝γ_actual_code_path)
+            3
+        else
+            2
+        end
+    )
 
     @testset "falsy evaluation" begin
         opath = Vector{Char}(['0'])
@@ -77,7 +89,7 @@ st[:update_✝γ_path] = update_✝γ_path
             ✝γ_actual_code_path = $apath
             $expr
         end
-        out = execute_on_input(st, angelic_expr, Dict(:x => 0)) 
+        out = execute_on_input(st, angelic_expr, Dict(:x => 0))
 
         @test out == 2
         @test apath == ['0']
@@ -92,7 +104,7 @@ st[:update_✝γ_path] = update_✝γ_path
             ✝γ_actual_code_path = $apath
             $expr
         end
-        out = execute_on_input(st, angelic_expr, Dict(:x => 0)) 
+        out = execute_on_input(st, angelic_expr, Dict(:x => 0))
 
         @test out == 3
         @test apath == ['1'] # Note how the attempted path is two 1s, but actual - just one (only one if-statement)
@@ -102,15 +114,15 @@ end
 @testset "test_expression_angelic_modification_error" begin
     st[:error] = error
     expr = :(
-        if update_✝γ_path(✝γ_code_path, ✝γ_actual_code_path) 
+        if update_✝γ_path(✝γ_code_path, ✝γ_actual_code_path)
             error("hi")
-            if update_✝γ_path(✝γ_code_path, ✝γ_actual_code_path) 
-                10 
-            else 
-                0 
-            end 
-        else 
-            2 
+            if update_✝γ_path(✝γ_code_path, ✝γ_actual_code_path)
+                10
+            else
+                0
+            end
+        else
+            2
         end
     )
 
@@ -123,7 +135,7 @@ end
             ✝γ_actual_code_path = $apath
             $expr
         end
-        out = execute_on_input(st, angelic_expr, Dict(:x => 0)) 
+        out = execute_on_input(st, angelic_expr, Dict(:x => 0))
 
         @test out == 2
         @test apath == ['0']

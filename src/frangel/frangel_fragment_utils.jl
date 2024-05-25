@@ -80,7 +80,7 @@ function remember_programs!(
     new_program_expr,
     fragments::AbstractVector{RuleNode},
     grammar::AbstractGrammar,
-)::Tuple{AbstractVector{RuleNode}, Bool}
+)::Tuple{AbstractVector{RuleNode},Bool}
     node_count = count_nodes(grammar, new_program)
     if new_program_expr === nothing
         program_length = 0
@@ -109,7 +109,7 @@ function remember_programs!(
     collect(mine_fragments(grammar, Set(values(old_remembered)))), true
 end
 
-function add_fragment_base_rules!(g::AbstractGrammar) 
+function add_fragment_base_rules!(g::AbstractGrammar)
     for typ in keys(g.bytype)
         expr = Symbol(string(:Fragment_, typ))
         rvec = Any[]

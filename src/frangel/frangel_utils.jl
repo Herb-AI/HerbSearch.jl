@@ -287,7 +287,7 @@ function _minsize!(grammar::AbstractGrammar, rule_index::Int, min_sizes::Abstrac
         if visited[ctyp]
             size += minimum(min_sizes[i] for i in grammar.bytype[ctyp])
             continue
-        end 
+        end
         visited[ctyp] = true
         rules = grammar.bytype[ctyp]
         min = 255

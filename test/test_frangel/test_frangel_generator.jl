@@ -14,13 +14,13 @@
         fragment_rules_offset::Int16 = length(grammar.rules)
         add_rule!(grammar, rule_to_add)
         fragments = [fragment]
-        
+
         add_fragments_prob!(grammar, Float16(0.5), fragment_base_rules_offset, fragment_rules_offset)
-        
+
         rule_minsize = rules_minsize(grammar)
-        rule_minsize[19:22].= 255
-        rule_minsize[23:24].= 6
-        
+        rule_minsize[19:22] .= 255
+        rule_minsize[23:24] .= 6
+
         symbol_minsize = symbols_minsize(grammar, rule_minsize)
         symbol_minsize[:Fragment_Program] = 6
 
@@ -35,7 +35,7 @@
     @testset "replaces fragment at top level with entire fragment" begin
         one_test_case(
             RuleNode(1, [RuleNode(3, [RuleNode(6, [RuleNode(17, [RuleNode(8), RuleNode(9)])])])]), # return (1 + 2)
-            :(Fragment_Program = return (1 + 2)), 1, 
+            :(Fragment_Program = return (1 + 2)), 1,
             RuleNode(23, [RuleNode(24)]), # program = fragment_program
             RuleNode(1, [RuleNode(3, [RuleNode(6, [RuleNode(17, [RuleNode(8), RuleNode(9)])])])]) # return (1 + 2)
         )
@@ -44,7 +44,7 @@
     @testset "replaces fragment at lower level with entire fragment" begin
         one_test_case(
             RuleNode(18, [RuleNode(9), RuleNode(10)]), # (2 - 3)
-            :(Fragment_Num = 1 + 2), 1, 
+            :(Fragment_Num = 1 + 2), 1,
             RuleNode(1, [RuleNode(4, [RuleNode(6, [RuleNode(21, [RuleNode(24)])])])]), # program = fragment_num
             RuleNode(1, [RuleNode(4, [RuleNode(6, [RuleNode(18, [RuleNode(9), RuleNode(10)])])])]) # program = (2 - 3)
         )
@@ -53,7 +53,7 @@
     @testset "replaces fragment at top level with modified fragment" begin
         one_test_case(
             RuleNode(1, [RuleNode(3, [RuleNode(6, [RuleNode(17, [RuleNode(8), RuleNode(9)])])])]), # return (1 + 2)
-            :(Fragment_Program = return (1 + 2)), 0, 
+            :(Fragment_Program = return (1 + 2)), 0,
             RuleNode(23, [RuleNode(24)]), # program = fragment_program
             RuleNode(1, [RuleNode(3, [RuleNode(6, [RuleNode(11)])])]) # return 4
         )
