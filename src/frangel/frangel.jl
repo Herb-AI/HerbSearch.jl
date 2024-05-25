@@ -64,7 +64,7 @@ end
 function frangel(
     spec::AbstractVector{<:IOExample},
     config::FrAngelConfig,
-    angelic_conditions::AbstractVector{Union{Nothing,Int}},
+    angelic_conditions::Dict{UInt16, UInt8},
     iter::ProgramIterator,
     rule_minsize::AbstractVector{UInt8},
     symbol_minsize::Dict{Symbol,UInt8}
@@ -122,7 +122,9 @@ function frangel(
 
         # Generalize these two procedures at some point
         program = modify_and_replace_program_fragments!(program, fragments, fragment_base_rules_offset, fragment_rules_offset, config.generation, grammar, rule_minsize, symbol_minsize)
-        program = add_angelic_conditions!(program, grammar, angelic_conditions, config.generation)
+        if config.generation.use_angelic_conditions_chance != 0
+            program = add_angelic_conditions!(program, grammar, angelic_conditions, config.generation)
+        end
 
         # Do not check visited program space
         if program in visited
@@ -197,6 +199,10 @@ function frangel(
                     symbol_minsize[grammar.rules[i]] = 255
                 end
                 resize!(rule_minsize, length(grammar.rules))
+                for i in fragment_base_rules_offset+1:fragment_rules_offset
+                    symbol_minsize[grammar.rules[i]] = 255
+                end
+
                 for (i, fragment) in enumerate(fragments)
                     rule_minsize[fragment_rules_offset+i] = count_nodes(grammar, fragment)
                     ret_typ = return_type(grammar, fragment_rules_offset + i)

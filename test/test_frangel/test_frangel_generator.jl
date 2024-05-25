@@ -79,7 +79,7 @@ end
 
         program = RuleNode(2, [RuleNode(4, [RuleNode(6, [RuleNode(7)])]), RuleNode(3, [RuleNode(6, [RuleNode(8)])])])
 
-        angelic_conditions = AbstractVector{Union{Nothing,Int}}([nothing for rule in grammar.rules])
+        angelic_conditions = Dict{UInt16, UInt8}()
         angelic_conditions[2] = 1
 
         # execute

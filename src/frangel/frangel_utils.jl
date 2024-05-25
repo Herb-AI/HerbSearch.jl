@@ -21,7 +21,7 @@ function get_passed_tests!(
     symboltable::SymbolTable,
     tests::AbstractVector{<:IOExample},
     prev_passed_tests::BitVector,
-    angelic_conditions::AbstractVector{Union{Nothing,Int}},
+    angelic_conditions::Dict{UInt16, UInt8},
     config::FrAngelConfigAngelic
 )
     # If angelic -> evaluate optimistically

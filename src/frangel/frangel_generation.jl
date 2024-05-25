@@ -204,12 +204,12 @@ function get_descendant_replacements!(node::RuleNode, symbol::Symbol, grammar::A
     end
 end
 
-function add_angelic_conditions!(program::RuleNode, grammar::AbstractGrammar, angelic_conditions::AbstractVector{Union{Nothing,Int}}, config::FrAngelConfigGeneration)
+function add_angelic_conditions!(program::RuleNode, grammar::AbstractGrammar, angelic_conditions::Dict{UInt16, UInt8}, config::FrAngelConfigGeneration)
     if isterminal(grammar, program.ind)
         return program
     end
 
-    if angelic_conditions[program.ind] !== nothing && rand() < config.use_angelic_conditions_chance
+    if haskey(angelic_conditions, program.ind) && rand() < config.use_angelic_conditions_chance
         angelic_condition_ind = angelic_conditions[program.ind]
 
         for (index, child) in enumerate(program.children)

@@ -27,7 +27,7 @@ function resolve_angelic!(
     symboltable::SymbolTable,
     tests::AbstractVector{<:IOExample},
     replacement_dir::Int, # Direction of replacement; 1 -> top-down, -1 -> bottom-up
-    angelic_conditions::AbstractVector{Union{Nothing,Int}},
+    angelic_conditions::Dict{UInt16, UInt8},
     config::FrAngelConfig,
     fragment_base_rules_offset::Int16,
     rule_minsize::AbstractVector{UInt8},
@@ -132,7 +132,7 @@ function execute_angelic_on_input(
     expected_output::Any,
     truthy::RuleNode,
     max_attempts::Int,
-    angelic_conditions::AbstractVector{Union{Nothing,Int}}
+    angelic_conditions::Dict{UInt16, UInt8}
 )::Bool
     num_true, attempts = 0, 0
     # We check traversed code paths by prefix -> trie is efficient for this
@@ -217,7 +217,7 @@ function create_angelic_expression(
     program::RuleNode,
     grammar::AbstractGrammar,
     truthy::RuleNode,
-    angelic_conditions::AbstractVector{Union{Nothing,Int}}
+    angelic_conditions::Dict{UInt16, UInt8}
 )::Expr
     new_program = deepcopy(program)
     # BFS traversal
@@ -248,8 +248,8 @@ Removes all subexpressions that are holes in the program, based on the angelic c
     If there is no angelic condition for a rule, the value is set to `nothing`.
 
 """
-function clear_holes!(program::RuleNode, angelic_conditions::AbstractVector{Union{Nothing,Int}})
-    if angelic_conditions[program.ind] !== nothing
+function clear_holes!(program::RuleNode, angelic_conditions::Dict{UInt16, UInt8})
+    if haskey(angelic_conditions, program.ind)
         idx = angelic_conditions[program.ind]
         if program.children[idx] isa AbstractHole
             deleteat!(program.children, angelic_conditions[program.index])
