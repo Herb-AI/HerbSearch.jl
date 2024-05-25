@@ -225,7 +225,7 @@ function create_angelic_expression(
     enqueue!(queue, new_program)
     while !isempty(queue)
         node = dequeue!(queue)
-        angelic_idx = angelic_conditions[node.ind]
+        angelic_idx = get(angelic_conditions, node.ind, -1)
         for (child_index, child) in enumerate(node.children)
             if angelic_idx == child_index
                 node.children[child_index] = truthy
