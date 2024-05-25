@@ -1,3 +1,5 @@
+select_partial_solution(partial_sols::Vector{ProgramCache}, all_selected_psols::Set{ProgramCache}) = selectpsol_largest_subset(partial_sols, all_selected_psols)
+
 """
     selectpsol_largest_subset(partial_sols::Vector{ProgramCache}}, all_selected_psols::Set{ProgramCache})) 
 
@@ -24,12 +26,12 @@ function selectpsol_largest_subset(partial_sols::Vector{ProgramCache}, all_selec
 end
 
 """
-    selectpsol_first_cheapest(partial_sols::Vector{ProgramCache}}, all_selected_psols::Set{ProgramCache})) 
+    selectpsol_first_cheapest(partial_sols::Vector{ProgramCache}}, ::Set{ProgramCache})) 
 
 This scheme selects a single cheapest program (first enumerated) that 
 satisfies a unique subset of examples.
 """
-function selectpsol_first_cheapest(partial_sols::Vector{ProgramCache}, all_selected_psol::Set{ProgramCache})
+function selectpsol_first_cheapest(partial_sols::Vector{ProgramCache}, ::Set{ProgramCache})
     # maps subset of examples to the cheapest program 
     mapping = Dict{Vector{Int},ProgramCache}()
     for sol ∈ partial_sols
@@ -48,11 +50,11 @@ function selectpsol_first_cheapest(partial_sols::Vector{ProgramCache}, all_selec
 end
 
 """
-    selectpsol_all_cheapest(partial_sols::Vector{ProgramCache}, all_selected_psol::Set{ProgramCache}) 
+    selectpsol_all_cheapest(partial_sols::Vector{ProgramCache}, ::Set{ProgramCache}) 
 
 This scheme selects all cheapest programs that satisfies a unique subset of examples.
 """
-function selectpsol_all_cheapest(partial_sols::Vector{ProgramCache}, all_selected_psol::Set{ProgramCache})
+function selectpsol_all_cheapest(partial_sols::Vector{ProgramCache}, ::Set{ProgramCache})
     # maps subset of examples to the cheapest program 
     mapping = Dict{Vector{Int},Vector{ProgramCache}}()
     for sol ∈ partial_sols
@@ -72,4 +74,15 @@ function selectpsol_all_cheapest(partial_sols::Vector{ProgramCache}, all_selecte
     end
     # get all cheapest programs that satisfy unique subsets of examples
     return collect(Iterators.flatten(values(mapping)))
+end
+
+function select_partial_solution(partial_sols::Vector{ProgramCacheTrace}, all_selected_psols::Set{ProgramCacheTrace})
+    if isempty(partial_sols)
+        return Vector{ProgramCache}()
+    end
+    push!(partial_sols, all_selected_psols...)
+    # sort partial solutions by reward
+    sort!(partial_sols, by=x -> x.reward, rev=true)
+    to_select = 5
+    return partial_sols[1:min(to_select, length(partial_sols))]
 end

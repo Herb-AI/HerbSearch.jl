@@ -1,8 +1,8 @@
-
 @programiterator GuidedSearchIterator(
     spec::Vector{<:IOExample},
     symboltable::SymbolTable,
 )
+
 Base.@kwdef mutable struct GuidedSearchState
     level::Int64
     bank::Vector{Vector{RuleNode}}

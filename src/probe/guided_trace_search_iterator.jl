@@ -1,7 +1,6 @@
+@programiterator GuidedSearchTraceIterator()
 
-@programiterator GuidedTraceSearchIterator()
-
-function Base.iterate(iter::GuidedTraceSearchIterator)
+function Base.iterate(iter::GuidedSearchTraceIterator)
     iterate(iter, GuidedSearchState(
         level=-1,
         bank=[],
@@ -11,7 +10,7 @@ function Base.iterate(iter::GuidedTraceSearchIterator)
     ))
 end
 
-function Base.iterate(iter::GuidedTraceSearchIterator, state::GuidedSearchState)
+function Base.iterate(iter::GuidedSearchTraceIterator, state::GuidedSearchState)
     grammar = get_grammar(iter.solver)
     start_symbol = get_starting_symbol(iter.solver)
     # wrap in while true to optimize for tail call

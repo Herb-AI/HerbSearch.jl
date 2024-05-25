@@ -1,4 +1,3 @@
-
 """
     update_grammar(grammar::ContextSensitiveGrammar, PSols_with_eval_cache::Vector{ProgramCache}, examples::Vector{<:IOExample})
 
@@ -10,7 +9,7 @@ Update the given `grammar` using the provided `PSols_with_eval_cache` and `examp
 - `examples::Vector{<:IOExample}`: The input-output examples.
 
 """
-function update_grammar(grammar::ContextSensitiveGrammar, PSols_with_eval_cache::Vector{ProgramCache}, examples::Vector{<:IOExample})
+function update_grammar!(grammar::ContextSensitiveGrammar, PSols_with_eval_cache::Vector{ProgramCache}, examples::Vector{<:IOExample})
     sum = 0
     for rule_index in eachindex(grammar.rules) # iterate for each rule_index 
         highest_correct_nr = 0

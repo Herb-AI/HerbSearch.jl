@@ -1,3 +1,5 @@
+calculate_rule_cost(rule_index::Int, grammar::ContextSensitiveGrammar) = calculate_rule_cost_prob(rule_index, grammar)
+
 struct NewProgramsIterator
     level::Int
     bank::Vector{Vector{RuleNode}}
@@ -75,7 +77,7 @@ function Base.iterate(iter::NewProgramsIterator, state::NewProgramsState)
     return nothing
 end
 
-function calculate_rule_cost_prob(rule_index, grammar, log_base = 2)
+function calculate_rule_cost_prob(rule_index, grammar, log_base=2)
     log_prob = grammar.log_probabilities[rule_index] / log(log_base)
     return convert(Int64, round(-log_prob))
 end
@@ -83,8 +85,6 @@ end
 function calculate_rule_cost_size(rule_index, grammar)
     return 1
 end
-
-calculate_rule_cost(rule_index::Int, grammar::ContextSensitiveGrammar) = calculate_rule_cost_size(rule_index, grammar)
 
 """
     calculate_program_cost(program::RuleNode, grammar::ContextSensitiveGrammar)  
