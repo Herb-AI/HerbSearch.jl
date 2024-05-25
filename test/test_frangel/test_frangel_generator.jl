@@ -1,23 +1,22 @@
 @testset "modify_and_replace_program_fragments!" begin
-    @testset "replaces fragment at top level with entire fragment" begin
-        # setup
-        grammar = @cfgrammar begin
+
+    function one_test_case(fragment::RuleNode, rule_to_add::Expr, use_entire_fragment_chance::Int, program_to_modify::RuleNode, expected_program::RuleNode)
+        # Setup
+        grammar = deepcopy(@cfgrammar begin
             Program = Return | (Statement; Return)
             Return = return Expression
             Statement = Expression | (Statement; Statement)
             Expression = Num
             Num = |(0:9) | (Num + Num) | (Num - Num)
-        end
+        end)
         fragment_base_rules_offset::Int16 = length(grammar.rules)
         add_fragment_base_rules!(grammar)
         fragment_rules_offset::Int16 = length(grammar.rules)
-        add_rule!(grammar, :(Fragment_Program = return (1 + 2)))
-        fragments = [
-            RuleNode(1, [RuleNode(3, [RuleNode(6, [RuleNode(17, [RuleNode(8), RuleNode(9)])])])])
-        ]
-
+        add_rule!(grammar, rule_to_add)
+        fragments = [fragment]
+        
         add_fragments_prob!(grammar, Float16(0.5), fragment_base_rules_offset, fragment_rules_offset)
-
+        
         rule_minsize = rules_minsize(grammar)
         rule_minsize[19:22].= 255
         rule_minsize[23:24].= 6
@@ -25,94 +24,39 @@
         symbol_minsize = symbols_minsize(grammar, rule_minsize)
         symbol_minsize[:Fragment_Program] = 6
 
-        config = FrAngelConfigGeneration(use_entire_fragment_chance=1)
-
-        program_with_fragments = RuleNode(23, [RuleNode(24)])
+        config = FrAngelConfigGeneration(use_entire_fragment_chance=use_entire_fragment_chance)
 
         # execute
-        program = modify_and_replace_program_fragments!(program_with_fragments, fragments, fragment_base_rules_offset, fragment_rules_offset, config, grammar, rule_minsize, symbol_minsize)
+        program = modify_and_replace_program_fragments!(program_to_modify, fragments, fragment_base_rules_offset, fragment_rules_offset, config, grammar, rule_minsize, symbol_minsize)
         # verify
-        expected = RuleNode(1, [RuleNode(3, [RuleNode(6, [RuleNode(17, [RuleNode(8), RuleNode(9)])])])])
-        @test program == expected
+        @test program == expected_program
+    end
+
+    @testset "replaces fragment at top level with entire fragment" begin
+        one_test_case(
+            RuleNode(1, [RuleNode(3, [RuleNode(6, [RuleNode(17, [RuleNode(8), RuleNode(9)])])])]), # return (1 + 2)
+            :(Fragment_Program = return (1 + 2)), 1, 
+            RuleNode(23, [RuleNode(24)]), # program = fragment_program
+            RuleNode(1, [RuleNode(3, [RuleNode(6, [RuleNode(17, [RuleNode(8), RuleNode(9)])])])]) # return (1 + 2)
+        )
     end
 
     @testset "replaces fragment at lower level with entire fragment" begin
-        # setup
-        grammar = @cfgrammar begin
-            Program = Return | (Statement; Return)
-            Return = return Expression
-            Statement = Expression | (Statement; Statement)
-            Expression = Num
-            Num = |(0:9) | (Num + Num) | (Num - Num)
-        end
-        fragment_base_rules_offset::Int16 = length(grammar.rules)
-        add_fragment_base_rules!(grammar)
-        fragment_rules_offset::Int16 = length(grammar.rules)
-        add_rule!(grammar, :(Fragment_Num = 1 + 2))
-        fragments = [
-            RuleNode(18, [RuleNode(9), RuleNode(10)])
-        ]
-
-        add_fragments_prob!(grammar, Float16(0.5), fragment_base_rules_offset, fragment_rules_offset)
-
-        program_with_fragments = RuleNode(1, [RuleNode(4, [RuleNode(6, [RuleNode(21, [RuleNode(24)])])])])
- 
-        config = FrAngelConfigGeneration(use_entire_fragment_chance=1)
-
-        rule_minsize = rules_minsize(grammar)
-        for rule_index in eachindex(grammar.rules)
-            sym = grammar.types[rule_index]
-
-            if isterminal(grammar, rule_index) && grammar.rules[rule_index] == Symbol(string(:Fragment_, sym))
-                rule_minsize[rule_index] = 255
-            end
-        end
-
-        symbol_minsize = symbols_minsize(grammar, rule_minsize)
-
-        # execute
-        program = modify_and_replace_program_fragments!(program_with_fragments, fragments, fragment_base_rules_offset, fragment_rules_offset, config, grammar, rule_minsize, symbol_minsize)
-
-        # verify
-        expected = RuleNode(1, [RuleNode(4, [RuleNode(6, [RuleNode(18, [RuleNode(9), RuleNode(10)])])])])
-        @test program == expected
+        one_test_case(
+            RuleNode(18, [RuleNode(9), RuleNode(10)]), # (2 - 3)
+            :(Fragment_Num = 1 + 2), 1, 
+            RuleNode(1, [RuleNode(4, [RuleNode(6, [RuleNode(21, [RuleNode(24)])])])]), # program = fragment_num
+            RuleNode(1, [RuleNode(4, [RuleNode(6, [RuleNode(18, [RuleNode(9), RuleNode(10)])])])]) # program = (2 - 3)
+        )
     end
 
     @testset "replaces fragment at top level with modified fragment" begin
-        # setup
-        grammar = @cfgrammar begin
-            Program = Return | (Statement; Return)
-            Return = return Expression
-            Statement = Expression | (Statement; Statement)
-            Expression = Num
-            Num = |(0:9) | (Num + Num) | (Num - Num)
-        end
-        fragment_base_rules_offset::Int16 = length(grammar.rules)
-        add_fragment_base_rules!(grammar)
-        fragment_rules_offset::Int16 = length(grammar.rules)
-        add_rule!(grammar, :(Fragment_Program = return (1 + 2)))
-        fragments = [
-            RuleNode(1, [RuleNode(3, [RuleNode(6, [RuleNode(17, [RuleNode(8), RuleNode(9)])])])])
-        ]
-
-        add_fragments_prob!(grammar, Float16(0.5), fragment_base_rules_offset, fragment_rules_offset)
-
-        rule_minsize = rules_minsize(grammar)
-        rule_minsize[19:22].= 255
-        rule_minsize[23:24].= 6
-        
-        symbol_minsize = symbols_minsize(grammar, rule_minsize)
-        symbol_minsize[:Fragment_Program] = 6
-
-        config = FrAngelConfigGeneration(use_entire_fragment_chance=0)
-
-        program_with_fragments = RuleNode(23, [RuleNode(24)])
-
-        # execute
-        program = modify_and_replace_program_fragments!(program_with_fragments, fragments, fragment_base_rules_offset, fragment_rules_offset, config, grammar, rule_minsize, symbol_minsize)
-        # verify
-        expected = RuleNode(1, [RuleNode(3, [RuleNode(6, [RuleNode(11)])])])
-        @test program == expected
+        one_test_case(
+            RuleNode(1, [RuleNode(3, [RuleNode(6, [RuleNode(17, [RuleNode(8), RuleNode(9)])])])]), # return (1 + 2)
+            :(Fragment_Program = return (1 + 2)), 0, 
+            RuleNode(23, [RuleNode(24)]), # program = fragment_program
+            RuleNode(1, [RuleNode(3, [RuleNode(6, [RuleNode(11)])])]) # return 4
+        )
     end
 end
 
