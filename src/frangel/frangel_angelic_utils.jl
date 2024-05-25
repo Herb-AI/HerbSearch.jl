@@ -41,6 +41,7 @@ function resolve_angelic!(
     while num_holes != 0
         success = false
         start_time = time()
+        max_time = config.angelic.max_time
         while time() - start_time < max_time
             boolean_expr = generate_random_program(grammar, :Bool, config.generation, fragment_base_rules_offset, angelic.boolean_expr_max_size, rule_minsize, symbol_minsize)
             new_program = replace_next_angelic(program, boolean_expr, replacement_index)

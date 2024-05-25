@@ -26,7 +26,7 @@ function get_passed_tests!(
 )
     # If angelic -> evaluate optimistically
     if contains_hole(program)
-        @assert !isa(truthy, Nothing)
+        @assert !isa(config.truthy_tree, Nothing)
         truthy = config.truthy_tree::RuleNode
         fails = 0
         for (index, test) in enumerate(tests)

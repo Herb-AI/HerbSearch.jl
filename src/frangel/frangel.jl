@@ -88,7 +88,7 @@ function frangel(
     start_time = time()
     verbose_level = config.verbose_level
 
-    if isnothing(config.angelic.truthy_tree)
+    if isnothing(config.angelic.truthy_tree) && config.generation.use_angelic_conditions_chance != 0
         res = false
         truthy_tree = nothing
         while !res
@@ -193,6 +193,9 @@ function frangel(
                 add_rules!(grammar, fragments)
                 add_fragments_prob!(grammar, config.generation.use_fragments_chance, fragment_base_rules_offset, fragment_rules_offset)
                 # Update rule_minsize and symbol_minsize        
+                for i in fragment_base_rules_offset+1:fragment_rules_offset
+                    symbol_minsize[grammar.rules[i]] = 255
+                end
                 resize!(rule_minsize, length(grammar.rules))
                 for (i, fragment) in enumerate(fragments)
                     rule_minsize[fragment_rules_offset+i] = count_nodes(grammar, fragment)

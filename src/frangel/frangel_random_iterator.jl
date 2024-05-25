@@ -33,7 +33,6 @@ function sample!(
     empty!(filtered_indices)
     empty!(probabilities)
 
-    push!(cumulative_probs, 0)
     for i in grammar[symbol]
         if rule_minsize[i] ≤ max_size
             push!(filtered_indices, i)
