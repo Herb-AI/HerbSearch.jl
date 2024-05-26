@@ -80,7 +80,7 @@ function modify_and_replace_program_fragments!(
 
         if rand() < config.use_entire_fragment_chance
             # use fragment as is
-            return deepcopy(fragments[fragment_rule_index-fragment_rules_offset])
+            return fragments[fragment_rule_index-fragment_rules_offset]
         else
             # modify the fragment
             modified_fragment = deepcopy(fragments[fragment_rule_index-fragment_rules_offset])
@@ -210,7 +210,7 @@ Finds all the descendants of the same symbol for a given node in the AST.
 function get_descendant_replacements!(node::RuleNode, symbol::Symbol, grammar::AbstractGrammar, replacements::AbstractSet{RuleNode})
     for child in node.children
         if return_type(grammar, child) == symbol
-            push!(replacements, deepcopy(child))
+            push!(replacements, child)
         end
         get_descendant_replacements!(child, symbol, grammar, replacements)
     end
