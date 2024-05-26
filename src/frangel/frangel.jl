@@ -37,7 +37,7 @@ A configuration struct for the angelic mode of FrAngel.
     max_time::Float16 = 0.1
     boolean_expr_max_size::UInt8 = 6
     max_execute_attempts::Int = 55
-    max_allowed_fails::Float16 = 0.3
+    max_allowed_fails::Float16 = 0.75
     truthy_tree::Union{Nothing,RuleNode} = nothing
 end
 
@@ -148,7 +148,7 @@ function frangel(
 
         # If it contains angelic conditions, resolve them
         if contains_hole(program)
-            resolve_angelic!(program, passed_tests, grammar, symboltable, spec, 1, angelic_conditions, config, fragment_base_rules_offset, rule_minsize, symbol_minsize)
+            program = resolve_angelic!(program, passed_tests, grammar, symboltable, spec, 1, angelic_conditions, config, fragment_base_rules_offset, rule_minsize, symbol_minsize)
             # Still contains angelic conditions -> unresolved
             if contains_hole(program)
                 continue

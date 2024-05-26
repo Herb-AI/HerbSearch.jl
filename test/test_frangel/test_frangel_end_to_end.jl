@@ -1,7 +1,7 @@
 g = @cfgrammar begin
     Num = |(0:10)
     Num = x | (Num + Num)
-    Bool = (Num == Num)
+    Bool = true | false | (Num == Num) | (Num < Num)
     Num = (
         if Bool
             Num
@@ -11,7 +11,7 @@ g = @cfgrammar begin
     )
 end
 
-@testset "basic_example" begin
+@testset "basic_example_fragments_only" begin
     spec = [IOExample(Dict(:x => x), 2x) for x ∈ 1:5]
     problem = Problem(spec)
     rules_min = rules_minsize(g)
@@ -34,7 +34,7 @@ end
     println(program)
 end
 
-@testset "basic_example_2" begin
+@testset "basic_example_with_angelic" begin
     spec = [
         IOExample(Dict(:x => 1), 2)
         IOExample(Dict(:x => 2), 3)
@@ -46,11 +46,14 @@ end
     problem = Problem(spec)
     rules_min = rules_minsize(g)
     symbol_min = symbols_minsize(g, rules_min)
-    config = FrAngelConfig(verbose_level=0, generation=FrAngelConfigGeneration(use_fragments_chance=0.5, use_angelic_conditions_chance=0, max_size=20))
+    config = FrAngelConfig(max_time=20, verbose_level=0, generation=FrAngelConfigGeneration(use_fragments_chance=0.5, use_angelic_conditions_chance=0.5, max_size=20),
+        angelic=FrAngelConfigAngelic(max_allowed_fails=0.5, max_execute_attempts=5))
+    angelic_conditions = Dict{UInt16,UInt8}()
+    angelic_conditions[15] = 1
     @time begin
         # @time @profview begin     
         iterator = FrAngelRandomIterator(deepcopy(g), :Num, rules_min, symbol_min, max_depth=config.generation.max_size)
-        solution = frangel(spec, config, Dict{UInt16, UInt8}(), iterator, rules_min, symbol_min)
+        solution = frangel(spec, config, angelic_conditions, iterator, rules_min, symbol_min)
     end
     program = rulenode2expr(solution, g)
     println(program)
