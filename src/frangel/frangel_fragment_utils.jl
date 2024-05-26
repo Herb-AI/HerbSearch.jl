@@ -29,7 +29,7 @@ end
 """
     mine_fragments(grammar::AbstractGrammar, programs::Set{RuleNode})::Set{RuleNode}
 
-Finds all the fragments from the provided `programs` list. The result is a set of the distinct fragments found within all programs.
+Finds all the fragments from the provided `programs` set. The result is a set of the distinct fragments found within all programs.
 
 # Arguments
 - `grammar`: The grammar rules of the program.
@@ -47,6 +47,19 @@ function mine_fragments(grammar::AbstractGrammar, programs::Set{RuleNode})::Set{
     fragments
 end
 
+"""
+    mine_fragments(grammar::AbstractGrammar, programs::Set{Tuple{RuleNode,Int,Int}}) -> Set{RuleNode}
+
+Finds all the fragments from the provided `programs` set. The result is a set of the distinct fragments found within all programs.
+
+# Arguments
+- `grammar`: An abstract grammar object.
+- `programs`: A set of programs, each also containing its node count and program length.
+
+# Returns
+All the found fragments in the provided programs.
+
+"""
 function mine_fragments(grammar::AbstractGrammar, programs::Set{Tuple{RuleNode,Int,Int}})::Set{RuleNode}
     fragments = reduce(union, mine_fragments(grammar, p) for (p, _, _) in programs)
     for program in programs
@@ -56,8 +69,8 @@ function mine_fragments(grammar::AbstractGrammar, programs::Set{Tuple{RuleNode,I
 end
 
 """
-    remember_programs!(old_remembered::Dict{BitVector, Tuple{RuleNode, Int, Int}}, passing_tests::BitVector, new_program::RuleNode, 
-        fragments::Set{RuleNode}, grammar::AbstractGrammar)::Set{RuleNode}
+    remember_programs!(old_remembered::Dict{BitVector, Tuple{RuleNode, Int, Int}}, passing_tests::BitVector, new_program::RuleNode, new_program_expr::Any, 
+        fragments::AbstractVector{RuleNode}, grammar::AbstractGrammar)::Tuple{AbstractVector{RuleNode},Bool}
 
 Updates the remembered programs by including `new_program` if it is simpler than all remembered programs that pass the same subset of tests, 
     and there is no simpler program passing a superset of the tests. It also removes any "worse" programs from the dictionary.
@@ -66,11 +79,12 @@ Updates the remembered programs by including `new_program` if it is simpler than
 - `old_remembered`: The previously remembered programs, represented as a dictionary mapping `passed_tests` to (program's tree, the tree's `node_count`, `program_length`).
 - `passing_tests`: A BitVector representing the passing test set for the new program.
 - `new_program`: The new program to be considered for addition to the `old_remembered` dictionary.
+- `new_program_expr`: The expression of the new program, used to calculate its length. If `nothing`, the length is set to 0.
 - `fragments`: A set the fragments mined from the `old_remembered` dictionary.
 - `grammar`: The grammar rules of the program.
 
 # Returns
-The newly mined fragments from the updated remembered programs.
+The newly mined fragments from the updated remembered programs, and a flag to indicate if the new program was added to the dictionary.
 
 """
 function remember_programs!(
@@ -107,25 +121,4 @@ function remember_programs!(
     # println("Simplest program for tests: ", passing_tests)
     # println(rulenode2expr(new_program, grammar))
     collect(mine_fragments(grammar, Set(values(old_remembered)))), true
-end
-
-function add_fragment_base_rules!(g::AbstractGrammar)
-    for typ in keys(g.bytype)
-        expr = Symbol(string(:Fragment_, typ))
-        rvec = Any[]
-        parse_rule!(rvec, expr)
-        for r ∈ rvec
-            if !any(r === rule && typ === return_type(g, i) for (i, rule) ∈ enumerate(g.rules))
-                push!(g.rules, r)
-                push!(g.iseval, iseval(expr))
-                push!(g.types, typ)
-                g.bytype[typ] = push!(get(g.bytype, typ, Int[]), length(g.rules))
-            end
-        end
-    end
-    alltypes = collect(keys(g.bytype))
-    g.isterminal = [isterminal(rule, alltypes) for rule ∈ g.rules]
-    g.childtypes = [get_childtypes(rule, alltypes) for rule ∈ g.rules]
-    g.bychildtypes = [BitVector([g.childtypes[i1] == g.childtypes[i2] for i2 ∈ 1:length(g.rules)]) for i1 ∈ 1:length(g.rules)]
-    g.domains = Dict(type => BitArray(r ∈ g.bytype[type] for r ∈ 1:length(g.rules)) for type ∈ keys(g.bytype))
 end

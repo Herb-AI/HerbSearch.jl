@@ -1,6 +1,6 @@
 """
     get_passed_tests!(program::RuleNode, grammar::AbstractGrammar, symboltable::SymbolTable, tests::AbstractVector{<:IOExample},
-        prev_passed_tests::BitVector, angelic_conditions::AbstractVector{Union{Nothing,Int}}, config::FrAngelConfigAngelic)
+        prev_passed_tests::BitVector, angelic_conditions::Dict{UInt16, UInt8}, config::FrAngelConfigAngelic)
 
 Runs the program with all provided tests, and updates the `prev_passed_tests` vector with the results.
 
@@ -10,8 +10,7 @@ Runs the program with all provided tests, and updates the `prev_passed_tests` ve
 - `symboltable`: A symbol table for the grammar.
 - `tests`: A vector of `IOExample` objects representing the input-output test cases.
 - `prev_passed_tests`: A `BitVector` representing the tests that the program has previously passed.
-- `angelic_conditions`: A vector of integers representing the index of the child to replace with an angelic condition for each rule. 
-    If there is no angelic condition for a rule, the value is set to `nothing`.
+- `angelic_conditions`: A dictionary mapping indices of angelic condition candidates, to the child index that may be changed.
 - `config`: The configuration for angelic conditions of FrAngel.
 
 """
@@ -21,7 +20,7 @@ function get_passed_tests!(
     symboltable::SymbolTable,
     tests::AbstractVector{<:IOExample},
     prev_passed_tests::BitVector,
-    angelic_conditions::Dict{UInt16, UInt8},
+    angelic_conditions::Dict{UInt16,UInt8},
     config::FrAngelConfigAngelic
 )
     # If angelic -> evaluate optimistically
@@ -112,7 +111,7 @@ function random_partition(grammar::AbstractGrammar, rule_index::Int16, size::UIn
 end
 
 """
-    simplify_quick(program::RuleNode, grammar::AbstractGrammar, tests::AbstractVector{<:IOExample}, passed_tests::BitVector)::RuleNode
+    simplify_quick(program::RuleNode, grammar::AbstractGrammar, tests::AbstractVector{<:IOExample}, passed_tests::BitVector, fragment_base_rules_offset::Int16)::RuleNode
 
 Simplifies the provided program by replacing nodes with smaller nodes that pass the same tests.
 
@@ -121,6 +120,7 @@ Simplifies the provided program by replacing nodes with smaller nodes that pass 
 - `grammar`: The grammar rules of the program.
 - `tests`: A vector of `IOExample` objects representing the input-output test cases.
 - `passed_tests`: A BitVector representing the tests that the program has already passed.
+- `fragment_base_rules_offset`: The offset for fragment base/identity rules.
 
 # Returns
 The simplified program.
@@ -136,7 +136,6 @@ function simplify_quick(program::RuleNode, grammar::AbstractGrammar, tests::Abst
 
     program
 end
-
 
 """
     _simplify_quick_once(root::RuleNode, node::RuleNode, grammar::AbstractGrammar, tests::AbstractVector{<:IOExample}, 
@@ -207,7 +206,7 @@ Checks if the provided program passes all the tests that have been marked as pas
 
 # Returns
 Returns true if the program passes all the tests that have been marked as passed, false otherwise.
-    
+
 """
 function passes_the_same_tests_or_more(program::RuleNode, grammar::AbstractGrammar, tests::AbstractVector{<:IOExample}, passed_tests::BitVector)::Bool
     symboltable = SymbolTable(grammar)

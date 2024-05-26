@@ -260,7 +260,7 @@ end
         Num = |(0:9) | (Num + Num) | (Num - Num) | Fragment_Num
     end
     old_size = length(grammar.rules)
-    add_rules!(grammar, [RuleNode(15)])
+    add_fragment_rules!(grammar, [RuleNode(15)])
 
     @test length(grammar.rules) == old_size + 1
 

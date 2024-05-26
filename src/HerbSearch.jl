@@ -121,7 +121,7 @@ export
   add_fragments_prob!,
   add_angelic_conditions!,
   add_fragment_base_rules!,
-  add_rules!,
+  add_fragment_rules!,
   print_grammar,
 
   buildProgrammingProblemGrammar,

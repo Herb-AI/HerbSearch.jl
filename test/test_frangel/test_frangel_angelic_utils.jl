@@ -23,12 +23,12 @@ end
     problem = Problem(spec)
     rules_min = rules_minsize(grammar)
     symbol_min = symbols_minsize(grammar, rules_min)
-    angelic_conditions = Dict{UInt16, UInt8}()
+    angelic_conditions = Dict{UInt16,UInt8}()
     angelic_conditions[15] = 1
 
     rules_min = rules_minsize(grammar)
     symbol_min = symbols_minsize(grammar, rules_min)
-    angelic_conditions = Dict{UInt16, UInt8}()
+    angelic_conditions = Dict{UInt16,UInt8}()
     angelic_conditions[15] = 1
 
     config = FrAngelConfig(verbose_level=0, generation=FrAngelConfigGeneration(use_fragments_chance=0.5, use_angelic_conditions_chance=1, max_size=20))

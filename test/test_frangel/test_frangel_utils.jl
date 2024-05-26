@@ -115,7 +115,7 @@ end
             Num = Fragment_Num
 
         end
-        add_rules!(grammar_with_fragment_placeholders, [RuleNode(8), RuleNode(9)])
+        add_fragment_rules!(grammar_with_fragment_placeholders, [RuleNode(8), RuleNode(9)])
         add_fragments_prob!(grammar_with_fragment_placeholders, Float16(0.6), Int16(18), Int16(20))
 
         expected_probabilities = Vector{Real}([0.5, 0.5])

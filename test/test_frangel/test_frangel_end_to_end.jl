@@ -75,7 +75,7 @@ end
     angelic_conditions = Dict{UInt16, UInt8}()
     angelic_conditions[6] = 1
     angelic_conditions[7] = 1
-    config = FrAngelConfig(max_time=40, generation=FrAngelConfigGeneration(use_fragments_chance=Float16(0.5), use_angelic_conditions_chance=0))
+    config = FrAngelConfig(max_time=60, generation=FrAngelConfigGeneration(use_fragments_chance=Float16(0.5), use_angelic_conditions_chance=0))
 
     rules_min = rules_minsize(grammar)
     symbol_min = symbols_minsize(grammar, rules_min)

@@ -64,7 +64,7 @@ end
 function frangel(
     spec::AbstractVector{<:IOExample},
     config::FrAngelConfig,
-    angelic_conditions::Dict{UInt16, UInt8},
+    angelic_conditions::Dict{UInt16,UInt8},
     iter::ProgramIterator,
     rule_minsize::AbstractVector{UInt8},
     symbol_minsize::Dict{Symbol,UInt8}
@@ -192,7 +192,7 @@ function frangel(
                 end
                 cleanup_removed_rules!(grammar)
                 # Add fragments to grammar
-                add_rules!(grammar, fragments)
+                add_fragment_rules!(grammar, fragments)
                 add_fragments_prob!(grammar, config.generation.use_fragments_chance, fragment_base_rules_offset, fragment_rules_offset)
                 # Update rule_minsize and symbol_minsize        
                 for i in fragment_base_rules_offset+1:fragment_rules_offset

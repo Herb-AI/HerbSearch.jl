@@ -1,20 +1,22 @@
 """
-    resolve_angelic!(program::RuleNode, fragments::Set{RuleNode}, passing_tests::BitVector, grammar::AbstractGrammar, symboltable::SymbolTable, 
-        tests::AbstractVector{<:IOExample}, replacement_dir::Int, angelic_conditions::AbstractVector{Union{Nothing,Int}}, config::FrAngelConfig)::RuleNode
+    resolve_angelic!(program::RuleNode, passing_tests::BitVector, grammar::AbstractGrammar, symboltable::SymbolTable, tests::AbstractVector{<:IOExample}, 
+        replacement_dir::Int, angelic_conditions::Dict{UInt16,UInt8}, config::FrAngelConfig, fragment_base_rules_offset::Int16,
+        rule_minsize::AbstractVector{UInt8}, symbol_minsize::Dict{Symbol,UInt8})::RuleNode
 
 Resolve angelic values in the given program by generating random boolean expressions and replacing the holes in the expression.
 
 # Arguments
 - `program`: The program to resolve angelic conditions in.
-- `fragments`: A set of rule nodes representing the fragments of the program.
 - `passing_tests`: A BitVector representing the tests that the program has already passed.
 - `grammar`: The grammar rules of the program.
 - `symboltable`: A symbol table for the grammar.
 - `tests`: A vector of `IOExample` objects representing the input-output test cases.
 - `replacement_dir`: The direction of replacement; 1 for top-down, -1 for bottom-up.
-- `angelic_conditions`: A vector of integers representing the index of the child to replace, and the condition's type, with an angelic condition for each rule. 
-    If there is no angelic condition for a rule, the value is set to `nothing`.
+- `angelic_conditions`: A dictionary mapping indices of angelic condition candidates, to the child index that may be changed.
 - `config`: The configuration object for FrAngel.
+- `fragment_base_rules_offset`: The offset for fragment base/identity rules.
+- `rule_minsize`: A vector of minimum sizes for each production rule in the grammar. Can be obtained from [`rules_minsize`](@ref).
+- `symbol_minsize`: A dictionary with the minimum size achievable for each symbol in the grammar. Can be obtained from [`symbols_minsize`](@ref).
 
 # Returns
 The resolved program with angelic values replaced, or an unresolved program if it times out.
@@ -27,7 +29,7 @@ function resolve_angelic!(
     symboltable::SymbolTable,
     tests::AbstractVector{<:IOExample},
     replacement_dir::Int, # Direction of replacement; 1 -> top-down, -1 -> bottom-up
-    angelic_conditions::Dict{UInt16, UInt8},
+    angelic_conditions::Dict{UInt16,UInt8},
     config::FrAngelConfig,
     fragment_base_rules_offset::Int16,
     rule_minsize::AbstractVector{UInt8},
@@ -105,7 +107,7 @@ end
 
 """
     execute_angelic_on_input(symboltable::SymbolTable, program::RuleNode, grammar::AbstractGrammar, input::Dict{Symbol,Any}, 
-        expected_output::Any, max_attempts::Int, angelic_conditions::AbstractVector{Union{Nothing,Int}})::Bool
+        expected_output::Any, truthy::RuleNode, max_attempts::Int, angelic_conditions::Dict{UInt16,UInt8})::Bool
 
 Run test case `input` on `program` containing angelic conditions. This is done by optimistically evaluating the program, by generating different code paths
     and checking if any of them make the program pass the test case.
@@ -116,9 +118,9 @@ Run test case `input` on `program` containing angelic conditions. This is done b
 - `grammar`: The grammar rules of the program.
 - `input`: A dictionary where each key is a symbol used in the expression, and the value is the corresponding value to be used in the expression's evaluation.
 - `expected_output`: The expected output of the program.
+- `truthy`: A rulenode that is 'truthy', i.e. it always evaluates to true. It is used to replace angelified conditions.
 - `max_attempts`: The maximum number of attempts before assuming the angelic program cannot be resolved.
-- `angelic_conditions`: A vector of integers representing the index of the child to replace, and the condition's type, with an angelic condition for each rule. 
-    If there is no angelic condition for a rule, the value is set to `nothing`.
+- `angelic_conditions`: A dictionary mapping indices of angelic condition candidates, to the child index that may be changed.
 
 # Returns
 Whether the output of running `program` on `input` matches `output` within `max_attempts` attempts.
@@ -132,7 +134,7 @@ function execute_angelic_on_input(
     expected_output::Any,
     truthy::RuleNode,
     max_attempts::Int,
-    angelic_conditions::Dict{UInt16, UInt8}
+    angelic_conditions::Dict{UInt16,UInt8}
 )::Bool
     num_true, attempts = 0, 0
     # We check traversed code paths by prefix -> trie is efficient for this
@@ -163,7 +165,7 @@ function execute_angelic_on_input(
 end
 
 """
-    get_code_paths!(num_true::Int, curr::Vector{Char}, visited::DataStructures.Trie{Bool}, code_paths::Vector{String}, max_length::Int)
+    get_code_paths!(num_true::Int, curr::Vector{Char}, visited::DataStructures.Trie{Bool}, code_paths::Vector{Vector{Char}}, max_length::Int)
 
 Generate code paths to be used for angelic evaluation, and stores them in `code_paths`. The function recursively explores different sequences of `true` and `false` 
     values, which represent whether the next control statement will be skipped or not. Makes sure that the returned paths do not share prefix with visited paths.
@@ -199,15 +201,15 @@ function get_code_paths!(
 end
 
 """
-    create_angelic_expression(program::RuleNode, grammar::AbstractGrammar, angelic_conditions::AbstractVector{Union{Nothing,Int}})
+    create_angelic_expression(program::RuleNode, grammar::AbstractGrammar, truthy::RuleNode, angelic_conditions::Dict{UInt16,UInt8})
 
-Create an angelic expression that can be ran, while also keeping track of the code path.
+Create an angelic expression, i.e. replace all remaining holes with truthy trees so that the tree can be parsed and executed.
 
 # Arguments
 - `program`: The program to turn into an angelic expression.
 - `grammar`: The grammar rules of the program.
-- `angelic_conditions`: A vector of integers representing the index of the child to replace, and the condition's type, with an angelic condition for each rule. 
-    If there is no angelic condition for a rule, the value is set to `nothing`.
+- `truthy`: A rulenode that is 'truthy', i.e. it always evaluates to true. It is used to replace angelified conditions.
+- `angelic_conditions`: A dictionary mapping indices of angelic condition candidates, to the child index that may be changed.
 
 # Returns
 The generated angelic expression.
@@ -217,7 +219,7 @@ function create_angelic_expression(
     program::RuleNode,
     grammar::AbstractGrammar,
     truthy::RuleNode,
-    angelic_conditions::Dict{UInt16, UInt8}
+    angelic_conditions::Dict{UInt16,UInt8}
 )::Expr
     new_program = deepcopy(program)
     # BFS traversal
@@ -238,17 +240,16 @@ function create_angelic_expression(
 end
 
 """
-    clear_holes!(program::RuleNode, angelic_conditions::AbstractVector{Union{Nothing,Int}})
+    clear_holes!(program::RuleNode, angelic_conditions::Dict{UInt16,UInt8})
 
 Removes all subexpressions that are holes in the program, based on the angelic conditions. Modifies the program in-place.
 
 # Arguments
 - `program`: The program to remove holes from. Goes recursively through children.
-- `angelic_conditions`: A vector of integers representing the index of the child to replace, and the condition's type, with an angelic condition for each rule. 
-    If there is no angelic condition for a rule, the value is set to `nothing`.
+- `angelic_conditions`: A dictionary mapping indices of angelic condition candidates, to the child index that may be changed.
 
 """
-function clear_holes!(program::RuleNode, angelic_conditions::Dict{UInt16, UInt8})
+function clear_holes!(program::RuleNode, angelic_conditions::Dict{UInt16,UInt8})
     if haskey(angelic_conditions, program.ind)
         idx = angelic_conditions[program.ind]
         if program.children[idx] isa AbstractHole

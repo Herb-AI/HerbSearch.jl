@@ -1,22 +1,17 @@
 """
-    generate_random_program(grammar::AbstractGrammar, type::Symbol, fragments::Set{RuleNode}, config::FrAngelConfigGeneration, generate_with_angelic::Float16, 
-        angelic_conditions::AbstractVector{Union{Nothing,Int}}, max_size, disabled_fragments=false)::Union{RuleNode, Nothing}
+    generate_random_program(grammar::AbstractGrammar, type::Symbol, config::FrAngelConfigGeneration, fragment_base_rules_offset::Int16, 
+        max_size::UInt8, rule_minsize::AbstractVector{UInt8}, symbol_minsize::Dict{Symbol,UInt8})::RuleNode
 
-Generates a random program of the provided `type` using the provided `grammar`. The program is generated with a maximum size of `max_size` and can use fragments from the provided set.
+Generates a random program of the provided `type` using the provided `grammar`. The program is generated with a maximum size of `max_size`.
 
 # Arguments
 - `grammar`: The grammar rules of the program.
 - `type`: The type of the program to generate.
-- `fragments`: A set of RuleNodes representing the fragments that can be used in the program generation.
 - `config`: The configuration for program generation of FrAngel.
-- `generate_with_angelic`: A float representing the chance to generate a program with an angelic condition. Set to 0 if no such conditions are desired.
-- `angelic_conditions`: A vector of integers representing the index of the child to replace with an angelic condition for each rule. 
-    If there is no angelic condition for a rule, the value is set to `nothing`.
+- `fragment_base_rules_offset`: The offset for fragment base/identity rules.
 - `max_size`: The maximum size of the program to generate. If the value is too small, the function will use the minimum size of the type.
-- `disabled_fragments`: A boolean flag to disable the use of fragments in the program generation.
-
-# Note
-The values passed as `max_size` and `generate_with_angelic` to the function will be used over the `config` values.
+- `rule_minsize`: A vector of minimum sizes for each production rule in the grammar. Can be obtained from [`rules_minsize`](@ref).
+- `symbol_minsize`: A dictionary with the minimum size achievable for each symbol in the grammar. Can be obtained from [`symbols_minsize`](@ref).
 
 # Returns
 A random program of the provided type.
@@ -49,6 +44,26 @@ function generate_random_program(
     rule_node
 end
 
+"""
+    modify_and_replace_program_fragments!(program::RuleNode, fragments::AbstractVector{RuleNode}, fragment_base_rules_offset::Int16, fragment_rules_offset::Int16, 
+        config::FrAngelConfigGeneration, grammar::AbstractGrammar, rule_minsize::AbstractVector{UInt8}, symbol_minsize::Dict{Symbol,UInt8})::RuleNode
+
+Recursively modifies and replaces program fragments based on specified rules and configurations.
+
+# Arguments
+- `program`: The program to modify and replace fragments in.
+- `fragments`: The collection of fragments to choose from.
+- `fragment_base_rules_offset`: The offset for fragment base/identity rules.
+- `fragment_rules_offset`: The offset for fragment rules.
+- `config`: The configuration for program generation of FrAngel.
+- `grammar`: The grammar rules of the program.
+- `rule_minsize`: A vector of minimum sizes for each production rule in the grammar. Can be obtained from [`rules_minsize`](@ref).
+- `symbol_minsize`: A dictionary with the minimum size achievable for each symbol in the grammar. Can be obtained from [`symbols_minsize`](@ref).
+
+# Returns
+The modified program with replaced fragments.
+
+"""
 function modify_and_replace_program_fragments!(
     program::RuleNode,
     fragments::AbstractVector{RuleNode},
@@ -89,8 +104,8 @@ function modify_and_replace_program_fragments!(
 end
 
 """
-    random_modify_children!(grammar::AbstractGrammar, node::RuleNode, config::FrAngelConfigGeneration, generate_with_angelic::Float16, 
-        angelic_conditions::AbstractVector{Union{Nothing,Int}})
+    random_modify_children!(grammar::AbstractGrammar, node::RuleNode, config::FrAngelConfigGeneration, fragment_base_rules_offset::Int16, 
+        rule_minsize::AbstractVector{UInt8}, symbol_minsize::Dict{Symbol,UInt8})
 
 Randomly modifies the children of a given node. The modification can be either a new random program or a modification of the existing children.
 
@@ -98,12 +113,9 @@ Randomly modifies the children of a given node. The modification can be either a
 - `grammar`: The grammar rules of the program.
 - `node`: The node to modify the children of.
 - `config`: The configuration for program generation of FrAngel.
-- `generate_with_angelic`: A float representing the chance to generate a program with an angelic condition.
-- `angelic_conditions`: A vector of integers representing the index of the child to replace with an angelic condition for each rule. 
-    If there is no angelic condition for a rule, the value is set to `nothing`.
-
-# Returns
-Modifies the `node` directly.
+- `fragment_base_rules_offset`: The offset for fragment base/identity rules.
+- `rule_minsize`: A vector of minimum sizes for each production rule in the grammar. Can be obtained from [`rules_minsize`](@ref).
+- `symbol_minsize`: A dictionary with the minimum size achievable for each symbol in the grammar. Can be obtained from [`symbols_minsize`](@ref).
 
 """
 function random_modify_children!(
@@ -113,7 +125,7 @@ function random_modify_children!(
     fragment_base_rules_offset::Int16,
     rule_minsize::AbstractVector{UInt8},
     symbol_minsize::Dict{Symbol,UInt8}
-)::Nothing
+)
     for (index, child) in enumerate(node.children)
         if rand() < config.gen_similar_prob_new
             node.children[index] = generate_random_program(grammar, return_type(grammar, child), config, fragment_base_rules_offset, count_nodes(grammar, child) + config.similar_new_extra_size, rule_minsize, symbol_minsize)
@@ -124,7 +136,7 @@ function random_modify_children!(
 end
 
 """
-    get_replacements(node::RuleNode, grammar::AbstractGrammar)::AbstractVector{RuleNode}
+    get_replacements(node::RuleNode, grammar::AbstractGrammar, fragment_base_rules_offset::Int16)::AbstractVector{RuleNode}
 
 Finds all the possible replacements for a given node in the AST. 
 Looks for single-node trees corresponding to all variables and constants in the grammar, and node descendants of the same symbol.
@@ -132,9 +144,11 @@ Looks for single-node trees corresponding to all variables and constants in the 
 # Arguments
 - `node`: The node to find replacements for.
 - `grammar`: The grammar rules of the program.
+- `fragment_base_rules_offset`: The offset for fragment base/identity rules.
 
 # Returns
 A vector of RuleNodes representing all the possible replacements for the provided node, ordered by size.
+
 """
 function get_replacements(node::RuleNode, grammar::AbstractGrammar, fragment_base_rules_offset::Int16)::AbstractVector{RuleNode}
     replacements = Set{RuleNode}([])
@@ -192,8 +206,6 @@ Finds all the descendants of the same symbol for a given node in the AST.
 - `grammar`: The grammar rules of the program.
 - `replacements`: A set of RuleNodes to add the descendants to.
 
-# Returns
-Updates the `replacements` set with all the descendants of the same symbol for the provided node.
 """
 function get_descendant_replacements!(node::RuleNode, symbol::Symbol, grammar::AbstractGrammar, replacements::AbstractSet{RuleNode})
     for child in node.children
@@ -204,7 +216,22 @@ function get_descendant_replacements!(node::RuleNode, symbol::Symbol, grammar::A
     end
 end
 
-function add_angelic_conditions!(program::RuleNode, grammar::AbstractGrammar, angelic_conditions::Dict{UInt16, UInt8}, config::FrAngelConfigGeneration)
+"""
+    add_angelic_conditions!(program, grammar, angelic_conditions, config)
+
+Add angelic conditions to a program. This is done by replacing some nodes with holes.
+
+# Arguments
+- `program`: The program to modify.
+- `grammar`: The grammar rules of the program.
+- `angelic_conditions`: A dictionary mapping indices of angelic condition candidates, to the child index that may be changed.
+- `config`: The configuration for program generation of FrAngel.
+
+# Returns
+The modified program with angelic conditions added.
+
+"""
+function add_angelic_conditions!(program::RuleNode, grammar::AbstractGrammar, angelic_conditions::Dict{UInt16,UInt8}, config::FrAngelConfigGeneration)
     if isterminal(grammar, program.ind)
         return program
     end
