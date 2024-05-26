@@ -30,14 +30,13 @@ function get_passed_tests!(
         fails = 0
         for (index, test) in enumerate(tests)
             prev_passed_tests[index] = execute_angelic_on_input(symboltable, program, grammar, test.in, test.out, truthy, config.max_execute_attempts, angelic_conditions)
-            if prev_passed_tests[index]
+            if !prev_passed_tests[index]
                 fails += 1
                 if config.max_allowed_fails < fails / length(tests)
-                    prev_passed_tests = BitVector([false for i in tests])
+                    return nothing
                 end
             end
         end
-
         nothing
     else
         expr = rulenode2expr(program, grammar)
@@ -49,7 +48,6 @@ function get_passed_tests!(
                 prev_passed_tests[index] = false
             end
         end
-
         expr
     end
 end
