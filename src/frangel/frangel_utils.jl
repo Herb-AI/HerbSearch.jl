@@ -302,3 +302,49 @@ function _minsize!(grammar::AbstractGrammar, rule_index::Int, min_sizes::Abstrac
     min_sizes[rule_index] = size
     size
 end
+
+"""
+    update_min_sizes!(grammar::AbstractGrammar, fragment_base_rules_offset::Int16, fragment_rules_offset::Int16,
+        fragments::AbstractVector{RuleNode}, rule_minsize::AbstractVector{UInt8}, symbol_minsize::Dict{Symbol,UInt8})
+
+Updates the minimum sizes of the rules and symbols in the grammar. Called after adding the new fragment rules.
+
+# Arguments
+- `grammar`: The grammar rules of the program.
+- `fragment_base_rules_offset`: The offset for fragment base/identity rules.
+- `fragment_rules_offset`: The offset for fragment rules.
+- `fragments`: A set of the fragments mined to update the grammar iwth.
+- `rule_minsize`: A vector of minimum sizes for each production rule in the grammar. Can be obtained from [`rules_minsize`](@ref).
+- `symbol_minsize`: A dictionary with the minimum size achievable for each symbol in the grammar. Can be obtained from [`symbols_minsize`](@ref).
+
+"""
+function update_min_sizes!(grammar::AbstractGrammar, fragment_base_rules_offset::Int16, fragment_rules_offset::Int16,
+    fragments::AbstractVector{RuleNode}, rule_minsize::AbstractVector{UInt8}, symbol_minsize::Dict{Symbol,UInt8})
+
+    # Reset symbol minsizes    
+    for i in fragment_base_rules_offset+1:fragment_rules_offset
+        symbol_minsize[grammar.rules[i]] = 255
+    end
+
+    # For each fragment, update its rule, and possibly the return symbol
+    resize!(rule_minsize, length(grammar.rules))
+    for (i, fragment) in enumerate(fragments)
+        rule_minsize[fragment_rules_offset+i] = count_nodes(grammar, fragment)
+        ret_typ = return_type(grammar, fragment_rules_offset + i)
+        if haskey(symbol_minsize, ret_typ)
+            symbol_minsize[ret_typ] = min(symbol_minsize[ret_typ], rule_minsize[fragment_rules_offset+i])
+        else
+            symbol_minsize[ret_typ] = rule_minsize[fragment_rules_offset+i]
+        end
+    end
+
+    # Reset remaining rule minsizes
+    for i in fragment_base_rules_offset+1:fragment_rules_offset
+        if !isterminal(grammar, i)
+            rule_minsize[i] = symbol_minsize[grammar.rules[i]]
+        else
+            rule_minsize[i] = 255
+        end
+    end
+
+end

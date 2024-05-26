@@ -93,6 +93,13 @@ export
   FrAngelConfigGeneration,
   FrAngelConfigAngelic,
 
+  resolve_angelic!,
+  replace_next_angelic,
+  execute_angelic_on_input,
+  get_code_paths!,
+  create_angelic_expression,
+  clear_holes!,
+
   mine_fragments,
   remember_programs!,
   
@@ -101,37 +108,32 @@ export
   random_modify_children!,
   get_replacements,
   get_descendant_replacements!,
+  add_angelic_conditions!,
 
-  resolve_angelic!,
-  replace_next_angelic,
-  execute_angelic_on_input,
-  get_code_paths!,
-  create_angelic_expression,
-  clear_holes!,
+  buildProgrammingProblemGrammar,
+  print_grammar,
+  add_fragments_prob!,
+  setup_grammar_with_fragments!,
+  add_fragment_base_rules!,
+  add_fragment_rules!,
 
-  get_passed_tests,
+  FrAngelRandomIterator,
+  FrAngelRandomIteratorState,
+
+  get_passed_tests!,
   count_nodes,
   random_partition,
   simplify_quick,
   _simplify_quick_once,
-  simplify_slow,
   passes_the_same_tests_or_more,
   symbols_minsize,
-  _minsize!,
   rules_minsize,
-  add_fragments_prob!,
-  add_angelic_conditions!,
-  add_fragment_base_rules!,
-  add_fragment_rules!,
-  print_grammar,
-
-  buildProgrammingProblemGrammar,
-  FrAngelRandomIterator,
-  FrAngelRandomIteratorState,
+  _minsize!,
+  update_min_sizes!,
 
   LongHashMap,
   init_long_hash_map,
   lhm_put!,
   lhm_contains
-
+  
 end # module HerbSearch

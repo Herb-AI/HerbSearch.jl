@@ -128,6 +128,34 @@ function add_fragments_prob!(grammar::AbstractGrammar, fragments_chance::Float16
     end
 end
 
+
+"""
+    setup_grammar_with_fragments(grammar::AbstractGrammar, use_fragments_chance::Float16, rule_minsize::AbstractVector{UInt8})
+
+Sets up the grammar with fragments by adding fragment base rules (eg. `<symbol> = Fragment_<symbol>`), resizes the rule minimum size, and adds fragment probabilities.
+
+# Arguments
+- `grammar`: The grammar object to set up.
+- `use_fragments_chance`: The chance of using fragments.
+- `rule_minsize`: The minimum size of each rule.
+
+# Returns
+A tuple `(fragment_base_rules_offset, fragment_rules_offset)` representing the offsets of fragments base rules (i.e. the start and end indices of the fragments base rules).
+
+"""
+function setup_grammar_with_fragments!(grammar::AbstractGrammar, use_fragments_chance::Float16, rule_minsize::AbstractVector{UInt8})::Tuple{Int16,Int16}
+    fragment_base_rules_offset::Int16 = length(grammar.rules)
+    add_fragment_base_rules!(grammar)
+    fragment_rules_offset::Int16 = length(grammar.rules)
+
+    resize!(rule_minsize, fragment_rules_offset)
+    for i in fragment_base_rules_offset+1:fragment_rules_offset
+        rule_minsize[i] = 255
+    end
+    add_fragments_prob!(grammar, use_fragments_chance, fragment_base_rules_offset, fragment_rules_offset)
+    return (fragment_base_rules_offset, fragment_rules_offset)
+end
+
 """
     add_fragment_base_rules!(g::AbstractGrammar)
 

@@ -80,7 +80,7 @@ Updates the remembered programs by including `new_program` if it is simpler than
 - `passing_tests`: A BitVector representing the passing test set for the new program.
 - `new_program`: The new program to be considered for addition to the `old_remembered` dictionary.
 - `new_program_expr`: The expression of the new program, used to calculate its length. If `nothing`, the length is set to 0.
-- `fragments`: A set the fragments mined from the `old_remembered` dictionary.
+- `fragments`: A set of the fragments mined from the `old_remembered` dictionary.
 - `grammar`: The grammar rules of the program.
 
 # Returns

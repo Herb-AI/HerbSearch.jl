@@ -8,7 +8,7 @@ A configuration struct for FrAngel generation.
 - `use_fragments_chance::Float16`: The chance of using fragments during generation.
 - `use_entire_fragment_chance::Float16`: The chance of using the entire fragment during replacement over modifying a program's children.
 - `use_angelic_conditions_chance::Float16`: The chance of using angelic conditions during generation.
-- `similar_new_extra_size::Int`: The extra size allowed for newly generated children during replacement.
+- `similar_new_extra_size::UInt8`: The extra size allowed for newly generated children during replacement.
 - `gen_similar_prob_new::Float16`: The chance of generating a new child / replacing a node randomly. 
 
 """
@@ -27,10 +27,11 @@ end
 A configuration struct for the angelic mode of FrAngel.
 
 # Fields
-- `max_time::Float16`: The maximum time allowed for resolving angelic conditions.
+- `max_time::Float16`: The maximum time allowed for resolving a single angelic expression.
 - `boolean_expr_max_size::Int`: The maximum size of boolean expressions when resolving angelic conditions.
 - `max_execute_attempts::Int`: The maximal attempts of executing the program with angelic evaluation.
 - `max_allowed_fails::Float16`: The maximum allowed fraction of failed tests during evaluation before short-circuit failure.
+- `truthy_tree::Union{Nothing,RuleNode}`: A tree with truthy value used to replace holes during angelic execution.
 
 """
 @kwdef mutable struct FrAngelConfigAngelic
@@ -48,6 +49,9 @@ The full configuration struct for FrAngel. Includes generation and angelic sub-c
 
 # Fields
 - `max_time::Float16`: The maximum time allowed for execution of whole iterator.
+- `try_to_simplify::Bool`: Whether to try to simplify the program before mining fragments.
+- `compare_programs_by_length::Bool`: Whether to compare programs by length if they have same number of AST nodes.
+- `verbose_level::Int`: The verbosity level of the output. This will print the program and all intermediate steps for the first `verbose_level` checked programs.
 - `generation::FrAngelConfigGeneration`: The generation configuration for FrAngel.
 - `angelic::FrAngelConfigAngelic`: The configuration for angelic conditions of FrAngel.
 
@@ -69,25 +73,21 @@ function frangel(
     rule_minsize::AbstractVector{UInt8},
     symbol_minsize::Dict{Symbol,UInt8}
 )
+    # Setup algorithm
     remembered_programs = Dict{BitVector,Tuple{RuleNode,Int,Int}}()
+    visited = init_long_hash_map()
     fragments = Vector{RuleNode}()
+
+    verbose_level = config.verbose_level
     grammar = iter.grammar
-    fragment_base_rules_offset::Int16 = length(grammar.rules)
-    add_fragment_base_rules!(grammar)
-    fragment_rules_offset::Int16 = length(grammar.rules)
-    resize!(rule_minsize, fragment_rules_offset)
-    for i in fragment_base_rules_offset+1:fragment_rules_offset
-        rule_minsize[i] = 255
-    end
     symboltable = SymbolTable(grammar)
 
-    add_fragments_prob!(grammar, config.generation.use_fragments_chance, fragment_base_rules_offset, fragment_rules_offset)
-
+    # Setup grammar with fragments
+    (fragment_base_rules_offset, fragment_rules_offset) = setup_grammar_with_fragments!(grammar, config.generation.use_fragments_chance, rule_minsize)
     state = nothing
-    visited = init_long_hash_map()
     start_time = time()
-    verbose_level = config.verbose_level
 
+    # Set truthy tree if not provided
     if isnothing(config.angelic.truthy_tree) && config.generation.use_angelic_conditions_chance != 0
         res = false
         truthy_tree = nothing
@@ -109,6 +109,7 @@ function frangel(
         println("Minimal size per symbol: ", symbol_minsize)
     end
 
+    # Main loop
     iterationCount, checkedProgram = 0, 0
     while time() - start_time < config.max_time
         iterationCount += 1
@@ -122,8 +123,9 @@ function frangel(
 
         use_angelic = config.generation.use_angelic_conditions_chance != 0 && rand() < config.generation.use_angelic_conditions_chance
 
-        # Generalize these two procedures at some point
+        # Modify the program with fragments
         program = modify_and_replace_program_fragments!(program, fragments, fragment_base_rules_offset, fragment_rules_offset, config.generation, grammar, rule_minsize, symbol_minsize, use_angelic)
+        # Modify the program with angelic conditions
         if use_angelic
             program = add_angelic_conditions!(program, grammar, angelic_conditions)
         end
@@ -175,12 +177,10 @@ function frangel(
             return simplify_quick(program, grammar, spec, passed_tests, fragment_base_rules_offset)
         end
 
+        # Update remember programs and fragments
         if config.generation.use_fragments_chance != 0
-            # Update grammar with fragments
-            if !config.compare_programs_by_length
-                program_expr = nothing
-            end
-            fragments, updatedFragments = remember_programs!(remembered_programs, passed_tests, program, program_expr, fragments, grammar)
+            fragments, updatedFragments = remember_programs!(remembered_programs, passed_tests, program, (!config.compare_programs_by_length ? nothing : program_expr), fragments, grammar)
+
             if checkedProgram <= verbose_level
                 println("---- Fragments ----")
                 for f in fragments
@@ -188,40 +188,22 @@ function frangel(
                 end
                 println("--------------------")
             end
+
+            # Only run if there is a change in remembered programs
             if updatedFragments
-                # Remove old fragments from grammar (by resetting to base grammar) / remove all rules aftere fragment_rules_offset
+                # Remove old fragments from grammar (by removing fragment rules)
                 for i in reverse(fragment_rules_offset+1:length(grammar.rules))
                     remove_rule!(grammar, i)
                 end
                 cleanup_removed_rules!(grammar)
-                # Add fragments to grammar
+
+                # Add new fragments to grammar and update probabilities
                 add_fragment_rules!(grammar, fragments)
                 add_fragments_prob!(grammar, config.generation.use_fragments_chance, fragment_base_rules_offset, fragment_rules_offset)
-                # Update rule_minsize and symbol_minsize        
-                for i in fragment_base_rules_offset+1:fragment_rules_offset
-                    symbol_minsize[grammar.rules[i]] = 255
-                end
-                resize!(rule_minsize, length(grammar.rules))
-                for i in fragment_base_rules_offset+1:fragment_rules_offset
-                    symbol_minsize[grammar.rules[i]] = 255
-                end
 
-                for (i, fragment) in enumerate(fragments)
-                    rule_minsize[fragment_rules_offset+i] = count_nodes(grammar, fragment)
-                    ret_typ = return_type(grammar, fragment_rules_offset + i)
-                    if haskey(symbol_minsize, ret_typ)
-                        symbol_minsize[ret_typ] = min(symbol_minsize[ret_typ], rule_minsize[fragment_rules_offset+i])
-                    else
-                        symbol_minsize[ret_typ] = rule_minsize[fragment_rules_offset+i]
-                    end
-                end
-                for i in fragment_base_rules_offset+1:fragment_rules_offset
-                    if !isterminal(grammar, i)
-                        rule_minsize[i] = symbol_minsize[grammar.rules[i]]
-                    else
-                        rule_minsize[i] = 255
-                    end
-                end
+                # Update minimal sizes
+                update_min_sizes!(grammar, fragment_base_rules_offset, fragment_rules_offset, fragments, rule_minsize, symbol_minsize)
+
                 if checkedProgram <= verbose_level
                     println("Grammar:")
                     print_grammar(grammar)
