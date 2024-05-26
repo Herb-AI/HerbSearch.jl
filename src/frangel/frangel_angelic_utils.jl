@@ -44,8 +44,13 @@ function resolve_angelic!(
         success = false
         start_time = time()
         max_time = config.angelic.max_time
+        visited = Set{RuleNode}()
         while time() - start_time < max_time
             boolean_expr = generate_random_program(grammar, :Bool, config.generation, fragment_base_rules_offset, angelic.boolean_expr_max_size, rule_minsize, symbol_minsize)
+            if boolean_expr in visited
+                continue
+            end
+            push!(visited, boolean_expr)
             new_program = replace_next_angelic(program, boolean_expr, replacement_index)
             get_passed_tests!(new_program, grammar, symboltable, tests, new_tests, angelic_conditions, angelic)
             # If the new program passes all the tests the original program did, replacement is successful
@@ -143,6 +148,9 @@ function execute_angelic_on_input(
     while num_true < max_attempts
         code_paths = Vector{Vector{Char}}()
         get_code_paths!(num_true, Vector{Char}(), visited, code_paths, max_attempts - attempts)
+        if isempty(code_paths)
+            return false
+        end
         for code_path in code_paths
             # println("Attempt: ", code_path)
             # Create actual_code_path here to keep reference for simpler access later
@@ -186,11 +194,11 @@ function get_code_paths!(
     max_length::Int
 )
     str_curr = String(curr)
-    if (length(curr) >= max_length || any(v -> v.is_key, partial_path(visited, str_curr)))
+    if (length(curr) > max_length || any(v -> v.is_key, partial_path(visited, str_curr)))
         return
     end
     if num_true == 0
-        push!(code_paths, curr)
+        push!(code_paths, deepcopy(curr))
         return
     end
     push!(curr, '1')
