@@ -66,6 +66,7 @@ The modified program with replaced fragments.
 
 """
 function modify_and_replace_program_fragments!(
+    root::RuleNode,
     program::RuleNode,
     fragments::AbstractVector{RuleNode},
     fragment_base_rules_offset::Int16,
@@ -74,24 +75,47 @@ function modify_and_replace_program_fragments!(
     grammar::AbstractGrammar,
     rule_minsize::AbstractVector{UInt8},
     symbol_minsize::Dict{Symbol,UInt8},
-    use_angelic::Bool
+    fragment_modifications::Dict{UInt16,AbstractVector{Tuple{AbstractVector{UInt8},RuleNode}}},
+    use_angelic::Bool=false,
+    path::AbstractVector{UInt8} = Vector{UInt8}(),
 )::RuleNode
     if program.ind > fragment_base_rules_offset && program.ind <= fragment_rules_offset
         fragment_rule_index = program.children[1].ind
         # a fragment was found
 
-        if rand() < config.use_entire_fragment_chance
-            # use fragment as is
-            if use_angelic
-                return deepcopy(fragments[fragment_rule_index-fragment_rules_offset])
+        if haskey(fragment_modifications, fragment_rule_index) || use_angelic
+            temp_modifications = Vector{Tuple{AbstractVector{UInt8},RuleNode}}()
+            # revert the previous modifications    
+            if haskey(fragment_modifications, fragment_rule_index)
+                for (path, modification) in fragment_modifications[fragment_rule_index]
+                    prev = swap_node_prev(root, modification, path)
+                    push!(temp_modifications, (path, prev))
+                end
             end
 
-            return fragments[fragment_rule_index-fragment_rules_offset]
-        else
-            # modify the fragment
-            modified_fragment = deepcopy(fragments[fragment_rule_index-fragment_rules_offset])
-            random_modify_children!(grammar, modified_fragment, config, fragment_base_rules_offset, rule_minsize, symbol_minsize)
-            return modified_fragment
+            fragment = deepcopy(fragments[fragment_rule_index-fragment_rules_offset])
+        
+            # apply them again
+            for (path, modification) in temp_modifications
+                swap_node(root, modification, path)
+            end
+
+            if rand() < config.use_entire_fragment_chance
+                return fragment
+            else
+                random_modify_children!(grammar, fragment, config, fragment_base_rules_offset, rule_minsize, symbol_minsize, fragment_modifications, path, false)
+                return fragment
+            end
+        else 
+            fragment = fragments[fragment_rule_index-fragment_rules_offset]
+            fragment_modifications[fragment_rule_index] = Vector{Tuple{AbstractVector{UInt8},RuleNode}}()
+
+            if rand() < config.use_entire_fragment_chance
+                return fragment
+            else
+                random_modify_children!(grammar, fragment, config, fragment_base_rules_offset, rule_minsize, symbol_minsize, fragment_modifications, path, true, UInt16(fragment_rule_index))
+                return fragment
+            end
         end
     elseif program.ind <= fragment_base_rules_offset
         # traverse the tree to find fragments to replace
@@ -100,7 +124,7 @@ function modify_and_replace_program_fragments!(
         end
 
         for (index, child) in enumerate(program.children)
-            program.children[index] = modify_and_replace_program_fragments!(child, fragments, fragment_base_rules_offset, fragment_rules_offset, config, grammar, rule_minsize, symbol_minsize, use_angelic)
+            program.children[index] = modify_and_replace_program_fragments!(root, child, fragments, fragment_base_rules_offset, fragment_rules_offset, config, grammar, rule_minsize, symbol_minsize, fragment_modifications, use_angelic, [path; UInt8(index)])
         end
 
         program
@@ -130,13 +154,20 @@ function random_modify_children!(
     config::FrAngelConfigGeneration,
     fragment_base_rules_offset::Int16,
     rule_minsize::AbstractVector{UInt8},
-    symbol_minsize::Dict{Symbol,UInt8}
+    symbol_minsize::Dict{Symbol,UInt8},
+    fragment_modifications::Dict{UInt16,AbstractVector{Tuple{AbstractVector{UInt8},RuleNode}}},
+    path::AbstractVector{UInt8}=Vector{UInt8}(),
+    update_modifications::Bool=false,
+    fragment_ind::UInt16=UInt16(0)
 )
     for (index, child) in enumerate(node.children)
         if rand() < config.gen_similar_prob_new
+            if update_modifications
+                push!(fragment_modifications[fragment_ind], ([path; UInt8(index)],deepcopy(child)))
+            end
             node.children[index] = generate_random_program(grammar, return_type(grammar, child), config, fragment_base_rules_offset, count_nodes(grammar, child) + config.similar_new_extra_size, rule_minsize, symbol_minsize)
         else
-            random_modify_children!(grammar, child, config, fragment_base_rules_offset, rule_minsize, symbol_minsize)
+            random_modify_children!(grammar, child, config, fragment_base_rules_offset, rule_minsize, symbol_minsize, fragment_modifications, [path; UInt8(index)], update_modifications, fragment_ind)
         end
     end
 end
@@ -258,4 +289,51 @@ function add_angelic_conditions!(program::RuleNode, grammar::AbstractGrammar, an
     end
 
     program
+end
+
+
+function swap_node(expr::AbstractRuleNode, new_expr::AbstractRuleNode, path::Vector{Int})
+    if length(path) == 0
+        return new_expr
+    end
+    if length(path) == 1
+        expr.children[path[begin]] = new_expr
+    else
+        swap_node(expr.children[path[begin]], new_expr, path[2:end])
+    end
+end
+
+function swap_node_t(expr::AbstractRuleNode, new_expr::AbstractRuleNode, path::Vector{UInt8})
+    if length(path) == 0
+        return new_expr
+    end
+    if length(path) == 1
+        @assert expr.children[path[begin]] == new_expr
+        expr.children[path[begin]] = new_expr
+    else
+        swap_node(expr.children[path[begin]], new_expr, path[2:end])
+    end
+end
+function swap_node(expr::AbstractRuleNode, new_expr::AbstractRuleNode, path::Vector{UInt8})
+    if length(path) == 0
+        return new_expr
+    end
+    if length(path) == 1
+        expr.children[path[begin]] = new_expr
+    else
+        swap_node(expr.children[path[begin]], new_expr, path[2:end])
+    end
+end
+
+function swap_node_prev(expr::AbstractRuleNode, new_expr::AbstractRuleNode, path::Vector{UInt8})::AbstractRuleNode
+    if length(path) == 0
+        return expr
+    end
+    if length(path) == 1
+        prev = expr.children[path[begin]]
+        expr.children[path[begin]] = new_expr
+        prev
+    else
+        swap_node_prev(expr.children[path[begin]], new_expr, path[2:end])
+    end
 end
