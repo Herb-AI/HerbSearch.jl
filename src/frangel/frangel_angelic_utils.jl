@@ -44,13 +44,14 @@ function resolve_angelic!(
         success = false
         start_time = time()
         max_time = config.angelic.max_time
-        visited = Set{RuleNode}()
+        visited = init_long_hash_map()
         while time() - start_time < max_time
             boolean_expr = generate_random_program(grammar, :Bool, config.generation, fragment_base_rules_offset, angelic.boolean_expr_max_size, rule_minsize, symbol_minsize)
-            if boolean_expr in visited
+            program_hash = hash(boolean_expr)
+            if lhm_contains(visited, program_hash)
                 continue
             end
-            push!(visited, boolean_expr)
+            lhm_put!(visited, program_hash)
             new_program = replace_next_angelic(program, boolean_expr, replacement_index)
             get_passed_tests!(new_program, grammar, symboltable, tests, new_tests, angelic_conditions, angelic)
             # If the new program passes all the tests the original program did, replacement is successful
