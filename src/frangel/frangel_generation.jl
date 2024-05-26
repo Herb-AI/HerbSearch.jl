@@ -80,7 +80,7 @@ function modify_and_replace_program_fragments!(
 
         if rand() < config.use_entire_fragment_chance
             # use fragment as is
-            return fragments[fragment_rule_index-fragment_rules_offset]
+            return deepcopy(fragments[fragment_rule_index-fragment_rules_offset])
         else
             # modify the fragment
             modified_fragment = deepcopy(fragments[fragment_rule_index-fragment_rules_offset])
@@ -245,7 +245,7 @@ function add_angelic_conditions!(program::RuleNode, grammar::AbstractGrammar, an
             end
         end
 
-        program.children[angelic_condition_ind] = Hole(grammar.domains[return_type(grammar, program.children[angelic_condition_ind].ind)])
+        program.children[angelic_condition_ind] = Hole(grammar.domains[grammar.childtypes[program.ind][angelic_condition_ind]])
     else
         for (index, child) in enumerate(program.children)
             program.children[index] = add_angelic_conditions!(child, grammar, angelic_conditions, config)

@@ -1,13 +1,13 @@
-"""
-    FrAngelRandomIterator(rule_minsize::AbstractVector{UInt8}, symbol_minsize::Dict{Symbol,UInt8})
+Base.@doc """
+    @programiterator FrAngelRandomIterator(rule_minsize::AbstractVector{UInt8}, symbol_minsize::Dict{Symbol,UInt8})
 
 A custom iterator for FrAngel that generates random programs.
 
 # Arguments
 - `rule_minsize`: A vector of minimum sizes for each production rule in the grammar. Can be obtained from [`rules_minsize`](@ref).
 - `symbol_minsize`: A dictionary with the minimum size achievable for each symbol in the grammar. Can be obtained from [`symbols_minsize`](@ref).
+""" FrAngelRandomIterator
 
-"""
 @programiterator FrAngelRandomIterator(
     rule_minsize::AbstractVector{UInt8},
     symbol_minsize::Dict{Symbol,UInt8}
