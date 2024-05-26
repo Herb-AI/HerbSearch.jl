@@ -84,7 +84,7 @@ function frangel(
     add_fragments_prob!(grammar, config.generation.use_fragments_chance, fragment_base_rules_offset, fragment_rules_offset)
 
     state = nothing
-    visited = Set{RuleNode}()
+    visited = init_long_hash_map()
     start_time = time()
     verbose_level = config.verbose_level
 
@@ -129,10 +129,11 @@ function frangel(
         end
 
         # Do not check visited program space
-        if program in visited
+        program_hash = hash(program)
+        if lhm_contains(visited, program_hash)
             continue
         end
-        push!(visited, program)
+        lhm_put!(visited, program_hash)
 
         checkedProgram += 1
         if checkedProgram <= verbose_level

@@ -45,6 +45,7 @@ include("frangel/frangel_generation.jl")
 include("frangel/frangel_angelic_utils.jl")
 include("frangel/frangel_random_iterator.jl")
 include("frangel/frangel_grammar_utils.jl")
+include("frangel/long_hash_map.jl")
 
 export 
   ProgramIterator,
@@ -126,6 +127,11 @@ export
 
   buildProgrammingProblemGrammar,
   FrAngelRandomIterator,
-  FrAngelRandomIteratorState
+  FrAngelRandomIteratorState,
+
+  LongHashMap,
+  init_long_hash_map,
+  lhm_put!,
+  lhm_contains
 
 end # module HerbSearch
