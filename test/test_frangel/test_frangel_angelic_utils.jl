@@ -58,7 +58,7 @@ end
             p, state = iterate(iterator)
         end
         println("Program to be 'angelified': ", p)
-        p = add_angelic_conditions!(p, grammar, angelic_conditions, config.generation)
+        p = add_angelic_conditions!(p, grammar, angelic_conditions)
         println("Program after 'angelification': ", p)
 
         @test contains_hole(p) && number_of_holes(p) == 1

@@ -27,7 +27,7 @@
         config = FrAngelConfigGeneration(use_entire_fragment_chance=use_entire_fragment_chance)
 
         # execute
-        program = modify_and_replace_program_fragments!(program_to_modify, fragments, fragment_base_rules_offset, fragment_rules_offset, config, grammar, rule_minsize, symbol_minsize)
+        program = modify_and_replace_program_fragments!(program_to_modify, fragments, fragment_base_rules_offset, fragment_rules_offset, config, grammar, rule_minsize, symbol_minsize, false)
         # verify
         @test program == expected_program
     end
@@ -83,7 +83,7 @@ end
         angelic_conditions[2] = 1
 
         # execute
-        program = add_angelic_conditions!(program, grammar, angelic_conditions, config.generation)
+        program = add_angelic_conditions!(program, grammar, angelic_conditions)
 
         # verify
         expected = RuleNode(2, [Hole(grammar.domains[return_type(grammar, 4)]), RuleNode(3, [RuleNode(6, [RuleNode(8)])])])

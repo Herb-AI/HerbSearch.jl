@@ -46,7 +46,7 @@ end
 
 """
     modify_and_replace_program_fragments!(program::RuleNode, fragments::AbstractVector{RuleNode}, fragment_base_rules_offset::Int16, fragment_rules_offset::Int16, 
-        config::FrAngelConfigGeneration, grammar::AbstractGrammar, rule_minsize::AbstractVector{UInt8}, symbol_minsize::Dict{Symbol,UInt8})::RuleNode
+        config::FrAngelConfigGeneration, grammar::AbstractGrammar, rule_minsize::AbstractVector{UInt8}, symbol_minsize::Dict{Symbol,UInt8}, use_angelic::Bool)::RuleNode
 
 Recursively modifies and replaces program fragments based on specified rules and configurations.
 
@@ -59,6 +59,7 @@ Recursively modifies and replaces program fragments based on specified rules and
 - `grammar`: The grammar rules of the program.
 - `rule_minsize`: A vector of minimum sizes for each production rule in the grammar. Can be obtained from [`rules_minsize`](@ref).
 - `symbol_minsize`: A dictionary with the minimum size achievable for each symbol in the grammar. Can be obtained from [`symbols_minsize`](@ref).
+- `use_angelic`: A boolean flag indicating whether angelic conditions will be used.
 
 # Returns
 The modified program with replaced fragments.
@@ -72,7 +73,8 @@ function modify_and_replace_program_fragments!(
     config::FrAngelConfigGeneration,
     grammar::AbstractGrammar,
     rule_minsize::AbstractVector{UInt8},
-    symbol_minsize::Dict{Symbol,UInt8}
+    symbol_minsize::Dict{Symbol,UInt8},
+    use_angelic::Bool
 )::RuleNode
     if program.ind > fragment_base_rules_offset && program.ind <= fragment_rules_offset
         fragment_rule_index = program.children[1].ind
@@ -80,6 +82,10 @@ function modify_and_replace_program_fragments!(
 
         if rand() < config.use_entire_fragment_chance
             # use fragment as is
+            if use_angelic
+                return deepcopy(fragments[fragment_rule_index-fragment_rules_offset])
+            end
+
             return fragments[fragment_rule_index-fragment_rules_offset]
         else
             # modify the fragment
@@ -94,7 +100,7 @@ function modify_and_replace_program_fragments!(
         end
 
         for (index, child) in enumerate(program.children)
-            program.children[index] = modify_and_replace_program_fragments!(child, fragments, fragment_base_rules_offset, fragment_rules_offset, config, grammar, rule_minsize, symbol_minsize)
+            program.children[index] = modify_and_replace_program_fragments!(child, fragments, fragment_base_rules_offset, fragment_rules_offset, config, grammar, rule_minsize, symbol_minsize, use_angelic)
         end
 
         program
@@ -217,7 +223,7 @@ function get_descendant_replacements!(node::RuleNode, symbol::Symbol, grammar::A
 end
 
 """
-    add_angelic_conditions!(program, grammar, angelic_conditions, config)
+    add_angelic_conditions!(program, grammar, angelic_conditions)
 
 Add angelic conditions to a program. This is done by replacing some nodes with holes.
 
@@ -225,30 +231,29 @@ Add angelic conditions to a program. This is done by replacing some nodes with h
 - `program`: The program to modify.
 - `grammar`: The grammar rules of the program.
 - `angelic_conditions`: A dictionary mapping indices of angelic condition candidates, to the child index that may be changed.
-- `config`: The configuration for program generation of FrAngel.
 
 # Returns
 The modified program with angelic conditions added.
 
 """
-function add_angelic_conditions!(program::RuleNode, grammar::AbstractGrammar, angelic_conditions::Dict{UInt16,UInt8}, config::FrAngelConfigGeneration)
+function add_angelic_conditions!(program::RuleNode, grammar::AbstractGrammar, angelic_conditions::Dict{UInt16,UInt8})
     if isterminal(grammar, program.ind)
         return program
     end
 
-    if haskey(angelic_conditions, program.ind) && rand() < config.use_angelic_conditions_chance
+    if haskey(angelic_conditions, program.ind)
         angelic_condition_ind = angelic_conditions[program.ind]
 
         for (index, child) in enumerate(program.children)
             if index != angelic_condition_ind
-                program.children[index] = add_angelic_conditions!(child, grammar, angelic_conditions, config)
+                program.children[index] = add_angelic_conditions!(child, grammar, angelic_conditions)
             end
         end
 
         program.children[angelic_condition_ind] = Hole(grammar.domains[grammar.childtypes[program.ind][angelic_condition_ind]])
     else
         for (index, child) in enumerate(program.children)
-            program.children[index] = add_angelic_conditions!(child, grammar, angelic_conditions, config)
+            program.children[index] = add_angelic_conditions!(child, grammar, angelic_conditions)
         end
     end
 

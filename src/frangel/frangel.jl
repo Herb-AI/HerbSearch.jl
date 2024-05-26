@@ -120,10 +120,12 @@ function frangel(
             println(program)
         end
 
+        use_angelic = config.generation.use_angelic_conditions_chance != 0 && rand() < config.generation.use_angelic_conditions_chance
+
         # Generalize these two procedures at some point
-        program = modify_and_replace_program_fragments!(program, fragments, fragment_base_rules_offset, fragment_rules_offset, config.generation, grammar, rule_minsize, symbol_minsize)
-        if config.generation.use_angelic_conditions_chance != 0
-            program = add_angelic_conditions!(program, grammar, angelic_conditions, config.generation)
+        program = modify_and_replace_program_fragments!(program, fragments, fragment_base_rules_offset, fragment_rules_offset, config.generation, grammar, rule_minsize, symbol_minsize, use_angelic)
+        if use_angelic
+            program = add_angelic_conditions!(program, grammar, angelic_conditions)
         end
 
         # Do not check visited program space
