@@ -1,4 +1,4 @@
-const DEFAULT_CAPACITY = 262_144
+const DEFAULT_CAPACITY = 32768
 const LOAD_FACTOR = 0.8
 
 mutable struct LongHashMap
