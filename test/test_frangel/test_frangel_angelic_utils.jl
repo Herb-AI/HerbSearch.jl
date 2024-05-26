@@ -1,3 +1,5 @@
+using DataStructures
+
 grammar = @cfgrammar begin
     Num = |(0:10)
     Num = x | (Num + Num)
@@ -153,5 +155,33 @@ end
 
         @test_throws Exception execute_on_input(st, angelic_expr, Dict(:x => 0)) # truthy case should throw an error
         @test apath == ['1'] # and not enter the if-statement afterwards
+    end
+end
+
+@testset "test_code_paths" begin
+    @testset "0-true flows" begin
+        code_paths = Vector{Vector{Char}}()
+        get_code_paths!(0, Vector{Char}(), DataStructures.Trie{Bool}(), code_paths, 2)
+        @test code_paths == [[]]
+    end
+
+    @testset "1-true flows" begin
+        code_paths = Vector{Vector{Char}}()
+        get_code_paths!(1, Vector{Char}(), DataStructures.Trie{Bool}(), code_paths, 2)
+        @test code_paths == [['1'], ['0','1']]
+    end
+
+    @testset "2-true flows" begin
+        code_paths = Vector{Vector{Char}}()
+        get_code_paths!(2, Vector{Char}(), DataStructures.Trie{Bool}(), code_paths, 3)
+        @test code_paths == [['1','1'], ['1','0','1'], ['0','1','1']]
+    end
+
+    @testset "2-true flows, some visited" begin
+        code_paths = Vector{Vector{Char}}()
+        visited = DataStructures.Trie{Bool}()
+        visited[String(['0'])] = true
+        get_code_paths!(2, Vector{Char}(), visited, code_paths, 3)
+        @test code_paths == [['1','1'], ['1','0','1']]
     end
 end
