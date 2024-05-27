@@ -77,18 +77,33 @@ function Base.iterate(iter::NewProgramsIterator, state::NewProgramsState)
     return nothing
 end
 
-function calculate_rule_cost_prob(rule_index, grammar, log_base=2)
+"""
+    calculate_rule_cost_prob(rule_index::Int, grammar::ContextSensitiveGrammar, log_base::Int=2)
+
+Calculate cost of rule `rule_index` in `grammar` based on its probability.
+
+``cost = -log_{base}(probability)``
+"""
+function calculate_rule_cost_prob(rule_index::Int, grammar::ContextSensitiveGrammar, log_base::Int=2)
     log_prob = grammar.log_probabilities[rule_index] / log(log_base)
     return convert(Int64, round(-log_prob))
 end
 
-function calculate_rule_cost_size(rule_index, grammar)
+"""
+    calculate_rule_cost_size(::Int, ::ContextSensitiveGrammar)
+
+Calculate rule cost based on size.
+
+This will always return 1.
+"""
+function calculate_rule_cost_size(::Int, ::ContextSensitiveGrammar)
     return 1
 end
 
 """
-    calculate_program_cost(program::RuleNode, grammar::ContextSensitiveGrammar)  
-Calculates the cost of a program by summing up the cost of the children and the cost of the rule
+    calculate_program_cost(program::RuleNode, grammar::ContextSensitiveGrammar)
+
+Calculates the cost of a program by summing up the cost of the children and the cost of the rule.
 """
 function calculate_program_cost(program::RuleNode, grammar::ContextSensitiveGrammar)
     cost_children = sum([calculate_program_cost(child, grammar) for child ∈ program.children], init=0)

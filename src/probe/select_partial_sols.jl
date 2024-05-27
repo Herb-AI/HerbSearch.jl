@@ -76,6 +76,11 @@ function selectpsol_all_cheapest(partial_sols::Vector{ProgramCache}, ::Set{Progr
     return collect(Iterators.flatten(values(mapping)))
 end
 
+"""
+    select_partial_solution(partial_sols::Vector{ProgramCacheTrace}, all_selected_psols::Set{ProgramCacheTrace})
+
+Select five programs with the highest reward.
+"""
 function select_partial_solution(partial_sols::Vector{ProgramCacheTrace}, all_selected_psols::Set{ProgramCacheTrace})
     if isempty(partial_sols)
         return Vector{ProgramCache}()

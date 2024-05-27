@@ -72,10 +72,10 @@ end
 """
     contains_rule(program::RuleNode, rule_index::Int)
 
-Check if a given `RuleNode` contains has used a derivation rule with the specified `rule_index`
+Check if a given `program` contains a derivation rule with the specified `rule_index`.
 
 # Arguments
-- `program::RuleNode`: The `RuleNode` to check.
+- `program::RuleNode`: The `program` to check.
 - `rule_index::Int`: The index of the rule to check for.
 
 """

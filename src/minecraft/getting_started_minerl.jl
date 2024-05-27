@@ -25,5 +25,5 @@ if !(@isdefined environment)
 end
 print_logo()
 iter = HerbSearch.GuidedSearchTraceIterator(minerl_grammar, :SEQ)
-program = @time probe(Vector{Trace}(), iter, 3000000, 6)
+program = @time probe(Vector{Trace}(), iter, max_time=3000000, cycle_length=6)
  

@@ -31,7 +31,7 @@ end
 """
     close_env(environment::Environment)
 
-Close environment.
+Close `environment`.
 """
 function close_env(environment::Environment)
     environment.env.close()
@@ -40,7 +40,7 @@ end
 """
     reset_env(environment::Environment) 
 
-Hard reset environment.
+Hard reset `environment`.
 """
 function reset_env(environment::Environment)
     env = environment.env
@@ -94,7 +94,7 @@ function get_xyz_from_obs(obs)::Tuple{Float64,Float64,Float64}
 end
 
 """
-    soft_reset(environment::Environment)
+    soft_reset_env(environment::Environment)
 
 Reset player position to `environment.start_pos`.
 """
@@ -116,7 +116,7 @@ end
 """
     evaluate_trace_minerl(prog::AbstractRuleNode, grammar::ContextSensitiveGrammar, environment::Environment, show_moves::Bool)
 
-Evaluate in MineRL environment.
+Evaluate in MineRL `environment`.
 """
 function evaluate_trace_minerl(prog::AbstractRuleNode, grammar::ContextSensitiveGrammar, environment::Environment, show_moves::Bool)
     soft_reset_env(environment)
