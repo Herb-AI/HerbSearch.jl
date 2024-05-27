@@ -1,4 +1,5 @@
 using PyCall
+using HerbGrammar
 pyimport("minerl")
 
 gym = pyimport("gym")

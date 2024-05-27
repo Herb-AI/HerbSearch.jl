@@ -2,7 +2,6 @@ using HerbGrammar, HerbSpecification, HerbSearch
 using Logging
 disable_logging(LogLevel(1))
 
-include("minerl.jl")
 
 SEED = 958129
 
@@ -14,7 +13,7 @@ minerl_grammar = @pcsgrammar begin
 end
 
 # make sure the probabilities are equal 
-@assert all(prob -> prob == minerl_grammar.log_probabilities[begin], minerl_grammar_2.log_probabilities)
+@assert all(prob -> prob == minerl_grammar.log_probabilities[begin], minerl_grammar.log_probabilities)
 
 #  overwrite the evaluate trace function
 HerbSearch.evaluate_trace(prog::RuleNode, grammar::ContextSensitiveGrammar; show_moves=false) = evaluate_trace_minerl(prog, grammar, show_moves)
