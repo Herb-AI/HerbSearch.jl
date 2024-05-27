@@ -1,12 +1,11 @@
 using PyCall
-using HerbGrammar
 pyimport("minerl")
 
 gym = pyimport("gym")
 
 mutable struct Environment
     env::PyObject
-    settings
+    settings::Dict{Symbol,Integer}
     start_pos::Tuple{Float64,Float64,Float64}
 end
 
@@ -22,37 +21,26 @@ Create environment.
 - `disable_mobs`: disable mobs.
 """
 function create_env(name::String; kwargs...)
-    if (@isdefined environment) && environment !== nothing
-        @warn "Environment already created"
-        return
-    end
-    global environment = Environment(gym.make(name), kwargs, (0, 0, 0))
-    reset_env()
+    environment = Environment(gym.make(name), Dict(kwargs), (0, 0, 0))
+    reset_env(environment)
+    return environment
 end
 
 """
-    close_env()
+    close_env(environment::Environment)
 
 Close environment.
 """
-function close_env()
-    if (@isdefined environment) && environment !== nothing
-        environment.env.close()
-    end
-    global environment = nothing
+function close_env(environment::Environment)
+    environment.env.close()
 end
 
 """
-    reset_env() 
+    reset_env(environment::Environment) 
 
 Hard reset environment.
 """
-function reset_env()
-    if (!@isdefined environment) || environment === nothing
-        @warn "Environment has not been created yet."
-        return
-    end
-
+function reset_env(environment::Environment)
     env = environment.env
     settings = environment.settings
 
@@ -104,16 +92,11 @@ function get_xyz_from_obs(obs)::Tuple{Float64,Float64,Float64}
 end
 
 """
-    soft_reset()
+    soft_reset(environment::Environment)
 
 Reset player position to `environment.start_pos`.
 """
-function soft_reset_env()
-    if (!@isdefined environment) || environment === nothing
-        @warn "Environment has not been created yet."
-        return
-    end
-
+function soft_reset_env(environment::Environment)
     env = environment.env
     action = env.action_space.noop()
     x_player_start, y_player_start, z_player_start = environment.start_pos
@@ -129,16 +112,12 @@ function soft_reset_env()
 end
 
 """
-    evaluate_trace_minerl(prog::AbstractRuleNode, grammar::ContextSensitiveGrammar, show_moves::Bool)
+    evaluate_trace_minerl(prog::AbstractRuleNode, grammar::ContextSensitiveGrammar, environment::Environment, show_moves::Bool)
 
 Evaluate in MineRL environment.
 """
-function evaluate_trace_minerl(prog::AbstractRuleNode, grammar::ContextSensitiveGrammar, show_moves::Bool)
-    if (!@isdefined environment) || environment === nothing
-        error("Cannot evaluate MineRL program. Environment has not been created.")
-    end
-
-    soft_reset_env()
+function evaluate_trace_minerl(prog::AbstractRuleNode, grammar::ContextSensitiveGrammar, environment::Environment, show_moves::Bool)
+    soft_reset_env(environment)
 
     expr = rulenode2expr(prog, grammar)
     sequence_of_actions = eval(expr)
