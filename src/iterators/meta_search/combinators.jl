@@ -7,7 +7,7 @@ It uses [`HerbSearch.supervised_search`](@ref) to run the enumerator and monitor
 
 Returns a tuple consisting of the `(program as rulenode, program cost)`
 """
-function generic_run(iterator::VannilaIterator; start_program::Union{Nothing,RuleNode}=nothing, stop_channel::Union{Nothing,Channel{Bool}}=nothing, max_running_time=0)
+function generic_run(iterator::VannilaIterator; start_program::Union{Nothing,AbstractRuleNode}=nothing, stop_channel::Union{Nothing,Channel{Bool}}=nothing, max_running_time=0)
     print("typeof problem", typeof(iterator))
     rulenode, cost = HerbSearch.supervised_search(
         iterator,
@@ -49,20 +49,15 @@ Returns a tuple consisting of the `(program as rulenode, program cost)` corespon
 """
 function generic_run(
     combinator::SequenceCombinatorIterator;
-    start_program::Union{Nothing,RuleNode}=nothing,
+    start_program::Union{Nothing,AbstractRuleNode}=nothing,
     stop_channel::Union{Nothing,Channel{Bool}}=nothing,
     max_running_time=MAX_SEQUENCE_RUNNING_TIME
  )
-    # create an inital random program as the start if there is no start program to begin with
-    # TODO: Make this configurable
-    if isnothing(start_program)
-        start_program = rand(RuleNode, combinator.grammar, combinator.max_depth_if_random)
-    end
-
     start_time = time()
 
     best_program, program_cost = start_program, Inf64
     for meta_iterator ∈ combinator.iterators
+        @warn "Starting new seq iteration!"
         if !isnothing(stop_channel) && !isempty(stop_channel)
             return best_program, program_cost
         end
@@ -73,6 +68,7 @@ function generic_run(
         end
         time_left = max_running_time - current_time
         start_program, cost = generic_run(meta_iterator, start_program=start_program, stop_channel=stop_channel, max_running_time=time_left)
+        println("Starting with $start_program")
         if cost < program_cost
             best_program, program_cost = start_program, cost
         end
@@ -103,7 +99,7 @@ Returns a tuple consisting of the `(program as rulenode, program cost)` corespon
 """
 function generic_run(
     combinator::ParallelCombinatorIterator;
-    start_program::Union{Nothing,RuleNode}=nothing,
+    start_program::Union{Nothing,AbstractRuleNode}=nothing,
     stop_channel::Union{Nothing,Channel{Bool}}=nothing,
     max_running_time=MAX_SEQUENCE_RUNNING_TIME
 )

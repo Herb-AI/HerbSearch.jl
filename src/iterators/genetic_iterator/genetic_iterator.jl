@@ -121,7 +121,7 @@ Returns the best program within the population with respect to the fitness funct
 """
 # TODO : Update docs
 function get_population_fitness(population::Array{RuleNode}, iter::GeneticSearchIterator)
-    best_program = nothing
+    best_program = population[begin] 
     best_fitness = 0
     fitness_array = Vector{Float64}(undef, iter.population_size)
 

@@ -10,7 +10,7 @@ import Random
 include("meta_search.jl")
 
 function read_configuration()
-    global meta_configuration::MetaConfiguration = from_toml(MetaConfiguration, "src/iterators/meta_search/configuration.toml")
+    global meta_configuration = from_toml(MetaConfiguration, "src/iterators/meta_search/configuration.toml")
     global fitness_configuration = meta_configuration.fitness
     global genetic_configuration = meta_configuration.genetic
 end
@@ -50,19 +50,24 @@ function print_meta_configuration()
     println("Estimates do not take into account the number of threads used")
 end
 
+using Logging
+Logging.disable_logging(Logging.LogLevel(0))
+
 function run_grammar_multiple_times()
     program = rand(RuleNode, meta_grammar, :S, 10)
-    problem, problem_text = problems_train[begin]
-    expr = rulenode2expr(program, meta_grammar)
-    @show expr
-    evaluate_meta_program(expr, problem, arithmetic_grammar)
+    for _ in 1:10
+        problem, problem_text = problems_train[6]
+        expr = rulenode2expr(program, meta_grammar)
+        @show expr
+        evaluate_meta_program(expr, problem, arithmetic_grammar)
+    end
 end
 
 function get_meta_algorithm()
     Logging.disable_logging(Logging.LogLevel(1))
     print_meta_configuration()
 
-    @time output = run_meta_search(max_time = typemax(Int), max_iterations = 4)
+    @time output = run_meta_search(max_time=typemax(Int), max_iterations=4)
     println("Output of meta search is: ", output)
     return output
 end
@@ -117,4 +122,57 @@ function test_runtime_of_a_single_fitness_evaluation()
 end
 
 # get_meta_algorithm()
-run_grammar_multiple_times()
+# run_grammar_multiple_times()
+
+expr = :(function f(input_problem::Problem, input_grammar::G) where {G<:AbstractGrammar}
+    generic_run(
+        SequenceCombinatorIterator(
+            [
+            VannilaIterator(
+                GeneticSearchIterator(input_grammar, :X,
+                    problem.spec,
+                    population_size=3,
+                    mutation_probability=0.2,
+                    always_keep_best_program=false,
+                    maximum_initial_population_depth=3),
+                ((time, iteration, cost) -> time > 3),
+                input_problem
+            ),
+            VannilaIterator(
+                GeneticSearchIterator(input_grammar, :X,
+                    problem.spec,
+                    population_size=1,
+                    mutation_probability=0.2,
+                    always_keep_best_program=false,
+                    maximum_initial_population_depth=3),
+                ((time, iteration, cost) -> time > 4),
+                input_problem
+            ),
+            VannilaIterator( BFSIterator(input_grammar, :X, max_depth=5), 
+                ((time, iteration, cost) -> time > 4),
+                input_problem
+            )
+        ]
+        )
+    )
+end)
+
+problem, problem_text = problems_train[4]
+# Random.seed!(42)
+
+@show expr
+evaluate_meta_program(expr, problem, arithmetic_grammar)
+
+# function f(input_problem::Problem, input_grammar::G) where {G<:AbstractGrammar}
+#     vlns = VLSNSearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, vlsn_neighbourhood_depth=2, max_depth=6)
+#     mh = MHSearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, max_depth=10)
+#     iterator = VannilaIterator(vlns, (time, iteration, cost) -> time > 1, input_problem)
+#     prog, cost= generic_run(SequenceCombinatorIterator([iterator], input_grammar, 10))
+#     # prog, cost= generic_run(iterator)
+#     if cost == 0
+#         println(rulenode2expr(prog, input_grammar))
+#     end
+# end
+# index = 2
+# @time f(problems_train[index][1], arithmetic_grammar)
+# println(problems_train[index][2])

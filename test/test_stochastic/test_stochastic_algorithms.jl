@@ -39,7 +39,7 @@ macro testsa(expression::String,max_depth=6,init_temp = 2)
     )
 end
 
-macro testvlsn(expression::String, max_depth = 6, neighbourhood_depth = 2)
+macro testvlsn(expression::String, max_depth = 6, neighbourhood_depth = 4)
     return :(
         @testset "vl $($expression)" begin
         e = Meta.parse("x -> $($expression)")
@@ -48,7 +48,7 @@ macro testvlsn(expression::String, max_depth = 6, neighbourhood_depth = 2)
 
         #@TODO overwrite evaluate function within synth to showcase how you may use that
 
-        solution, flag = synth(problem, iterator, max_time=MAX_RUNNING_TIME)
+        solution, flag = synth(problem, iterator, max_time=20)
         @test flag == optimal_program
     end
     )

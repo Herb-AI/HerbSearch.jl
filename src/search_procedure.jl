@@ -72,22 +72,23 @@ end
 
 function supervised_search(
     vanilla_iterator;
-    start_program::Union{RuleNode,Nothing},
+    start_program::Union{AbstractRuleNode,Nothing},
     stop_channel::Union{Nothing,Channel{Bool}}=nothing,
     max_running_time = 0,
-    )::Tuple{RuleNode, Real}
+    ) 
 
     iterator = vanilla_iterator.iterator
+    problem  = vanilla_iterator.problem
     start_time = time()
     g = get_grammar(iterator.solver)
     symboltable :: SymbolTable = SymbolTable(g)
 
     if !isnothing(start_program)
-        iterator = Base.Iterators.rest(iterator, construct_state_from_start_program(iterator, start_program))
+        set_start_program!(iterator, start_program)
     end
 
     best_error = typemax(Int)
-    best_rulenode = nothing
+    best_rulenode::Union{AbstractRuleNode, Nothing} = nothing
     for (i, h) ∈ enumerate(iterator)
         # check to stop or not
         if !isnothing(stop_channel) && !isempty(stop_channel)
@@ -99,7 +100,7 @@ function supervised_search(
         
         # Evaluate the expression on the examples
         total_error = 0
-        outputs = [ (example.out, execute_on_input(symboltable, expr, example.in)) for example ∈ problem.examples ]
+        outputs = [ (example.out, execute_on_input(symboltable, expr, example.in)) for example ∈ problem.spec ]
         total_error = mean_squared_error(outputs)
 
         if total_error == 0

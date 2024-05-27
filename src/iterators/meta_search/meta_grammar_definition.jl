@@ -5,14 +5,12 @@ abstract type ParallelNoThreads <: ParallelType end
 abstract type MetaSearchIterator end
 struct VannilaIterator{F1} <: MetaSearchIterator 
     iterator::ProgramIterator
-    stop_condition::F1
+    stopping_condition::F1
     problem::Problem
 end
 # TODO: Make specific types for each combinator type. That would be nice
-Base.@kwdef struct SequenceCombinatorIterator{G} <: MetaSearchIterator where G <: AbstractGrammar
+struct SequenceCombinatorIterator <: MetaSearchIterator
     iterators::Vector{<:MetaSearchIterator}
-	grammar::G
-	max_depth_if_random::Int = 10
 end
 struct ParallelCombinatorIterator <: MetaSearchIterator 
     combinator_type::Type{<:ParallelType}
@@ -45,24 +43,24 @@ meta_grammar = @csgrammar begin
     sa_temperature_decreasing_factor = 0.9 | 0.91 | 0.92 | 0.93 | 0.94 | 0.95 | 0.96 | 0.97 | 0.98 | 0.99 
 
     # TODO: Fix algorithm
-    ALGORITHM = MHSearchIterator(input_grammar, :X, problemExamples, mean_squared_error, max_depth=MAX_DEPTH) |
-                SASearchIterator(input_grammar, :X, problemExamples, mean_squared_error, initial_temperature = sa_inital_temperature, temperature_decreasing_factor = sa_temperature_decreasing_factor, max_depth=MAX_DEPTH) |
-                VLSNSearchIterator(input_grammar, :X, problemExamples, mean_squared_error, vlsn_neighbourhood_depth = vlsn_enumeration_depth)
+    ALGORITHM = # MHSearchIterator(input_grammar, :X, problemExamples, mean_squared_error, max_depth=MAX_DEPTH) |
+                # SASearchIterator(input_grammar, :X, problemExamples, mean_squared_error, initial_temperature = sa_inital_temperature, temperature_decreasing_factor = sa_temperature_decreasing_factor, max_depth=MAX_DEPTH) |
+                # VLSNSearchIterator(input_grammar, :X, problemExamples, mean_squared_error, vlsn_neighbourhood_depth = vlsn_enumeration_depth)
+                BFSIterator(input_grammar, :X, max_depth=4)
     SimpleIterator = VannilaIterator(ALGORITHM, STOPFUNCTION, input_problem)
     # A = ga,STOP
     # A = dfs,STOP
     # A = bfs,STOP
     # A = astar,STOP
-    COMBINATOR = SequenceCombinatorIterator(iterators = ALIST, grammar = input_grammar)
-    # COMBINATOR = ParallelCombinatorIterator(ParallelNoThreads, ALIST)
+    COMBINATOR = SequenceCombinatorIterator(ALIST)
+    COMBINATOR = ParallelCombinatorIterator(ParallelNoThreads, ALIST)
     ALIST = [MS; MS]
     ALIST = [MS; ALIST]
     # SELECT = best | crossover | mutate
-    STOPFUNCTION = (time, iteration, cost) -> time > BIGGEST_TIME
+    STOPFUNCTION = (time, iteration, cost) -> time > 4  # bigger running time
     ITERATION_STOP = iteration > VALUE
     # STOPTERM = OPERAND < VALUE
     # OPERAND = time | iteration | cost
-    BIGGEST_TIME = 2 | 3 | 4 | 5
     VALUE = 1000 | 2000 | 3000 | 4000 | 5000
     # VALUE = 10 * VALUE
 end

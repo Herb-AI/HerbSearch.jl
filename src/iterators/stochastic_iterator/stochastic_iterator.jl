@@ -51,7 +51,6 @@ include("stochastic_functions/cost_functions.jl")
 abstract type StochasticSearchIterator <: ProgramIterator end
 
 struct IteratorState
-    current_program::RuleNode
     current_temperature::Real
     dmap::AbstractVector{Int} # depth map of each rule
 end
@@ -59,14 +58,16 @@ end
 Base.IteratorSize(::StochasticSearchIterator) = Base.SizeUnknown()
 Base.eltype(::StochasticSearchIterator) = RuleNode
 
-construct_state_from_start_program(iter::StochasticSearchIterator, start_program::RuleNode) = IteratorState(start_program, 1, mindepth_map(get_grammar(iter.solver)))
 
 function Base.iterate(iter::StochasticSearchIterator)
     solver = iter.solver
     grammar, max_depth = get_grammar(solver), get_max_depth(solver)
-
-    # sample a random node using start symbol and grammar
     dmap = mindepth_map(grammar)
+
+    if typeof(get_tree(solver)) == RuleNode 
+        return (get_tree(solver), IteratorState(iter.initial_temperature, dmap))  
+    end
+    # sample a random node using start symbol and grammar
     start_symbol = get_starting_symbol(solver)
     sampled_program = rand(RuleNode, grammar, start_symbol , max_depth) #TODO: replace iter.sym with a domain of valid rules
     substitute!(solver, Vector{Int}(), sampled_program)
@@ -76,7 +77,7 @@ function Base.iterate(iter::StochasticSearchIterator)
         substitute!(solver, Vector{Int}(), sampled_program)
     end
 
-    return (sampled_program, IteratorState(sampled_program, iter.initial_temperature,dmap))  
+    return (sampled_program, IteratorState(iter.initial_temperature, dmap))  
 end
 
 
@@ -93,7 +94,8 @@ The algorithm that constructs the iterator of StochasticSearchIterator. It has t
 """
 function Base.iterate(iter::StochasticSearchIterator, iterator_state::IteratorState)
     grammar, solver = get_grammar(iter.solver), iter.solver
-    current_program = get_tree(solver)#iterator_state.current_program
+    current_program = get_tree(solver)
+    @assert typeof(current_program) == RuleNode " $current_program is not a RuleNode"
     
     current_cost = calculate_cost(iter, current_program)
 
@@ -132,7 +134,7 @@ function Base.iterate(iter::StochasticSearchIterator, iterator_state::IteratorSt
     @assert isfeasible(solver)
     @assert !contains_hole(get_tree(solver))
     
-    next_state = IteratorState(get_tree(solver), new_temperature,iterator_state.dmap)
+    next_state = IteratorState(new_temperature,iterator_state.dmap)
     return (get_tree(solver), next_state)
 end
 
