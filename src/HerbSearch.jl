@@ -46,6 +46,7 @@ include("frangel/frangel_angelic_utils.jl")
 include("frangel/frangel_random_iterator.jl")
 include("frangel/frangel_grammar_utils.jl")
 include("frangel/long_hash_map.jl")
+include("frangel/bit_trie.jl")
 
 export 
   ProgramIterator,
@@ -134,6 +135,11 @@ export
   LongHashMap,
   init_long_hash_map,
   lhm_put!,
-  lhm_contains
+  lhm_contains,
+
+  BitTrie,
+  BitTrieNode,
+  trie_add!,
+  trie_contains
   
 end # module HerbSearch

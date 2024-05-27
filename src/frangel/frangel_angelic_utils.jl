@@ -144,18 +144,18 @@ function execute_angelic_on_input(
 )::Bool
     num_true, attempts = 0, 0
     # We check traversed code paths by prefix -> trie is efficient for this
-    visited = DataStructures.Trie{Bool}()
+    visited = BitTrie()
     expr = create_angelic_expression(program, grammar, truthy, angelic_conditions)
     while num_true < max_attempts
-        code_paths = Vector{Vector{Char}}()
-        get_code_paths!(num_true, Vector{Char}(), visited, code_paths, max_attempts - attempts)
+        code_paths = Vector{BitVector}()
+        get_code_paths!(num_true, BitVector(), visited, code_paths, max_attempts - attempts)
         if isempty(code_paths)
             return false
         end
         for code_path in code_paths
             # println("Attempt: ", code_path)
             # Create actual_code_path here to keep reference for simpler access later
-            actual_code_path = Vector{Char}()
+            actual_code_path = BitVector()
             try
                 output = execute_on_input(symboltable, expr, input, code_path, actual_code_path)
                 # println("Actual path: ", actual_code_path)
@@ -164,7 +164,7 @@ function execute_angelic_on_input(
                 end
             catch
             finally
-                visited[String(actual_code_path)] = true
+                trie_add!(visited, actual_code_path)
                 attempts += 1
             end
         end
@@ -174,7 +174,7 @@ function execute_angelic_on_input(
 end
 
 """
-    get_code_paths!(num_true::Int, curr::Vector{Char}, visited::DataStructures.Trie{Bool}, code_paths::Vector{Vector{Char}}, max_length::Int)
+    get_code_paths!(num_true::Int, curr::BitVector, visited::BitTrie, code_paths::Vector{BitVector}, max_length::Int)
 
 Generate code paths to be used for angelic evaluation, and stores them in `code_paths`. The function recursively explores different sequences of `true` and `false` 
     values, which represent whether the next control statement will be skipped or not. Makes sure that the returned paths do not share prefix with visited paths.
@@ -189,22 +189,21 @@ Generate code paths to be used for angelic evaluation, and stores them in `code_
 """
 function get_code_paths!(
     num_true::Int,
-    curr::Vector{Char},
-    visited::DataStructures.Trie{Bool},
-    code_paths::Vector{Vector{Char}},
+    curr::BitVector,
+    visited,
+    code_paths::Vector{BitVector},
     max_length::Int
 )
-    str_curr = String(curr)
-    if (length(curr) > max_length || any(v -> v.is_key, partial_path(visited, str_curr)))
+    if (length(curr) > max_length || trie_contains(visited, curr))
         return
     end
     if num_true == 0
         push!(code_paths, deepcopy(curr))
         return
     end
-    push!(curr, '1')
+    push!(curr, true)
     get_code_paths!(num_true - 1, curr, visited, code_paths, max_length)
-    curr[length(curr)] = '0'
+    curr[end] = false
     get_code_paths!(num_true, curr, visited, code_paths, max_length)
     pop!(curr)
 end

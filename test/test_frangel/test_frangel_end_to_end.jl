@@ -12,7 +12,7 @@ g = @cfgrammar begin
 end
 
 @testset "basic_example_fragments_only" begin
-    spec = [IOExample(Dict(:x => x), 2x) for x ∈ 1:5]
+    spec = [IOExample(Dict(:x => x), 3x) for x ∈ 1:5]
     problem = Problem(spec)
     rules_min = rules_minsize(g)
     symbol_min = symbols_minsize(g, rules_min)

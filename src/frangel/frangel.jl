@@ -188,10 +188,10 @@ function frangel(
         # Early return -> if it passes all tests, then final round of simplification and return
         if all(passed_tests)
             # TODO program = simplify_slow(program, grammar, spec, angelic_conditions, (time() - start_time) / 10)
-            # if verbose_level > 0
+            if verbose_level > 0
                 println("Total iterations:", iterationCount)
                 println("Checked programs:", checkedProgram)
-            # end
+            end
             return simplify_quick(program, grammar, spec, passed_tests, fragment_base_rules_offset)
         end
 
