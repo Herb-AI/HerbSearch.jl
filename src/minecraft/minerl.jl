@@ -3,6 +3,8 @@ pyimport("minerl")
 
 gym = pyimport("gym")
 
+# WARNING: !!! NEVER MOVE THIS. It should ALWAYS be after the `pyimport`. I spent hours debugging this !!!
+using HerbGrammar
 mutable struct Environment
     env::PyObject
     settings::Dict{Symbol,Integer}

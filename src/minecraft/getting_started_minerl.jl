@@ -1,11 +1,6 @@
 include("minerl.jl")
 include("logo_print.jl")
 
-SEED = 958129
-if !(@isdefined environment)
-    environment = create_env("MineRLNavigateDenseProgSynth-v0"; seed=SEED, inf_health=true, inf_food=true, disable_mobs=true)
-end
-
 using HerbGrammar, HerbSpecification, HerbSearch
 using Logging
 disable_logging(LogLevel(1))
@@ -21,9 +16,14 @@ end
 @assert all(prob -> prob == minerl_grammar.log_probabilities[begin], minerl_grammar.log_probabilities)
 
 #  overwrite the evaluate trace function
-HerbSearch.evaluate_trace(prog::RuleNode, grammar::ContextSensitiveGrammar; show_moves=false) = evaluate_trace_minerl(prog, grammar, environment, show_moves)
+HerbSearch.evaluate_trace(prog::RuleNode, grammar::ContextSensitiveGrammar; show_moves=true) = evaluate_trace_minerl(prog, grammar, environment, show_moves)
 HerbSearch.calculate_rule_cost(rule_index::Int, grammar::ContextSensitiveGrammar) = HerbSearch.calculate_rule_cost_prob(rule_index, grammar)
 
+SEED = 958129
+if !(@isdefined environment)
+    environment = create_env("MineRLNavigateDenseProgSynth-v0"; seed=SEED, inf_health=true, inf_food=true, disable_mobs=true)
+end
 print_logo()
 iter = HerbSearch.GuidedSearchTraceIterator(minerl_grammar, :SEQ)
 program = @time probe(Vector{Trace}(), iter, 3000000, 6)
+ 
