@@ -254,7 +254,7 @@ end
                     deep_copy_grammar = deepcopy(grammar_to_use)
                     iter = HerbSearch.GuidedSearchIterator(deep_copy_grammar, :S, examples, symboltable)
                     max_time = 5
-                    runtime = @timed program = probe(examples, iter, max_time, 100)
+                    runtime = @timed program = probe(examples, iter, max_time=max_time, cycle_length=100)
                     expression = rulenode2expr(program, grammar_to_use)
                     @test runtime.time <= max_time
 

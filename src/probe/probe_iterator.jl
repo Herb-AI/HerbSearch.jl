@@ -1,53 +1,25 @@
 """
-    struct ProgramCache 
+    get_prog_eval(iterator, prog)
 
-Stores the evaluation cost and the program in a structure.
-This 
+Get the program and its evaluation.
 """
-mutable struct ProgramCache
-    program::RuleNode
-    correct_examples::Vector{Int}
-    cost::Int
-end
-function Base.:(==)(a::ProgramCache, b::ProgramCache)
-    return a.program == b.program
-end
-Base.hash(a::ProgramCache) = hash(a.program)
-
-mutable struct ProgramCacheTrace
-    program::RuleNode
-    cost::Int
-    reward::Float64
-end
-
-function Base.:(==)(a::ProgramCacheTrace, b::ProgramCacheTrace)
-    return a.program == b.program
-end
-Base.hash(a::ProgramCacheTrace) = hash(a.program)
-
-include("sum_iterator.jl")
-include("new_program_iterator.jl")
-include("guided_search_iterator.jl")
-include("guided_trace_search_iterator.jl")
-
-include("select_partial_sols.jl")
-include("update_grammar.jl")
-
-select_partial_solution(partial_sols::Vector{ProgramCache}, all_selected_psols::Set{ProgramCache}) = HerbSearch.selectpsol_largest_subset(partial_sols, all_selected_psols)
-update_grammar!(grammar::ContextSensitiveGrammar, PSols_with_eval_cache::Vector{ProgramCache}, examples::Vector{<:IOExample}) = update_grammar(grammar, PSols_with_eval_cache, examples)
-
 get_prog_eval(::ProgramIterator, prog::RuleNode) = (prog, [])
 
 get_prog_eval(::GuidedSearchIterator, prog::Tuple{RuleNode,Vector{Any}}) = prog
 
-get_prog_eval(::GuidedTraceSearchIterator, prog::Tuple{RuleNode,Tuple{Any,Bool,Number}}) = prog
+get_prog_eval(::GuidedSearchTraceIterator, prog::Tuple{RuleNode,Tuple{Any,Bool,Number}}) = prog
 
 """
-    probe(examples::Vector{<:IOExample}, iterator::ProgramIterator, max_time::Int, iteration_size::Int)
+    probe(examples::Vector{<:IOExample}, iterator::ProgramIterator, max_time::Int, cycle_length::Int)
 
-Probe for a solution using the given `iterator` and `examples` with a time limit of `max_time` and `iteration_size`.
+Probe for a solution using the given `iterator` and `examples` with a time limit of `max_time` and a cycle length of `cycle_length`.
+
+The selection, update, and cost functions can be changed by overriding the following functions:
+- [`select_partial_solution`](@ref)
+- [`update_grammar!`](@ref)
+- [`calculate_rule_cost`](@ref)
 """
-function probe(examples::Vector{<:IOExample}, iterator::ProgramIterator, max_time::Int, iteration_size::Int)
+function probe(examples::Vector{<:IOExample}, iterator::ProgramIterator; max_time::Int, cycle_length::Int)
     start_time = time()
     # store a set of all the results of evaluation programs
     eval_cache = Set()
@@ -62,7 +34,7 @@ function probe(examples::Vector{<:IOExample}, iterator::ProgramIterator, max_tim
         # partial solutions for the current synthesis cycle
         psol_with_eval_cache = Vector{ProgramCache}()
         next = state === nothing ? iterate(iterator) : iterate(iterator, state)
-        while next !== nothing && i < iteration_size # run one iteration
+        while next !== nothing && i < cycle_length # run one cycle
             program, state = next
 
             # evaluate program
@@ -108,11 +80,12 @@ function probe(examples::Vector{<:IOExample}, iterator::ProgramIterator, max_tim
         if next === nothing
             return nothing
         end
+
         partial_sols = filter(x -> x ∉ all_selected_psols, select_partial_solution(psol_with_eval_cache, all_selected_psols))
         if !isempty(partial_sols)
             push!(all_selected_psols, partial_sols...)
-            # update probabilites if any promising partial solutions
             update_grammar!(grammar, partial_sols, examples) # update probabilites
+
             # restart iterator
             eval_cache = Set()
             state = nothing
@@ -129,33 +102,19 @@ function probe(examples::Vector{<:IOExample}, iterator::ProgramIterator, max_tim
     return nothing
 end
 
-
-evaluate_trace(program::RuleNode, grammar::ContextSensitiveGrammar) = error("Evaluate trace method should be overwritten")
-# this is here just to be overwritten in getting_started_minerl.jl
-set_env_position(x, y, z) = error("Set env position method should be overwritten")
-
-function select_partial_solution(partial_sols::Vector{ProgramCacheTrace}, all_selected_psols::Set{ProgramCacheTrace})
-    if isempty(partial_sols)
-        return Vector{ProgramCache}()
-    end
-    push!(partial_sols, all_selected_psols...)
-    # sort partial solutions by reward
-    sort!(partial_sols, by=x -> x.reward, rev=true)
-    to_select = 5
-    return partial_sols[1:min(to_select, length(partial_sols))]
-end
-
 """
+    evaluate_trace(program::RuleNode, grammar::ContextSensitiveGrammar)
 
-Probe for a solution using the given `iterator` and `examples` with a time limit of `max_time` and `iteration_size`.
+Evaluate the `program` with the `grammar`.
 """
-function probe(traces::Vector{Trace}, iterator::ProgramIterator, max_time::Int, iteration_size::Int)
+evaluate_trace(program::RuleNode, grammar::ContextSensitiveGrammar; show_moves::Bool) = error("Evaluate trace method should be overwritten")
+
+function probe(traces::Vector{Trace}, iterator::ProgramIterator; max_time::Int, cycle_length::Int)
     start_time = time()
     # store a set of all the results of evaluation programs
     eval_cache = Set()
     state = nothing
     grammar = get_grammar(iterator.solver)
-    symboltable = SymbolTable(grammar)
 
     best_reward = 0
     # all partial solutions that were found so far
@@ -166,7 +125,7 @@ function probe(traces::Vector{Trace}, iterator::ProgramIterator, max_time::Int, 
         # partial solutions for the current synthesis cycle
         psol_with_eval_cache = Vector{ProgramCacheTrace}()
         next = state === nothing ? iterate(iterator) : iterate(iterator, state)
-        while next !== nothing && i < iteration_size # run one iteration
+        while next !== nothing && i < cycle_length # run one cycle
             program, state = next
 
             # evaluate
@@ -188,15 +147,12 @@ function probe(traces::Vector{Trace}, iterator::ProgramIterator, max_time::Int, 
             elseif is_partial_sol # partial solution 
                 cost = calculate_program_cost(program, grammar)
                 push!(psol_with_eval_cache, ProgramCacheTrace(program, cost, reward))
-                # if length(psol_with_eval_cache) >= 2 # play with this threshold
-                #     break
-                # end
             end
 
             push!(eval_cache, eval_observation_rounded)
 
             i += 1
-            if i < iteration_size
+            if i < cycle_length
                 next = iterate(iterator, state)
             end
         end
@@ -206,7 +162,7 @@ function probe(traces::Vector{Trace}, iterator::ProgramIterator, max_time::Int, 
             return nothing
         end
 
-        partial_sols = select_partial_solution(psol_with_eval_cache, all_selected_psols)
+        partial_sols = filter(x -> x ∉ all_selected_psols, select_partial_solution(psol_with_eval_cache, all_selected_psols))
         if !isempty(partial_sols)
             printstyled("Restarting!\n", color=:magenta)
 
@@ -217,11 +173,11 @@ function probe(traces::Vector{Trace}, iterator::ProgramIterator, max_time::Int, 
             state = nothing
 
             #for loop to update all_selected_psols with new costs
-            # for prog_with_cache ∈ all_selected_psols
-            #     program = prog_with_cache.program
-            #     new_cost = calculate_program_cost(program, grammar)
-            #     prog_with_cache.cost = new_cost
-            # end
+            for prog_with_cache ∈ all_selected_psols
+                program = prog_with_cache.program
+                new_cost = calculate_program_cost(program, grammar)
+                prog_with_cache.cost = new_cost
+            end
         end
     end
 

@@ -1,4 +1,3 @@
-
 """
     update_grammar(grammar::ContextSensitiveGrammar, PSols_with_eval_cache::Vector{ProgramCache}, examples::Vector{<:IOExample})
 
@@ -10,7 +9,7 @@ Update the given `grammar` using the provided `PSols_with_eval_cache` and `examp
 - `examples::Vector{<:IOExample}`: The input-output examples.
 
 """
-function update_grammar(grammar::ContextSensitiveGrammar, PSols_with_eval_cache::Vector{ProgramCache}, examples::Vector{<:IOExample})
+function update_grammar!(grammar::ContextSensitiveGrammar, PSols_with_eval_cache::Vector{ProgramCache}, examples::Vector{<:IOExample})
     sum = 0
     for rule_index in eachindex(grammar.rules) # iterate for each rule_index 
         highest_correct_nr = 0
@@ -73,10 +72,10 @@ end
 """
     contains_rule(program::RuleNode, rule_index::Int)
 
-Check if a given `RuleNode` contains has used a derivation rule with the specified `rule_index`
+Check if a given `program` contains a derivation rule with the specified `rule_index`.
 
 # Arguments
-- `program::RuleNode`: The `RuleNode` to check.
+- `program::RuleNode`: The `program` to check.
 - `rule_index::Int`: The index of the rule to check for.
 
 """

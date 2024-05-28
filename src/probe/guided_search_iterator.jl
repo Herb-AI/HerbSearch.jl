@@ -1,8 +1,8 @@
-
 @programiterator GuidedSearchIterator(
     spec::Vector{<:IOExample},
     symboltable::SymbolTable,
 )
+
 Base.@kwdef mutable struct GuidedSearchState
     level::Int64
     bank::Vector{Vector{RuleNode}}
@@ -39,7 +39,6 @@ function Base.iterate(iter::GuidedSearchIterator, state::GuidedSearchState)::Uni
         end
         # go over all programs in a level
         while state.next_iter !== nothing
-            # prog = pop!(state.programs) # get next program
             prog::RuleNode, next_state = state.next_iter
             # move in advance
             state.next_iter = iterate(state.iter, next_state)
