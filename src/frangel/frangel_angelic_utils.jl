@@ -159,7 +159,7 @@ function execute_angelic_on_input(
             try
                 output = execute_on_input(symboltable, expr, input, CodePath(code_path, 0), actual_code_path)
                 # println("Actual path: ", actual_code_path)
-                if output == expected_output
+                if test_output_equality(output, expected_output)
                     return true
                 end
             catch

@@ -43,7 +43,7 @@ function get_passed_tests!(
         for (index, test) in enumerate(tests)
             try
                 output = execute_on_input(symboltable, expr, test.in)
-                prev_passed_tests[index] = output == test.out
+                prev_passed_tests[index] = test_output_equality(output, test.out)
             catch _
                 prev_passed_tests[index] = false
             end
@@ -217,7 +217,7 @@ function passes_the_same_tests_or_more(program::RuleNode, grammar::AbstractGramm
         # Else check that new program also passes the test
         try
             output = execute_on_input(symboltable, expr, test.in)
-            if (output != test.out)
+            if !test_output_equality(output, test.out)
                 return false
             end
         catch _
@@ -347,4 +347,50 @@ function update_min_sizes!(grammar::AbstractGrammar, fragment_base_rules_offset:
         end
     end
 
+end
+
+"""
+    test_output_equality(exec_output::Any, out::Any)::Bool
+
+Checks if the output of the execution is equal to the expected output.
+
+# Arguments
+- `exec_output`: The output of the execution.
+- `out`: The expected output.
+
+# Returns
+`true` if the output of the execution is equal to the expected output, `false` otherwise.
+"""
+test_output_equality(exec_output::Any, out::Any) = test_output_equal(exec_output, out)
+
+"""
+    test_output_equal_or_greater(exec_output::Any, out::Any)::Bool
+
+Checks if the output of the execution is equal to or greater than the expected output.
+
+# Arguments
+- `exec_output`: The output of the execution.
+- `out`: The expected output.
+
+# Returns
+`true` if the output of the test is equal to or greater than the expected output, `false` otherwise.
+"""
+function test_output_equal_or_greater(exec_output::Any, out::Any)::Bool 
+    exec_output >= out 
+end
+
+"""
+    test_output_equal(exec_output::Any, out::Any)::Bool
+
+Checks if the output of the execution is equal to the expected output.
+
+# Arguments
+- `exec_output`: The output of the execution.
+- `out`: The expected output.
+
+# Returns
+`true` if the output of the test is equal to the expected output, `false` otherwise.
+"""
+function test_output_equal(exec_output::Any, out::Any)::Bool
+    exec_output == out
 end

@@ -110,7 +110,6 @@ function soft_reset_env(environment::Environment)
         obs = env.step(action)[1]
         obsx, obsy, obsz = get_xyz_from_obs(obs)
     end
-    println((obsx, obsy, obsz)) #TODO: remove/change print
 end
 
 """

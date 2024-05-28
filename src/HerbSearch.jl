@@ -131,6 +131,9 @@ export
   rules_minsize,
   _minsize!,
   update_min_sizes!,
+  test_output_equality,
+  test_output_equal_or_greater,
+  test_output_equal,
 
   LongHashMap,
   init_long_hash_map,
