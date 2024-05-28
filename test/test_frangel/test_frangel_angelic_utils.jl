@@ -25,11 +25,6 @@ symbol_min = symbols_minsize(grammar, rules_min)
 angelic_conditions = Dict{UInt16,UInt8}()
 angelic_conditions[15] = 1
 
-rules_min = rules_minsize(grammar)
-symbol_min = symbols_minsize(grammar, rules_min)
-angelic_conditions = Dict{UInt16,UInt8}()
-angelic_conditions[15] = 1
-
 config = FrAngelConfig(verbose_level=0, generation=FrAngelConfigGeneration(use_fragments_chance=0.5, use_angelic_conditions_chance=1, max_size=20))
 iterator = FrAngelRandomIterator(grammar, :Num, rules_min, symbol_min, max_depth=config.generation.max_size)
 (fragment_base_rules_offset, fragment_rules_offset) = setup_grammar_with_fragments!(grammar, config.generation.use_fragments_chance, rules_min)
@@ -59,7 +54,6 @@ end
     @test !contains_hole(p)
 end
 
-
 st = SymbolTable(grammar)
 st[:update_✝γ_path] = update_✝γ_path
 
@@ -73,7 +67,7 @@ st[:update_✝γ_path] = update_✝γ_path
     )
 
     @testset "falsy evaluation" begin
-        opath = BitVector([false])
+        opath = CodePath(BitVector([false]), 0)
         apath = BitVector()
 
         angelic_expr = quote
@@ -88,7 +82,7 @@ st[:update_✝γ_path] = update_✝γ_path
     end
 
     @testset "truthy evaluation" begin
-        opath = BitVector([true, true])
+        opath = CodePath(BitVector([true, true]), 0)
         apath = BitVector()
 
         angelic_expr = quote
@@ -119,7 +113,7 @@ end
     )
 
     @testset "falsy evaluation" begin
-        opath = BitVector([false])
+        opath = CodePath(BitVector([false]), 0)
         apath = BitVector()
 
         angelic_expr = quote
@@ -134,7 +128,7 @@ end
     end
 
     @testset "truthy evaluation" begin
-        opath = BitVector([true, true])
+        opath = CodePath(BitVector([true, true]), 0)
         apath = BitVector()
 
         angelic_expr = quote

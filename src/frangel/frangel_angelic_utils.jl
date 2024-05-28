@@ -157,7 +157,7 @@ function execute_angelic_on_input(
             # Create actual_code_path here to keep reference for simpler access later
             actual_code_path = BitVector()
             try
-                output = execute_on_input(symboltable, expr, input, code_path, actual_code_path)
+                output = execute_on_input(symboltable, expr, input, CodePath(code_path, 0), actual_code_path)
                 # println("Actual path: ", actual_code_path)
                 if output == expected_output
                     return true
@@ -194,7 +194,7 @@ function get_code_paths!(
     code_paths::Vector{BitVector},
     max_length::Int
 )
-    if (length(curr) > max_length || trie_contains(visited, curr))
+    if (length(code_paths) > max_length || trie_contains(visited, curr))
         return
     end
     if num_true == 0

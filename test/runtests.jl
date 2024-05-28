@@ -10,7 +10,7 @@ include("test_helpers.jl")
 using Random
 Random.seed!(1234)
 
-@testset "HerbSearch.jl" verbose=true begin
+@testset "HerbSearch.jl" verbose = true begin
     # include("test_search_procedure.jl")        
     # include("test_context_free_iterators.jl") #TODO: see "probabilistic enumerator" in test_context_free_iterators.jl
     # include("test_sampling.jl")
