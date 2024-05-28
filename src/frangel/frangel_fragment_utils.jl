@@ -94,7 +94,6 @@ function remember_programs!(
     new_program_expr,
     fragments::AbstractVector{RuleNode},
     grammar::AbstractGrammar,
-    fragment_modifications::Dict{UInt16,AbstractVector{Tuple{AbstractVector{UInt8},RuleNode}}},
 )::Tuple{AbstractVector{RuleNode},Bool}
     node_count = count_nodes(grammar, new_program)
     if new_program_expr === nothing
@@ -108,12 +107,6 @@ function remember_programs!(
         # if the new program's passing testset is a subset of the old program's, discard new program if worse
         if all(passing_tests .== (passing_tests .& key_tests))
             if !isSimpler
-                for (_, modifications) in fragment_modifications
-                    for (path, modification) in modifications
-                        swap_node(new_program, modification, path)
-                    end
-                end
-
                 return fragments, false
             end
             # else if it is a superset -> discard old program if worse (either more nodes, or same #nodes but less tests)
@@ -123,16 +116,8 @@ function remember_programs!(
             end
         end
     end
-    program_to_add = deepcopy(new_program)
-
-    for (_, modifications) in fragment_modifications
-        for (path, modification) in modifications
-            swap_node(new_program, modification, path)
-        end
-    end
-
     # Add new program to remembered ones
-    old_remembered[passing_tests] = (program_to_add, node_count, program_length)
+    old_remembered[passing_tests] = (new_program, node_count, program_length)
     # println("Simplest program for tests: ", passing_tests)
     # println(rulenode2expr(new_program, grammar))
     collect(mine_fragments(grammar, Set(values(old_remembered)))), true

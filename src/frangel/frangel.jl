@@ -84,8 +84,6 @@ function frangel(
 
     # Setup grammar with fragments
     (fragment_base_rules_offset, fragment_rules_offset) = setup_grammar_with_fragments!(grammar, config.generation.use_fragments_chance, rule_minsize)
-    fragment_modifications = Dict{UInt16,AbstractVector{Tuple{AbstractVector{UInt8},RuleNode}}}()
-
     state = nothing
     start_time = time()
 
@@ -126,8 +124,7 @@ function frangel(
         use_angelic = config.generation.use_angelic_conditions_chance != 0 && rand() < config.generation.use_angelic_conditions_chance
 
         # Modify the program with fragments
-        empty!(fragment_modifications)
-        program = modify_and_replace_program_fragments!(program, program, fragments, fragment_base_rules_offset, fragment_rules_offset, config.generation, grammar, rule_minsize, symbol_minsize, fragment_modifications, use_angelic)
+        program = modify_and_replace_program_fragments!(program, fragments, fragment_base_rules_offset, fragment_rules_offset, config.generation, grammar, rule_minsize, symbol_minsize, use_angelic)
         # Modify the program with angelic conditions
         if use_angelic
             program = add_angelic_conditions!(program, grammar, angelic_conditions)
@@ -136,15 +133,10 @@ function frangel(
         # Do not check visited program space
         program_hash = hash(program)
         if lhm_contains(visited, program_hash)
-            for (_, modifications) in fragment_modifications
-                for (path, modification) in modifications
-                    swap_node(program, modification, path)
-                end
-            end
             continue
         end
         lhm_put!(visited, program_hash)
-  
+
         checkedProgram += 1
         if checkedProgram <= verbose_level
             println("Checked program #", checkedProgram)
@@ -156,11 +148,6 @@ function frangel(
         # If it does not pass any tests, discard
         program_expr = get_passed_tests!(program, grammar, symboltable, spec, passed_tests, angelic_conditions, config.angelic)
         if !any(passed_tests)
-            for (_, modifications) in fragment_modifications
-                for (path, modification) in modifications
-                    swap_node(program, modification, path)
-                end
-            end
             continue
         end
 
@@ -169,11 +156,6 @@ function frangel(
             program = resolve_angelic!(program, passed_tests, grammar, symboltable, spec, 1, angelic_conditions, config, fragment_base_rules_offset, rule_minsize, symbol_minsize)
             # Still contains angelic conditions -> unresolved
             if contains_hole(program)
-                for (_, modifications) in fragment_modifications
-                    for (path, modification) in modifications
-                        swap_node(program, modification, path)
-                    end
-                end
                 continue
             end
             program_expr = get_passed_tests!(program, grammar, symboltable, spec, passed_tests, angelic_conditions, config.angelic)
@@ -197,7 +179,7 @@ function frangel(
 
         # Update remember programs and fragments
         if config.generation.use_fragments_chance != 0
-            fragments, updatedFragments = remember_programs!(remembered_programs, passed_tests, program, (!config.compare_programs_by_length ? nothing : program_expr), fragments, grammar, fragment_modifications)
+            fragments, updatedFragments = remember_programs!(remembered_programs, passed_tests, program, (!config.compare_programs_by_length ? nothing : program_expr), fragments, grammar)
 
             if checkedProgram <= verbose_level
                 println("---- Fragments ----")
@@ -231,8 +213,8 @@ function frangel(
             end
         end
     end
-    # if verbose_level > 0
+    if verbose_level > 0
         println("Total iterations:", iterationCount)
         println("Checked programs:", checkedProgram)
-    # end
+    end
 end
