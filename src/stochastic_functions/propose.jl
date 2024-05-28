@@ -1,39 +1,29 @@
 """
-For efficiency reasons, the propose functions return the proposed subprograms.
-These subprograms are supposed to replace the subprogram at neighbourhood node location.
-It is the responsibility of the caller to make this replacement.
+The propose functions return the fully constructed proposed programs given a path to a location to fill in.
 """
 
 """
-    random_fill_propose(current_program::RuleNode, neighbourhood_node_loc::NodeLoc, grammar::AbstractGrammar, max_depth::Int, dmap::AbstractVector{Int}, dict::Union{Nothing,Dict{String,Any}})
+    random_fill_propose(solver::Solver, path::Vector{Int}, dict::Union{Nothing,Dict{String,Any}}, nr_random=5)
 
 Returns a list with only one proposed, completely random, subprogram.
 # Arguments
-- `current_program::RuleNode`: the current program.
-- `neighbourhood_node_loc::NodeLoc`: the location of the program to replace.
-- `grammar::AbstractGrammar`: the grammar used to create programs.
-- `max_depth::Int`: the maximum depth of the resulting programs.
-- `dmap::AbstractVector{Int} : the minimum possible depth to reach for each rule`
+- `solver::solver`: solver
+- `path::Vector{Int}`: path to the location to be filled.
 - `dict::Dict{String, Any}`: the dictionary with additional arguments; not used.
+- `nr_random`=1 : the number of random subprograms to be generated.
 """
-function random_fill_propose(solver::Solver, path::Vector{Int}, dict::Union{Nothing,Dict{String,Any}})
-    return Iterators.take(RandomSearchIterator(get_grammar(solver), :ThisIsIgnored, solver=solver, path = path),5)
-    #return Iterators.take(RandomIterator(get_grammar(solver), :ThisIsIgnored, solver=solver, max_depth=get_max_depth(solver), max_size=get_max_size(solver)),N)
+function random_fill_propose(solver::Solver, path::Vector{Int}, dict::Union{Nothing,Dict{String,Any}}, nr_random=1)
+    return Iterators.take(RandomSearchIterator(solver, path), nr_random)
 end 
 
 """
     enumerate_neighbours_propose(enumeration_depth::Int64)
 
 The return function is a function that produces a list with all the subprograms with depth at most `enumeration_depth`.
-# Arguments
-- `enumeration_depth::Int64`: the maximum enumeration depth.
 """
 function enumerate_neighbours_propose(enumeration_depth::Int64)
     return (solver::Solver, path::Vector{Int}, dict::Union{Nothing,Dict{String,Any}}) -> begin
-        #TODO: Fix the ProgramIterator (macro)
-        # Make sure it doesn't overwrite (grammar, sym, max_depth, max_size) of the Solver.
-        # Ideally this line should be: BFSIterator(solver).
-        return BFSIterator(get_grammar(solver), :ThisIsIgnored, solver=solver, max_depth=get_max_depth(solver), max_size=get_max_size(solver))
+        return BFSIterator(solver)
     end
 end
     

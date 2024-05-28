@@ -79,7 +79,7 @@ function frangel(
     fragments = Vector{RuleNode}()
 
     verbose_level = config.verbose_level
-    grammar = iter.grammar
+    grammar = iter.solver.grammar
     symboltable = SymbolTable(grammar)
 
     # Setup grammar with fragments

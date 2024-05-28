@@ -2,7 +2,7 @@ using HerbCore, HerbGrammar, HerbConstraints
 
 @testset verbose=true "Ordered" begin
 
-    function get_grammar_and_constraint1()
+    @testset "Number of candidate programs" begin
         grammar = @csgrammar begin
             Number = 1
             Number = x
@@ -12,10 +12,8 @@ using HerbCore, HerbGrammar, HerbConstraints
             VarNode(:a),
             VarNode(:b)
         ]), [:a, :b])
-        return grammar, constraint
-    end
+        test_constraint!(grammar, constraint, max_size=6)
 
-    function get_grammar_and_constraint2()
         grammar = @csgrammar begin
             Number = Number + Number
             Number = 1
@@ -26,28 +24,7 @@ using HerbCore, HerbGrammar, HerbConstraints
             RuleNode(3, [VarNode(:a)]) ,
             RuleNode(3, [VarNode(:b)])
         ]), [:a, :b])
-        return grammar, constraint
-    end
-
-    @testset "Number of candidate programs" begin
-        for (grammar, constraint) in [get_grammar_and_constraint1(), get_grammar_and_constraint2()]
-            iter = BFSIterator(grammar, :Number, solver=GenericSolver(grammar, :Number), max_size=6)
-            alltrees = 0
-            validtrees = 0
-            for p ∈ iter
-                if check_tree(constraint, p)
-                    validtrees += 1
-                end
-                alltrees += 1
-            end
-
-            addconstraint!(grammar, constraint)
-            constraint_iter = BFSIterator(grammar, :Number, solver=GenericSolver(grammar, :Number), max_size=6)
-
-            @test validtrees > 0
-            @test validtrees < alltrees
-            @test length([freeze_state(p) for p ∈ constraint_iter]) == validtrees
-        end
+        test_constraint!(grammar, constraint, max_size=6)
     end
 
     @testset "DomainRuleNode" begin
@@ -83,8 +60,8 @@ using HerbCore, HerbGrammar, HerbConstraints
         addconstraint!(grammar_domainrulenode, constraint_domainrulenode)
         
         #The number of solutions should be equal in both approaches
-        iter = BFSIterator(grammar, :Number, solver=GenericSolver(grammar, :Number), max_size=6)
-        iter_domainrulenode = BFSIterator(grammar_domainrulenode, :Number, solver=GenericSolver(grammar, :Number), max_size=6)
+        iter = BFSIterator(grammar, :Number, max_size=6)
+        iter_domainrulenode = BFSIterator(grammar_domainrulenode, :Number, max_size=6)
         @test length(iter) == length(iter_domainrulenode)
     end
 
@@ -106,8 +83,8 @@ using HerbCore, HerbGrammar, HerbConstraints
         
         addconstraint!(grammar, constraint)
         
-        s = GenericSolver(grammar, :S)
-        iter = BFSIterator(grammar, :S, solver=s)
+        solver = GenericSolver(grammar, :S)
+        iter = BFSIterator(solver)
 
         # (1, 1, 1, 1)
         # (1, 1, 1, 2)

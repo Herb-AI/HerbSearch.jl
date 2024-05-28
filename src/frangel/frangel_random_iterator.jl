@@ -37,7 +37,7 @@ function Base.iterate(iter::FrAngelRandomIterator)
 end
 
 function Base.iterate(iter::FrAngelRandomIterator, state::FrAngelRandomIteratorState)
-    return (sample!(iter.grammar, iter.sym, iter.rule_minsize, iter.symbol_minsize, state.filtered_indices, state.probabilities, state.cumulative_probs, UInt8(iter.max_depth)), state)
+    return (sample!(iter.solver.grammar, get_starting_symbol(iter.solver), iter.rule_minsize, iter.symbol_minsize, state.filtered_indices, state.probabilities, state.cumulative_probs, UInt8(iter.solver.max_depth)), state)
 end
 
 
