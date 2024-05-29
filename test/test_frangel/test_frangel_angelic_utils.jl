@@ -9,6 +9,7 @@ grammar = @cfgrammar begin
             Num
         end
     )
+    Angelic = update_✝_angelic_path
 end
 
 spec = [
@@ -32,7 +33,7 @@ iterator = FrAngelRandomIterator(grammar, :Num, rules_min, symbol_min, max_depth
 @testset "angelic_evaluation" begin
     p = RuleNode(15, [Hole([]), RuleNode(12), RuleNode(13, [RuleNode(12), RuleNode(2)])])
     tab = SymbolTable(grammar)
-    res = execute_angelic_on_input(tab, p, grammar, spec[1].in, 2, RuleNode(14, [RuleNode(1), RuleNode(1)]), config.angelic.max_execute_attempts, angelic_conditions)
+    res = execute_angelic_on_input(tab, p, grammar, spec[1].in, 2, RuleNode(16), config.angelic.max_execute_attempts, angelic_conditions)
     @test res
 end
 
@@ -152,20 +153,20 @@ end
     @testset "1-true flows" begin
         code_paths = Vector{BitVector}()
         get_code_paths!(1, BitVector(), BitTrie(), code_paths, 2)
-        @test code_paths == [[true], [false, true]]
+        @test code_paths == BitVector[[true], [false, true]]
     end
 
     @testset "2-true flows" begin
         code_paths = Vector{BitVector}()
         get_code_paths!(2, BitVector(), BitTrie(), code_paths, 3)
-        @test code_paths == [[true, true], [true, false, true], [false, true, true]]
+        @test code_paths == [[true, true], [true, false, true], [true, false, false, true]]
     end
 
     @testset "2-true flows, some visited" begin
         code_paths = Vector{BitVector}()
         visited = BitTrie()
-        trie_add!(visited, BitVector([false]))
+        trie_add!(visited, BitVector([true]))
         get_code_paths!(2, BitVector(), visited, code_paths, 3)
-        @test code_paths == [[true, true], [true, false, true]]
+        @test code_paths == [[false, true, true], [false, true, false, true], [false, true, false, false, true]]
     end
 end
