@@ -113,12 +113,15 @@ function soft_reset_env(environment::Environment)
     println((obsx, obsy, obsz)) #TODO: remove/change print
 end
 
+
+number_of_evals = 0
 """
     evaluate_trace_minerl(prog::AbstractRuleNode, grammar::ContextSensitiveGrammar, environment::Environment, show_moves::Bool)
 
 Evaluate in MineRL `environment`.
 """
-function evaluate_trace_minerl(prog::AbstractRuleNode, grammar::ContextSensitiveGrammar, environment::Environment, show_moves::Bool)
+function evaluate_trace_minerl(prog::AbstractRuleNode, grammar::ContextSensitiveGrammar, environment::Environment; show_moves::Bool=false)
+    global number_of_evals += 1
     soft_reset_env(environment)
 
     expr = rulenode2expr(prog, grammar)

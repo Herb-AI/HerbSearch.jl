@@ -16,7 +16,7 @@ end
 @assert all(prob -> prob == minerl_grammar.log_probabilities[begin], minerl_grammar.log_probabilities)
 
 #  overwrite the evaluate trace function
-HerbSearch.evaluate_trace(prog::RuleNode, grammar::ContextSensitiveGrammar; show_moves=true) = evaluate_trace_minerl(prog, grammar, environment, show_moves)
+HerbSearch.evaluate_trace(prog::RuleNode, grammar::ContextSensitiveGrammar) = evaluate_trace_minerl(prog, grammar, environment, show_moves=false)
 HerbSearch.calculate_rule_cost(rule_index::Int, grammar::ContextSensitiveGrammar) = HerbSearch.calculate_rule_cost_prob(rule_index, grammar)
 
 SEED = 958129
@@ -24,6 +24,6 @@ if !(@isdefined environment)
     environment = create_env("MineRLNavigateDenseProgSynth-v0"; seed=SEED, inf_health=true, inf_food=true, disable_mobs=true)
 end
 print_logo()
-iter = HerbSearch.GuidedSearchTraceIterator(minerl_grammar, :SEQ)
+iter = HerbSearch.GuidedSearchTraceIterator(minerl_grammar, :SEQ, time(), 30000000)
 program = @time probe(Vector{Trace}(), iter, max_time=3000000, cycle_length=6)
  

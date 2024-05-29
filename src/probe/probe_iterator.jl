@@ -107,7 +107,10 @@ end
 
 Evaluate the `program` with the `grammar`.
 """
-evaluate_trace(program::RuleNode, grammar::ContextSensitiveGrammar; show_moves::Bool) = error("Evaluate trace method should be overwritten")
+evaluate_trace(program::RuleNode, grammar::ContextSensitiveGrammar) = error("Evaluate trace method should be overwritten")
+
+partial_sol(best_reward::Float64, reward::Float64) = reward > best_reward + 0.2
+reset_iterator(eval_cache::Set{Any}, state::Any) = Set(), nothing
 
 function probe(traces::Vector{Trace}, iterator::ProgramIterator; max_time::Int, cycle_length::Int)
     start_time = time()
@@ -116,7 +119,9 @@ function probe(traces::Vector{Trace}, iterator::ProgramIterator; max_time::Int, 
     state = nothing
     grammar = get_grammar(iterator.solver)
 
-    best_reward = 0
+    best_reward_psol = 0.0
+    best_reward = 0.0
+    best_reward_over_time = Vector{Tuple{Float64,Float64}}()
     # all partial solutions that were found so far
     all_selected_psols = Set{ProgramCacheTrace}()
     # start next iteration while there is time left
@@ -125,22 +130,26 @@ function probe(traces::Vector{Trace}, iterator::ProgramIterator; max_time::Int, 
         # partial solutions for the current synthesis cycle
         psol_with_eval_cache = Vector{ProgramCacheTrace}()
         next = state === nothing ? iterate(iterator) : iterate(iterator, state)
-        while next !== nothing && i < cycle_length # run one cycle
+        while next !== nothing && i < cycle_length && time() - start_time < max_time # run one cycle
             program, state = next
 
             # evaluate
             program, evaluation = get_prog_eval(iterator, program)
-            eval_observation, is_done, reward = isempty(evaluation) ? evaluate_trace(program, grammar, show_moves=true) : evaluation
+            eval_observation, is_done, reward = isempty(evaluation) ? evaluate_trace(program, grammar) : evaluation
             eval_observation_rounded = round.(eval_observation, digits=1)
             is_partial_sol = false
-            if reward > best_reward + 0.2
+            if reward > best_reward
                 best_reward = reward
-                printstyled("Best reward: $best_reward\n", color=:red)
+                push!(best_reward_over_time, (time() - start_time, best_reward))
+            end
+            if partial_sol(best_reward_psol, reward)
+                best_reward_psol = reward
+                printstyled("Best reward: $best_reward_psol\n", color=:red)
                 is_partial_sol = true
             end
             if is_done
                 @info "Last level: $(length(state.bank[state.level + 1])) programs"
-                return program
+                return program, best_reward_over_time
             elseif eval_observation_rounded in eval_cache # result already in cache
                 next = iterate(iterator, state)
                 continue
@@ -159,7 +168,7 @@ function probe(traces::Vector{Trace}, iterator::ProgramIterator; max_time::Int, 
 
         # check if program iterator is exhausted
         if next === nothing
-            return nothing
+            return nothing, best_reward_over_time
         end
 
         partial_sols = filter(x -> x ∉ all_selected_psols, select_partial_solution(psol_with_eval_cache, all_selected_psols))
@@ -169,8 +178,7 @@ function probe(traces::Vector{Trace}, iterator::ProgramIterator; max_time::Int, 
             update_grammar!(grammar, partial_sols) # update probabilites
 
             # restart iterator
-            eval_cache = Set()
-            state = nothing
+            eval_cache, state = reset_iterator(eval_cache, state)
 
             #for loop to update all_selected_psols with new costs
             for prog_with_cache ∈ all_selected_psols
@@ -181,5 +189,5 @@ function probe(traces::Vector{Trace}, iterator::ProgramIterator; max_time::Int, 
         end
     end
 
-    return nothing
+    return nothing, best_reward_over_time
 end
