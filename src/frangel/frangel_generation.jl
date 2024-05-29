@@ -243,14 +243,13 @@ function add_angelic_conditions!(program::RuleNode, grammar::AbstractGrammar, an
 
     if haskey(angelic_conditions, program.ind)
         angelic_condition_ind = angelic_conditions[program.ind]
-
         for (index, child) in enumerate(program.children)
             if index != angelic_condition_ind
                 program.children[index] = add_angelic_conditions!(child, grammar, angelic_conditions)
+            else
+                program.children[index] = Hole(grammar.domains[grammar.childtypes[program.ind][angelic_condition_ind]])
             end
         end
-
-        program.children[angelic_condition_ind] = Hole(grammar.domains[grammar.childtypes[program.ind][angelic_condition_ind]])
     else
         for (index, child) in enumerate(program.children)
             program.children[index] = add_angelic_conditions!(child, grammar, angelic_conditions)
