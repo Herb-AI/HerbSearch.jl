@@ -31,7 +31,7 @@ A configuration struct for the angelic mode of FrAngel.
 - `boolean_expr_max_size::Int`: The maximum size of boolean expressions when resolving angelic conditions.
 - `max_execute_attempts::Int`: The maximal attempts of executing the program with angelic evaluation.
 - `max_allowed_fails::Float16`: The maximum allowed fraction of failed tests during evaluation before short-circuit failure.
-- `truthy_tree::Union{Nothing,RuleNode}`: A tree with truthy value used to replace holes during angelic execution.
+- `angelic_rulenode_idx::Union{Nothing,Int}`: The index of the angelic rule node in the grammar. Used to replace angelic conditions/holes right before evaluation.
 
 """
 @kwdef mutable struct FrAngelConfigAngelic
@@ -39,7 +39,7 @@ A configuration struct for the angelic mode of FrAngel.
     boolean_expr_max_size::UInt8 = 6
     max_execute_attempts::Int = 55
     max_allowed_fails::Float16 = 0.75
-    truthy_tree::Union{Nothing,RuleNode} = nothing
+    angelic_rulenode_idx::Union{Nothing,Int} = nothing
 end
 
 """
@@ -82,25 +82,16 @@ function frangel(
     grammar = iter.solver.grammar
     symboltable = SymbolTable(grammar)
 
+    # Add angelic rule and save index if not provided
+    if isnothing(config.angelic.angelic_rulenode_idx)
+        add_rule!(grammar, :(Angelic = update_✝_angelic_path))
+        config.angelic.angelic_rulenode_idx = length(grammar.rules)
+    end
+    
     # Setup grammar with fragments
     (fragment_base_rules_offset, fragment_rules_offset) = setup_grammar_with_fragments!(grammar, config.generation.use_fragments_chance, rule_minsize)
     state = nothing
     start_time = time()
-
-    # Set truthy tree if not provided
-    if isnothing(config.angelic.truthy_tree) && config.generation.use_angelic_conditions_chance != 0
-        res = false
-        truthy_tree = nothing
-        while !res
-            truthy_tree = generate_random_program(grammar, :Bool, config.generation, fragment_base_rules_offset, config.angelic.boolean_expr_max_size, rule_minsize, symbol_minsize)
-            try
-                res = execute_on_input(symboltable, rulenode2expr(truthy_tree, grammar), spec[1].in)
-            catch
-                res = false
-            end
-        end
-        config.angelic.truthy_tree = truthy_tree
-    end
 
     if verbose_level > 0
         println("Grammar:")
@@ -124,7 +115,8 @@ function frangel(
         use_angelic = config.generation.use_angelic_conditions_chance != 0 && rand() < config.generation.use_angelic_conditions_chance
 
         # Modify the program with fragments
-        program = modify_and_replace_program_fragments!(program, fragments, fragment_base_rules_offset, fragment_rules_offset, config.generation, grammar, rule_minsize, symbol_minsize, use_angelic)
+        program = modify_and_replace_program_fragments!(program, fragments, fragment_base_rules_offset, fragment_rules_offset, config.generation,
+            grammar, rule_minsize, symbol_minsize, use_angelic)
         # Modify the program with angelic conditions
         if use_angelic
             program = add_angelic_conditions!(program, grammar, angelic_conditions)
