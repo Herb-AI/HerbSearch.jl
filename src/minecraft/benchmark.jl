@@ -108,7 +108,7 @@ for i in 1:number_of_tries
     push!(tries, Dict(
         "number" => i,
         "programs_evaluated" => number_of_evals,
-        "program" => string(eval(rulenode2expr(program, grammar))),
+        "program" => isnothing(program) ? nothing : string(eval(rulenode2expr(program, grammar))),
         "best_reward_over_time" => join(best_reward_over_time, ""),
         "time" => isnothing(program) ? "TIMEOUT" : time_taken
     ))

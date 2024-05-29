@@ -1,0 +1,38 @@
+{
+    "avg_time": "TIMEOUT",
+    "experiment": {
+        "number": 1,
+        "description": "Partial solution: reward > best_reward + 0.2.\nCycle length 6.\nSelect 5 programs with highest reward.\nUpdate based on last action; fit = min(best_reward / 100, 1); replace start symbol with [best_program; ACT].",
+        "grammar": [
+            "4 : SEQ => [ACT]",
+            "4 : ACT => (TIMES, Dict(\"move\" => DIR, \"sprint\" => 1, \"jump\" => 1))",
+            "4 : DIR => 1",
+            "4 : DIR => 2",
+            "4 : DIR => 4",
+            "4 : DIR => 8",
+            "4 : DIR => 5",
+            "4 : DIR => 9",
+            "4 : DIR => 6",
+            "4 : DIR => 10",
+            "4 : TIMES => 5",
+            "4 : TIMES => 10",
+            "4 : TIMES => 25",
+            "4 : TIMES => 50",
+            "4 : TIMES => 75",
+            "4 : TIMES => 100"
+        ]
+    },
+    "tries": [
+        {
+            "number": 1,
+            "program": null,
+            "time": "TIMEOUT",
+            "best_reward_over_time": "(0.6488010883331299, 0.3605499267578125)(0.9478390216827393, 0.8559112548828125)(1.3688130378723145, 2.613525390625)(2.116147994995117, 4.671119689941406)(3.0738840103149414, 5.413383483886719)(4.362957954406738, 5.994316101074219)(8.217113971710205, 6.072784423828125)(9.761198043823242, 6.086273193359375)(23.335774898529053, 6.2750396728515625)(24.462788105010986, 6.841880798339844)(25.691575050354004, 8.232391357421875)(27.128716945648193, 10.347366333007812)(53.413105964660645, 11.189949035644531)(55.29823899269104, 13.404376983642578)(60.68567490577698, 13.719436645507812)(62.69463896751404, 14.249526977539062)(74.94017601013184, 15.003543853759766)",
+            "programs_evaluated": 102
+        }
+    ],
+    "world": {
+        "seed": 11248956,
+        "description": "Big cave forward. Reward increases when entering cave. Goal not in cave."
+    }
+}

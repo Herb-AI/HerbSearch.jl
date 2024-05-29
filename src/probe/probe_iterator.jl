@@ -34,7 +34,7 @@ function probe(examples::Vector{<:IOExample}, iterator::ProgramIterator; max_tim
         # partial solutions for the current synthesis cycle
         psol_with_eval_cache = Vector{ProgramCache}()
         next = state === nothing ? iterate(iterator) : iterate(iterator, state)
-        while next !== nothing && i < cycle_length # run one cycle
+        while next !== nothing && i <= cycle_length # run one cycle
             program, state = next
 
             # evaluate program
@@ -72,8 +72,10 @@ function probe(examples::Vector{<:IOExample}, iterator::ProgramIterator; max_tim
 
             push!(eval_cache, eval_observation)
 
-            next = iterate(iterator, state)
             i += 1
+            if i <= cycle_length
+                next = iterate(iterator, state)
+            end
         end
 
         # check if program iterator is exhausted
@@ -130,7 +132,7 @@ function probe(traces::Vector{Trace}, iterator::ProgramIterator; max_time::Int, 
         # partial solutions for the current synthesis cycle
         psol_with_eval_cache = Vector{ProgramCacheTrace}()
         next = state === nothing ? iterate(iterator) : iterate(iterator, state)
-        while next !== nothing && i < cycle_length && time() - start_time < max_time # run one cycle
+        while next !== nothing && i <= cycle_length && time() - start_time < max_time # run one cycle
             program, state = next
 
             # evaluate
@@ -161,7 +163,7 @@ function probe(traces::Vector{Trace}, iterator::ProgramIterator; max_time::Int, 
             push!(eval_cache, eval_observation_rounded)
 
             i += 1
-            if i < cycle_length
+            if i <= cycle_length
                 next = iterate(iterator, state)
             end
         end
