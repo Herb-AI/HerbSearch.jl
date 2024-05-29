@@ -194,7 +194,7 @@ function get_code_paths!(
     code_paths::Vector{BitVector},
     max_length::Int
 )
-    if (length(code_paths) > max_length || trie_contains(visited, curr))
+    if (length(code_paths) >= max_length || trie_contains(visited, curr))
         return
     end
     if num_true == 0
