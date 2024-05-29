@@ -31,7 +31,7 @@ A configuration struct for the angelic mode of FrAngel.
 - `boolean_expr_max_size::Int`: The maximum size of boolean expressions when resolving angelic conditions.
 - `max_execute_attempts::Int`: The maximal attempts of executing the program with angelic evaluation.
 - `max_allowed_fails::Float16`: The maximum allowed fraction of failed tests during evaluation before short-circuit failure.
-- `angelic_rulenode_idx::Union{Nothing,Int}`: The index of the angelic rule node in the grammar. Used to replace angelic conditions/holes right before evaluation.
+- `angelic_rulenode::Union{Nothing,RuleNode}`: The angelic rulenode. Used to replace angelic conditions/holes right before evaluation.
 
 """
 @kwdef mutable struct FrAngelConfigAngelic
@@ -39,7 +39,7 @@ A configuration struct for the angelic mode of FrAngel.
     boolean_expr_max_size::UInt8 = 6
     max_execute_attempts::Int = 55
     max_allowed_fails::Float16 = 0.75
-    angelic_rulenode_idx::Union{Nothing,Int} = nothing
+    angelic_rulenode::Union{Nothing,RuleNode} = nothing
 end
 
 """
@@ -83,11 +83,11 @@ function frangel(
     symboltable = SymbolTable(grammar)
 
     # Add angelic rule and save index if not provided
-    if isnothing(config.angelic.angelic_rulenode_idx)
+    if isnothing(config.angelic.angelic_rulenode)
         add_rule!(grammar, :(Angelic = update_✝_angelic_path))
-        config.angelic.angelic_rulenode_idx = length(grammar.rules)
+        config.angelic.angelic_rulenode = RuleNode(length(grammar.rules))
     end
-    
+
     # Setup grammar with fragments
     (fragment_base_rules_offset, fragment_rules_offset) = setup_grammar_with_fragments!(grammar, config.generation.use_fragments_chance, rule_minsize)
     state = nothing

@@ -25,12 +25,12 @@ function get_passed_tests!(
 )
     # If angelic -> evaluate optimistically
     if contains_hole(program)
-        @assert !isa(config.angelic_rulenode_idx, Nothing)
-        angelic_rulenode_idx = config.angelic_rulenode_idx::Int
+        @assert !isa(config.angelic_rulenode, Nothing)
+        angelic_rulenode = config.angelic_rulenode::RuleNode
         fails = 0
         for (index, test) in enumerate(tests)
-            prev_passed_tests[index] = execute_angelic_on_input(symboltable, program, grammar, test.in, test.out, 
-                angelic_rulenode_idx, config.max_execute_attempts, angelic_conditions)
+            prev_passed_tests[index] = execute_angelic_on_input(symboltable, program, grammar, test.in, test.out,
+                angelic_rulenode, config.max_execute_attempts, angelic_conditions)
             if !prev_passed_tests[index]
                 fails += 1
                 if config.max_allowed_fails < fails / length(tests)
