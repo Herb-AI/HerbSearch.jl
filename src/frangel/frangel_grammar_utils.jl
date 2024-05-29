@@ -17,50 +17,44 @@ function buildProgrammingProblemGrammar(
     return_type::Symbol,
     intermediate_variables_count::Int=0
 )::ContextSensitiveGrammar
-    base_grammar = deepcopy(@cfgrammar begin
+    base = deepcopy(@cfgrammar begin
+        Bool = true | false | isnothing(Any) | (Num < Num) | (Any == Any) | !(Bool) | (Bool && Bool) | (Bool || Bool)
+        Num = |(0:9)
+        Num = (Num + Num) | (Num - Num) | (Num * Num) | i
+        Any = Bool | Num
 
-        Program = (VariableDefintion; Statement; Return) | (Statement; Return) | Return
-        VariableDefintion = ListVariable = List
+        Program = Return | (Statement; Return)
 
         Statement = (Statement; Statement)
-        Statement = (
-            i = 0;
-            while Bool
-                InnerStatement
-                i = i + 1
-            end)
-        Statement = (
-            if Bool
-                Statement
-            end
-        )
-        Statement = push!(ListVariable, Num)
-
-        InnerNum = Num | i | (InnerNum + InnerNum)
-        InnerStatement = push!(ListVariable, InnerNum)
-
-        Num = |(0:9) | (Num + Num) | (Num - Num)
-        Num = getindex(ListVariable, Num)
-
-        Bool = true | false | (InnerNum < InnerNum)
-
-        List = [] | ListVariable
+        Statement = # control structures
+            (
+                if Bool
+                    Statement
+                end
+            )
+        Statement =
+            (
+                i = 0;
+                while Bool
+                    Statement
+                    i += 1
+                end
+            )
+        Statement = (ListVariable = List)
+        # list ones, add separately
+        Statement = push!(ListVariable, Any)
 
         ListVariable = list
+        List = []
     end)
 
-    # add return type constraint
-    add_rule!(base_grammar, :(Return = return $return_type))
-
-    # add input parameters constraints
     for input_parameter in input_parameters
-        add_rule!(base_grammar, :($(input_parameter[2]) = $(input_parameter[1])))
+        add_rule!(base, :($(input_parameter[2]) = $(input_parameter[1])))
     end
 
-    # what about order constrains for while loops?
-    # what about order constrains for variables
+    add_rule!(base, :(Return = return $return_type))
 
-    base_grammar
+    base
 end
 
 """
@@ -167,6 +161,9 @@ Add base/identity rules for fragments to the given grammar.
 """
 function add_fragment_base_rules!(g::AbstractGrammar)
     for typ in keys(g.bytype)
+        if typ == :Angelic
+            continue
+        end
         expr = Symbol(string(:Fragment_, typ))
         rvec = Any[]
         parse_rule!(rvec, expr)
