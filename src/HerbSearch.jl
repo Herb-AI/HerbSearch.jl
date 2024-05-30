@@ -129,7 +129,6 @@ export
   passes_the_same_tests_or_more,
   symbols_minsize,
   rules_minsize,
-  _minsize!,
   update_min_sizes!,
   test_output_equality,
   test_output_equal_or_greater,

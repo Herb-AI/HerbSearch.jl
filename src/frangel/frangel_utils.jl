@@ -259,49 +259,58 @@ using each of the available production rules as a root.
 The minimum size achievable for each production rule in the grammar, in the same order as the rules.
 
 """
-function rules_minsize(grammar::AbstractGrammar)::AbstractVector{UInt8}
-    min_sizes = UInt8[255 for i in eachindex(grammar.rules)]
-    visited = Dict(type => false for type in grammar.types)
+function rules_minsize(grammar::AbstractGrammar)::Vector{UInt8}
+    temp = Union{UInt8, Nothing}[nothing for _ in eachindex(grammar.rules)]
 
     for i in eachindex(grammar.rules)
         if isterminal(grammar, i)
-            min_sizes[i] = 1
+            temp[i] = 1
         end
     end
 
-    for i in eachindex(grammar.rules)
-        if !isterminal(grammar, i)
-            min_sizes[i] = _minsize!(grammar, i, min_sizes, visited)
-        end
-    end
-    min_sizes
-end
+    max_tries = length(grammar.rules)
+    while any(isnothing, temp) && max_tries > 0
+        for i in eachindex(grammar.rules)
+            if isnothing(temp[i])
+                size = UInt8(1)
 
-function _minsize!(grammar::AbstractGrammar, rule_index::Int, min_sizes::AbstractVector{UInt8}, visited::Dict{Symbol,Bool})::UInt8
-    isterminal(grammar, rule_index) && return min_sizes[rule_index]
+                for ctyp in child_types(grammar, i)
+                    min_child_size = nothing
+            
+                    for index in grammar.bytype[ctyp]
+                        if !isnothing(temp[index])
+                            if isnothing(min_child_size)
+                                min_child_size = temp[index]
+                            else
+                                min_child_size = min(min_child_size, temp[index])
+                            end
+                        end
+                    end
+                    if isnothing(min_child_size)
+                        @goto next_rule
+                    else 
+                        size += min_child_size
+                    end
+                end
 
-    size = UInt8(1)
-    for ctyp in child_types(grammar, rule_index)
-        if visited[ctyp]
-            size += minimum(min_sizes[i] for i in grammar.bytype[ctyp])
-            continue
-        end
-        visited[ctyp] = true
-        rules = grammar.bytype[ctyp]
-        min = 255
-        for index in rules
-            min = minimum([min, _minsize!(grammar, index, min_sizes, visited)])
-            if min == 1
-                break
+                temp[i] = size
+                @label next_rule
             end
         end
-
-        visited[ctyp] = false
-        size += min
+        max_tries -= 1
     end
+    
+    if any(isnothing, temp)
+        throw(ArgumentError("Could not calculate minimum sizes for all rules"))
+    else
+        min_sizes = UInt8[255 for _ in eachindex(grammar.rules)]
 
-    min_sizes[rule_index] = size
-    size
+        for i in eachindex(grammar.rules)
+            min_sizes[i] = temp[i]
+        end
+
+        min_sizes
+    end
 end
 
 """
