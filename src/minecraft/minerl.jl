@@ -54,7 +54,6 @@ function reset_env(environment::Environment)
 
     # set start position
     environment.start_pos = get_xyz_from_obs(obs)
-    print(environment.start_pos) #TODO: remove/change print
 
     # weird bug fix
     action = env.action_space.noop()
@@ -80,8 +79,6 @@ function reset_env(environment::Environment)
         env.set_next_chat_message("/kill @e[type=!player]")
         env.step(action)
     end
-
-    printstyled("Environment created. x: $(environment.start_pos[1]), y: $(environment.start_pos[2]), z: $(environment.start_pos[3])\n", color=:green) #TODO: remove/change print
 end
 
 """
@@ -110,7 +107,6 @@ function soft_reset_env(environment::Environment)
         obs = env.step(action)[1]
         obsx, obsy, obsz = get_xyz_from_obs(obs)
     end
-    println((obsx, obsy, obsz)) #TODO: remove/change print
 end
 
 
@@ -153,7 +149,6 @@ function evaluate_trace_minerl(prog::AbstractRuleNode, grammar::ContextSensitive
             sum_of_rewards += reward
             if done
                 is_done = true
-                printstyled("sum of rewards: $sum_of_rewards. Done\n", color=:green) #TODO: remove/change print
                 break
             end
         end
