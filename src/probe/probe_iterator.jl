@@ -138,7 +138,7 @@ function probe(traces::Vector{Trace}, iterator::ProgramIterator; max_time::Int, 
             # evaluate
             program, evaluation = get_prog_eval(iterator, program)
             eval_observation, is_done, reward = isempty(evaluation) ? evaluate_trace(program, grammar) : evaluation
-            eval_observation_rounded = round.(eval_observation, digits=1)
+            eval_observation_rounded = (round(eval_observation[1], digits=1), floor(eval_observation[2]), round(eval_observation[3], digits=1))
             is_partial_sol = false
             if reward > best_reward
                 best_reward = reward

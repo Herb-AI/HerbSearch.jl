@@ -41,7 +41,7 @@ function Base.iterate(iter::GuidedSearchTraceIterator, state::GuidedSearchState)
             # evaluate program if starting symbol
             if return_type(grammar, prog.ind) == start_symbol
                 eval_observation, is_done, final_reward = evaluate_trace(prog, grammar)
-                eval_observation_rounded = round.(eval_observation, digits=1)
+                eval_observation_rounded = (round(eval_observation[1], digits=1), floor(eval_observation[2]), round(eval_observation[3], digits=1))
                 if eval_observation_rounded in state.eval_cache # program already cached
                     continue
                 end
