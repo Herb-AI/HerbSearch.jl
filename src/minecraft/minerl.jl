@@ -158,6 +158,21 @@ function evaluate_trace_minerl(prog::AbstractRuleNode, grammar::ContextSensitive
             break
         end
     end
+
+    # take noop action until player stops
+    # this is to avoid a bug where the player moves onto the goal in soft_reset_env
+    pos = get_xyz_from_obs(obs)
+    old_pos = pos
+    action = env.action_space.noop()
+    while !is_done
+        obs, _, is_done = env.step(action)
+        new_pos = get_xyz_from_obs(obs)
+        if new_pos == old_pos
+            break
+        end
+        old_pos = new_pos
+    end
+
     println("Reward $sum_of_rewards") #TODO: remove/change print
-    return get_xyz_from_obs(obs), is_done, sum_of_rewards
+    return pos, is_done, sum_of_rewards
 end
