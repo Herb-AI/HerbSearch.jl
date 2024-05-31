@@ -128,6 +128,9 @@ function evaluate_trace_minerl(prog::AbstractRuleNode, grammar::ContextSensitive
     obs = nothing
     env = environment.env
     for (times, action) ∈ sequence_of_actions
+        if !(typeof(times) <: Number)
+            times, action = action, times
+        end
         new_action = env.action_space.noop()
         for (key, val) in action
             if key == "move"

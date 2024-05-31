@@ -103,6 +103,24 @@ elseif experiment_number == 2
         Update based on last action; fit = min(best_reward / 100, 1); replace start symbol with [best_program; ACTS].
         Allow taking multiple actions after best program."""
     experiment_data["experiment"]["grammar"] = grammar_to_list(minerl_grammar)
+elseif experiment_number == 3
+    cycle_length = 8
+    minerl_grammar = @pcsgrammar begin
+        1:SEQ = ACT
+        2:ACT = [A] | [ACT; A]
+        1:A = (Dict("move" => DIR, "sprint" => 1, "jump" => 1), TIMES)
+        8:DIR = 0b0001 | 0b0010 | 0b0100 | 0b1000 | 0b0101 | 0b1001 | 0b0110 | 0b1010 # forward | back | left | right | forward-left | forward-right | back-left | back-right
+        6:TIMES = 5 | 10 | 25 | 50 | 75 | 100
+    end
+
+    experiment_data["experiment"]["description"] = """
+        Partial solution: reward > best_reward + 0.2.
+        Cycle length 8.
+        Select 5 programs with highest reward.
+        Update based on last action; fit = min(best_reward / 100, 1); replace start symbol with [best_program; ACTS].
+        Allow taking multiple actions after best program.
+        Change (TIMES, action) to (action, TIMES)"""
+    experiment_data["experiment"]["grammar"] = grammar_to_list(minerl_grammar)
 end
 
 # run experiment
@@ -135,10 +153,10 @@ for i in 1:number_of_tries
 
     # probe timed out, no point in running again
     if isnothing(program)
-        printstyled("\nTry $i timed out.\n", color=:red, bold=true)  
+        printstyled("\nTry $i timed out.\n", color=:red, bold=true)
         break
     else
-        printstyled("\nFinished try $i in $(time_taken) seconds.\n", color=:green, bold=true)  
+        printstyled("\nFinished try $i in $(time_taken) seconds.\n", color=:green, bold=true)
     end
 
     if i != number_of_tries
