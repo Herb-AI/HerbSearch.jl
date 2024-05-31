@@ -116,6 +116,10 @@ function remember_programs!(
             end
         end
     end
+    println("Simplest program for tests: ", passing_tests)
+    println(rulenode2expr(new_program, grammar))
+    println()
+
     # Add new program to remembered ones
     old_remembered[passing_tests] = (new_program, node_count, program_length)
     # println("Simplest program for tests: ", passing_tests)

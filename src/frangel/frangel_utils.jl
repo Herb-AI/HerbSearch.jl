@@ -41,11 +41,13 @@ function get_passed_tests!(
         nothing
     else
         expr = rulenode2expr(program, grammar)
+        output = execute_on_input(symboltable, expr, tests[1].in)
         for (index, test) in enumerate(tests)
             try
-                output = execute_on_input(symboltable, expr, test.in)
+                
                 prev_passed_tests[index] = test_output_equality(output, test.out)
-            catch _
+            catch e
+                println(e)
                 prev_passed_tests[index] = false
             end
         end
