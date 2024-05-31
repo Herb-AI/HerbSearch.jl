@@ -23,6 +23,9 @@ function parse_commandline()
             help = "environment name"
             arg_type = String
             default = "MineRLNavigateDenseProgSynth-v0"
+        "--render", "-r"
+            help = "render the environment"
+            action = :store_true
     end
 
     return parse_args(settings)

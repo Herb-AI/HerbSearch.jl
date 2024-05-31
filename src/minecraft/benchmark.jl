@@ -33,7 +33,7 @@ end
 @assert all(prob -> prob == minerl_grammar.log_probabilities[begin], minerl_grammar.log_probabilities)
 
 # override the evaluate trace function
-HerbSearch.evaluate_trace(prog::RuleNode, grammar::ContextSensitiveGrammar) = evaluate_trace_minerl(prog, grammar, environment)
+HerbSearch.evaluate_trace(prog::RuleNode, grammar::ContextSensitiveGrammar) = evaluate_trace_minerl(prog, grammar, environment, show_moves=args["render"])
 # override cost function
 HerbSearch.calculate_rule_cost(rule_index::Int, grammar::ContextSensitiveGrammar) = HerbSearch.calculate_rule_cost_prob(rule_index, grammar)
 
