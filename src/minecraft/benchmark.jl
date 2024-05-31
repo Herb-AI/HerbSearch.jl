@@ -168,7 +168,7 @@ end
 experiment_data["avg_time"] = time_sum == 0 ? "TIMEOUT" : time_sum / number_of_tries
 
 dir = "experiments/experiment_$(experiment_number)"
-file_path = "$dir/$seed.json"
+file_path = "$dir/$(experiment_number)_$seed.json"
 
 println("\nWriting data to $(pwd())/$(file_path)...")
 
