@@ -28,7 +28,7 @@ function resolve_angelic!(
     grammar::AbstractGrammar,
     symboltable::SymbolTable,
     tests::AbstractVector{<:IOExample},
-    replacement_dir::Int, # Direction of replacement; 1 -> top-down, -1 -> bottom-up
+    replacement_func::Function,
     angelic_conditions::Dict{UInt16,UInt8},
     config::FrAngelConfig,
     fragment_base_rules_offset::Int16,
@@ -36,8 +36,6 @@ function resolve_angelic!(
     symbol_minsize::Dict{Symbol,UInt8}
 )::RuleNode
     num_holes = number_of_holes(program)
-    # Which hole to be replaced; if top-down -> first one; else -> last one
-    replacement_index = (replacement_dir == 1) ? 1 : (num_holes - 1)
     angelic = config.angelic
     new_tests = BitVector([false for _ in tests])
     while num_holes != 0
@@ -52,21 +50,23 @@ function resolve_angelic!(
                 continue
             end
             lhm_put!(visited, program_hash)
-            new_program = replace_next_angelic(program, boolean_expr, replacement_index)
-            get_passed_tests!(new_program, grammar, symboltable, tests, new_tests, angelic_conditions, angelic)
+            tuple = replacement_func(program, boolean_expr, config.angelic.angelic_rulenode)
+            get_passed_tests!(program, grammar, symboltable, tests, new_tests, angelic_conditions, angelic)
             # If the new program passes all the tests the original program did, replacement is successful
             if all(passing_tests .== (passing_tests .& new_tests))
-                program = new_program
                 passing_tests = new_tests
                 success = true
                 break
+            else
+                tuple[1].children[tuple[2]] = tuple[3]
             end
         end
         # Unresolved -> try other direction, or fail
-        if !success && replacement_dir == -1
+        if !success && replacement_func == replace_last_angelic!
             return program
         elseif !success
-            return resolve_angelic!(program, passing_tests, grammar, symboltable, tests, -1, angelic_conditions, config, fragment_base_rules_offset, rule_minsize, symbol_minsize)
+            return resolve_angelic!(program, passing_tests, grammar, symboltable, tests, replace_last_angelic!, angelic_conditions, config, 
+                fragment_base_rules_offset, rule_minsize, symbol_minsize)
         else
             num_holes -= 1
         end
@@ -75,40 +75,70 @@ function resolve_angelic!(
 end
 
 """
-    replace_next_angelic(program::RuleNode, boolean_expr::RuleNode, replacement_index::Int)::RuleNode
+    replace_first_angelic!(program::RuleNode, boolean_expr::RuleNode, angelic_rulenode::RuleNode)::Union{Tuple{RuleNode,Int},Nothing}
 
-Replace the `replacement_index`'th `AbstractHole` node in the `program` with the `boolean_expr` node. The tree is traversed by BFS.
+Replaces the first `AbstractHole` node in the `program` with the `boolean_expr` node. 
+The 'first' is defined here as the first node visited by pre-order traversal, left-to-right. The program is modified in-place.
 
 # Arguments
 - `program`: The program to resolve angelic conditions in.
 - `boolean_expr`: The boolean expression node to replace the `AbstractHole` node with.
-- `replacement_index`: The index of the occurrence to replace.
+- `angelic_rulenode`: The angelic rulenode. Used to compare against nodes in the program.
 
 # Returns
 The modified program with the replacement.
 
 """
-function replace_next_angelic(program::RuleNode, boolean_expr::RuleNode, replacement_index::Int)::RuleNode
-    new_program = deepcopy(program)
-    # BFS traversal
-    queue = DataStructures.Queue{AbstractRuleNode}()
-    enqueue!(queue, new_program)
-    while !isempty(queue)
-        node = dequeue!(queue)
-        for (child_index, child) in enumerate(node.children)
-            if child isa AbstractHole
-                if replacement_index == 1
-                    node.children[child_index] = boolean_expr
-                    return new_program
-                else
-                    replacement_index -= 1
-                end
-            else
-                enqueue!(queue, child)
+function replace_first_angelic!(program::RuleNode, boolean_expr::RuleNode, angelic_rulenode::RuleNode)::Union{Tuple{RuleNode,Int,AbstractHole},Nothing}
+    for (child_index, child) in enumerate(program.children)
+        if child isa AbstractHole
+            program.children[child_index] = boolean_expr
+            return (program, child_index, child)
+        else
+            res = replace_first_angelic!(child, boolean_expr, angelic_rulenode)
+            if res !== nothing
+                return res
             end
         end
     end
-    new_program
+    return nothing
+end
+
+
+"""
+    replace_last_angelic!(program::RuleNode, boolean_expr::RuleNode, angelic_rulenode::RuleNode)::Union{Tuple{RuleNode,Int},Nothing}
+
+Replaces the last `AbstractHole` node in the `program` with the `boolean_expr` node. 
+The 'last' is defined here as the first node visited by reversed pre-order traversal (right-to-left). The program is modified in-place.
+
+# Arguments
+- `program`: The program to resolve angelic conditions in.
+- `boolean_expr`: The boolean expression node to replace the `AbstractHole` node with.
+- `angelic_rulenode`: The angelic rulenode. Used to compare against nodes in the program.
+
+# Returns
+The parent node and the index of its children that has been modified. Used to clear the changes if replacement is unsuccessful.
+
+"""
+function replace_last_angelic!(program::RuleNode, boolean_expr::RuleNode, angelic_rulenode::RuleNode)::Union{Tuple{RuleNode,Int,AbstractHole},Nothing}
+    indices = Vector{Int}([])
+    for child_index in reverse(eachindex(program.children))
+        child = program.children[child_index]
+        if child isa AbstractHole
+            program.children[child_index] = boolean_expr
+            return (program, child_index, child)
+        else
+            push!(indices, child_index)
+        end
+    end
+
+    for child_index in indices
+        res = replace_last_angelic!(program.children[child_index], boolean_expr, angelic_rulenode)
+        if res !== nothing
+            return res
+        end
+    end
+    return nothing
 end
 
 """

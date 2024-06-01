@@ -4,7 +4,8 @@
 Builds a context-sensitive grammar for a generalized programming problem that FrAngel can use.
 
 # Arguments
-- `input_parameters`: An abstract vector of tuples representing the input parameters of the problem. Each tuple consists of a symbol representing the parameter name and a symbol representing the parameter type.
+- `input_parameters`: An abstract vector of tuples representing the input parameters of the problem. 
+Each tuple consists of a symbol representing the parameter name and a symbol representing the parameter type.
 - `return_type`: A symbol representing the return type of the problem.
 - `intermediate_variables_count`: An optional integer representing the number of intermediate variables to be used in the problem. Default is 0.
 
@@ -18,34 +19,34 @@ function buildProgrammingProblemGrammar(
     intermediate_variables_count::Int=0
 )::ContextSensitiveGrammar
     base = deepcopy(@cfgrammar begin
-        Bool = true | false | isnothing(Any) | (Num < Num) | (Any == Any) | !(Bool) | (Bool && Bool) | (Bool || Bool)
-        Num = |(0:9)
-        Num = (Num + Num) | (Num - Num) | (Num * Num) | i
-        Any = Bool | Num
-
-        Program = Return | (Statement; Return)
+        Program = (VariableDefintion; Statement; Return) | (Statement; Return) | Return
+        VariableDefintion = ListVariable = List
 
         Statement = (Statement; Statement)
-        Statement = # control structures
-            (
-                if Bool
-                    Statement
-                end
-            )
-        Statement =
-            (
-                i = 0;
-                while Bool
-                    Statement
-                    i += 1
-                end
-            )
-        Statement = (ListVariable = List)
-        # list ones, add separately
-        Statement = push!(ListVariable, Any)
+        Statement = (
+            i = 0;
+            while Bool
+                InnerStatement
+                i = i + 1
+            end)
+        Statement = (
+            if Bool
+                Statement
+            end
+        )
+        Statement = push!(ListVariable, Num)
+
+        InnerNum = Num | i | (InnerNum + InnerNum) | (InnerNum - InnerNum)
+        InnerStatement = push!(ListVariable, InnerNum)
+
+        Num = |(0:9) | (Num + Num) | (Num - Num)
+        Num = getindex(ListVariable, Num)
+
+        Bool = true | false | (InnerNum < InnerNum)
+
+        List = [] | ListVariable
 
         ListVariable = list
-        List = []
     end)
 
     for input_parameter in input_parameters

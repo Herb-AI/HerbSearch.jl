@@ -145,7 +145,8 @@ function frangel(
 
         # If it contains angelic conditions, resolve them
         if contains_hole(program)
-            program = resolve_angelic!(program, passed_tests, grammar, symboltable, spec, 1, angelic_conditions, config, fragment_base_rules_offset, rule_minsize, symbol_minsize)
+            program = resolve_angelic!(program, passed_tests, grammar, symboltable, spec, replace_first_angelic!, angelic_conditions, 
+                config, fragment_base_rules_offset, rule_minsize, symbol_minsize)
             # Still contains angelic conditions -> unresolved
             if contains_hole(program)
                 continue
