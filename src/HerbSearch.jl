@@ -95,11 +95,12 @@ export
   FrAngelConfigAngelic,
 
   resolve_angelic!,
-  replace_next_angelic,
+  replace_first_angelic!,
+  replace_last_angelic!,
   execute_angelic_on_input,
   get_code_paths!,
   create_angelic_expression,
-  clear_holes!,
+  number_of_angelic,
 
   mine_fragments,
   remember_programs!,

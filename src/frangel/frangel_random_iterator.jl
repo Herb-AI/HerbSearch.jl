@@ -37,12 +37,14 @@ function Base.iterate(iter::FrAngelRandomIterator)
 end
 
 function Base.iterate(iter::FrAngelRandomIterator, state::FrAngelRandomIteratorState)
-    return (sample!(iter.solver.grammar, get_starting_symbol(iter.solver), iter.rule_minsize, iter.symbol_minsize, state.filtered_indices, state.probabilities, state.cumulative_probs, UInt8(iter.solver.max_depth)), state)
+    return (sample!(iter.solver.grammar, get_starting_symbol(iter.solver), iter.rule_minsize, iter.symbol_minsize, 
+        state.filtered_indices, state.probabilities, state.cumulative_probs, UInt8(iter.solver.max_depth)), state)
 end
 
 
 """
-    sample!(grammar::AbstractGrammar, symbol::Symbol, rule_minsize::AbstractVector{UInt8}, symbol_minsize::Dict{Symbol,UInt8},
+    sample!(
+        grammar::AbstractGrammar, symbol::Symbol, rule_minsize::AbstractVector{UInt8}, symbol_minsize::Dict{Symbol,UInt8},
         filtered_indices::Vector{Int16}, probabilities::Vector{Float16}, cumulative_probs::Vector{Float16}, max_size::UInt8=UInt8(40))::RuleNode
 
 Sample a random rule from the grammar based on the given symbol and maximum size.

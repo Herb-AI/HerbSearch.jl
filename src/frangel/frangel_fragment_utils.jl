@@ -69,7 +69,8 @@ function mine_fragments(grammar::AbstractGrammar, programs::Set{Tuple{RuleNode,I
 end
 
 """
-    remember_programs!(old_remembered::Dict{BitVector, Tuple{RuleNode, Int, Int}}, passing_tests::BitVector, new_program::RuleNode, new_program_expr::Any, 
+    remember_programs!(
+        old_remembered::Dict{BitVector, Tuple{RuleNode, Int, Int}}, passing_tests::BitVector, new_program::RuleNode, new_program_expr::Any, 
         fragments::AbstractVector{RuleNode}, grammar::AbstractGrammar)::Tuple{AbstractVector{RuleNode},Bool}
 
 Updates the remembered programs by including `new_program` if it is simpler than all remembered programs that pass the same subset of tests, 

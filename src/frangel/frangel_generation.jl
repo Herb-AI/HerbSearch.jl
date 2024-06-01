@@ -1,5 +1,6 @@
 """
-    generate_random_program(grammar::AbstractGrammar, type::Symbol, config::FrAngelConfigGeneration, fragment_base_rules_offset::Int16, 
+    generate_random_program(
+        grammar::AbstractGrammar, type::Symbol, config::FrAngelConfigGeneration, fragment_base_rules_offset::Int16, 
         max_size::UInt8, rule_minsize::AbstractVector{UInt8}, symbol_minsize::Dict{Symbol,UInt8})::RuleNode
 
 Generates a random program of the provided `type` using the provided `grammar`. The program is generated with a maximum size of `max_size`.
@@ -37,7 +38,8 @@ function generate_random_program(
         sizes = random_partition(grammar, Int16(rule_index), max_size, symbol_minsize)
 
         for (index, child_type) in enumerate(child_types(grammar, rule_index))
-            push!(rule_node.children, generate_random_program(grammar, child_type, config, fragment_base_rules_offset, sizes[index], rule_minsize, symbol_minsize))
+            push!(rule_node.children, generate_random_program(grammar, child_type, config, fragment_base_rules_offset, sizes[index],
+                rule_minsize, symbol_minsize))
         end
     end
 
@@ -45,8 +47,10 @@ function generate_random_program(
 end
 
 """
-    modify_and_replace_program_fragments!(program::RuleNode, fragments::AbstractVector{RuleNode}, fragment_base_rules_offset::Int16, fragment_rules_offset::Int16, 
-        config::FrAngelConfigGeneration, grammar::AbstractGrammar, rule_minsize::AbstractVector{UInt8}, symbol_minsize::Dict{Symbol,UInt8}, use_angelic::Bool)::RuleNode
+    modify_and_replace_program_fragments!(
+        program::RuleNode, fragments::AbstractVector{RuleNode}, fragment_base_rules_offset::Int16, fragment_rules_offset::Int16, 
+        config::FrAngelConfigGeneration, grammar::AbstractGrammar, rule_minsize::AbstractVector{UInt8}, 
+        symbol_minsize::Dict{Symbol,UInt8}, use_angelic::Bool)::RuleNode
 
 Recursively modifies and replaces program fragments based on specified rules and configurations.
 
@@ -78,31 +82,29 @@ function modify_and_replace_program_fragments!(
 )::RuleNode
     if program.ind > fragment_base_rules_offset && program.ind <= fragment_rules_offset
         fragment_rule_index = program.children[1].ind
-        # a fragment was found
-
+        # A fragment was found
         if rand() < config.use_entire_fragment_chance
-            # use fragment as is
+            # Use the entire fragment as is
             if use_angelic
                 return deepcopy(fragments[fragment_rule_index-fragment_rules_offset])
             end
-
             return fragments[fragment_rule_index-fragment_rules_offset]
         else
-            # modify the fragment
+            # Modify the fragment
             modified_fragment = deepcopy(fragments[fragment_rule_index-fragment_rules_offset])
             random_modify_children!(grammar, modified_fragment, config, fragment_base_rules_offset, rule_minsize, symbol_minsize)
             return modified_fragment
         end
     elseif program.ind <= fragment_base_rules_offset
-        # traverse the tree to find fragments to replace
+        # Traverse the tree to find fragments to replace
         if isterminal(grammar, program.ind)
             return program
         end
 
         for (index, child) in enumerate(program.children)
-            program.children[index] = modify_and_replace_program_fragments!(child, fragments, fragment_base_rules_offset, fragment_rules_offset, config, grammar, rule_minsize, symbol_minsize, use_angelic)
+            program.children[index] = modify_and_replace_program_fragments!(child, fragments, fragment_base_rules_offset, fragment_rules_offset, config,
+                grammar, rule_minsize, symbol_minsize, use_angelic)
         end
-
         program
     else
         println("Invalid rule index: ", program.ind)
@@ -110,7 +112,8 @@ function modify_and_replace_program_fragments!(
 end
 
 """
-    random_modify_children!(grammar::AbstractGrammar, node::RuleNode, config::FrAngelConfigGeneration, fragment_base_rules_offset::Int16, 
+    random_modify_children!(
+        grammar::AbstractGrammar, node::RuleNode, config::FrAngelConfigGeneration, fragment_base_rules_offset::Int16, 
         rule_minsize::AbstractVector{UInt8}, symbol_minsize::Dict{Symbol,UInt8})
 
 Randomly modifies the children of a given node. The modification can be either a new random program or a modification of the existing children.
@@ -134,7 +137,8 @@ function random_modify_children!(
 )
     for (index, child) in enumerate(node.children)
         if rand() < config.gen_similar_prob_new
-            node.children[index] = generate_random_program(grammar, return_type(grammar, child), config, fragment_base_rules_offset, count_nodes(grammar, child) + config.similar_new_extra_size, rule_minsize, symbol_minsize)
+            node.children[index] = generate_random_program(grammar, return_type(grammar, child), config, fragment_base_rules_offset,
+                count_nodes(grammar, child) + config.similar_new_extra_size, rule_minsize, symbol_minsize)
         else
             random_modify_children!(grammar, child, config, fragment_base_rules_offset, rule_minsize, symbol_minsize)
         end
@@ -223,7 +227,7 @@ function get_descendant_replacements!(node::RuleNode, symbol::Symbol, grammar::A
 end
 
 """
-    add_angelic_conditions!(program, grammar, angelic_conditions)
+    add_angelic_conditions!(program::RuleNode, grammar::AbstractGrammar, angelic_conditions::Dict{UInt16,UInt8})::RuleNode
 
 Add angelic conditions to a program. This is done by replacing some nodes with holes.
 
@@ -236,7 +240,7 @@ Add angelic conditions to a program. This is done by replacing some nodes with h
 The modified program with angelic conditions added.
 
 """
-function add_angelic_conditions!(program::RuleNode, grammar::AbstractGrammar, angelic_conditions::Dict{UInt16,UInt8})
+function add_angelic_conditions!(program::RuleNode, grammar::AbstractGrammar, angelic_conditions::Dict{UInt16,UInt8})::RuleNode
     if isterminal(grammar, program.ind)
         return program
     end

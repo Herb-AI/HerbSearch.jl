@@ -1,5 +1,6 @@
 """
-    resolve_angelic!(program::RuleNode, passing_tests::BitVector, grammar::AbstractGrammar, symboltable::SymbolTable, tests::AbstractVector{<:IOExample}, 
+    resolve_angelic!(
+        program::RuleNode, passing_tests::BitVector, grammar::AbstractGrammar, symboltable::SymbolTable, tests::AbstractVector{<:IOExample}, 
         replacement_dir::Int, angelic_conditions::Dict{UInt16,UInt8}, config::FrAngelConfig, fragment_base_rules_offset::Int16,
         rule_minsize::AbstractVector{UInt8}, symbol_minsize::Dict{Symbol,UInt8})::RuleNode
 
@@ -65,7 +66,7 @@ function resolve_angelic!(
         if !success && replacement_func == replace_last_angelic!
             return program
         elseif !success
-            return resolve_angelic!(program, passing_tests, grammar, symboltable, tests, replace_last_angelic!, angelic_conditions, config, 
+            return resolve_angelic!(program, passing_tests, grammar, symboltable, tests, replace_last_angelic!, angelic_conditions, config,
                 fragment_base_rules_offset, rule_minsize, symbol_minsize)
         else
             num_holes -= 1
@@ -142,7 +143,8 @@ function replace_last_angelic!(program::RuleNode, boolean_expr::RuleNode, angeli
 end
 
 """
-    execute_angelic_on_input(symboltable::SymbolTable, program::RuleNode, grammar::AbstractGrammar, input::Dict{Symbol,Any}, 
+    execute_angelic_on_input(
+        symboltable::SymbolTable, program::RuleNode, grammar::AbstractGrammar, input::Dict{Symbol,Any}, 
         expected_output::Any, angelic_rulenode::RuleNode, max_attempts::Int, angelic_conditions::Dict{UInt16,UInt8})::Bool
 
 Run test case `input` on `program` containing angelic conditions. This is done by optimistically evaluating the program, by generating different code paths
@@ -277,24 +279,14 @@ function create_angelic_expression(
     rulenode2expr(new_program, grammar)
 end
 
-"""
-    clear_holes!(program::RuleNode, angelic_conditions::Dict{UInt16,UInt8})
-
-Removes all subexpressions that are holes in the program, based on the angelic conditions. Modifies the program in-place.
-
-# Arguments
-- `program`: The program to remove holes from. Goes recursively through children.
-- `angelic_conditions`: A dictionary mapping indices of angelic condition candidates, to the child index that may be changed.
-
-"""
-function clear_holes!(program::RuleNode, angelic_conditions::Dict{UInt16,UInt8})
-    if haskey(angelic_conditions, program.ind)
-        idx = angelic_conditions[program.ind]
-        if program.children[idx] isa AbstractHole
-            deleteat!(program.children, angelic_conditions[program.index])
-        end
-        for ch in program.children
-            clear_holes!(ch, angelic_conditions)
+function number_of_angelic(program::RuleNode, angelic_rulenode::RuleNode)::Int
+    num = 0
+    for child in program.children
+        if child == angelic_rulenode
+            num += 1
+        else
+            num += number_of_angelic(child, angelic_rulenode)
         end
     end
+    return num
 end

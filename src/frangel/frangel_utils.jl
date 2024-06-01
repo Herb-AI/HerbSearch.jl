@@ -1,6 +1,7 @@
 """
-    get_passed_tests!(program::RuleNode, grammar::AbstractGrammar, symboltable::SymbolTable, tests::AbstractVector{<:IOExample},
-        prev_passed_tests::BitVector, angelic_conditions::Dict{UInt16, UInt8}, config::FrAngelConfigAngelic)
+    get_passed_tests!(
+        program::RuleNode, grammar::AbstractGrammar, symboltable::SymbolTable, tests::AbstractVector{<:IOExample},
+        prev_passed_tests::BitVector, angelic_conditions::Dict{UInt16, UInt8}, config::FrAngelConfigAngelic, contains_angelic::Bool)
 
 Runs the program with all provided tests, and updates the `prev_passed_tests` vector with the results.
 
@@ -10,8 +11,8 @@ Runs the program with all provided tests, and updates the `prev_passed_tests` ve
 - `symboltable`: A symbol table for the grammar.
 - `tests`: A vector of `IOExample` objects representing the input-output test cases.
 - `prev_passed_tests`: A `BitVector` representing the tests that the program has previously passed.
-- `angelic_conditions`: A dictionary mapping indices of angelic condition candidates, to the child index that may be changed.
 - `config`: The configuration for angelic conditions of FrAngel.
+- `contains_angelic`: A flag to represent if the program contains angelic conditions.
 
 """
 function get_passed_tests!(
@@ -54,7 +55,7 @@ function get_passed_tests!(
 end
 
 """
-    count_nodes(program::RuleNode)::Int
+    count_nodes(grammar::AbstractGrammar, program::RuleNode)::Int
 
 Count the number of nodes in a given `RuleNode` program.
 
@@ -137,7 +138,8 @@ function simplify_quick(program::RuleNode, grammar::AbstractGrammar, tests::Abst
 end
 
 """
-    _simplify_quick_once(root::RuleNode, node::RuleNode, grammar::AbstractGrammar, tests::AbstractVector{<:IOExample}, 
+    _simplify_quick_once(
+        root::RuleNode, node::RuleNode, grammar::AbstractGrammar, tests::AbstractVector{<:IOExample}, 
         passed_tests::BitVector, path::Vector{Int}=[])::RuleNode
 
 The recursive one-call function for simplifying a program.
@@ -260,7 +262,7 @@ The minimum size achievable for each production rule in the grammar, in the same
 
 """
 function rules_minsize(grammar::AbstractGrammar)::Vector{UInt8}
-    temp = Union{UInt8, Nothing}[nothing for _ in eachindex(grammar.rules)]
+    temp = Union{UInt8,Nothing}[nothing for _ in eachindex(grammar.rules)]
 
     for i in eachindex(grammar.rules)
         if isterminal(grammar, i)
@@ -276,7 +278,7 @@ function rules_minsize(grammar::AbstractGrammar)::Vector{UInt8}
 
                 for ctyp in child_types(grammar, i)
                     min_child_size = nothing
-            
+
                     for index in grammar.bytype[ctyp]
                         if !isnothing(temp[index])
                             if isnothing(min_child_size)
@@ -288,7 +290,7 @@ function rules_minsize(grammar::AbstractGrammar)::Vector{UInt8}
                     end
                     if isnothing(min_child_size)
                         @goto next_rule
-                    else 
+                    else
                         size += min_child_size
                     end
                 end
@@ -299,7 +301,7 @@ function rules_minsize(grammar::AbstractGrammar)::Vector{UInt8}
         end
         max_tries -= 1
     end
-    
+
     if any(isnothing, temp)
         throw(ArgumentError("Could not calculate minimum sizes for all rules"))
     else
@@ -314,7 +316,8 @@ function rules_minsize(grammar::AbstractGrammar)::Vector{UInt8}
 end
 
 """
-    update_min_sizes!(grammar::AbstractGrammar, fragment_base_rules_offset::Int16, fragment_rules_offset::Int16,
+    update_min_sizes!(
+        grammar::AbstractGrammar, fragment_base_rules_offset::Int16, fragment_rules_offset::Int16,
         fragments::AbstractVector{RuleNode}, rule_minsize::AbstractVector{UInt8}, symbol_minsize::Dict{Symbol,UInt8})
 
 Updates the minimum sizes of the rules and symbols in the grammar. Called after adding the new fragment rules.
