@@ -43,6 +43,9 @@ function update_grammar!(grammar::ContextSensitiveGrammar, PSols_with_eval_cache
         best_reward = 0
         for psol in PSols_with_eval_cache
             program = psol.program.children[end]
+            if program.ind != 2
+                program = program.children[end]
+            end
             reward = psol.reward
             # check if the program tree has rule_index somewhere inside it using a recursive function
             if contains_rule(program, rule_index) && reward > best_reward
@@ -58,6 +61,46 @@ function update_grammar!(grammar::ContextSensitiveGrammar, PSols_with_eval_cache
         sum += p_current^(1 - fitness)
         log_prob = ((1 - fitness) * log(2, p_current))
         grammar.log_probabilities[rule_index] = log_prob
+    end
+    total_sum = 0
+    for rule_index in eachindex(grammar.rules)
+        grammar.log_probabilities[rule_index] = grammar.log_probabilities[rule_index] - log(2, sum)
+        total_sum += 2^(grammar.log_probabilities[rule_index])
+    end
+    expr = rulenode2expr(PSols_with_eval_cache[begin].program, grammar)
+    grammar.rules[1] = :([$expr; ACT])
+    @assert abs(total_sum - 1) <= 1e-4 "Total sum is $(total_sum) "
+end
+
+function update_grammar_4!(grammar::ContextSensitiveGrammar, PSols_with_eval_cache::Vector{ProgramCacheTrace})
+    sum = 0
+    for rule_index in eachindex(grammar.rules)
+        best_reward = 0
+        for psol in PSols_with_eval_cache
+            program = psol.program.children[end]
+            if program.ind != 2
+                program = program.children[end]
+            end
+            reward = psol.reward
+            # check if the program tree has rule_index somewhere inside it using a recursive function
+            if contains_rule(program, rule_index) && reward > best_reward
+                best_reward = reward
+            end
+        end
+
+        if grammar.types[rule_index] == :DIR
+            log_prob = best_reward > 0 ? -1.0 : -10.0
+            sum += 2^(log_prob)
+            grammar.log_probabilities[rule_index] = log_prob
+        else
+            fitness = min(best_reward / 100, 1)
+
+            p_current = 2^(grammar.log_probabilities[rule_index])
+
+            sum += p_current^(1 - fitness)
+            log_prob = ((1 - fitness) * log(2, p_current))
+            grammar.log_probabilities[rule_index] = log_prob
+        end
     end
     total_sum = 0
     for rule_index in eachindex(grammar.rules)
