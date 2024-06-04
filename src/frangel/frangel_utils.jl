@@ -21,7 +21,10 @@ function get_passed_tests!(
     tests::AbstractVector{<:IOExample},
     prev_passed_tests::BitVector,
     angelic_conditions::Dict{UInt16,UInt8},
-    config::FrAngelConfigAngelic
+    config::FrAngelConfigAngelic,
+    rewards_over_time::Vector{Tuple{Float64,Float64}} = Vector{Tuple{Float64,Float64}}(),
+    start_time = time(),
+    start_reward = 0.0
 )
     # If angelic -> evaluate optimistically
     if contains_hole(program)
@@ -42,12 +45,15 @@ function get_passed_tests!(
     else
         expr = rulenode2expr(program, grammar)
         output = execute_on_input(symboltable, expr, tests[1].in)
+
+        push!(rewards_over_time, (time() - start_time, start_reward + output.total_reward))
+
         for (index, test) in enumerate(tests)
             try
-                
                 prev_passed_tests[index] = test_output_equality(output, test.out)
             catch e
-                println(e)
+                # println(e)
+                # println(e.backtrace)
                 prev_passed_tests[index] = false
             end
         end

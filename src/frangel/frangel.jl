@@ -71,7 +71,10 @@ function frangel(
     angelic_conditions::Dict{UInt16,UInt8},
     iter::ProgramIterator,
     rule_minsize::AbstractVector{UInt8},
-    symbol_minsize::Dict{Symbol,UInt8}
+    symbol_minsize::Dict{Symbol,UInt8},
+    rewards_over_time::Vector{Tuple{Float64,Float64}} = Vector{Tuple{Float64,Float64}}(),
+    logging_start_time::Float64 = time(),
+    start_reward::Float64 = 0.0
 )
     # Setup algorithm
     remembered_programs = Dict{BitVector,Tuple{RuleNode,Int,Int}}()
@@ -99,6 +102,9 @@ function frangel(
         println("Minimal sizes per rule: ", rule_minsize)
         println("Minimal size per symbol: ", symbol_minsize)
     end
+
+    best_program_passing_tests_count = -1
+    best_program = nothing
 
     # Main loop
     iterationCount, checkedProgram = 0, 0
@@ -138,7 +144,8 @@ function frangel(
 
         passed_tests = BitVector([false for _ in spec])
         # If it does not pass any tests, discard
-        program_expr = get_passed_tests!(program, grammar, symboltable, spec, passed_tests, angelic_conditions, config.angelic)
+        program_expr = get_passed_tests!(program, grammar, symboltable, spec, passed_tests, angelic_conditions, config.angelic, rewards_over_time, logging_start_time, start_reward)
+        # println(rulenode2expr(program, grammar))
         if !any(passed_tests)
             continue
         end
@@ -150,13 +157,18 @@ function frangel(
             if contains_hole(program)
                 continue
             end
-            program_expr = get_passed_tests!(program, grammar, symboltable, spec, passed_tests, angelic_conditions, config.angelic)
+            program_expr = get_passed_tests!(program, grammar, symboltable, spec, passed_tests, angelic_conditions, config.angelic, rewards_over_time, logging_start_time, start_reward)
         end
 
         # Simplify and rerun over examples
         if config.try_to_simplify
             program = simplify_quick(program, grammar, spec, passed_tests, fragment_base_rules_offset)
-            program_expr = get_passed_tests!(program, grammar, symboltable, spec, passed_tests, angelic_conditions, config.angelic)
+            program_expr = get_passed_tests!(program, grammar, symboltable, spec, passed_tests, angelic_conditions, config.angelic, rewards_over_time, logging_start_time, start_reward)
+        end
+
+        if count(passed_tests) > best_program_passing_tests_count
+            best_program_passing_tests_count = count(passed_tests)
+            best_program = program
         end
 
         # Early return -> if it passes all tests, then final round of simplification and return
@@ -209,4 +221,5 @@ function frangel(
         println("Total iterations:", iterationCount)
         println("Checked programs:", checkedProgram)
     end
+    best_program
 end

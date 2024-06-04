@@ -54,7 +54,6 @@ function reset_env(environment::Environment)
 
     # set start position
     environment.start_pos = get_xyz_from_obs(obs)
-    print(environment.start_pos) #TODO: remove/change print
 
     # weird bug fix
     action = env.action_space.noop()
@@ -80,8 +79,6 @@ function reset_env(environment::Environment)
         env.set_next_chat_message("/kill @e[type=!player]")
         env.step(action)
     end
-
-    printstyled("Environment created. x: $(environment.start_pos[1]), y: $(environment.start_pos[2]), z: $(environment.start_pos[3])\n", color=:green) #TODO: remove/change print
 end
 
 """
@@ -94,14 +91,14 @@ function get_xyz_from_obs(obs)::Tuple{Float64,Float64,Float64}
 end
 
 """
-    soft_reset_env(environment::Environment)
+    soft_reset_env(environment::Environment, start_pos::Tuple{Float64, Float64, Float64})
 
-Reset player position to `environment.start_pos`.
+Reset player position to `start_pos`.
 """
-function soft_reset_env(environment::Environment)
+function soft_reset_env(environment::Environment, start_pos::Tuple{Float64, Float64, Float64})
     env = environment.env
     action = env.action_space.noop()
-    x_player_start, y_player_start, z_player_start = environment.start_pos
+    x_player_start, y_player_start, z_player_start = start_pos
     env.set_next_chat_message("/tp @a $(x_player_start) $(y_player_start) $(z_player_start)")
 
     obs = env.step(action)[1]
@@ -112,51 +109,185 @@ function soft_reset_env(environment::Environment)
     end
 end
 
+
 """
-    evaluate_trace_minerl(prog::AbstractRuleNode, grammar::ContextSensitiveGrammar, environment::Environment, show_moves::Bool)
-
-Evaluate in MineRL `environment`.
+    The state of a program in the Minecraft environment.
 """
-function evaluate_trace_minerl(prog::AbstractRuleNode, grammar::ContextSensitiveGrammar, environment::Environment, show_moves::Bool)
-    soft_reset_env(environment)
+@kwdef mutable struct ProgramState
+    current_position::Tuple{Float64, Float64, Float64} = (0.0, 0.0, 0.0)
+    last_position::Tuple{Float64, Float64, Float64} = (0.0, 0.0, 0.0)
+    is_done::Bool = false
+    total_reward::Float64 = 0.0
+    last_reward::Float64 = 0.0
+end
 
-    expr = rulenode2expr(prog, grammar)
-    sequence_of_actions = eval(expr)
+"""
+    test_reward_output_tuple(exec_output::ProgramState, expected_out::Tuple{Float64, Bool})::Bool
 
-    sum_of_rewards = 0
-    is_done = false
-    obs = nothing
-    env = environment.env
-    for (times, action) ∈ sequence_of_actions
-        new_action = env.action_space.noop()
-        for (key, val) in action
-            if key == "move"
-                new_action["forward"] = val & 1
-                new_action["back"] = val >> 1 & 1
-                new_action["left"] = val >> 2 & 1
-                new_action["right"] = val >> 3
-            else
-                new_action[key] = val
-            end
-        end
+Test if the output of the program passes the expected output. 
+If the program is done, it should return true. If the program is not done, it should return false if the expected output is done. 
+Otherwise, it should return true if the total reward of the program is equal to or bigger than the expected total reward.
 
-        for i in 1:times
-            obs, reward, done, _ = env.step(new_action)
-            if show_moves
-                env.render()
-            end
+# Arguments
+- `exec_output::ProgramState`: The output of the program
+- `expected_out::Tuple{Float64, Bool}`: The expected output of the program. (total_reward, is_done)
 
-            sum_of_rewards += reward
-            if done
-                is_done = true
-                printstyled("sum of rewards: $sum_of_rewards. Done\n", color=:green) #TODO: remove/change print
-                break
-            end
-        end
-        if is_done
-            break
+# Returns
+- Whether the output of the program passes the expected output.
+"""
+function test_reward_output_tuple(exec_output::ProgramState, expected_out::Tuple{Float64, Bool})::Bool
+    if exec_output.is_done
+        return true
+    elseif expected_out[2]
+        return false
+    else
+        return expected_out[1] <= exec_output.total_reward
+    end
+end
+
+"""
+    update_state!(state::ProgramState, obs, reward, done)
+
+Update the state of the program based on the observation, reward, and done flag.
+
+# Arguments
+- `state::ProgramState`: The current state of the program.
+- `obs`: The observation from the environment.
+- `reward`: The reward from the environment.
+- `done`: Whether the episode is done.
+"""
+function update_state!(state::ProgramState, obs, reward, done)
+    state.last_position = state.current_position
+    state.current_position = get_xyz_from_obs(obs)
+    state.last_reward = state.total_reward
+    state.total_reward += reward
+    state.is_done = done
+end
+
+"""
+    mc_init(start_pos::Tuple{Float64, Float64, Float64})::ProgramState
+
+Initializes the Minecraft environment and returns the initial state.
+
+# Arguments
+- `start_pos::Tuple{Float64, Float64, Float64}`: The starting position of the player.
+
+# Returns
+- The initial state of the program.
+"""
+function mc_init(start_pos::Tuple{Float64, Float64, Float64})::ProgramState
+    soft_reset_env(environment, start_pos)
+    if RENDER
+        environment.env.render()
+    end 
+    action = environment.env.action_space.noop()
+    obs, _, done, _ = environment.env.step(action)
+
+    return ProgramState(
+        total_reward = 0.0,
+        last_reward = 0.0,
+        is_done = done,
+        current_position = get_xyz_from_obs(obs),
+        last_position = get_xyz_from_obs(obs))
+end
+
+"""
+    mc_move!(state::ProgramState, directions, times::UInt = 1, sprint::UInt = 0, jump::UInt = 0, sneak::UInt = 0)
+
+Move the player in the Minecraft environment.
+
+# Arguments
+- `state::ProgramState`: The current state of the program.
+- `directions::Vector{String}`: The directions to move the player. Possible values are "forward", "back", "left", and "right".
+- `times::UInt = 1`: The number of times to move the player.
+- `sprint::UInt = 0`: Whether to sprint while moving.
+- `jump::UInt = 0`: Whether to jump while moving.
+- `sneak::UInt = 0`: Whether to sneak while moving.
+"""
+function mc_move!(program_state::ProgramState, directions, times::Int = 1, sprint::Int = 1, jump::Int = 1, sneak::Int = 0)
+    if program_state.total_reward < -10
+        return
+    end
+
+    # set action
+    action = environment.env.action_space.noop()
+    for direction in directions
+       action[direction] = 1
+    end
+    action["sprint"] = sprint   
+    action["jump"] = jump
+    action["sneak"] = sneak
+
+    # execute action and update state accordingly
+    for i in 1:times
+        obs, reward, done, _ = environment.env.step(action)
+        update_state!(program_state, obs, reward, done)
+
+        if RENDER
+            environment.env.render()
         end
     end
-    println("Reward $sum_of_rewards") #TODO: remove/change print
-    return get_xyz_from_obs(obs), is_done, sum_of_rewards
+end
+
+"""
+    mc_end(state::ProgramState)::ProgramState
+
+End the program and return the final state.
+
+# Arguments
+- `state::ProgramState`: The current state of the program.
+
+# Returns
+- The final state of the program.
+"""
+function mc_end(program_state::ProgramState)::ProgramState
+    # if state.total_reward > 0
+    #     println(state)
+    # end
+    program_state
+end
+
+"""
+    mc_was_good_move(state::ProgramState)::Bool
+
+Check if the last move reward was positive.
+
+# Arguments
+- `state::ProgramState`: The current state of the program.
+
+# Returns
+- Whether the last move reward was positive.
+"""
+function mc_was_good_move(program_state::ProgramState)::Bool
+    return program_state.total_reward > program_state.last_reward
+end
+
+"""
+    mc_has_moved(state::ProgramState)::Bool
+
+Check if the player has moved.
+
+# Arguments
+- `state::ProgramState`: The current state of the program.
+
+# Returns
+- Whether the player has moved.
+"""
+function mc_has_moved(program_state::ProgramState)::Bool
+    return program_state.current_position != program_state.last_position
+end
+
+"""
+    is_done(progarm_state::ProgramState)::Bool
+
+Check if the program is done.
+
+# Arguments
+- `progarm_state::ProgramState`: The current state of the program.
+
+# Returns
+- Whether the program is done.
+"""
+function is_done(progarm_state::ProgramState)::Bool
+    return progarm_state.is_done
 end
