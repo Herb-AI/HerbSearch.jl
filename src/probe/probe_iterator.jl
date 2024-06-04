@@ -35,6 +35,7 @@ function probe(examples::Vector{<:IOExample}, iterator::ProgramIterator; max_tim
         psol_with_eval_cache = Vector{ProgramCache}()
         next = state === nothing ? iterate(iterator) : iterate(iterator, state)
         while next !== nothing && i <= cycle_length # run one cycle
+            i += 1
             program, state = next
 
             # evaluate program
@@ -63,7 +64,9 @@ function probe(examples::Vector{<:IOExample}, iterator::ProgramIterator; max_tim
                 @info "Last level: $(length(state.bank[state.level + 1])) programs"
                 return program
             elseif eval_observation in eval_cache # result already in cache
-                next = iterate(iterator, state)
+                if i <= cycle_length
+                    next = iterate(iterator, state)
+                end
                 continue
             elseif nr_correct_examples >= 1 # partial solution 
                 program_cost = calculate_program_cost(program, grammar)
@@ -72,7 +75,6 @@ function probe(examples::Vector{<:IOExample}, iterator::ProgramIterator; max_tim
 
             push!(eval_cache, eval_observation)
 
-            i += 1
             if i <= cycle_length
                 next = iterate(iterator, state)
             end
@@ -133,6 +135,7 @@ function probe(traces::Vector{Trace}, iterator::ProgramIterator; max_time::Int, 
         psol_with_eval_cache = Vector{ProgramCacheTrace}()
         next = state === nothing ? iterate(iterator) : iterate(iterator, state)
         while next !== nothing && i <= cycle_length && time() - start_time < max_time # run one cycle
+            i += 1
             program, state = next
 
             # evaluate
@@ -153,7 +156,9 @@ function probe(traces::Vector{Trace}, iterator::ProgramIterator; max_time::Int, 
                 @info "Last level: $(length(state.bank[state.level + 1])) programs"
                 return program, best_reward_over_time
             elseif eval_observation_rounded in eval_cache # result already in cache
-                next = iterate(iterator, state)
+                if i <= cycle_length
+                    next = iterate(iterator, state)
+                end
                 continue
             elseif is_partial_sol # partial solution 
                 cost = calculate_program_cost(program, grammar)
@@ -162,7 +167,6 @@ function probe(traces::Vector{Trace}, iterator::ProgramIterator; max_time::Int, 
 
             push!(eval_cache, eval_observation_rounded)
 
-            i += 1
             if i <= cycle_length
                 next = iterate(iterator, state)
             end
