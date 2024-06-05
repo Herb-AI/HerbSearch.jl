@@ -113,7 +113,7 @@ Evaluate the `program` with the `grammar`.
 """
 evaluate_trace(program::RuleNode, grammar::ContextSensitiveGrammar) = error("Evaluate trace method should be overwritten")
 
-partial_sol(best_reward::Float64, reward::Float64) = reward > best_reward + 0.2
+partial_sol(best_reward::Float64, reward::Float64) = reward > best_reward
 reset_iterator(eval_cache::Set{Any}, state::Any) = Set(), nothing
 
 function probe(traces::Vector{Trace}, iterator::ProgramIterator; max_time::Int, cycle_length::Int)
