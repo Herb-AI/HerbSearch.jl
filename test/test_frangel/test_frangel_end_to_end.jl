@@ -46,7 +46,7 @@ end
     problem = Problem(spec)
     rules_min = rules_minsize(g)
     symbol_min = symbols_minsize(g, rules_min)
-    config = FrAngelConfig(max_time=20, verbose_level=1,
+    config = FrAngelConfig(max_time=20, verbose_level=0,
         generation=FrAngelConfigGeneration(use_fragments_chance=0.5, use_angelic_conditions_chance=0.75, max_size=20),
         angelic=FrAngelConfigAngelic(max_allowed_fails=0.5, max_execute_attempts=5))
     angelic_conditions = Dict{UInt16,UInt8}(18 => 1)

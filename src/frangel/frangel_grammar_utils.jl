@@ -74,7 +74,7 @@ function print_grammar(g::AbstractGrammar)
 end
 
 """
-    add_fragments_prob!(grammar::AbstractGrammar, fragments_chance::Float64, fragment_base_rules_offset::Int16, fragment_rules_offset::Int16)
+    add_fragments_prob!(grammar::AbstractGrammar, fragments_chance::Float16, fragment_base_rules_offset::Int16, fragment_rules_offset::Int16)
 
 Adds the probability of using a fragment rule to the grammar rules. For a fragment rule to be found it should be named `Fragment_<symbol>`.
 It should be a terminal rule and have the same type as the symbol it is a fragment of. There should be at most one fragment rule for each symbol.
@@ -127,7 +127,7 @@ end
 """
     setup_grammar_with_fragments(grammar::AbstractGrammar, use_fragments_chance::Float16, rule_minsize::AbstractVector{UInt8})
 
-Sets up the grammar with fragments by adding fragment base rules (eg. `<symbol> = Fragment_<symbol>`), resizes the rule minimum size, and adds fragment probabilities.
+Sets up the grammar with fragments by adding fragment base/identity rules (eg. `<symbol> = Fragment_<symbol>`), resizes the rule minimum size, and adds fragment probabilities.
 
 # Arguments
 - `grammar`: The grammar object to set up.
@@ -161,14 +161,18 @@ Add base/identity rules for fragments to the given grammar.
 
 """
 function add_fragment_base_rules!(g::AbstractGrammar)
+    # Add base/identity rule to each type
     for typ in keys(g.bytype)
+        # Skip angelic rulenode - cannot have fragments
         if typ == :Angelic
             continue
         end
+        # Create rule
         expr = Symbol(string(:Fragment_, typ))
         rvec = Any[]
         parse_rule!(rvec, expr)
         for r ∈ rvec
+            # Add rule unless there exists an identity fragment rule already
             if !any(r === rule && typ === return_type(g, i) for (i, rule) ∈ enumerate(g.rules))
                 push!(g.rules, r)
                 push!(g.iseval, iseval(expr))
@@ -177,6 +181,7 @@ function add_fragment_base_rules!(g::AbstractGrammar)
             end
         end
     end
+    # Update supplemental data structures in bulk
     alltypes = collect(keys(g.bytype))
     g.isterminal = [isterminal(rule, alltypes) for rule ∈ g.rules]
     g.childtypes = [get_childtypes(rule, alltypes) for rule ∈ g.rules]
@@ -195,12 +200,15 @@ Add fragment rules to the given grammar.
 
 """
 function add_fragment_rules!(g::AbstractGrammar, fragments::AbstractVector{RuleNode})
+    # Add each fragment
     for fragment in fragments
+        # Create rule
         typ = Symbol("Fragment_", return_type(g, fragment))
         expr = rulenode2expr(fragment, g)
         rvec = Any[]
         parse_rule!(rvec, expr)
         for r ∈ rvec
+            # Add rule unless expression was already added (should never happen as fragments are stored in a set, but just in case)
             if !any(r === rule && typ === return_type(g, i) for (i, rule) ∈ enumerate(g.rules))
                 push!(g.rules, r)
                 push!(g.iseval, iseval(expr))
@@ -209,6 +217,7 @@ function add_fragment_rules!(g::AbstractGrammar, fragments::AbstractVector{RuleN
             end
         end
     end
+    # Update supplemental data structures in bulk
     alltypes = collect(keys(g.bytype))
     g.isterminal = [isterminal(rule, alltypes) for rule ∈ g.rules]
     g.childtypes = [get_childtypes(rule, alltypes) for rule ∈ g.rules]

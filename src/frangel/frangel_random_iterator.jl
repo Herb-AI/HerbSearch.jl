@@ -74,33 +74,30 @@ function sample!(
     max_size::UInt8=UInt8(40)
 )::RuleNode
     max_size = max(max_size, symbol_minsize[symbol])
-
     empty!(filtered_indices)
     empty!(probabilities)
-
+    # Only consider rules that have defined a minimal size defined
     for i in grammar[symbol]
         if rule_minsize[i] ≤ max_size
             push!(filtered_indices, i)
             push!(probabilities, grammar.log_probabilities[i])
         end
     end
-
     empty!(cumulative_probs)
     append!(cumulative_probs, cumsum(probabilities))
     total_prob = cumulative_probs[end]
-
+    # Pick randomly a number
     r = rand(Float16) * total_prob
     rule_index = -1
-
+    # Find the respective rulenode based on cumulative probability
     for (index, cum_prob) in enumerate(cumulative_probs)
         if r ≤ cum_prob
             rule_index = filtered_indices[index]
             break
         end
     end
-
     rule_node = RuleNode(Int(rule_index))
-
+    # If the rule is not terminal, partition remaining sizes to children and generate them
     if !grammar.isterminal[rule_index]
         sizes = random_partition(grammar, rule_index, max_size, symbol_minsize)
         children_types = child_types(grammar, Int(rule_index))
@@ -114,6 +111,5 @@ function sample!(
             )
         end
     end
-
     rule_node
 end

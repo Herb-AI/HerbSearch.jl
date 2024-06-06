@@ -13,9 +13,11 @@ All the found fragments in the provided program.
 """
 function mine_fragments(grammar::AbstractGrammar, program::RuleNode)::Set{RuleNode}
     fragments = Set{RuleNode}()
+    # Push terminals as they are
     if isterminal(grammar, program)
         push!(fragments, program)
     else
+        # Only complete programs count as fragments by FrAngel spec
         if iscomplete(grammar, program)
             push!(fragments, program)
         end
@@ -97,6 +99,7 @@ function remember_programs!(
     grammar::AbstractGrammar,
 )::Tuple{AbstractVector{RuleNode},Bool}
     node_count = count_nodes(grammar, new_program)
+    # Use program length only if an expression is provided -> saves time in many cases
     if new_program_expr === nothing
         program_length = 0
     else

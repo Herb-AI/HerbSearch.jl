@@ -1,7 +1,7 @@
 """
     resolve_angelic!(
         program::RuleNode, passing_tests::BitVector, grammar::AbstractGrammar, symboltable::SymbolTable, tests::AbstractVector{<:IOExample}, 
-        replacement_dir::Int, angelic_conditions::Dict{UInt16,UInt8}, config::FrAngelConfig, fragment_base_rules_offset::Int16,
+        replacement_func::Function, angelic_conditions::Dict{UInt16,UInt8}, config::FrAngelConfig, fragment_base_rules_offset::Int16,
         rule_minsize::AbstractVector{UInt8}, symbol_minsize::Dict{Symbol,UInt8})::RuleNode
 
 Resolve angelic values in the given program by generating random boolean expressions and replacing the holes in the expression.
@@ -12,7 +12,7 @@ Resolve angelic values in the given program by generating random boolean express
 - `grammar`: The grammar rules of the program.
 - `symboltable`: A symbol table for the grammar.
 - `tests`: A vector of `IOExample` objects representing the input-output test cases.
-- `replacement_dir`: The direction of replacement; 1 for top-down, -1 for bottom-up.
+- `replacement_func`: The function to use for replacement -> either `replace_first_angelic!` or `replace_last_angelic!`.
 - `angelic_conditions`: A dictionary mapping indices of angelic condition candidates, to the child index that may be changed.
 - `config`: The configuration object for FrAngel.
 - `fragment_base_rules_offset`: The offset for fragment base/identity rules.
@@ -39,19 +39,24 @@ function resolve_angelic!(
     num_holes = number_of_holes(program)
     angelic = config.angelic
     new_tests = BitVector([false for _ in tests])
+    # Continue resolution until all holes are filled
     while num_holes != 0
         success = false
         start_time = time()
         max_time = config.angelic.max_time
+        # Keep track of visited replacements - avoid duplicates
         visited = init_long_hash_map()
         while time() - start_time < max_time
-            boolean_expr = generate_random_program(grammar, :Bool, config.generation, fragment_base_rules_offset, angelic.boolean_expr_max_size, rule_minsize, symbol_minsize)
+            # Generate a replacement
+            boolean_expr = generate_random_program(grammar, :Bool, config.generation, fragment_base_rules_offset, angelic.boolean_expr_max_size, 
+                rule_minsize, symbol_minsize)
             program_hash = hash(boolean_expr)
             if lhm_contains(visited, program_hash)
                 continue
             end
             lhm_put!(visited, program_hash)
-            tuple = replacement_func(program, boolean_expr, config.angelic.angelic_rulenode)
+            # Either replace 'first' or 'last' hole
+            changed = replacement_func(program, boolean_expr, config.angelic.angelic_rulenode, angelic_conditions)
             get_passed_tests!(program, grammar, symboltable, tests, new_tests, angelic_conditions, angelic)
             # If the new program passes all the tests the original program did, replacement is successful
             if all(passing_tests .== (passing_tests .& new_tests))
@@ -59,7 +64,8 @@ function resolve_angelic!(
                 success = true
                 break
             else
-                tuple[1].children[tuple[2]] = tuple[3]
+                # Undo replacement changes
+                changed[1].children[changed[2]] = changed[3]
             end
         end
         # Unresolved -> try other direction, or fail
@@ -76,7 +82,8 @@ function resolve_angelic!(
 end
 
 """
-    replace_first_angelic!(program::RuleNode, boolean_expr::RuleNode, angelic_rulenode::RuleNode)::Union{Tuple{RuleNode,Int},Nothing}
+    replace_first_angelic!(program::RuleNode, boolean_expr::RuleNode, angelic_rulenode::RuleNode, angelic_conditions::Dict{UInt16,UInt8})
+        ::Union{Tuple{RuleNode,Int,AbstractHole},Nothing}
 
 Replaces the first `AbstractHole` node in the `program` with the `boolean_expr` node. 
 The 'first' is defined here as the first node visited by pre-order traversal, left-to-right. The program is modified in-place.
@@ -85,18 +92,25 @@ The 'first' is defined here as the first node visited by pre-order traversal, le
 - `program`: The program to resolve angelic conditions in.
 - `boolean_expr`: The boolean expression node to replace the `AbstractHole` node with.
 - `angelic_rulenode`: The angelic rulenode. Used to compare against nodes in the program.
+- `angelic_conditions`: A dictionary mapping indices of angelic condition candidates, to the child index that may be changed.
 
 # Returns
-The modified program with the replacement.
+The parent node, the index of its modified child, and the modification. Used to clear the changes if replacement is unsuccessful.
 
 """
-function replace_first_angelic!(program::RuleNode, boolean_expr::RuleNode, angelic_rulenode::RuleNode)::Union{Tuple{RuleNode,Int,AbstractHole},Nothing}
+function replace_first_angelic!(
+    program::RuleNode,
+    boolean_expr::RuleNode,
+    angelic_rulenode::RuleNode,
+    angelic_conditions::Dict{UInt16,UInt8}
+)::Union{Tuple{RuleNode,Int,AbstractHole},Nothing}
+    angelic_index = get(angelic_conditions, program.ind, -1)
     for (child_index, child) in enumerate(program.children)
-        if child isa AbstractHole
+        if child_index == angelic_index && child isa AbstractHole
             program.children[child_index] = boolean_expr
             return (program, child_index, child)
         else
-            res = replace_first_angelic!(child, boolean_expr, angelic_rulenode)
+            res = replace_first_angelic!(child, boolean_expr, angelic_rulenode, angelic_conditions)
             if res !== nothing
                 return res
             end
@@ -107,7 +121,8 @@ end
 
 
 """
-    replace_last_angelic!(program::RuleNode, boolean_expr::RuleNode, angelic_rulenode::RuleNode)::Union{Tuple{RuleNode,Int},Nothing}
+    replace_last_angelic!(program::RuleNode, boolean_expr::RuleNode, angelic_rulenode::RuleNode, angelic_conditions::Dict{UInt16,UInt8})
+        ::Union{Tuple{RuleNode,Int,AbstractHole},Nothing}
 
 Replaces the last `AbstractHole` node in the `program` with the `boolean_expr` node. 
 The 'last' is defined here as the first node visited by reversed pre-order traversal (right-to-left). The program is modified in-place.
@@ -116,25 +131,33 @@ The 'last' is defined here as the first node visited by reversed pre-order trave
 - `program`: The program to resolve angelic conditions in.
 - `boolean_expr`: The boolean expression node to replace the `AbstractHole` node with.
 - `angelic_rulenode`: The angelic rulenode. Used to compare against nodes in the program.
+- `angelic_conditions`: A dictionary mapping indices of angelic condition candidates, to the child index that may be changed.
 
 # Returns
-The parent node and the index of its children that has been modified. Used to clear the changes if replacement is unsuccessful.
+The parent node, the index of its modified child, and the modification. Used to clear the changes if replacement is unsuccessful.
 
 """
-function replace_last_angelic!(program::RuleNode, boolean_expr::RuleNode, angelic_rulenode::RuleNode)::Union{Tuple{RuleNode,Int,AbstractHole},Nothing}
+function replace_last_angelic!(
+    program::RuleNode,
+    boolean_expr::RuleNode,
+    angelic_rulenode::RuleNode,
+    angelic_conditions::Dict{UInt16,UInt8}
+)::Union{Tuple{RuleNode,Int,AbstractHole},Nothing}
+    angelic_index = get(angelic_conditions, program.ind, -1)
+    # Store indices to go over them backwards later
     indices = Vector{Int}([])
     for child_index in reverse(eachindex(program.children))
         child = program.children[child_index]
-        if child isa AbstractHole
+        if child_index == angelic_index && child isa AbstractHole
             program.children[child_index] = boolean_expr
             return (program, child_index, child)
         else
             push!(indices, child_index)
         end
     end
-
+    # If no angelic in this layer, continue onto lower layers, in reverse
     for child_index in indices
-        res = replace_last_angelic!(program.children[child_index], boolean_expr, angelic_rulenode)
+        res = replace_last_angelic!(program.children[child_index], boolean_expr, angelic_rulenode, angelic_conditions)
         if res !== nothing
             return res
         end
@@ -181,12 +204,12 @@ function execute_angelic_on_input(
     while num_true < max_attempts
         code_paths = Vector{BitVector}()
         get_code_paths!(num_true, BitVector(), visited, code_paths, max_attempts - attempts)
+        # Terminate if we generated max_attempts, or impossible to generate further paths
         if isempty(code_paths)
             return false
         end
         for code_path in code_paths
             # println("Attempt: ", code_path)
-            # Create actual_code_path here to keep reference for simpler access later
             actual_code_path = BitVector()
             try
                 output = execute_on_input(symboltable, expr, input, CodePath(code_path, 0), actual_code_path)
@@ -195,6 +218,7 @@ function execute_angelic_on_input(
                     return true
                 end
             catch
+            # Mark as visited and count attempt
             finally
                 trie_add!(visited, actual_code_path)
                 attempts += 1
@@ -226,22 +250,26 @@ function get_code_paths!(
     code_paths::Vector{BitVector},
     max_length::Int
 )
+    # If enough code paths, or visited a prefix-path, return
     if (length(code_paths) >= max_length || trie_contains(visited, curr))
         return
     end
+    # Add current one if enough 'true' values
     if num_true == 0
         push!(code_paths, deepcopy(curr))
         return
     end
+    # Continue with 'true' and build all paths
     push!(curr, true)
     get_code_paths!(num_true - 1, curr, visited, code_paths, max_length)
+    # Continue with 'false' and build all paths
     curr[end] = false
     get_code_paths!(num_true, curr, visited, code_paths, max_length)
     pop!(curr)
 end
 
 """
-    create_angelic_expression(program::RuleNode, grammar::AbstractGrammar, angelic_rulenode::RuleNode, angelic_conditions::Dict{UInt16,UInt8})
+    create_angelic_expression(program::RuleNode, grammar::AbstractGrammar, angelic_rulenode::RuleNode, angelic_conditions::Dict{UInt16,UInt8})::Expr
 
 Create an angelic expression, i.e. replace all remaining holes with angelic rulenode trees so that the tree can be parsed and executed.
 
@@ -289,4 +317,14 @@ function number_of_angelic(program::RuleNode, angelic_rulenode::RuleNode)::Int
         end
     end
     return num
+end
+
+function replace_holes!(program::RuleNode, angelic_rulenode::RuleNode)
+    for (child_index, child) in enumerate(program.children)
+        if child isa AbstractHole
+            program.children[child_index] = angelic_rulenode
+        else
+            replace_holes!(child, angelic_rulenode)
+        end
+    end
 end
