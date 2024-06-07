@@ -4,6 +4,8 @@
         max_size::UInt8, rule_minsize::AbstractVector{UInt8}, symbol_minsize::Dict{Symbol,UInt8})::RuleNode
 
 Generates a random program of the provided `type` using the provided `grammar`. The program is generated with a maximum size of `max_size`.
+The function will exclude fragment rules with an index greater than `fragment_base_rules_offset` from the generation process.
+In case it is not possible to generate a program with the given maximum size, the function will generate a complete program with the smallest possible size.
 
 # Arguments
 - `grammar`: The grammar rules of the program.
@@ -52,6 +54,7 @@ end
         symbol_minsize::Dict{Symbol,UInt8}, use_angelic::Bool)::RuleNode
 
 Recursively modifies and replaces program fragments based on specified rules and configurations.
+The `X = Fragment_X` and `Fragment_X = ...` rules are replaced with non-fragment rules corresponding to the fragment's content, and are then possibly modified.
 
 # Arguments
 - `program`: The program to modify and replace fragments in.
@@ -116,6 +119,7 @@ end
         rule_minsize::AbstractVector{UInt8}, symbol_minsize::Dict{Symbol,UInt8})
 
 Randomly modifies the children of a given node. The modification can be either a new random program or a modification of the existing children.
+Only non-fragment rules are considered while modifiying by excluding rules with an index greater than `fragment_base_rules_offset`.
 
 # Arguments
 - `grammar`: The grammar rules of the program.
@@ -150,7 +154,8 @@ end
     get_replacements(node::RuleNode, grammar::AbstractGrammar, fragment_base_rules_offset::Int16)::AbstractVector{RuleNode}
 
 Finds all the possible replacements for a given node in the AST. 
-Looks for single-node trees corresponding to all variables and constants in the grammar, and node descendants of the same symbol.
+Looks for single-node trees corresponding to all variables and constants in the grammar, node descendants of the same symbol, and 
+rules that have a subset of the current node's children (in the same order).
 
 # Arguments
 - `node`: The node to find replacements for.
@@ -167,11 +172,10 @@ function get_replacements(node::RuleNode, grammar::AbstractGrammar, fragment_bas
 
     # The empty tree, if N⊤ is a statement in a block.
     children_types = child_types(grammar, node.ind)
-    #
+    # Find all rules that can replace the current node, the replacement has to have a subse
     for rule_index in eachindex(grammar.rules)
         if grammar.types[rule_index] == symbol && length(child_types(grammar, rule_index)) < length(children_types)
             possible_replacement = RuleNode(rule_index)
-            # TODO: possibly update it, to work regardless of the order
             i = 1
             for c in child_types(grammar, rule_index)
                 while i <= length(children_types) && c != children_types[i]
@@ -227,7 +231,7 @@ end
 """
     add_angelic_conditions!(program::RuleNode, grammar::AbstractGrammar, angelic_conditions::Dict{UInt16,UInt8})::RuleNode
 
-Add angelic conditions to a program. This is done by replacing some nodes with holes.
+Add angelic conditions to a program. This is done by replacing some of the nodes indicated by `angelic_conditions`` with holes.
 
 # Arguments
 - `program`: The program to modify.
