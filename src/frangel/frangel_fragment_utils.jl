@@ -2,6 +2,7 @@
     mine_fragments(grammar::AbstractGrammar, program::RuleNode)::Set{RuleNode}
 
 Finds all the fragments from the provided `program`. The result is a set of the distinct fragments, generated recursively by going over all children.
+A fragment is any complete subprogram of the original program.
 
 # Arguments
 - `grammar`: The grammar rules of the program.
@@ -32,6 +33,7 @@ end
     mine_fragments(grammar::AbstractGrammar, programs::Set{RuleNode})::Set{RuleNode}
 
 Finds all the fragments from the provided `programs` set. The result is a set of the distinct fragments found within all programs.
+A fragment is any complete subprogram of the original program.
 
 # Arguments
 - `grammar`: The grammar rules of the program.
@@ -53,6 +55,7 @@ end
     mine_fragments(grammar::AbstractGrammar, programs::Set{Tuple{RuleNode,Int,Int}}) -> Set{RuleNode}
 
 Finds all the fragments from the provided `programs` set. The result is a set of the distinct fragments found within all programs.
+A fragment is any complete subprogram of the original program.
 
 # Arguments
 - `grammar`: An abstract grammar object.

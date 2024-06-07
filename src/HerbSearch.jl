@@ -94,26 +94,18 @@ export
   FrAngelConfigGeneration,
   FrAngelConfigAngelic,
 
-  resolve_angelic!,
   replace_first_angelic!,
-  replace_last_angelic!,
   execute_angelic_on_input,
   get_code_paths!,
-  create_angelic_expression,
-  number_of_angelic,
 
   mine_fragments,
   remember_programs!,
   
   generate_random_program,
   modify_and_replace_program_fragments!,
-  random_modify_children!,
-  get_replacements,
-  get_descendant_replacements!,
   add_angelic_conditions!,
 
   buildProgrammingProblemGrammar,
-  print_grammar,
   add_fragments_prob!,
   setup_grammar_with_fragments!,
   add_fragment_base_rules!,
@@ -122,15 +114,11 @@ export
   FrAngelRandomIterator,
   FrAngelRandomIteratorState,
 
-  get_passed_tests!,
   count_nodes,
-  random_partition,
   simplify_quick,
   _simplify_quick_once,
-  passes_the_same_tests_or_more,
   symbols_minsize,
   rules_minsize,
-  update_min_sizes!,
 
   LongHashMap,
   init_long_hash_map,

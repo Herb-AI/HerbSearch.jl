@@ -195,7 +195,7 @@ function frangel(
 
         passed_tests = BitVector([false for _ in spec])
         # If it does not pass any tests, discard
-        program_expr = get_passed_tests!(program, grammar, symboltable, spec, passed_tests, angelic_conditions, config.angelic)
+        program_expr = update_passed_tests!(program, grammar, symboltable, spec, passed_tests, angelic_conditions, config.angelic)
         if !any(passed_tests)
             continue
         end
@@ -208,13 +208,13 @@ function frangel(
             if contains_hole(program)
                 continue
             end
-            program_expr = get_passed_tests!(program, grammar, symboltable, spec, passed_tests, angelic_conditions, config.angelic)
+            program_expr = update_passed_tests!(program, grammar, symboltable, spec, passed_tests, angelic_conditions, config.angelic)
         end
 
         # Simplify and rerun over examples
         if config.try_to_simplify
             program = simplify_quick(program, grammar, spec, passed_tests, fragment_base_rules_offset)
-            program_expr = get_passed_tests!(program, grammar, symboltable, spec, passed_tests, angelic_conditions, config.angelic)
+            program_expr = update_passed_tests!(program, grammar, symboltable, spec, passed_tests, angelic_conditions, config.angelic)
         end
 
         # Early return -> if it passes all tests, then final round of simplification and return

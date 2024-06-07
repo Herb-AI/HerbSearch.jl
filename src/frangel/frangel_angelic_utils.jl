@@ -4,7 +4,8 @@
         replacement_func::Function, angelic_conditions::Dict{UInt16,UInt8}, config::FrAngelConfig, fragment_base_rules_offset::Int16,
         rule_minsize::AbstractVector{UInt8}, symbol_minsize::Dict{Symbol,UInt8})::RuleNode
 
-Resolve angelic values in the given program by generating random boolean expressions and replacing the holes in the expression.
+Resolve angelic conditions in the given program by generating random boolean expressions and replacing the holes in the expression.
+The program is modified in-place.
 
 # Arguments
 - `program`: The program to resolve angelic conditions in.
@@ -48,7 +49,7 @@ function resolve_angelic!(
         visited = init_long_hash_map()
         while time() - start_time < max_time
             # Generate a replacement
-            boolean_expr = generate_random_program(grammar, :Bool, config.generation, fragment_base_rules_offset, angelic.boolean_expr_max_size, 
+            boolean_expr = generate_random_program(grammar, :Bool, config.generation, fragment_base_rules_offset, angelic.boolean_expr_max_size,
                 rule_minsize, symbol_minsize)
             program_hash = hash(boolean_expr)
             if lhm_contains(visited, program_hash)
@@ -57,7 +58,7 @@ function resolve_angelic!(
             lhm_put!(visited, program_hash)
             # Either replace 'first' or 'last' hole
             changed = replacement_func(program, boolean_expr, config.angelic.angelic_rulenode, angelic_conditions)
-            get_passed_tests!(program, grammar, symboltable, tests, new_tests, angelic_conditions, angelic)
+            update_passed_tests!(program, grammar, symboltable, tests, new_tests, angelic_conditions, angelic)
             # If the new program passes all the tests the original program did, replacement is successful
             if all(passing_tests .== (passing_tests .& new_tests))
                 passing_tests = new_tests
@@ -305,26 +306,4 @@ function create_angelic_expression(
         end
     end
     rulenode2expr(new_program, grammar)
-end
-
-function number_of_angelic(program::RuleNode, angelic_rulenode::RuleNode)::Int
-    num = 0
-    for child in program.children
-        if child == angelic_rulenode
-            num += 1
-        else
-            num += number_of_angelic(child, angelic_rulenode)
-        end
-    end
-    return num
-end
-
-function replace_holes!(program::RuleNode, angelic_rulenode::RuleNode)
-    for (child_index, child) in enumerate(program.children)
-        if child isa AbstractHole
-            program.children[child_index] = angelic_rulenode
-        else
-            replace_holes!(child, angelic_rulenode)
-        end
-    end
 end

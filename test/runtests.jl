@@ -8,7 +8,7 @@ using Test
 
 include("test_helpers.jl")
 using Random
-# Random.seed!(1234)
+Random.seed!(1234)
 
 @testset "HerbSearch.jl" verbose=true begin
     # include("test_search_procedure.jl")        

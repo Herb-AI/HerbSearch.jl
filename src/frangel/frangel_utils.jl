@@ -1,9 +1,9 @@
 """
-    get_passed_tests!(
+    update_passed_tests!(
         program::RuleNode, grammar::AbstractGrammar, symboltable::SymbolTable, tests::AbstractVector{<:IOExample},
-        prev_passed_tests::BitVector, angelic_conditions::Dict{UInt16, UInt8}, config::FrAngelConfigAngelic, contains_angelic::Bool)
+        prev_passed_tests::BitVector, angelic_conditions::Dict{UInt16, UInt8}, config::FrAngelConfigAngelic)
 
-Runs the program with all provided tests, and updates the `prev_passed_tests` vector with the results.
+Updates the tests that the program passes. This is done by running `program` for all `tests`, and updates the `prev_passed_tests` vector with the results.
 
 # Arguments
 - `program`: The program to be tested.
@@ -11,11 +11,11 @@ Runs the program with all provided tests, and updates the `prev_passed_tests` ve
 - `symboltable`: A symbol table for the grammar.
 - `tests`: A vector of `IOExample` objects representing the input-output test cases.
 - `prev_passed_tests`: A `BitVector` representing the tests that the program has previously passed.
+- `angelic_conditions`: A dictionary mapping indices of angelic condition candidates, to the child index that may be changed.
 - `config`: The configuration for angelic conditions of FrAngel.
-- `contains_angelic`: A flag to represent if the program contains angelic conditions.
 
 """
-function get_passed_tests!(
+function update_passed_tests!(
     program::RuleNode,
     grammar::AbstractGrammar,
     symboltable::SymbolTable,
@@ -58,7 +58,7 @@ function get_passed_tests!(
 end
 
 """
-    count_nodes(grammar::AbstractGrammar, program::RuleNode)::Int
+    count_nodes(grammar::AbstractGrammar, program::RuleNode)::UInt8
 
 Count the number of nodes in a given `RuleNode` program.
 
@@ -79,7 +79,7 @@ function count_nodes(grammar::AbstractGrammar, program::RuleNode)::UInt8
 end
 
 """
-    random_partition(grammar::AbstractGrammar, rule_index::Int, size::Int, symbol_minsize::Dict{Symbol,Int})::AbstractVector{Int}
+    random_partition(grammar::AbstractGrammar, rule_index::Int16, size::UInt8, symbol_minsize::Dict{Symbol,Int})::AbstractVector{UInt8}
 
 Randomly partitions the allowed size into a vector of sizes for each child of the provided rule index.
 
@@ -114,7 +114,7 @@ end
 """
     simplify_quick(program::RuleNode, grammar::AbstractGrammar, tests::AbstractVector{<:IOExample}, passed_tests::BitVector, fragment_base_rules_offset::Int16)::RuleNode
 
-Simplifies the provided program by replacing nodes with smaller nodes that pass the same tests.
+Simplifies the provided program by replacing nodes with smaller nodes that pass the same tests. The program is updated in-place.
 
 # Arguments
 - `program`: The program to simplify.
@@ -198,7 +198,7 @@ end
 """
     passes_the_same_tests_or_more(program::RuleNode, grammar::AbstractGrammar, tests::AbstractVector{<:IOExample}, passed_tests::BitVector)::Bool
 
-Checks if the provided program passes all the tests that have been marked as passed.
+Checks if the provided program passes all the tests (or more) that have been provided. The function breaks early if a test fails.
 
 # Arguments
 - `program`: The program to test.
@@ -207,7 +207,7 @@ Checks if the provided program passes all the tests that have been marked as pas
 - `passed_tests`: A BitVector representing the tests that the program has already passed.
 
 # Returns
-Returns true if the program passes all the tests that have been marked as passed, false otherwise.
+Returns true if the program passes all the tests in marked in `passed_Tests`, false otherwise.
 
 """
 function passes_the_same_tests_or_more(program::RuleNode, grammar::AbstractGrammar, tests::AbstractVector{<:IOExample}, passed_tests::BitVector)::Bool
