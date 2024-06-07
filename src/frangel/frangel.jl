@@ -178,7 +178,10 @@ function frangel(
                 println("Total iterations:", iterationCount)
                 println("Checked programs:", checkedProgram)
             end
-            return simplify_quick(program, grammar, spec, passed_tests, fragment_base_rules_offset)
+            if config.try_to_simplify
+                return simplify_quick(program, grammar, spec, passed_tests, fragment_base_rules_offset)
+            end
+            return program
         end
 
         # Update remember programs and fragments
