@@ -12,6 +12,7 @@ HerbInterpret = "5bbddadd-02c5-4713-84b8-97364418cca7"
 HerbSpecification = "6d54aada-062f-46d8-85cf-a1ceaf058a06"
 Logging = "56ddb016-857b-54e1-b83d-db4d58db5568"
 MLStyle = "d8e11817-5142-5d16-987a-aa16d5891078"
+PyCall = "438e738f-606a-5dbb-bf0a-cddfbfd45ab0"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 StatsBase = "2913bbd2-ae8a-5f71-8c99-4fb6c76f3a91"
 

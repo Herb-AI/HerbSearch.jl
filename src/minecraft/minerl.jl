@@ -205,7 +205,7 @@ Move the player in the Minecraft environment.
 - `sneak::UInt = 0`: Whether to sneak while moving.
 """
 function mc_move!(program_state::ProgramState, directions, times::Int = 1, sprint::Int = 1, jump::Int = 1, sneak::Int = 0)
-    if program_state.total_reward < -10
+    if program_state.total_reward < -10 # TODO: Configure
         return
     end
 
