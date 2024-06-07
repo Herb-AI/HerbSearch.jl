@@ -2,6 +2,7 @@
     mine_fragments(grammar::AbstractGrammar, program::RuleNode)::Set{RuleNode}
 
 Finds all the fragments from the provided `program`. The result is a set of the distinct fragments, generated recursively by going over all children.
+A fragment is any complete subprogram of the original program.
 
 # Arguments
 - `grammar`: The grammar rules of the program.
@@ -13,9 +14,11 @@ All the found fragments in the provided program.
 """
 function mine_fragments(grammar::AbstractGrammar, program::RuleNode)::Set{RuleNode}
     fragments = Set{RuleNode}()
+    # Push terminals as they are
     if isterminal(grammar, program)
         push!(fragments, program)
     else
+        # Only complete programs count as fragments by FrAngel spec
         if iscomplete(grammar, program)
             push!(fragments, program)
         end
@@ -30,6 +33,7 @@ end
     mine_fragments(grammar::AbstractGrammar, programs::Set{RuleNode})::Set{RuleNode}
 
 Finds all the fragments from the provided `programs` set. The result is a set of the distinct fragments found within all programs.
+A fragment is any complete subprogram of the original program.
 
 # Arguments
 - `grammar`: The grammar rules of the program.
@@ -51,6 +55,7 @@ end
     mine_fragments(grammar::AbstractGrammar, programs::Set{Tuple{RuleNode,Int,Int}}) -> Set{RuleNode}
 
 Finds all the fragments from the provided `programs` set. The result is a set of the distinct fragments found within all programs.
+A fragment is any complete subprogram of the original program.
 
 # Arguments
 - `grammar`: An abstract grammar object.
@@ -69,7 +74,8 @@ function mine_fragments(grammar::AbstractGrammar, programs::Set{Tuple{RuleNode,I
 end
 
 """
-    remember_programs!(old_remembered::Dict{BitVector, Tuple{RuleNode, Int, Int}}, passing_tests::BitVector, new_program::RuleNode, new_program_expr::Any, 
+    remember_programs!(
+        old_remembered::Dict{BitVector, Tuple{RuleNode, Int, Int}}, passing_tests::BitVector, new_program::RuleNode, new_program_expr::Any, 
         fragments::AbstractVector{RuleNode}, grammar::AbstractGrammar)::Tuple{AbstractVector{RuleNode},Bool}
 
 Updates the remembered programs by including `new_program` if it is simpler than all remembered programs that pass the same subset of tests, 
@@ -96,6 +102,7 @@ function remember_programs!(
     grammar::AbstractGrammar,
 )::Tuple{AbstractVector{RuleNode},Bool}
     node_count = count_nodes(grammar, new_program)
+    # Use program length only if an expression is provided -> saves time in many cases
     if new_program_expr === nothing
         program_length = 0
     else

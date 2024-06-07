@@ -37,7 +37,7 @@ iterator = FrAngelRandomIterator(grammar, :Num, rules_min, symbol_min, max_depth
     @test res
 end
 
-@testset "add_angelic_conditions! and replace_next_angelic" begin
+@testset "add_angelic_conditions! and replace_first_angelic!" begin
     p = RuleNode(1)
     state = nothing
     while p.ind != 15
@@ -51,7 +51,7 @@ end
 
     new_tests = BitVector([false for _ in 1:5])
     boolean_expr = generate_random_program(grammar, :Bool, config.generation, fragment_base_rules_offset, config.angelic.boolean_expr_max_size, rules_min, symbol_min)
-    p = replace_next_angelic(p, boolean_expr, 1)
+    replace_first_angelic!(p, boolean_expr, RuleNode(0), Dict{UInt16,UInt8}(15 => 1))
     @test !contains_hole(p)
 end
 

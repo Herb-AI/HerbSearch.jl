@@ -1,8 +1,9 @@
 """
-    get_passed_tests!(program::RuleNode, grammar::AbstractGrammar, symboltable::SymbolTable, tests::AbstractVector{<:IOExample},
+    update_passed_tests!(
+        program::RuleNode, grammar::AbstractGrammar, symboltable::SymbolTable, tests::AbstractVector{<:IOExample},
         prev_passed_tests::BitVector, angelic_conditions::Dict{UInt16, UInt8}, config::FrAngelConfigAngelic)
 
-Runs the program with all provided tests, and updates the `prev_passed_tests` vector with the results.
+Updates the tests that the program passes. This is done by running `program` for all `tests`, and updates the `prev_passed_tests` vector with the results.
 
 # Arguments
 - `program`: The program to be tested.
@@ -14,7 +15,7 @@ Runs the program with all provided tests, and updates the `prev_passed_tests` ve
 - `config`: The configuration for angelic conditions of FrAngel.
 
 """
-function get_passed_tests!(
+function update_passed_tests!(
     program::RuleNode,
     grammar::AbstractGrammar,
     symboltable::SymbolTable,
@@ -32,16 +33,19 @@ function get_passed_tests!(
         angelic_rulenode = config.angelic_rulenode::RuleNode
         fails = 0
         for (index, test) in enumerate(tests)
+            # Angelically evaluate the program for this test
             prev_passed_tests[index] = execute_angelic_on_input(symboltable, program, grammar, test.in, test.out,
                 angelic_rulenode, config.max_execute_attempts, angelic_conditions)
             if !prev_passed_tests[index]
                 fails += 1
+                # If it fails too many tests, preemtively end evaluation
                 if config.max_allowed_fails < fails / length(tests)
                     return nothing
                 end
             end
         end
         nothing
+        # Otherwise, evaluate regularly
     else
         expr = rulenode2expr(program, grammar)
         output = execute_on_input(symboltable, expr, tests[1].in)
@@ -62,7 +66,7 @@ function get_passed_tests!(
 end
 
 """
-    count_nodes(program::RuleNode)::Int
+    count_nodes(grammar::AbstractGrammar, program::RuleNode)::UInt8
 
 Count the number of nodes in a given `RuleNode` program.
 
@@ -83,7 +87,7 @@ function count_nodes(grammar::AbstractGrammar, program::RuleNode)::UInt8
 end
 
 """
-    random_partition(grammar::AbstractGrammar, rule_index::Int, size::Int, symbol_minsize::Dict{Symbol,Int})::AbstractVector{Int}
+    random_partition(grammar::AbstractGrammar, rule_index::Int16, size::UInt8, symbol_minsize::Dict{Symbol,Int})::AbstractVector{UInt8}
 
 Randomly partitions the allowed size into a vector of sizes for each child of the provided rule index.
 
@@ -99,28 +103,26 @@ A vector of sizes for each child of the provided rule index.
 """
 function random_partition(grammar::AbstractGrammar, rule_index::Int16, size::UInt8, symbol_minsize::Dict{Symbol,UInt8})::AbstractVector{UInt8}
     children_types = child_types(grammar, Int(rule_index))
-
+    # Calculate remainder (total -  minimal size needed for this rule, aka. sum of all its children's minimal sizes)
     min_size = sum(symbol_minsize[child_type] for child_type in children_types)
     left_to_partition = size - min_size
-
+    # Partition the remaining size randomly among children
     sizes = Vector{UInt8}(undef, length(children_types))
-
     for (index, child_type) in enumerate(children_types)
+        # Give each children a random size between minimal and minimal + total remainder
         child_min_size = symbol_minsize[child_type]
         partition_size = rand(child_min_size:(child_min_size+left_to_partition))
-
+        # Update sizes and remainder
         sizes[index] = partition_size
-
         left_to_partition -= (partition_size - child_min_size)
     end
-
     sizes
 end
 
 """
     simplify_quick(program::RuleNode, grammar::AbstractGrammar, tests::AbstractVector{<:IOExample}, passed_tests::BitVector, fragment_base_rules_offset::Int16)::RuleNode
 
-Simplifies the provided program by replacing nodes with smaller nodes that pass the same tests.
+Simplifies the provided program by replacing nodes with smaller nodes that pass the same tests. The program is updated in-place.
 
 # Arguments
 - `program`: The program to simplify.
@@ -140,12 +142,12 @@ function simplify_quick(program::RuleNode, grammar::AbstractGrammar, tests::Abst
         program = simlified
         simlified = _simplify_quick_once(program, program, grammar, tests, passed_tests, fragment_base_rules_offset, Vector{Int}())
     end
-
     program
 end
 
 """
-    _simplify_quick_once(root::RuleNode, node::RuleNode, grammar::AbstractGrammar, tests::AbstractVector{<:IOExample}, 
+    _simplify_quick_once(
+        root::RuleNode, node::RuleNode, grammar::AbstractGrammar, tests::AbstractVector{<:IOExample}, 
         passed_tests::BitVector, path::Vector{Int}=[])::RuleNode
 
 The recursive one-call function for simplifying a program.
@@ -171,6 +173,7 @@ function _simplify_quick_once(
     fragment_base_rules_offset::Int16,
     path::Vector{Int}=[]
 )::RuleNode
+    # Try each replacement, by checking if it passes a superset of original tests
     for replacement in get_replacements(node, grammar, fragment_base_rules_offset)
         if length(path) == 0
             if passes_the_same_tests_or_more(replacement, grammar, tests, passed_tests)
@@ -184,26 +187,26 @@ function _simplify_quick_once(
             swap_node(root, node, path)
         end
     end
-
+    # Revert swap of higher nodes
     if length(path) > 0
         swap_node(root, node, path)
     end
-
+    # If already reached leaves, terminate
     if isterminal(grammar, node)
         return node
+        # Else recurse to try simplifying children
     else
         for (index, child) in enumerate(node.children)
             node.children[index] = _simplify_quick_once(root, child, grammar, tests, passed_tests, fragment_base_rules_offset, [path; index])
         end
     end
-
     node
 end
 
 """
     passes_the_same_tests_or_more(program::RuleNode, grammar::AbstractGrammar, tests::AbstractVector{<:IOExample}, passed_tests::BitVector)::Bool
 
-Checks if the provided program passes all the tests that have been marked as passed.
+Checks if the provided program passes all the tests (or more) that have been provided. The function breaks early if a test fails.
 
 # Arguments
 - `program`: The program to test.
@@ -212,7 +215,7 @@ Checks if the provided program passes all the tests that have been marked as pas
 - `passed_tests`: A BitVector representing the tests that the program has already passed.
 
 # Returns
-Returns true if the program passes all the tests that have been marked as passed, false otherwise.
+Returns true if the program passes all the tests in marked in `passed_Tests`, false otherwise.
 
 """
 function passes_the_same_tests_or_more(program::RuleNode, grammar::AbstractGrammar, tests::AbstractVector{<:IOExample}, passed_tests::BitVector)::Bool
@@ -268,7 +271,7 @@ The minimum size achievable for each production rule in the grammar, in the same
 
 """
 function rules_minsize(grammar::AbstractGrammar)::Vector{UInt8}
-    temp = Union{UInt8, Nothing}[nothing for _ in eachindex(grammar.rules)]
+    temp = Union{UInt8,Nothing}[nothing for _ in eachindex(grammar.rules)]
 
     for i in eachindex(grammar.rules)
         if isterminal(grammar, i)
@@ -284,7 +287,7 @@ function rules_minsize(grammar::AbstractGrammar)::Vector{UInt8}
 
                 for ctyp in child_types(grammar, i)
                     min_child_size = nothing
-            
+
                     for index in grammar.bytype[ctyp]
                         if !isnothing(temp[index])
                             if isnothing(min_child_size)
@@ -296,7 +299,7 @@ function rules_minsize(grammar::AbstractGrammar)::Vector{UInt8}
                     end
                     if isnothing(min_child_size)
                         @goto next_rule
-                    else 
+                    else
                         size += min_child_size
                     end
                 end
@@ -307,7 +310,7 @@ function rules_minsize(grammar::AbstractGrammar)::Vector{UInt8}
         end
         max_tries -= 1
     end
-    
+
     if any(isnothing, temp)
         throw(ArgumentError("Could not calculate minimum sizes for all rules"))
     else
@@ -322,7 +325,8 @@ function rules_minsize(grammar::AbstractGrammar)::Vector{UInt8}
 end
 
 """
-    update_min_sizes!(grammar::AbstractGrammar, fragment_base_rules_offset::Int16, fragment_rules_offset::Int16,
+    update_min_sizes!(
+        grammar::AbstractGrammar, fragment_base_rules_offset::Int16, fragment_rules_offset::Int16,
         fragments::AbstractVector{RuleNode}, rule_minsize::AbstractVector{UInt8}, symbol_minsize::Dict{Symbol,UInt8})
 
 Updates the minimum sizes of the rules and symbols in the grammar. Called after adding the new fragment rules.
@@ -338,12 +342,10 @@ Updates the minimum sizes of the rules and symbols in the grammar. Called after 
 """
 function update_min_sizes!(grammar::AbstractGrammar, fragment_base_rules_offset::Int16, fragment_rules_offset::Int16,
     fragments::AbstractVector{RuleNode}, rule_minsize::AbstractVector{UInt8}, symbol_minsize::Dict{Symbol,UInt8})
-
     # Reset symbol minsizes    
     for i in fragment_base_rules_offset+1:fragment_rules_offset
         symbol_minsize[grammar.rules[i]] = 255
     end
-
     # For each fragment, update its rule, and possibly the return symbol
     resize!(rule_minsize, length(grammar.rules))
     for (i, fragment) in enumerate(fragments)
@@ -355,7 +357,6 @@ function update_min_sizes!(grammar::AbstractGrammar, fragment_base_rules_offset:
             symbol_minsize[ret_typ] = rule_minsize[fragment_rules_offset+i]
         end
     end
-
     # Reset remaining rule minsizes
     for i in fragment_base_rules_offset+1:fragment_rules_offset
         if !isterminal(grammar, i)
