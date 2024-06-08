@@ -205,7 +205,7 @@ Move the player in the Minecraft environment.
 - `sneak::UInt = 0`: Whether to sneak while moving.
 """
 function mc_move!(program_state::ProgramState, directions, times::Int = 1, sprint::Int = 1, jump::Int = 1, sneak::Int = 0)
-    if program_state.total_reward < -10 # TODO: Configure
+    if program_state.total_reward < -10
         return
     end
 
@@ -222,6 +222,10 @@ function mc_move!(program_state::ProgramState, directions, times::Int = 1, sprin
     for i in 1:times
         obs, reward, done, _ = environment.env.step(action)
         update_state!(program_state, obs, reward, done)
+
+        if program_state.total_reward < -10
+            return
+        end
 
         if RENDER
             environment.env.render()
@@ -241,9 +245,6 @@ End the program and return the final state.
 - The final state of the program.
 """
 function mc_end(program_state::ProgramState)::ProgramState
-    # if state.total_reward > 0
-    #     println(state)
-    # end
     program_state
 end
 

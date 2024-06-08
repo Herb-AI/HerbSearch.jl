@@ -100,6 +100,8 @@ function remember_programs!(
     new_program_expr,
     fragments::AbstractVector{RuleNode},
     grammar::AbstractGrammar,
+    iter_start_time::Float64 = time(),
+    iter_fragments_mined::Vector{Float64} = Vector{Float64}()
 )::Tuple{AbstractVector{RuleNode},Bool}
     node_count = count_nodes(grammar, new_program)
     # Use program length only if an expression is provided -> saves time in many cases
@@ -131,5 +133,6 @@ function remember_programs!(
     old_remembered[passing_tests] = (new_program, node_count, program_length)
     # println("Simplest program for tests: ", passing_tests)
     # println(rulenode2expr(new_program, grammar))
+    push!(iter_fragments_mined, time() - iter_start_time)
     collect(mine_fragments(grammar, Set(values(old_remembered)))), true
 end

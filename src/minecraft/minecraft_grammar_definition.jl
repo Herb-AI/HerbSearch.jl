@@ -5,8 +5,8 @@ struct MinecraftGrammarConfiguration
     angelic_conditions::Dict{UInt16, UInt8}
 end
 
-function get_minecraft_grammar()
-    minecraft_grammar =  @csgrammar begin
+function get_minecraft_grammar_config()
+    minecraft_grammar = @csgrammar begin
         Program = (
             state = Init;
             Statement;
@@ -39,5 +39,5 @@ function get_minecraft_grammar()
     end
 
     angelic_conditions = Dict{UInt16, UInt8}(5 => 1, 8 => 2)
-    return MinecraftGrammarConfiguration(minecraft_grammar, angelic_conditions)
+    return MinecraftGrammarConfiguration(deepcopy(minecraft_grammar), angelic_conditions)
 end

@@ -80,10 +80,14 @@ function modify_and_replace_program_fragments!(
     grammar::AbstractGrammar,
     rule_minsize::AbstractVector{UInt8},
     symbol_minsize::Dict{Symbol,UInt8},
-    use_angelic::Bool
+    use_angelic::Bool,
+    iter_start_time::Float64 = 0.0,
+    iter_fragments_used::Vector{Float64} = Vector{Float64}()
 )::RuleNode
     # If an identity fragment rule is picked -> fragments will be used
     if program.ind > fragment_base_rules_offset && program.ind <= fragment_rules_offset
+        push!(iter_fragments_used, time() - iter_start_time)
+
         fragment_rule_index = program.children[1].ind
         # Either use entire fragment as is (replace by regular fragment rule)
         if rand() < config.use_entire_fragment_chance
