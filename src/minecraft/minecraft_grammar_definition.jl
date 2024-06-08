@@ -39,3 +39,18 @@ function get_minecraft_grammar()
     angelic_conditions = Dict{UInt16, UInt8}(5 => 1, 8 => 2)
     return MinecraftGrammarConfiguration(deepcopy(minecraft_grammar), angelic_conditions)
 end
+
+"""
+    grammar_to_list(grammar::ContextSensitiveGrammar)
+
+Converts a grammar to a list of strings that represent each rule.
+"""
+function grammar_to_list(grammar::ContextSensitiveGrammar)
+    rules = Vector{String}()
+    for i in eachindex(grammar.rules)
+        type = grammar.types[i]
+        rule = grammar.rules[i]
+        push!(rules, "$type => $rule")
+    end
+    return rules
+end
