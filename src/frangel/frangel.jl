@@ -105,7 +105,7 @@ will be changed at initialization to:
     Bool = (Num == Num) | (Num < Num)
     Num = Fragment_Num
     Bool = Fragment_Bool
-    Fragment_Num = (5 + x)
+    Fragment_Num = (5 + x) | 5 | x | 3
     Fragment_Bool = (x == 3)
 ```.
 
