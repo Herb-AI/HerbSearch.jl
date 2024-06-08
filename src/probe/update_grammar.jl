@@ -86,6 +86,9 @@ function update_grammar_4!(grammar::ContextSensitiveGrammar, PSols_with_eval_cac
             if contains_rule(program, rule_index) && reward > best_reward
                 best_reward = reward
             end
+            if grammar.types[rule_index] == :DIR
+                break
+            end
         end
 
         if grammar.types[rule_index] == :DIR
@@ -125,6 +128,9 @@ function update_grammar_5!(grammar::ContextSensitiveGrammar, PSols_with_eval_cac
             # check if the program tree has rule_index somewhere inside it using a recursive function
             if contains_rule(program, rule_index) && reward > best_reward
                 best_reward = reward
+            end
+            if grammar.types[rule_index] == :DIR
+                break
             end
         end
 
