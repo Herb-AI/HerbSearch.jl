@@ -32,7 +32,7 @@ function create_spec(max_reward::Float64, percentages::Vector{Float64}, require_
     spec
 end
 
-RANDOM_SEED = 1235
+RANDOM_SEED = 2
 
 using Random
 
@@ -116,11 +116,12 @@ function runfrangel(;
     return try_data
 end
 
-function runfrangel_experiment(; 
+function runfrangel_experiment_different_use_fragments_chance(; 
     grammar_config::MinecraftGrammarConfiguration,
     experiment_configuration::ExperimentConfiguration,
+    frangel_max_time::Float64,
+    fragment_changes::Vector{Float64},
     seeds::Vector{Int},
-    frangel_config::FrAngelConfig = FrAngelConfig(max_time=20, generation=FrAngelConfigGeneration(use_fragments_chance=0.8, use_angelic_conditions_chance=0, max_size=40)),
     specification_config::SpecificationConfiguration,
 )
     # for each world seed run the experiment
@@ -129,31 +130,31 @@ function runfrangel_experiment(;
         
         # reset environment to the new seed
         environment.settings[:seed] = world_seed
-        reset_env(environment)
-
-        Random.seed!(RANDOM_SEED) # seed the random seed the same for each world 
-        
-        # for each experiment try run the experiment
+        reset_env(environment)        
         tries_data = []
-        for experiment_try_index in 1:experiment_configuration.number_of_runs
-            # TODO: here change frangel configuration for each world
-            try 
-                try_output = runfrangel(
-                    grammar_config = grammar_config,
-                    frangel_config = frangel_config,
-                    specification_config = specification_config,
-                    max_synthesis_runtime = experiment_configuration.max_run_time,
-                )
-                if try_output["solved"]
-                    printstyled("[Seed]: $world_seed try=$experiment_try_index solved=$(try_output["solved"]) runtime=$(try_output["runtime"])\n", color=:green)
-                else
-                    printstyled("[Seed]: $world_seed try=$experiment_try_index solved=$(try_output["solved"]) runtime=$(try_output["runtime"])\n", color=:black)
+        for fragement_chance in fragment_changes
+            # for each experiment try run the experiment
+            Random.seed!(RANDOM_SEED) # seed the random seed the same for each world 
+            for experiment_try_index in 1:experiment_configuration.number_of_runs
+                frangel_config::FrAngelConfig = FrAngelConfig(max_time=frangel_max_time, generation=FrAngelConfigGeneration(use_fragments_chance=fragement_chance, use_angelic_conditions_chance=0, max_size=40))
+                try 
+                    try_output = runfrangel(
+                        grammar_config = grammar_config,
+                        frangel_config = frangel_config,
+                        specification_config = specification_config,
+                        max_synthesis_runtime = experiment_configuration.max_run_time,
+                    )
+                    if try_output["solved"]
+                        printstyled("[Seed]: $world_seed try=$experiment_try_index solved=$(try_output["solved"]) runtime=$(try_output["runtime"])\n", color=:green)
+                    else
+                        printstyled("[Seed]: $world_seed try=$experiment_try_index solved=$(try_output["solved"]) runtime=$(try_output["runtime"])\n", color=:black)
+                    end
+                    try_output["try_index"] = experiment_try_index
+                    push!(tries_data, try_output)
+                catch e
+                    @error e
+                        println("Error in running the experiment with world_seed=$world_seed but we continue")
                 end
-                try_output["try_index"] = experiment_try_index
-                push!(tries_data, try_output)
-            catch e
-                @error e
-                println("Error in running the experiment with world_seed=$world_seed try_index=$try_index but we continue")
             end
         end
         experiment_data = Dict(
@@ -169,18 +170,19 @@ function runfrangel_experiment(;
     end
 end
 minerl_grammar_config::MinecraftGrammarConfiguration = get_minecraft_grammar()
-@time runfrangel_experiment(
+@time runfrangel_experiment_different_use_fragments_chance(
     grammar_config = minerl_grammar_config, 
     experiment_configuration=ExperimentConfiguration(
-        directory_path="src/minecraft/experiments/experiment_frangel/",
-        experiment_description="Dummy experiment",
-        number_of_runs=2,
-        max_run_time=3,
+        directory_path="src/minecraft/experiments/experiment_frangel_different_use_changes/",
+        experiment_description="Experiment with different mining fragments probabilities",
+        number_of_runs=3,
+        max_run_time=200,
         render_moves=RENDER
     ),
     seeds = [958129, 1234, 4123, 4231, 9999],
+    fragment_changes=[0.2, 0.4, 0.6, 0.8],
+    frangel_max_time=20.0,
     specification_config=SpecificationConfiguration(),
-    frangel_config = FrAngelConfig(max_time=20,verbose_level=-1, generation=FrAngelConfigGeneration(use_fragments_chance=0.8, use_angelic_conditions_chance=0, max_size=40)),
 )
 
 

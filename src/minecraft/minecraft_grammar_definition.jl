@@ -27,8 +27,8 @@ function get_minecraft_grammar()
             end)
         End = mc_end(state)
         Direction = (["forward"]) | (["back"]) | (["left"]) | (["right"]) | (["forward", "left"]) | (["forward", "right"]) | (["back", "left"]) | (["back", "right"])
-        Sprint = 0 | 1
-        Jump =  0 | 1
+        Sprint =  1 # always sprint 
+        Jump =   1  # always jump
         Sneak = 0
         Times = 1 | 2 | 3 | 4
         Bool = is_done(state)

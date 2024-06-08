@@ -103,9 +103,14 @@ function soft_reset_env(environment::Environment, start_pos::Tuple{Float64, Floa
 
     obs = env.step(action)[1]
     obsx, obsy, obsz = get_xyz_from_obs(obs)
+    start_time = time()
     while obsx != x_player_start || obsy != y_player_start || obsz != z_player_start
         obs = env.step(action)[1]
         obsx, obsy, obsz = get_xyz_from_obs(obs)
+        if time() - start_time > 5
+            println("Can't reset properly to position $(start_pos)")
+            break
+        end
     end
 end
 
