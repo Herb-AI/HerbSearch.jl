@@ -91,7 +91,7 @@ end
 function run_first_experiment_configured()
     cycle_lengths_range = 5:8 
     run_first_experiment(
-        seeds=[1234, 4123, 4231, 9581, 9999], 
+        seeds=GLOBAL_SEEDS_FOR_EXPERIMENTS, 
         grammar=minerl_grammar,
         experiment_configuration=ExperimentConfiguration(
             directory_path="src/minecraft/experiments/probe/experiment_cycles/",
@@ -146,7 +146,7 @@ end
 function run_second_experiment_configured(;random_probability,file)
     Random.seed!(1234)
     run_second_experiment(
-        seeds=[1234, 4123, 4231, 9581, 9999], 
+        seeds=GLOBAL_SEEDS_FOR_EXPERIMENTS, 
         grammar=minerl_grammar,
         experiment_configuration=ExperimentConfiguration(
             directory_path=file,
@@ -165,7 +165,7 @@ function run_alternative_random_experiments()
     with_logger(debug_logger) do # Enable the debug logger locally
         run_second_experiment_configured(random_probability = 0.3, file="src/minecraft/experiments/probe/experiment_alternating_random_0.3")
         run_second_experiment_configured(random_probability = 0.5, file="src/minecraft/experiments/probe/experiment_alternating_random_0.5")
-        run_second_experiment_configured(random_probability = 1, file="src/minecraft/experiments/probe/experiment_full_random_reproduce")
+        run_second_experiment_configured(random_probability = 1,   file="src/minecraft/experiments/probe/experiment_alternating_random_1")
     end
 end
 
