@@ -26,7 +26,7 @@ minerl_grammar_config::MinecraftGrammarConfiguration = get_minecraft_grammar()
 @time run_frangel_experiments(
     grammar_config = minerl_grammar_config, 
     experiment_configuration=ExperimentConfiguration(
-        directory_path="src/minecraft/experiments/experiment_frangel/",
+        directory_path="src/minecraft/frangel_experiments/",
         experiment_description="Dummy experiment",
         number_of_runs=2,
         max_run_time=3,
