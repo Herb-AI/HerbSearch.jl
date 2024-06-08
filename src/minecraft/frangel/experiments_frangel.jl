@@ -1,7 +1,6 @@
-include("minerl.jl")
-include("logo_print.jl")
+include("../minerl.jl")
+include("../experiment_helpers.jl")
 include("minecraft_grammar_definition.jl")
-include("experiment_helpers.jl")
 
 using HerbGrammar, HerbSpecification, HerbSearch, HerbInterpret
 using Logging
@@ -169,11 +168,12 @@ function runfrangel_experiment_different_use_fragments_chance(;
         end
     end
 end
+HerbSearch.print_logo_frangel()
 minerl_grammar_config::MinecraftGrammarConfiguration = get_minecraft_grammar()
 @time runfrangel_experiment_different_use_fragments_chance(
     grammar_config = minerl_grammar_config, 
     experiment_configuration=ExperimentConfiguration(
-        directory_path="src/minecraft/experiments/experiment_frangel_different_use_changes/",
+        directory_path="src/minecraft/experiments/frangel/experiment_different_use_changes/",
         experiment_description="Experiment with different mining fragments probabilities",
         number_of_runs=3,
         max_run_time=200,

@@ -1,16 +1,12 @@
-include("minerl.jl")
-include("experiments_helpers.jl")
+include("../minerl.jl")
+include("../experiment_helpers.jl")
 
 using HerbGrammar, HerbSpecification, HerbSearch, HerbConstraints
 using Logging
 using JSON
 using Random 
 
-# Logging.min_enabled_level(LogLevel(Logging.Debug))
-# disable_logging(LogLevel(Logging.Debug))
 RENDER_MOVES = false # configure to render moves or not when training
-
-
 
 minerl_grammar = @pcsgrammar begin
     1:best_program = []
@@ -98,7 +94,7 @@ function run_first_experiment_configured()
         seeds=[1234, 4123, 4231, 9581, 9999], 
         grammar=minerl_grammar,
         experiment_configuration=ExperimentConfiguration(
-            directory_path="src/minecraft/experiments/experiment_cycles/",
+            directory_path="src/minecraft/experiments/probe/experiment_cycles/",
             experiment_description="Experiment with different cycle lengths",
             number_of_runs=3,
             max_run_time=300,
@@ -167,10 +163,11 @@ end
 function run_alternative_random_experiments()
     debug_logger = ConsoleLogger(stdout, Logging.Info)
     with_logger(debug_logger) do # Enable the debug logger locally
-        run_second_experiment_configured(random_probability = 0.3, file="src/minecraft/experiments/experiment_alternating_random_0.3")
-        run_second_experiment_configured(random_probability = 0.5, file="src/minecraft/experiments/experiment_alternating_random_0.5")
-        run_second_experiment_configured(random_probability = 1, file="src/minecraft/experiments/experiment_full_random_reproduce")
+        run_second_experiment_configured(random_probability = 0.3, file="src/minecraft/experiments/probe/experiment_alternating_random_0.3")
+        run_second_experiment_configured(random_probability = 0.5, file="src/minecraft/experiments/probe/experiment_alternating_random_0.5")
+        run_second_experiment_configured(random_probability = 1, file="src/minecraft/experiments/probe/experiment_full_random_reproduce")
     end
 end
-run_alternative_random_experiments()
 
+HerbSearch.print_logo_probe()
+run_alternative_random_experiments()

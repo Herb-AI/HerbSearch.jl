@@ -1,9 +1,9 @@
 """
-    print_logo()
+    print_logo_frangel()
 
 Prints a stylized ascii art of the word probe.
 """
-function print_logo()
+function print_logo_frangel()
     printstyled(raw"""                           
      _____  ____    ____  ____    ____    ___  _     
     |     ||    \  /    ||    \  /    |  /  _]| |    

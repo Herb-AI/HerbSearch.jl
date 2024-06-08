@@ -5,6 +5,9 @@ import re
 
 BOX_HEIGHT_WHEN_NOT_SOLVED = 5
 EXPERIMENT_PATH = "src/minecraft/experiments"
+PROBE_EXPERIMENT_PATH = f"{EXPERIMENT_PATH}/probe"
+FRANGEL_EXPERIMENT_PATH = f"{EXPERIMENT_PATH}/frangel"
+
 def compute_mean_of_attempt(attempt_list, key_total_time="total_time", key_solved="solved"):
     solved_attempts = [attempt[key_total_time] for attempt in attempt_list if attempt[key_solved]]
     if solved_attempts:
@@ -15,7 +18,7 @@ def compute_mean_of_attempt(attempt_list, key_total_time="total_time", key_solve
 def read_experiment_alternating_random(experiment_name, seeds):
     solved_time_data = []
     for seed_nr in seeds:
-        with open(f"{EXPERIMENT_PATH}/{experiment_name}/Seed_{seed_nr}.json","r") as f:
+        with open(f"{PROBE_EXPERIMENT_PATH}/{experiment_name}/Seed_{seed_nr}.json","r") as f:
             json_data = json.load(f)
             run_data = json_data["data"]
             mean_solved_time = compute_mean_of_attempt(run_data)
@@ -25,7 +28,7 @@ def read_experiment_alternating_random(experiment_name, seeds):
 def read_experiment_cycles(seed_numbers, cycle_length):
     solved_time_data = []
     for seed_nr in seed_numbers:
-        with open(f"{EXPERIMENT_PATH}/experiment_cycles/Seed_{seed_nr}.json","r") as f:
+        with open(f"{PROBE_EXPERIMENT_PATH}/experiment_cycles/Seed_{seed_nr}.json","r") as f:
             json_data = json.load(f)
             run_data = json_data["data"]
             for cycle_data in run_data:
@@ -38,7 +41,7 @@ def read_experiment_cycles(seed_numbers, cycle_length):
 
 def read_experiment_full_random():
     solved_time_data = []
-    with open(f"{EXPERIMENT_PATH}/experiment_pure_random/experiment.json","r") as f:
+    with open(f"{PROBE_EXPERIMENT_PATH}/experiment_pure_random/experiment.json","r") as f:
         json_data = json.load(f)
         for world in json_data:
             run_data = world["tries_data"]
@@ -49,7 +52,7 @@ def read_experiment_full_random():
 def read_experiment_frangel_different_fragement_probs(seeds, fragement_prob):
     solved_time_data = []
     for seed in seeds: 
-        with open(f"{EXPERIMENT_PATH}/experiment_frangel_different_use_changes/Seed_{seed}.json","r") as f:
+        with open(f"{FRANGEL_EXPERIMENT_PATH}/experiment_different_use_changes/Seed_{seed}.json","r") as f:
             json_data = json.load(f)
             run_data = json_data["tries_data"]
             
@@ -78,11 +81,11 @@ def create_bar_data_probe(seeds):
             "data": read_experiment_cycles(seeds, i)
         })
         
-    # add full random data
-    bar_data_array.append({
-        "label": "Full random",
-        "data": read_experiment_full_random()
-    })
+    # # add full random data
+    # bar_data_array.append({
+    #     "label": "Full random",
+    #     "data": read_experiment_full_random()
+    # })
 
     # add random alternate data with p = 0.3
     bar_data_array.append({
@@ -124,8 +127,15 @@ def plot_bar_data_array(bar_data_array, seeds, barWidth = 0.1, title="Average ru
     
     plt.legend()
     plt.show() 
-    
-seeds = [1234, 4123, 4231, 9581, 9999] # Probe seeds 
-# seeds = [958129, 1234, 4123, 4231, 9999] # Frangel seeds
-bar_data = create_bar_data_probe(seeds)
-plot_bar_data_array(bar_data, seeds = seeds)
+
+def show_probe():
+    seeds = [1234, 4123, 4231, 9581, 9999] # Probe seeds 
+    # seeds = [958129, 1234, 4123, 4231, 9999] # Frangel seeds
+    bar_data = create_bar_data_probe(seeds)
+    plot_bar_data_array(bar_data, seeds = seeds)
+
+def show_frangel():
+    seeds = [958129, 1234, 4123, 4231, 9999] # Frangel seeds
+    bar_data = create_bar_data_frangel(seeds)
+    plot_bar_data_array(bar_data, seeds = seeds)
+show_frangel()

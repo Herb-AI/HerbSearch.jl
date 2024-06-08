@@ -47,6 +47,7 @@ include("frangel/frangel_random_iterator.jl")
 include("frangel/frangel_grammar_utils.jl")
 include("frangel/long_hash_map.jl")
 include("frangel/bit_trie.jl")
+include("frangel/logo_print.jl")
 
 include("probe/logging_helpers.jl")
 include("probe/program_cache.jl")
@@ -57,7 +58,8 @@ include("probe/update_grammar.jl")
 include("probe/guided_search_iterator.jl")
 include("probe/guided_trace_search_iterator.jl")
 include("probe/probe_iterator.jl")
-include("minecraft/alternating_random_iterator.jl")
+include("probe/logo_print.jl")
+include("minecraft/probe/alternating_random_iterator.jl")
 
 export 
   ProgramIterator,

@@ -1,9 +1,9 @@
 """
-    print_logo()
+    print_logo_probe()
 
 Prints a stylized ascii art of the word probe.
 """
-function print_logo()
+function print_logo_probe()
     printstyled(raw"""______          _                __ ___  ____           ______ _     
 | ___ \        | |              / / |  \/  (_)          | ___ \ |    
 | |_/ / __ ___ | |__   ___     / /  | .  . |_ _ __   ___| |_/ / |    
