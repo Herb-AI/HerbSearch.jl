@@ -95,7 +95,7 @@ end
 
 Reset player position to `start_pos`.
 """
-function soft_reset_env(environment::Environment, start_pos::Tuple{Float64, Float64, Float64})
+function soft_reset_env(environment::Environment, start_pos::Tuple{Float64,Float64,Float64})
     env = environment.env
     action = env.action_space.noop()
     x_player_start, y_player_start, z_player_start = start_pos
@@ -114,8 +114,8 @@ end
     The state of a program in the Minecraft environment.
 """
 @kwdef mutable struct ProgramState
-    current_position::Tuple{Float64, Float64, Float64} = (0.0, 0.0, 0.0)
-    last_position::Tuple{Float64, Float64, Float64} = (0.0, 0.0, 0.0)
+    current_position::Tuple{Float64,Float64,Float64} = (0.0, 0.0, 0.0)
+    last_position::Tuple{Float64,Float64,Float64} = (0.0, 0.0, 0.0)
     is_done::Bool = false
     total_reward::Float64 = 0.0
     last_reward::Float64 = 0.0
@@ -135,7 +135,7 @@ Otherwise, it should return true if the total reward of the program is equal to 
 # Returns
 - Whether the output of the program passes the expected output.
 """
-function test_reward_output_tuple(exec_output::ProgramState, expected_out::Tuple{Float64, Bool})::Bool
+function test_reward_output_tuple(exec_output::ProgramState, expected_out::Tuple{Float64,Bool})::Bool
     if exec_output.is_done
         return true
     elseif expected_out[2]
@@ -175,20 +175,20 @@ Initializes the Minecraft environment and returns the initial state.
 # Returns
 - The initial state of the program.
 """
-function mc_init(start_pos::Tuple{Float64, Float64, Float64})::ProgramState
+function mc_init(start_pos::Tuple{Float64,Float64,Float64})::ProgramState
     soft_reset_env(environment, start_pos)
     if RENDER
         environment.env.render()
-    end 
+    end
     action = environment.env.action_space.noop()
     obs, _, done, _ = environment.env.step(action)
 
     return ProgramState(
-        total_reward = 0.0,
-        last_reward = 0.0,
-        is_done = done,
-        current_position = get_xyz_from_obs(obs),
-        last_position = get_xyz_from_obs(obs))
+        total_reward=0.0,
+        last_reward=0.0,
+        is_done=done,
+        current_position=get_xyz_from_obs(obs),
+        last_position=get_xyz_from_obs(obs))
 end
 
 """
@@ -204,7 +204,7 @@ Move the player in the Minecraft environment.
 - `jump`: Whether to jump while moving.
 - `sneak`: Whether to sneak while moving.
 """
-function mc_move!(program_state::ProgramState, directions, times::Int = 1, sprint::Bool = true, jump::Bool = true, sneak::Bool = false)
+function mc_move!(program_state::ProgramState, directions, times::Int=1, sprint::Bool=true, jump::Bool=true, sneak::Bool=false)
     if program_state.total_reward < -10 # TODO: Configure
         return
     end
@@ -212,9 +212,9 @@ function mc_move!(program_state::ProgramState, directions, times::Int = 1, sprin
     # set action
     action = environment.env.action_space.noop()
     for direction in directions
-       action[direction] = 1
+        action[direction] = 1
     end
-    action["sprint"] = Int(sprint)   
+    action["sprint"] = Int(sprint)
     action["jump"] = Int(jump)
     action["sneak"] = Int(sneak)
 

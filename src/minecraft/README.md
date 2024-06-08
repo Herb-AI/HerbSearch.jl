@@ -12,7 +12,7 @@ _How do we adjust the FrAngel program synthesizer to discover more complex subpr
 
 - [minerl.jl](https://github.com/Herb-AI/HerbSearch.jl/blob/frangel-with-minerl-exploit/src/minecraft/minerl.jl): The file that provides the API for the MineRL environment.
 
-- [experiment_helpers.jl](https://github.com/Herb-AI/HerbSearch.jl/blob/frangel-with-minerl-exploit/src/minecraft/experiment_helpers.jl): An util file containing functions for running the experiments and saving the data.
+- [experiment_helpers.jl](https://github.com/Herb-AI/HerbSearch.jl/blob/frangel-with-minerl-exploit/src/minecraft/experiment_helpers.jl): An util file containing helper functions for running the experiments and saving the data.
 
 - [minecraft_grammar_definition.jl](https://github.com/Herb-AI/HerbSearch.jl/blob/frangel-with-minerl-exploit/src/minecraft/minecraft_grammar_definition.jl): The file that contains the grammar used for running the experiments.
 

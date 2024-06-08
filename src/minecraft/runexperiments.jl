@@ -9,11 +9,7 @@ using Logging
 # Set up FrAngel to use the test_tuple function for output equality
 HerbSearch.test_output_equality(exec_output::Any, out::Any) = test_reward_output_tuple(exec_output, out)
 
-# Environment constants - experiments may change these
-# SEEDS = [958129, 1234, 4123, 4231, 9999]        # Seed for MineRL world environment
-SEEDS = [958129, 1234]        # Seed for MineRL world environment
-RANDOM_SEEDS = [1235, 1236]                           # Seed for FrAngel
-RENDER = true                                   # Toggle if Minecraft should be rendered
+
 
 # Set up the Minecraft environment
 if !(@isdefined environment)
@@ -24,16 +20,16 @@ end
 # Main body -> run frangel experiments
 minerl_grammar_config::MinecraftGrammarConfiguration = get_minecraft_grammar()
 @time run_frangel_experiments(
-    grammar_config = minerl_grammar_config, 
+    grammar_config=minerl_grammar_config,
     experiment_configuration=ExperimentConfiguration(
         directory_path="src/minecraft/frangel_experiments/",
         experiment_description="Dummy experiment",
-        number_of_runs=2,
-        max_run_time=3,
-        render_moves=RENDER
+        number_of_runs=3,
+        max_run_time=300,
+        render_moves=true # Toggle if Minecraft should be rendered
     ),
-    world_seeds = SEEDS,
-    frangel_seeds = RANDOM_SEEDS,
+    world_seeds=[958129], # [958129, 1234, 4123, 4231, 9999] Seed for MineRL world environment
+    frangel_seeds=[1235], # Seed for FrAngel
     specification_config=SpecificationConfiguration(),
-    frangel_config = FrAngelConfig(max_time=20, verbose_level=0, generation=FrAngelConfigGeneration(use_fragments_chance=0.8, use_angelic_conditions_chance=0, max_size=40)),
+    frangel_config=FrAngelConfig(max_time=30, verbose_level=0, generation=FrAngelConfigGeneration(use_fragments_chance=0.8, use_angelic_conditions_chance=0, max_size=40)),
 )

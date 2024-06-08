@@ -96,6 +96,7 @@ function run_frangel_once(;
             # If the solution passes at least one test
             if !isnothing(solution)
                 state = execute_on_input(grammar, solution, Dict{Symbol,Any}(:start_pos => starting_position))
+                # Set new checkpoint at best spot
                 starting_position = state.current_position
                 # Update the reward left to reach goal
                 current_max_possible_reward -= state.total_reward
@@ -107,7 +108,8 @@ function run_frangel_once(;
                 has_solved_task = true
                 break
             else
-                rethrow() # TODO: maybe here just print the error such that the experiment can continue
+                print(e)
+                rethrow()
             end
         end
     end
