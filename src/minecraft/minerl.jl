@@ -192,19 +192,19 @@ function mc_init(start_pos::Tuple{Float64, Float64, Float64})::ProgramState
 end
 
 """
-    mc_move!(state::ProgramState, directions, times::UInt = 1, sprint::UInt = 0, jump::UInt = 0, sneak::UInt = 0)
+    mc_move!(state::ProgramState, directions::Vector{String}, times::UInt = 1, sprint::Bool = true, jump::Bool = true, sneak::Bool = false)
 
 Move the player in the Minecraft environment.
 
 # Arguments
-- `state::ProgramState`: The current state of the program.
-- `directions::Vector{String}`: The directions to move the player. Possible values are "forward", "back", "left", and "right".
-- `times::UInt = 1`: The number of times to move the player.
-- `sprint::UInt = 0`: Whether to sprint while moving.
-- `jump::UInt = 0`: Whether to jump while moving.
-- `sneak::UInt = 0`: Whether to sneak while moving.
+- `state`: The current state of the program.
+- `directions`: The directions to move the player. Possible values are "forward", "back", "left", and "right".
+- `times`: The number of times to move the player.
+- `sprint`: Whether to sprint while moving.
+- `jump`: Whether to jump while moving.
+- `sneak`: Whether to sneak while moving.
 """
-function mc_move!(program_state::ProgramState, directions, times::Int = 1, sprint::Int = 1, jump::Int = 1, sneak::Int = 0)
+function mc_move!(program_state::ProgramState, directions, times::Int = 1, sprint::Bool = true, jump::Bool = true, sneak::Bool = false)
     if program_state.total_reward < -10 # TODO: Configure
         return
     end
@@ -214,12 +214,12 @@ function mc_move!(program_state::ProgramState, directions, times::Int = 1, sprin
     for direction in directions
        action[direction] = 1
     end
-    action["sprint"] = sprint   
-    action["jump"] = jump
-    action["sneak"] = sneak
+    action["sprint"] = Int(sprint)   
+    action["jump"] = Int(jump)
+    action["sneak"] = Int(sneak)
 
     # execute action and update state accordingly
-    for i in 1:times
+    for _ in 1:times
         obs, reward, done, _ = environment.env.step(action)
         update_state!(program_state, obs, reward, done)
 

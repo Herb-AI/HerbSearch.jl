@@ -12,7 +12,7 @@ function get_minecraft_grammar()
             Statement;
             End)
         Init = mc_init(start_pos)
-        InnerStatement = (mc_move!(state, Direction, Times, Sprint, Jump, Sneak))
+        InnerStatement = (mc_move!(state, Direction, Times, Toggle, Toggle, false))
         InnerStatement = (InnerStatement ; InnerStatement)
         InnerStatement = (
             if Bool 
@@ -27,9 +27,7 @@ function get_minecraft_grammar()
             end)
         End = mc_end(state)
         Direction = (["forward"]) | (["back"]) | (["left"]) | (["right"]) | (["forward", "left"]) | (["forward", "right"]) | (["back", "left"]) | (["back", "right"])
-        Sprint = 0 | 1
-        Jump =  0 | 1
-        Sneak = 0
+        Toggle = 0 | 1
         Times = 1 | 2 | 3 | 4
         Bool = is_done(state)
         Bool = !Bool
