@@ -65,6 +65,63 @@ The full configuration struct for FrAngel. Includes generation and angelic sub-c
     angelic::FrAngelConfigAngelic = FrAngelConfigAngelic()
 end
 
+"""
+    frangel(
+        spec::AbstractVector{<:IOExample}, config::FrAngelConfig, angelic_conditions::Dict{UInt16,UInt8}, 
+        iter::ProgramIterator, rule_minsize::AbstractVector{UInt8}, symbol_minsize::Dict{Symbol,UInt8})::RuleNode
+
+The main function for FrAngel. It generates a program that passes all the given examples, or times out if one was not found.
+
+# Arguments
+- `spec`: The examples to pass.
+- `config`: The configuration for FrAngel. It contains as sub-configurations the generation and angelic conditions configurations.
+- `angelic_conditions`: A dictionary mapping indices of angelic condition candidates, to the child index that may be changed.
+- `iter`: The iterator to use for generating programs.
+- `rule_minsize`: A vector of minimum sizes for each production rule in the grammar. Can be obtained from [`rules_minsize`](@ref).
+- `symbol_minsize`: A dictionary with the minimum size achievable for each symbol in the grammar. Can be obtained from [`symbols_minsize`](@ref).
+
+# Description
+
+FrAngel is a component-based program synthesizer that makes use of two main features, fragments and angelic conditions, to address the aspects of exploitation and exploration respectively.
+https://arxiv.org/pdf/1811.05175
+The function changes the grammar in every iteration, by adding fragments as rulenodes accessible to the iterator. For example, the following grammar:
+```julia
+    Num = |(0:10)
+    Num = (Num + Num) | (Num - Num) | x
+    Bool = (Num == Num) | (Num < Num)
+```
+will be changed at initialization to:
+```julia
+    Num = |(0:10)
+    Num = (Num + Num) | (Num - Num) | x
+    Bool = (Num == Num) | (Num < Num)
+    Num = Fragment_Num
+    Bool = Fragment_Bool
+```
+, and in a given iteration with fragments [(5 + x), (x == 3)], it will be changed to:
+```julia
+    Num = |(0:10)
+    Num = (Num + Num) | (Num - Num) | x
+    Bool = (Num == Num) | (Num < Num)
+    Num = Fragment_Num
+    Bool = Fragment_Bool
+    Fragment_Num = (5 + x)
+    Fragment_Bool = (x == 3)
+```.
+
+It also turns it into a probabilistic grammar, based on the configuration (how often to use fragments).
+
+The `rule_minsize` and `symbol_minsize` arguments are not strictly required. To abide by the FrAngel spec, the function operates on a `RuleNode` nodesize- instead of depth-basis.
+With an iterator that does not use nodesize, these two arrays will not be used.
+
+# Notes
+- `spec` must be a non-empty vector of [`IOExample`](@ref).	
+- Terminals in the grammar cannot be angelic conditions (it is faulty conceptually, as well).
+- The ideal order of the grammar rules is to group rules with the same return type/LHS together, and sorted with terminals on top, 
+    and recursive rules (rules that contain the return type itself) at the end. While this is not a strict requirement, the program may crash otherwise.
+- `iter` must use a bottom-up search procedure. Since the grammar is changed in every iteration, top-down iterators need to be regenerated in every iteration, wrecking performance.
+
+"""
 function frangel(
     spec::AbstractVector{<:IOExample},
     config::FrAngelConfig,
@@ -144,28 +201,27 @@ function frangel(
 
         passed_tests = BitVector([false for _ in spec])
         # If it does not pass any tests, discard
-        program_expr = get_passed_tests!(program, grammar, symboltable, spec, passed_tests, angelic_conditions, config.angelic, rewards_over_time, logging_start_time, start_reward)
-        # println(rulenode2expr(program, grammar))
+        program_expr = update_passed_tests!(program, grammar, symboltable, spec, passed_tests, angelic_conditions, config.angelic, rewards_over_time, logging_start_time, start_reward)
         if !any(passed_tests)
             continue
         end
 
         # If it contains angelic conditions, resolve them
         if contains_hole(program)
-            program = resolve_angelic!(program, passed_tests, grammar, symboltable, spec, 1, angelic_conditions, config, fragment_base_rules_offset, rule_minsize, symbol_minsize)
+            program = resolve_angelic!(program, passed_tests, grammar, symboltable, spec, replace_first_angelic!, angelic_conditions,
+                config, fragment_base_rules_offset, rule_minsize, symbol_minsize)
             # Still contains angelic conditions -> unresolved
             if contains_hole(program)
                 continue
             end
-            program_expr = get_passed_tests!(program, grammar, symboltable, spec, passed_tests, angelic_conditions, config.angelic, rewards_over_time, logging_start_time, start_reward)
+            program_expr = update_passed_tests!(program, grammar, symboltable, spec, passed_tests, angelic_conditions, config.angelic, rewards_over_time, logging_start_time, start_reward)
         end
 
         # Simplify and rerun over examples
         if config.try_to_simplify
             program = simplify_quick(program, grammar, spec, passed_tests, fragment_base_rules_offset)
-            program_expr = get_passed_tests!(program, grammar, symboltable, spec, passed_tests, angelic_conditions, config.angelic, rewards_over_time, logging_start_time, start_reward)
+            program_expr = update_passed_tests!(program, grammar, symboltable, spec, passed_tests, angelic_conditions, config.angelic, rewards_over_time, logging_start_time, start_reward)
         end
-
         if count(passed_tests) > best_program_passing_tests_count
             best_program_passing_tests_count = count(passed_tests)
             best_program = program

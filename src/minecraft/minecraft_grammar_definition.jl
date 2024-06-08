@@ -27,7 +27,7 @@ function get_minecraft_grammar()
             end)
         End = mc_end(state)
         Direction = (["forward"]) | (["back"]) | (["left"]) | (["right"]) | (["forward", "left"]) | (["forward", "right"]) | (["back", "left"]) | (["back", "right"])
-        Toggle = 0 | 1
+        Toggle = false | true
         Times = 1 | 2 | 3 | 4
         Bool = is_done(state)
         Bool = !Bool

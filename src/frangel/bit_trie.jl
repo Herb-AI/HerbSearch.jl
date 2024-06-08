@@ -1,3 +1,12 @@
+"""
+An implementation of a bare-bones trie data structure
+https://en.wikipedia.org/wiki/Trie
+
+This trie does not store values associated to the nodes, and the paths are built using bitstrings instead of regular strings.
+
+The trie is used to store code paths that have been traversed, and check if a given path is a prefix of any of the stored paths.
+
+"""
 @kwdef mutable struct BitTrieNode
     left::Union{BitTrieNode,Nothing} = nothing
     right::Union{BitTrieNode,Nothing} = nothing
@@ -9,6 +18,7 @@ end
     size::Int = 0
 end
 
+# Adds nodes to the trie to represent the given path
 function trie_add!(trie::BitTrie, path::BitVector)
     curr = trie.root
     for i in eachindex(path)
@@ -33,6 +43,7 @@ function trie_add!(trie::BitTrie, path::BitVector)
     end
 end
 
+# Checks if the trie contains the given path - used for
 function trie_contains(trie::BitTrie, path::BitVector)
     curr = trie.root
     if curr.is_leaf

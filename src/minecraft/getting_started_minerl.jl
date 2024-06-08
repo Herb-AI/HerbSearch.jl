@@ -139,10 +139,12 @@ function runfrangel_experiment(;
         reset_env(environment)
         Random.seed!(RANDOM_SEED) # The FrAngel seed is constant between worlds in this branch - can be changed in another branch for personal experiments
         
-        # For each experiment, try to run the experiment
+        # Run the experiment `number_of_runs` times
         tries_data = []
         for experiment_try_index in 1:experiment_configuration.number_of_runs
-            # TODO: here change FrAngel configuration for each world
+            
+            # Note: here change FrAngel configuration for each world
+
             try 
                 # Run the experiment
                 try_output = runfrangel(
