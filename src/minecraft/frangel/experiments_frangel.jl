@@ -115,11 +115,10 @@ function runfrangel(;
     return try_data
 end
 
-function runfrangel_experiment_different_use_fragments_chance(; 
+function runfrangel_experiment_with_different_configs(; 
     grammar_config::MinecraftGrammarConfiguration,
     experiment_configuration::ExperimentConfiguration,
-    frangel_max_time::Float64,
-    fragment_changes::Vector{Float64},
+    frangel_configs::Vector{FrAngelConfig},
     seeds::Vector{Int},
     specification_config::SpecificationConfiguration,
 )
@@ -131,11 +130,10 @@ function runfrangel_experiment_different_use_fragments_chance(;
         environment.settings[:seed] = world_seed
         reset_env(environment)        
         tries_data = []
-        for fragement_chance in fragment_changes
+        for frangel_config in frangel_configs
             # for each experiment try run the experiment
             Random.seed!(RANDOM_SEED) # seed the random seed the same for each world 
             for experiment_try_index in 1:experiment_configuration.number_of_runs
-                frangel_config::FrAngelConfig = FrAngelConfig(max_time=frangel_max_time, generation=FrAngelConfigGeneration(use_fragments_chance=fragement_chance, use_angelic_conditions_chance=0, max_size=40))
                 try 
                     try_output = runfrangel(
                         grammar_config = grammar_config,
@@ -170,21 +168,59 @@ function runfrangel_experiment_different_use_fragments_chance(;
 end
 HerbSearch.print_logo_frangel()
 minerl_grammar_config::MinecraftGrammarConfiguration = get_minecraft_grammar()
-@time runfrangel_experiment_different_use_fragments_chance(
-    grammar_config = minerl_grammar_config, 
-    experiment_configuration=ExperimentConfiguration(
-        directory_path="src/minecraft/experiments/frangel/experiment_different_use_changes/",
-        experiment_description="Experiment with different mining fragments probabilities",
-        number_of_runs=3,
-        max_run_time=200,
-        render_moves=RENDER
-    ),
-    seeds = [958129, 1234, 4123, 4231, 9999],
-    fragment_changes=[0.2, 0.4, 0.6, 0.8],
-    frangel_max_time=20.0,
-    specification_config=SpecificationConfiguration(),
-)
 
+function frangel_first_experiment()
+    fragment_chances=[0.2, 0.4, 0.6, 0.8]
+    max_time_frangel = 20.0
+    frangel_configs::Vector{FrAngelConfig} = Vector{FrAngelConfig}()
+    for fragement_prob in fragment_chances
+        frangel_config = FrAngelConfig(
+            max_time=max_time_frangel,
+            generation=FrAngelConfigGeneration(use_fragments_chance=fragement_prob, use_angelic_conditions_chance=0, max_size=40),
+        )
+        push!(frangel_configs, frangel_config)
+    end
 
+    @time runfrangel_experiment_with_different_configs(
+        grammar_config = minerl_grammar_config, 
+        experiment_configuration=ExperimentConfiguration(
+            directory_path="src/minecraft/experiments/frangel/experiment_different_use_fragement_probabilities/",
+            experiment_description="Experiment with different mining fragments probabilities",
+            number_of_runs=3,
+            max_run_time=200,
+            render_moves=RENDER
+        ),
+        seeds = GLOBAL_SEEDS_FOR_EXPERIMENTS,
+        frangel_configs=frangel_configs,
+        specification_config=SpecificationConfiguration(),
+    )
+end
 
+function frangel_second_experiment()
+    fragement_chance = 0.4
+    frangel_configs::Vector{FrAngelConfig} = Vector{FrAngelConfig}()
+    max_times_frangel = [5, 10, 20, 30]
+    for max_time in max_times_frangel
+        frangel_config = FrAngelConfig(
+            max_time=max_time,
+            generation=FrAngelConfigGeneration(use_fragments_chance=fragement_chance, use_angelic_conditions_chance=0, max_size=40),
+        )
+        push!(frangel_configs, frangel_config)
+    end
 
+    @time runfrangel_experiment_with_different_configs(
+        grammar_config = minerl_grammar_config, 
+        experiment_configuration=ExperimentConfiguration(
+            directory_path="src/minecraft/experiments/frangel/experiment_different_frangel_max_time/",
+            experiment_description="Experiment with different maximum running time for frangel synthesis cycle",
+            number_of_runs=3,
+            max_run_time=200,
+            render_moves=RENDER
+        ),
+        seeds=GLOBAL_SEEDS_FOR_EXPERIMENTS, 
+        frangel_configs=frangel_configs,
+        specification_config=SpecificationConfiguration(),
+    )
+end
+# frangel_second_experiment()
+frangel_first_experiment()

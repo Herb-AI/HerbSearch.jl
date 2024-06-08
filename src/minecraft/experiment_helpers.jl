@@ -1,5 +1,7 @@
 using Base.Filesystem
 
+GLOBAL_SEEDS_FOR_EXPERIMENTS = [1234, 4123, 4231, 9581, 9999]
+
 """
     create_experiment_file(directory_path::String, experiment_name::String)
 
