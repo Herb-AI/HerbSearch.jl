@@ -1,3 +1,5 @@
+using PyCall
+
 """
     update_passed_tests!(
         program::RuleNode, grammar::AbstractGrammar, symboltable::SymbolTable, tests::AbstractVector{<:IOExample},

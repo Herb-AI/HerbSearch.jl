@@ -104,7 +104,7 @@ function run_frangel_once(;
             end
         catch e
             # Task is solved
-            if isa(e, PyCall.PyError) && environment.env.done
+            if isa(e, PyCall.PyError)
                 has_solved_task = true
                 break
             else
@@ -175,7 +175,7 @@ function run_frangel_experiments(;
                     try_output["frangel_seed"] = frangel_seed
                     push!(tries_data, try_output)
                 catch e
-                    @error e
+                    println(e)
                     println("Error in running the experiment with world_seed=$world_seed frangel_seed=$frangel_seed try_index=$experiment_try_index but we continue")
                 end
             end
