@@ -1,6 +1,5 @@
 include("minerl.jl")
-include("logo_print.jl")
-include("spec_utils.jl")
+include("utils.jl")
 
 using Base.Filesystem
 using HerbGrammar, HerbSpecification, HerbInterpret, HerbSearch

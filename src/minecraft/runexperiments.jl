@@ -1,7 +1,7 @@
 include("minerl.jl")
 include("minecraft_grammar_definition.jl")
 include("experiment_helpers.jl")
-include("spec_utils.jl")
+include("utils.jl")
 
 using HerbSearch
 using Logging
