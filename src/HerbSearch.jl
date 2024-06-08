@@ -48,6 +48,17 @@ include("frangel/frangel_grammar_utils.jl")
 include("frangel/long_hash_map.jl")
 include("frangel/bit_trie.jl")
 
+include("probe/logging_helpers.jl")
+include("probe/program_cache.jl")
+include("probe/sum_iterator.jl")
+include("probe/new_program_iterator.jl")
+include("probe/select_partial_sols.jl")
+include("probe/update_grammar.jl")
+include("probe/guided_search_iterator.jl")
+include("probe/guided_trace_search_iterator.jl")
+include("probe/probe_iterator.jl")
+include("minecraft/alternating_random_iterator.jl")
+
 export 
   ProgramIterator,
   @programiterator,
@@ -80,6 +91,12 @@ export
   VLSNSearchIterator,
   SASearchIterator,
   
+  RandomSearchIterator,
+
+  GuidedSearchIterator,
+  GuidedSearchTraceIterator,
+  probe,
+
   mean_squared_error,
   misclassification,
 
@@ -144,4 +161,6 @@ export
   trie_add!,
   trie_contains
   
+  rand
+
 end # module HerbSearch

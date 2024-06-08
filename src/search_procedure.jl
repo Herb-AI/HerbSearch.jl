@@ -61,7 +61,6 @@ function synth(
             break;
         end
     end
-    println(i)
     # The enumeration exhausted, but an optimal problem was not found
     return (best_program, suboptimal_program)
 end

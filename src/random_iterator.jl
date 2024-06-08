@@ -1,12 +1,12 @@
 function rand_with_constraints!(solver::Solver,path::Vector{Int})
     skeleton = get_node_at_location(solver,path)
     grammar = get_grammar(solver)
-    @info "The maximum depth is $(get_max_depth(solver) - length(path)). $(get_max_depth(solver))"
+    @debug "The maximum depth is $(get_max_depth(solver) - length(path)). $(get_max_depth(solver))"
     return _rand_with_constraints!(skeleton,solver, path, mindepth_map(grammar), get_max_depth(solver))
 end
 
 function _rand_with_constraints!(skeleton::RuleNode,solver::Solver,path::Vector{Int},dmap::AbstractVector{Int}, remaining_depth::Int=10) 
-    @info "The depth RuleNode left: $remaining_depth"
+    @debug "The depth RuleNode left: $remaining_depth"
 
     for (i,child) ∈ enumerate(skeleton.children)
         push!(path,i)
@@ -17,7 +17,7 @@ function _rand_with_constraints!(skeleton::RuleNode,solver::Solver,path::Vector{
 end
 
 function _rand_with_constraints!(hole::AbstractHole,solver::Solver,path::Vector{Int},dmap::AbstractVector{Int}, remaining_depth::Int=10) 
-    @info "The depth hole left: $remaining_depth"
+    @debug "The depth hole left: $remaining_depth"
 
     hole = get_hole_at_location(solver, path)
 

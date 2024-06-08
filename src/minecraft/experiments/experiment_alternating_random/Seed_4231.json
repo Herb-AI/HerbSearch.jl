@@ -1,0 +1,290 @@
+{
+    "minerl_configuration": {
+        "seed": 4231,
+        "environment_name": "MineRLNavigateDenseProgSynth-v0"
+    },
+    "experiment_configuration": {
+        "directory_path": "src/minecraft/experiments/experiment_alternating_random/",
+        "experiment_description": "Experiment with different cycle lengths",
+        "number_of_runs": 3,
+        "max_run_time": 300,
+        "render_moves": false
+    },
+    "data": [
+        {
+            "solved": false,
+            "best_program": [
+                [
+                    10,
+                    {
+                        "sprint": 1,
+                        "jump": 1,
+                        "move": 5
+                    }
+                ],
+                [
+                    100,
+                    {
+                        "sprint": 1,
+                        "jump": 1,
+                        "move": 1
+                    }
+                ],
+                [
+                    75,
+                    {
+                        "sprint": 1,
+                        "jump": 1,
+                        "move": 9
+                    }
+                ],
+                [
+                    50,
+                    {
+                        "sprint": 1,
+                        "jump": 1,
+                        "move": 8
+                    }
+                ],
+                [
+                    10,
+                    {
+                        "sprint": 1,
+                        "jump": 1,
+                        "move": 6
+                    }
+                ],
+                [
+                    100,
+                    {
+                        "sprint": 1,
+                        "jump": 1,
+                        "move": 9
+                    }
+                ],
+                [
+                    25,
+                    {
+                        "sprint": 1,
+                        "jump": 1,
+                        "move": 5
+                    }
+                ],
+                [
+                    25,
+                    {
+                        "sprint": 1,
+                        "jump": 1,
+                        "move": 4
+                    }
+                ],
+                [
+                    75,
+                    {
+                        "sprint": 1,
+                        "jump": 1,
+                        "move": 8
+                    }
+                ],
+                [
+                    25,
+                    {
+                        "sprint": 1,
+                        "jump": 1,
+                        "move": 5
+                    }
+                ]
+            ],
+            "cycle_length": 5,
+            "best_reward_over_time": [
+                [
+                    8.570239067077637,
+                    0.2166290283203125
+                ],
+                [
+                    9.785810947418213,
+                    5.331459045410156
+                ],
+                [
+                    13.840496063232422,
+                    11.979728698730469
+                ],
+                [
+                    17.33645510673523,
+                    16.820659637451172
+                ],
+                [
+                    296.78140807151794,
+                    37.07478713989258
+                ],
+                [
+                    303.6213209629059,
+                    38.48960494995117
+                ],
+                [
+                    310.57172203063965,
+                    40.383460998535156
+                ]
+            ],
+            "number_of_restarts": 5,
+            "total_time": 331.4098069667816,
+            "best_reward": 40.383460998535156,
+            "try_index": 1,
+            "random_probability": 1
+        },
+        {
+            "solved": false,
+            "best_program": [
+                [
+                    25,
+                    {
+                        "sprint": 1,
+                        "jump": 1,
+                        "move": 2
+                    }
+                ],
+                [
+                    50,
+                    {
+                        "sprint": 1,
+                        "jump": 1,
+                        "move": 9
+                    }
+                ],
+                [
+                    10,
+                    {
+                        "sprint": 1,
+                        "jump": 1,
+                        "move": 10
+                    }
+                ],
+                [
+                    5,
+                    {
+                        "sprint": 1,
+                        "jump": 1,
+                        "move": 9
+                    }
+                ],
+                [
+                    50,
+                    {
+                        "sprint": 1,
+                        "jump": 1,
+                        "move": 1
+                    }
+                ],
+                [
+                    10,
+                    {
+                        "sprint": 1,
+                        "jump": 1,
+                        "move": 4
+                    }
+                ]
+            ],
+            "cycle_length": 5,
+            "best_reward_over_time": [
+                [
+                    3.080699920654297,
+                    0.6230239868164062
+                ],
+                [
+                    7.685959100723267,
+                    4.7431640625
+                ],
+                [
+                    15.22138500213623,
+                    4.963233947753906
+                ],
+                [
+                    20.15241289138794,
+                    8.945289611816406
+                ],
+                [
+                    22.57900309562683,
+                    9.096832275390625
+                ],
+                [
+                    47.325278997421265,
+                    9.317283630371094
+                ],
+                [
+                    49.56286311149597,
+                    9.317794799804688
+                ]
+            ],
+            "number_of_restarts": 3,
+            "total_time": 313.64053201675415,
+            "best_reward": 9.317794799804688,
+            "try_index": 2,
+            "random_probability": 1
+        },
+        {
+            "solved": false,
+            "best_program": [
+                [
+                    75,
+                    {
+                        "sprint": 1,
+                        "jump": 1,
+                        "move": 1
+                    }
+                ],
+                [
+                    50,
+                    {
+                        "sprint": 1,
+                        "jump": 1,
+                        "move": 5
+                    }
+                ],
+                [
+                    25,
+                    {
+                        "sprint": 1,
+                        "jump": 1,
+                        "move": 8
+                    }
+                ],
+                [
+                    100,
+                    {
+                        "sprint": 1,
+                        "jump": 1,
+                        "move": 1
+                    }
+                ]
+            ],
+            "cycle_length": 5,
+            "best_reward_over_time": [
+                [
+                    1.2290370464324951,
+                    6.4303131103515625
+                ],
+                [
+                    10.776983976364136,
+                    11.750263214111328
+                ],
+                [
+                    21.34809708595276,
+                    11.92269515991211
+                ],
+                [
+                    29.747281074523926,
+                    16.163799285888672
+                ],
+                [
+                    33.57651901245117,
+                    16.28207015991211
+                ]
+            ],
+            "number_of_restarts": 2,
+            "total_time": 320.96626591682434,
+            "best_reward": 16.28207015991211,
+            "try_index": 3,
+            "random_probability": 1
+        }
+    ]
+}

@@ -97,7 +97,7 @@ function Base.iterate(iter::StochasticSearchIterator, iterator_state::IteratorSt
     subprogram = get(current_program, neighbourhood_node_location)
 
 
-    @info "Start: $(rulenode2expr(current_program, grammar)), subexpr: $(rulenode2expr(subprogram, grammar)), cost: $current_cost
+    @debug "Start: $(rulenode2expr(current_program, grammar)), subexpr: $(rulenode2expr(subprogram, grammar)), cost: $current_cost
             temp $new_temperature"
 
     # remove the rule node by substituting it with a hole of the same symbol

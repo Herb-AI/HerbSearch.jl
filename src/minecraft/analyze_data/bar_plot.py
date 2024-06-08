@@ -125,7 +125,7 @@ def plot_bar_data_array(bar_data_array, seeds, barWidth = 0.1, title="Average ru
     plt.legend()
     plt.show() 
     
-# seeds = [1234, 4123, 4231, 9581, 9999]
-seeds = [958129, 1234, 4123, 4231, 9999]
-bar_data = create_bar_data_frangel(seeds)
+seeds = [1234, 4123, 4231, 9581, 9999] # Probe seeds 
+# seeds = [958129, 1234, 4123, 4231, 9999] # Frangel seeds
+bar_data = create_bar_data_probe(seeds)
 plot_bar_data_array(bar_data, seeds = seeds)

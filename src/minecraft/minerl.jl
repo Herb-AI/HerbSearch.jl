@@ -296,3 +296,77 @@ Check if the program is done.
 function is_done(progarm_state::ProgramState)::Bool
     return progarm_state.is_done
 end
+
+
+"""
+    evaluate_trace_minerl(prog::AbstractRuleNode, grammar::ContextSensitiveGrammar, environment::Environment, show_moves::Bool)
+
+Evaluate a program in MineRL `environment`. This function is used by the Probe algorithm.
+"""
+function evaluate_trace_minerl(prog::AbstractRuleNode, grammar::ContextSensitiveGrammar, environment::Environment, show_moves::Bool)
+
+    expr = rulenode2expr(prog, grammar)
+    sequence_of_actions::Vector = eval(expr)
+    evaluate_sequence_actions_minerl(sequence_of_actions, environment, show_moves)
+end
+
+function evaluate_sequence_actions_minerl(sequence_of_actions::Vector, environment::Environment, show_moves::Bool)
+    soft_reset_env(environment, environment.start_pos)
+    @debug "Program : $sequence_of_actions"
+    
+    sum_of_rewards = 0
+    is_done = false
+    obs = nothing
+    env = environment.env
+    for (times, action) ∈ sequence_of_actions
+        new_action = env.action_space.noop()
+        for (key, val) in action
+            if key == "move"
+                new_action["forward"] = val & 1
+                new_action["back"] = val >> 1 & 1
+                new_action["left"] = val >> 2 & 1
+                new_action["right"] = val >> 3
+            else
+                new_action[key] = val
+            end
+        end
+
+        for i in 1:times
+            obs, reward, done, _ = env.step(new_action)
+            if show_moves
+                env.render()
+            end
+
+            sum_of_rewards += reward
+            if done
+                is_done = true
+                break
+            end
+        end
+        if is_done
+            break
+        end
+    end
+
+    # take noop action until player stops
+    # this is to avoid a bug where the player moves onto the goal in soft_reset_env
+    pos = get_xyz_from_obs(obs)
+    old_pos = pos
+    action = env.action_space.noop()
+    while !is_done
+        obs, _, is_done = env.step(action)
+        new_pos = get_xyz_from_obs(obs)
+        if new_pos == old_pos
+            break
+        end
+        old_pos = new_pos
+    end
+    @debug "Reward $sum_of_rewards" 
+    return pos, is_done, sum_of_rewards
+end
+
+
+function visualize_program(final_program, environment::Environment)
+    reset_env(environment)
+    evaluate_sequence_actions_minerl(final_program, environment, true)
+end
