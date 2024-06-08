@@ -138,7 +138,7 @@ function run_frangel_experiments(;
     specification_config::SpecificationConfiguration,
 )
     # Have some joy in life :)
-    # print_logo()
+    print_logo()
 
     # For each world seed run an experiment
     for world_seed in world_seeds
