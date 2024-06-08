@@ -23,9 +23,9 @@ function update_passed_tests!(
     prev_passed_tests::BitVector,
     angelic_conditions::Dict{UInt16,UInt8},
     config::FrAngelConfigAngelic,
-    rewards_over_time::Vector{Tuple{Float64,Float64}} = Vector{Tuple{Float64,Float64}}(),
-    start_time = time(),
-    start_reward = 0.0
+    rewards_over_time::Vector{Tuple{Float64,Float64}}=Vector{Tuple{Float64,Float64}}(),
+    start_time=time(),
+    start_reward=0.0
 )
     # If angelic -> evaluate optimistically
     if contains_hole(program)
@@ -48,17 +48,19 @@ function update_passed_tests!(
         # Otherwise, evaluate regularly
     else
         expr = rulenode2expr(program, grammar)
-        output = execute_on_input(symboltable, expr, tests[1].in)
+        try
+            output = execute_on_input(symboltable, expr, tests[1].in)
+            push!(rewards_over_time, (time() - start_time, start_reward + output.total_reward))
+            for (index, test) in enumerate(tests)
 
-        push!(rewards_over_time, (time() - start_time, start_reward + output.total_reward))
-
-        for (index, test) in enumerate(tests)
-            try
                 prev_passed_tests[index] = test_output_equality(output, test.out)
-            catch e
-                # println(e)
-                # println(e.backtrace)
-                prev_passed_tests[index] = false
+            end
+        catch e
+            if isa(e, PyCall.PyError)
+                prev_passed_tests .= true
+            else
+                println(e)
+                prev_passed_tests .= false
             end
         end
         expr
@@ -394,8 +396,8 @@ Checks if the output of the execution is equal to or greater than the expected o
 # Returns
 `true` if the output of the test is equal to or greater than the expected output, `false` otherwise.
 """
-function test_output_equal_or_greater(exec_output::Any, out::Any)::Bool 
-    exec_output >= out 
+function test_output_equal_or_greater(exec_output::Any, out::Any)::Bool
+    exec_output >= out
 end
 
 """

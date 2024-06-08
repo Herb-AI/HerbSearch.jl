@@ -37,5 +37,5 @@ function get_minecraft_grammar()
     end
 
     angelic_conditions = Dict{UInt16, UInt8}(5 => 1, 8 => 2)
-    return MinecraftGrammarConfiguration(minecraft_grammar, angelic_conditions)
+    return MinecraftGrammarConfiguration(deepcopy(minecraft_grammar), angelic_conditions)
 end
