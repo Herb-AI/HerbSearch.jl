@@ -1,3 +1,5 @@
+using Random
+
 """
     update_grammar(grammar::ContextSensitiveGrammar, PSols_with_eval_cache::Vector{ProgramCache}, examples::Vector{<:IOExample})
 
@@ -67,8 +69,7 @@ function update_grammar!(grammar::ContextSensitiveGrammar, PSols_with_eval_cache
         grammar.log_probabilities[rule_index] = grammar.log_probabilities[rule_index] - log(2, sum)
         total_sum += 2^(grammar.log_probabilities[rule_index])
     end
-    expr = rulenode2expr(PSols_with_eval_cache[begin].program, grammar)
-    grammar.rules[1] = :([$expr; ACT])
+    add_best_program!(grammar, PSols_with_eval_cache)
     @assert abs(total_sum - 1) <= 1e-4 "Total sum is $(total_sum) "
 end
 
@@ -110,8 +111,7 @@ function update_grammar_4!(grammar::ContextSensitiveGrammar, PSols_with_eval_cac
         grammar.log_probabilities[rule_index] = grammar.log_probabilities[rule_index] - log(2, sum)
         total_sum += 2^(grammar.log_probabilities[rule_index])
     end
-    expr = rulenode2expr(PSols_with_eval_cache[begin].program, grammar)
-    grammar.rules[1] = :([$expr; ACT])
+    add_best_program!(grammar, PSols_with_eval_cache)
     @assert abs(total_sum - 1) <= 1e-4 "Total sum is $(total_sum) "
 end
 
@@ -155,9 +155,13 @@ function update_grammar_5!(grammar::ContextSensitiveGrammar, PSols_with_eval_cac
         grammar.log_probabilities[rule_index] = grammar.log_probabilities[rule_index] - log(2, sum)
         total_sum += 2^(grammar.log_probabilities[rule_index])
     end
+    add_best_program!(grammar, PSols_with_eval_cache)
+    @assert abs(total_sum - 1) <= 1e-4 "Total sum is $(total_sum) "
+end
+
+function add_best_program!(grammar::ContextSensitiveGrammar, PSols_with_eval_cache::Vector{ProgramCacheTrace})
     expr = rulenode2expr(PSols_with_eval_cache[begin].program, grammar)
     grammar.rules[1] = :([$expr; ACT])
-    @assert abs(total_sum - 1) <= 1e-4 "Total sum is $(total_sum) "
 end
 
 """
@@ -181,4 +185,24 @@ function contains_rule(program::RuleNode, rule_index::Int)
         end
         return false # if no child has that rule return false
     end
+end
+
+"""
+    randomise_costs!(grammar::ContextSensitiveGrammar)
+
+Randomise the costs of the rules in the `grammar`.
+"""
+function randomise_costs!(grammar::ContextSensitiveGrammar)
+    sum = 0
+    for rule_index in eachindex(grammar.rules)
+        log_prob = Float64(-rand(1:3))
+        grammar.log_probabilities[rule_index] = log_prob
+        sum += 2^(log_prob)
+    end
+    total_sum = 0
+    for rule_index in eachindex(grammar.rules)
+        grammar.log_probabilities[rule_index] = grammar.log_probabilities[rule_index] - log(2, sum)
+        total_sum += 2^(grammar.log_probabilities[rule_index])
+    end
+    @assert abs(total_sum - 1) <= 1e-4 "Total sum is $(total_sum) "
 end
