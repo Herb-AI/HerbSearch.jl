@@ -192,7 +192,7 @@ function mc_init(start_pos::Tuple{Float64, Float64, Float64})::ProgramState
 end
 
 """
-    mc_move!(state::ProgramState, directions, times::UInt = 1, sprint::UInt = 0, jump::UInt = 0, sneak::UInt = 0)
+    mc_move!(state::ProgramState, directions, times::UInt = 1, sprint::Bool = false, jump::Bool = false)
 
 Move the player in the Minecraft environment.
 
@@ -200,12 +200,11 @@ Move the player in the Minecraft environment.
 - `state::ProgramState`: The current state of the program.
 - `directions::Vector{String}`: The directions to move the player. Possible values are "forward", "back", "left", and "right".
 - `times::UInt = 1`: The number of times to move the player.
-- `sprint::UInt = 0`: Whether to sprint while moving.
-- `jump::UInt = 0`: Whether to jump while moving.
-- `sneak::UInt = 0`: Whether to sneak while moving.
+- `sprint::Bool = false`: Whether to sprint while moving.
+- `jump::Bool = false`: Whether to jump while moving.
 """
-function mc_move!(program_state::ProgramState, directions, times::Int = 1, sprint::Int = 1, jump::Int = 1, sneak::Int = 0)
-    if program_state.total_reward < -10
+function mc_move!(program_state::ProgramState, directions, times::Int = 1, sprint::Bool = false, jump::Bool = false)
+    if program_state.total_reward < -8
         return
     end
 
@@ -214,16 +213,19 @@ function mc_move!(program_state::ProgramState, directions, times::Int = 1, sprin
     for direction in directions
        action[direction] = 1
     end
-    action["sprint"] = sprint   
-    action["jump"] = jump
-    action["sneak"] = sneak
+    if sprint
+        action["sprint"] = 1
+    end
+    if jump
+        action["jump"] = 1
+    end
 
     # execute action and update state accordingly
     for i in 1:times
         obs, reward, done, _ = environment.env.step(action)
         update_state!(program_state, obs, reward, done)
 
-        if program_state.total_reward < -10
+        if program_state.total_reward < -8
             return
         end
 

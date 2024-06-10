@@ -47,6 +47,7 @@ include("frangel/frangel_random_iterator.jl")
 include("frangel/frangel_grammar_utils.jl")
 include("frangel/long_hash_map.jl")
 include("frangel/bit_trie.jl")
+include("frangel/experimental_random_iterator.jl")
 
 export 
   ProgramIterator,
@@ -113,6 +114,8 @@ export
 
   FrAngelRandomIterator,
   FrAngelRandomIteratorState,
+
+  ExperimentalRandomIterator,
 
   count_nodes,
   simplify_quick,

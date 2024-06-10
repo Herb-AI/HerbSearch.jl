@@ -63,6 +63,9 @@ function update_passed_tests!(
         catch ex
             if isa(ex, PyCall.PyError)
                 prev_passed_tests .= true
+
+                push!(rewards_over_time, (time() - run_start_time, start_reward + output.total_reward))
+                push!(iter_rewards_over_time, (time() - iter_start_time, output.total_reward))    
             else
                 println(ex)
                 prev_passed_tests .= false
