@@ -237,6 +237,18 @@ end
 
 experiment_data["avg_time"] = timeout ? "TIMEOUT" : time_sum / number_of_tries
 
+# caclucate standard_deviation
+if !timeout
+    variance = 0
+    for i in 1:number_of_tries
+        global variance += (tries[i]["time"] - experiment_data["avg_time"])^2
+    end
+    variance /= number_of_tries - 1
+    experiment_data["standard_deviation"] = sqrt(variance)
+else
+    experiment_data["standard_deviation"] = "N/A"
+end
+
 dir = "experiments/experiment_$(experiment_number)"
 file_path = "$dir/$(experiment_number)_$seed.json"
 
