@@ -159,6 +159,11 @@ function update_grammar_5!(grammar::ContextSensitiveGrammar, PSols_with_eval_cac
     @assert abs(total_sum - 1) <= 1e-4 "Total sum is $(total_sum) "
 end
 
+function update_grammar_6!(grammar::ContextSensitiveGrammar, PSols_with_eval_cache::Vector{ProgramCacheTrace})
+    randomise_costs!(grammar)
+    add_best_program!(grammar, PSols_with_eval_cache)
+end
+
 function add_best_program!(grammar::ContextSensitiveGrammar, PSols_with_eval_cache::Vector{ProgramCacheTrace})
     expr = rulenode2expr(PSols_with_eval_cache[begin].program, grammar)
     grammar.rules[1] = :([$expr; ACT])

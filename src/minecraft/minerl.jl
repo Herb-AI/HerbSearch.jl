@@ -165,14 +165,18 @@ function evaluate_trace_minerl(prog::AbstractRuleNode, grammar::ContextSensitive
     pos = get_xyz_from_obs(obs)
     old_pos = pos
     action = env.action_space.noop()
+    new_sum_of_rewards = sum_of_rewards
     while !is_done
-        obs, _, is_done = env.step(action)
+        obs, reward, is_done = env.step(action)
+        new_sum_of_rewards += reward
         new_pos = get_xyz_from_obs(obs)
         if new_pos == old_pos
             break
         end
         old_pos = new_pos
     end
+
+    sum_of_rewards = is_done ? new_sum_of_rewards : sum_of_rewards
 
     println("Reward $sum_of_rewards") #TODO: remove/change print
     return pos, is_done, sum_of_rewards

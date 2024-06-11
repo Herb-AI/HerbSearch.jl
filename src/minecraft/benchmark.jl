@@ -167,7 +167,7 @@ elseif experiment_number == 6
         Partial solution: reward > best_reward.
         Cycle length 8.
         Select 5 programs with highest reward.
-        Start with random probablities; do not update probabilites; replace start symbol with [best_program; ACT].
+        Start with random probablities; ranadomise probabilites when updating; replace start symbol with [best_program; ACT].
         Allow taking multiple actions after best program.
         Change (TIMES, action) to (action, TIMES)."""
 
@@ -180,7 +180,7 @@ elseif experiment_number == 6
         6:TIMES = 5 | 10 | 25 | 50 | 75 | 100
     end
     randomise_costs = true
-    HerbSearch.update_grammar!(grammar::ContextSensitiveGrammar, PSols_with_eval_cache::Vector{ProgramCacheTrace}) = HerbSearch.add_best_program!(grammar, PSols_with_eval_cache)
+    HerbSearch.update_grammar!(grammar::ContextSensitiveGrammar, PSols_with_eval_cache::Vector{ProgramCacheTrace}) = HerbSearch.update_grammar_6!(grammar, PSols_with_eval_cache)
 end
 
 experiment_data["experiment"]["grammar"] = grammar_to_list(minerl_grammar)
@@ -190,6 +190,7 @@ tries = []
 experiment_data["tries"] = tries
 
 time_sum = 0
+timeout = false
 
 for i in 1:number_of_tries
     printstyled("\n=============== TRY $i ===============\n\n", color=:cyan, bold=true)
@@ -204,8 +205,10 @@ for i in 1:number_of_tries
     end_time = time()
 
     time_taken = end_time - start_time
-    if !isnothing(program)
+    if !isnothing(program) && !timeout
         global time_sum += time_taken
+    else
+        global timeout = true
     end
 
     push!(tries, Dict(
@@ -232,7 +235,7 @@ for i in 1:number_of_tries
     end
 end
 
-experiment_data["avg_time"] = time_sum == 0 ? "TIMEOUT" : time_sum / number_of_tries
+experiment_data["avg_time"] = timeout ? "TIMEOUT" : time_sum / number_of_tries
 
 dir = "experiments/experiment_$(experiment_number)"
 file_path = "$dir/$(experiment_number)_$seed.json"
