@@ -116,16 +116,18 @@ function probe(traces::Vector{Trace}, iterator::ProgramIterator; max_time::Int, 
     state = nothing
     grammar = get_grammar(iterator.solver)
 
-    best_reward = 0
+    # best_reward_psol = 0.0
+    best_reward = 0.0
+    best_reward_over_time = Vector{Tuple{Float64,Float64}}()
     # all partial solutions that were found so far
-    all_selected_psols = Set{ProgramCacheTrace}()
+    all_selected_psols = Vector{ProgramCacheTrace}()
     # start next iteration while there is time left
     while time() - start_time < max_time
         i = 1
         # partial solutions for the current synthesis cycle
         psol_with_eval_cache = Vector{ProgramCacheTrace}()
         next = state === nothing ? iterate(iterator) : iterate(iterator, state)
-        while next !== nothing && i < cycle_length # run one cycle
+        while next !== nothing && i < cycle_length && time() - start_time < max_time # run one cycle
             program, state = next
 
             # evaluate
@@ -133,14 +135,23 @@ function probe(traces::Vector{Trace}, iterator::ProgramIterator; max_time::Int, 
             eval_observation, is_done, reward = isempty(evaluation) ? evaluate_trace(program, grammar, show_moves=true) : evaluation
             eval_observation_rounded = round.(eval_observation, digits=1)
             is_partial_sol = false
-            if reward > best_reward + 0.2
+            if reward > best_reward
                 best_reward = reward
                 printstyled("Best reward: $best_reward\n", color=:red)
+                push!(best_reward_over_time, (time() - start_time, best_reward))
                 is_partial_sol = true
+                if reward > 73
+                    is_done = true
+                end
             end
+            # if reward > best_reward_psol
+            #     best_reward_psol = reward
+            #     printstyled("Best reward: $best_reward_psol\n", color=:red)
+            #     is_partial_sol = true
+            # end
             if is_done
                 @info "Last level: $(length(state.bank[state.level + 1])) programs"
-                return program
+                return program, best_reward_over_time
             elseif eval_observation_rounded in eval_cache # result already in cache
                 next = iterate(iterator, state)
                 continue
@@ -159,27 +170,39 @@ function probe(traces::Vector{Trace}, iterator::ProgramIterator; max_time::Int, 
 
         # check if program iterator is exhausted
         if next === nothing
-            return nothing
+            return nothing, best_reward_over_time
         end
 
-        partial_sols = filter(x -> x ∉ all_selected_psols, select_partial_solution(psol_with_eval_cache, all_selected_psols))
+        # partial_sols = filter(x -> x ∉ all_selected_psols, select_partial_solution(psol_with_eval_cache, all_selected_psols))
+        partial_sols = select_partial_solution(psol_with_eval_cache, all_selected_psols)
+
         if !isempty(partial_sols)
             printstyled("Restarting!\n", color=:magenta)
+            # println("printing the partial solutions")
+            # println(union(collect(all_selected_psols), partial_sols))
 
+            # println(rulenode2expr(partial_sols[1].program, grammar))
+            # push!(all_selected_psols, partial_sols...)
+            # println("printing all_selected_psols")
+            # println(all_selected_psols)
+            # println("printing partial_sols")
+            # println(partial_sols)
             update_grammar!(grammar, partial_sols) # update probabilites
+            # update_grammar!(grammar, all_selected_psols) 
 
             # restart iterator
             eval_cache = Set()
             state = nothing
 
             #for loop to update all_selected_psols with new costs
-            for prog_with_cache ∈ all_selected_psols
-                program = prog_with_cache.program
-                new_cost = calculate_program_cost(program, grammar)
-                prog_with_cache.cost = new_cost
-            end
+            # for prog_with_cache ∈ all_selected_psols
+            #     println("updating costs")
+            #     program = prog_with_cache.program
+            #     new_cost = calculate_program_cost(program, grammar)
+            #     prog_with_cache.cost = new_cost
+            # end
         end
     end
 
-    return nothing
+    return nothing, best_reward_over_time
 end

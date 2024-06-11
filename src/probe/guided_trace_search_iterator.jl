@@ -1,4 +1,7 @@
-@programiterator GuidedSearchTraceIterator()
+@programiterator GuidedSearchTraceIterator(
+    start_time::Float64,
+    max_time::Int
+)
 
 function Base.iterate(iter::GuidedSearchTraceIterator)
     iterate(iter, GuidedSearchState(
@@ -16,6 +19,9 @@ function Base.iterate(iter::GuidedSearchTraceIterator, state::GuidedSearchState)
     # wrap in while true to optimize for tail call
     while true
         while state.next_iter === nothing
+            if time() - iter.start_time > iter.max_time
+                return nothing
+            end
             state.level += 1
             push!(state.bank, [])
 

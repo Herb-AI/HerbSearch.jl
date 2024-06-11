@@ -81,12 +81,13 @@ end
 
 Select five programs with the highest reward.
 """
-function select_partial_solution(partial_sols::Vector{ProgramCacheTrace}, all_selected_psols::Set{ProgramCacheTrace})
+function select_partial_solution(partial_sols::Vector{ProgramCacheTrace}, all_selected_psols::Vector{ProgramCacheTrace})
     if isempty(partial_sols)
         return Vector{ProgramCache}()
     end
-    push!(partial_sols, all_selected_psols...)
+    # push!(all_selected_psols, partial_sols...)
     # sort partial solutions by reward
+    # println("selecting partial solutions")
     sort!(partial_sols, by=x -> x.reward, rev=true)
     to_select = 5
     return partial_sols[1:min(to_select, length(partial_sols))]

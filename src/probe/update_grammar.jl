@@ -1,3 +1,5 @@
+using Statistics
+
 """
     update_grammar(grammar::ContextSensitiveGrammar, PSols_with_eval_cache::Vector{ProgramCache}, examples::Vector{<:IOExample})
 
@@ -36,29 +38,64 @@ function update_grammar!(grammar::ContextSensitiveGrammar, PSols_with_eval_cache
     end
     @assert abs(total_sum - 1) <= 1e-4 "Total sum is $(total_sum) "
 end
-
+# count = ones(Int, 16)
+# best_rewards = zeros(Float64, 16)
 function update_grammar!(grammar::ContextSensitiveGrammar, PSols_with_eval_cache::Vector{ProgramCacheTrace})
     sum = 0
+    # mean_reward = mean(p.reward for p in PSols_with_eval_cache)
+    
+    # Track the best reward for each rule
+    count = zeros(Int, 16)
+    best_rewards = zeros(Float64, 16)
+
     for rule_index in eachindex(grammar.rules)
-        best_reward = 0
+        # best_reward = 0
         for psol in PSols_with_eval_cache
-            program = psol.program.children[end]
+            program = psol.program.children[begin]
             reward = psol.reward
             # check if the program tree has rule_index somewhere inside it using a recursive function
-            if contains_rule(program, rule_index) && reward > best_reward
-                best_reward = reward
+            # if contains_rule(program, rule_index) && reward > best_reward
+            #     best_reward = reward
+            # end
+            # contains_num = contains_rule(program, rule_index, grammar)
+            if contains_rule(program, rule_index)
+            
+            # if contains_num > 0
+                # count[rule_index] += contains_num
+                count[rule_index] += 1
+                if reward > best_rewards[rule_index]
+                    best_rewards[rule_index] = reward
+                end
             end
         end
         # fitness higher is better
         # TODO: think about better thing here
-        fitness = min(best_reward / 100, 1)
+        # fitness = min(best_reward / 100, 1)
+        # k = 1/mean_reward
+        # fitness = 1 - exp(-k * best_reward)
 
+        # p_current = 2^(grammar.log_probabilities[rule_index])
+
+        # sum += p_current^(1 - fitness)
+        # log_prob = ((1 - fitness) * log(2, p_current))
+        # grammar.log_probabilities[rule_index] = log_prob
+    end
+    println(best_rewards)
+    println(count)
+    for rule_index in eachindex(grammar.rules)
+        best_reward = best_rewards[rule_index]
+        appearances = count[rule_index]
+        # fitness = (best_reward / 100) * (log(1 + appearances))
+        # fitness = (best_reward / 100) / (log(1+appearnaces))
+        fitness = (best_reward / 100)
+
+        fitness = min(fitness, 1)
         p_current = 2^(grammar.log_probabilities[rule_index])
-
         sum += p_current^(1 - fitness)
         log_prob = ((1 - fitness) * log(2, p_current))
         grammar.log_probabilities[rule_index] = log_prob
     end
+    println(grammar.log_probabilities)
     total_sum = 0
     for rule_index in eachindex(grammar.rules)
         grammar.log_probabilities[rule_index] = grammar.log_probabilities[rule_index] - log(2, sum)
@@ -66,6 +103,7 @@ function update_grammar!(grammar::ContextSensitiveGrammar, PSols_with_eval_cache
     end
     expr = rulenode2expr(PSols_with_eval_cache[begin].program, grammar)
     grammar.rules[1] = :([$expr; ACT])
+    println(total_sum)
     @assert abs(total_sum - 1) <= 1e-4 "Total sum is $(total_sum) "
 end
 
@@ -90,4 +128,31 @@ function contains_rule(program::RuleNode, rule_index::Int)
         end
         return false # if no child has that rule return false
     end
+end
+function contains_rule(program::RuleNode, rule_index::Int, grammar::ContextSensitiveGrammar)
+    sum = 0
+    # for p in program
+    if program.ind == rule_index # if the rule is good return true
+        sum = 1
+    end
+    for child in program.children
+        # println(child)
+        sum += contains_rule(child, rule_index, grammar)  # if a child has that rule then return true
+    end
+    # end
+    if sum>0 
+        # println("count of rule: $(rule_index) is $(sum) for program \n $(rulenode2expr(program, grammar))")
+    end
+    return sum # if no child has that rule return false
+end
+
+function flatten_nested_vector(v::Vector{RuleNode}, result=[])
+    for element in v
+        if isa(element, AbstractVector)
+            flatten_nested_vector(element, result)
+        else
+            push!(result, element)
+        end
+    end
+    return result
 end
