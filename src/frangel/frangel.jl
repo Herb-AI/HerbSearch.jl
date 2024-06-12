@@ -128,13 +128,7 @@ function frangel(
     angelic_conditions::Dict{UInt16,UInt8},
     iter::ProgramIterator,
     rule_minsize::AbstractVector{UInt8},
-    symbol_minsize::Dict{Symbol,UInt8},
-    rewards_over_time::Vector{Tuple{Float64,Float64}} = Vector{Tuple{Float64,Float64}}(),
-    start_reward::Float64 = 0.0, 
-    run_start_time::Float64 = time(),
-    iter_reward_over_time::Vector{Tuple{Float64,Float64}} = Vector{Tuple{Float64,Float64}}(),
-    iter_fragments_used::Vector{Float64} = Vector{Float64}(), 
-    iter_fragments_mined::Vector{Float64} = Vector{Float64}()
+    symbol_minsize::Dict{Symbol,UInt8}
 )
     # Setup algorithm
     remembered_programs = Dict{BitVector,Tuple{RuleNode,Int,Int}}()
@@ -182,7 +176,7 @@ function frangel(
 
         # Modify the program with fragments
         program = modify_and_replace_program_fragments!(program, fragments, fragment_base_rules_offset, fragment_rules_offset, config.generation,
-            grammar, rule_minsize, symbol_minsize, use_angelic, start_time, iter_fragments_used)
+            grammar, rule_minsize, symbol_minsize, use_angelic)
         # Modify the program with angelic conditions
         if use_angelic
             program = add_angelic_conditions!(program, grammar, angelic_conditions)
@@ -204,7 +198,7 @@ function frangel(
 
         passed_tests = BitVector([false for _ in spec])
         # If it does not pass any tests, discard
-        program_expr = update_passed_tests!(program, grammar, symboltable, spec, passed_tests, angelic_conditions, config.angelic, rewards_over_time, start_reward, run_start_time, start_time, iter_reward_over_time)
+        program_expr = update_passed_tests!(program, grammar, symboltable, spec, passed_tests, angelic_conditions, config.angelic)
         if !any(passed_tests)
             continue
         end
@@ -217,7 +211,7 @@ function frangel(
             if contains_hole(program)
                 continue
             end
-            program_expr = update_passed_tests!(program, grammar, symboltable, spec, passed_tests, angelic_conditions, config.angelic, rewards_over_time, start_reward, run_start_time, start_time, iter_reward_over_time)
+            program_expr = update_passed_tests!(program, grammar, symboltable, spec, passed_tests, angelic_conditions, config.angelic)
         end
 
         # Simplify and rerun over examples
@@ -246,7 +240,7 @@ function frangel(
 
         # Update remember programs and fragments
         if config.generation.use_fragments_chance != 0
-            fragments, updatedFragments = remember_programs!(remembered_programs, passed_tests, program, (!config.compare_programs_by_length ? nothing : program_expr), fragments, grammar, start_time, iter_fragments_mined)
+            fragments, updatedFragments = remember_programs!(remembered_programs, passed_tests, program, (!config.compare_programs_by_length ? nothing : program_expr), fragments, grammar)
 
             if checkedProgram <= verbose_level
                 println("---- Fragments ----")

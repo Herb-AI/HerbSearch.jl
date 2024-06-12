@@ -23,12 +23,7 @@ function update_passed_tests!(
     tests::AbstractVector{<:IOExample},
     prev_passed_tests::BitVector,
     angelic_conditions::Dict{UInt16,UInt8},
-    config::FrAngelConfigAngelic,
-    rewards_over_time::Vector{Tuple{Float64,Float64}} = Vector{Tuple{Float64,Float64}}(),
-    start_reward::Float64 = 0.0, 
-    run_start_time::Float64 = time(),
-    iter_start_time::Float64 = time(),
-    iter_rewards_over_time::Vector{Tuple{Float64,Float64}} = Vector{Tuple{Float64,Float64}}()
+    config::FrAngelConfigAngelic
 )
     # If angelic -> evaluate optimistically
     if contains_hole(program)
@@ -53,23 +48,13 @@ function update_passed_tests!(
         expr = rulenode2expr(program, grammar)
         try
             output = execute_on_input(symboltable, expr, tests[1].in)
-
-            push!(rewards_over_time, (time() - run_start_time, start_reward + output.total_reward))
-            push!(iter_rewards_over_time, (time() - iter_start_time, output.total_reward))
-
+            
             for (index, test) in enumerate(tests)
                     prev_passed_tests[index] = test_output_equality(output, test.out)
             end
         catch ex
-            if isa(ex, PyCall.PyError)
-                prev_passed_tests .= true
-
-                push!(rewards_over_time, (time() - run_start_time, start_reward + output.total_reward))
-                push!(iter_rewards_over_time, (time() - iter_start_time, output.total_reward))    
-            else
-                println(ex)
-                prev_passed_tests .= false
-            end
+            println(ex, catch_backtrace())
+            prev_passed_tests .= false
         end
         expr
     end
