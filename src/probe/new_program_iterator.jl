@@ -75,8 +75,8 @@ function Base.iterate(iter::NewProgramsIterator, state::NewProgramsState)
     return nothing
 end
 
-function calculate_rule_cost_prob(rule_index, grammar, log_base = 2)
-    log_prob = grammar.log_probabilities[rule_index] / log(log_base)
+function calculate_rule_cost_prob(rule_index::Int, grammar::ContextSensitiveGrammar)
+    log_prob = grammar.log_probabilities[rule_index]
     return convert(Int64, round(-log_prob))
 end
 
