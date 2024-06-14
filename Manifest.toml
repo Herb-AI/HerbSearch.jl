@@ -170,7 +170,7 @@ version = "0.3.0"
 
 [[deps.HerbGrammar]]
 deps = ["AbstractTrees", "DataStructures", "HerbCore", "Serialization", "TreeView"]
-git-tree-sha1 = "42ec66a30889477bc91b421e786cc3d29bd567ae"
+git-tree-sha1 = "0a04a7d7a1c8e168169d10a215ee52fe9d3ce362"
 repo-rev = "fix-normalizing"
 repo-url = "https://github.com/Herb-AI/HerbGrammar.jl.git"
 uuid = "4ef9e186-2fe5-4b24-8de7-9f7291f24af7"
@@ -194,9 +194,9 @@ uuid = "a51ab1cf-af8e-5615-a023-bc2c838bba6b"
 version = "69.1.0+0"
 
 [[deps.Inflate]]
-git-tree-sha1 = "d1b1b796e47d94588b3757fe84fbf65a5ec4a80d"
+git-tree-sha1 = "ea8031dea4aff6bd41f1df8f2fdfb25b33626381"
 uuid = "d25df0c9-e2be-5dd7-82c8-3ad0b3e990b9"
-version = "0.1.5"
+version = "0.1.4"
 
 [[deps.InteractiveUtils]]
 deps = ["Markdown"]
@@ -329,9 +329,9 @@ version = "2.12.0+0"
 
 [[deps.LogExpFunctions]]
 deps = ["DocStringExtensions", "IrrationalConstants", "LinearAlgebra"]
-git-tree-sha1 = "a2d09619db4e765091ee5c6ffe8872849de0feea"
+git-tree-sha1 = "18144f3e9cbe9b15b070288eef858f71b291ce37"
 uuid = "2ab3a3ac-af41-5b50-aa03-7779005ae688"
-version = "0.3.28"
+version = "0.3.27"
 
     [deps.LogExpFunctions.extensions]
     LogExpFunctionsChainRulesCoreExt = "ChainRulesCore"

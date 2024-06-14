@@ -72,8 +72,7 @@ function grammar_to_list(grammar::ContextSensitiveGrammar)
     for i in 1:length(grammar.rules)
         type = grammar.types[i]
         rule = grammar.rules[i]
-        cost = HerbSearch.calculate_rule_cost(i, grammar)
-        push!(rules, "$cost : $type => $rule")
+        push!(rules, "$type => $rule")
     end
     return rules
 end

@@ -28,13 +28,13 @@ function update_grammar!(grammar::ContextSensitiveGrammar, PSols_with_eval_cache
 
         # compute (log2(p_u) ^ (1 - fit)) = (1-fit) * log2(p_u)
         sum += p_uniform^(1 - fitnes)
-        log_prob = ((1 - fitnes) * log(2, p_uniform))
+        log_prob = ((1 - fitnes) * log2(p_uniform))
         grammar.log_probabilities[rule_index] = log_prob
     end
     total_sum = 0
     for rule_index in eachindex(grammar.rules)
-        grammar.log_probabilities[rule_index] = grammar.log_probabilities[rule_index] - log(2, sum)
-        total_sum += 2^(grammar.log_probabilities[rule_index])
+        grammar.log_probabilities[rule_index] -= log2(sum)
+        total_sum += exp2(grammar.log_probabilities[rule_index])
     end
     @assert abs(total_sum - 1) <= 1e-4 "Total sum is $(total_sum) "
 end
@@ -58,16 +58,15 @@ function update_grammar!(grammar::ContextSensitiveGrammar, PSols_with_eval_cache
         # TODO: think about better thing here
         fitness = min(best_reward / 100, 1)
 
-        p_current = 2^(grammar.log_probabilities[rule_index])
+        p_current = exp2(grammar.log_probabilities[rule_index])
 
         sum += p_current^(1 - fitness)
-        log_prob = ((1 - fitness) * log(2, p_current))
-        grammar.log_probabilities[rule_index] = log_prob
+        grammar.log_probabilities[rule_index] *= 1 - fitness
     end
     total_sum = 0
     for rule_index in eachindex(grammar.rules)
-        grammar.log_probabilities[rule_index] = grammar.log_probabilities[rule_index] - log(2, sum)
-        total_sum += 2^(grammar.log_probabilities[rule_index])
+        grammar.log_probabilities[rule_index] -= log2(sum)
+        total_sum += exp2(grammar.log_probabilities[rule_index])
     end
     add_best_program!(grammar, PSols_with_eval_cache)
     @assert abs(total_sum - 1) <= 1e-4 "Total sum is $(total_sum) "
@@ -94,22 +93,21 @@ function update_grammar_4!(grammar::ContextSensitiveGrammar, PSols_with_eval_cac
 
         if grammar.types[rule_index] == :DIR
             log_prob = best_reward > 0 ? -1.0 : -10.0
-            sum += 2^(log_prob)
+            sum += exp2(log_prob)
             grammar.log_probabilities[rule_index] = log_prob
         else
             fitness = min(best_reward / 100, 1)
 
-            p_current = 2^(grammar.log_probabilities[rule_index])
+            p_current = exp2(grammar.log_probabilities[rule_index])
 
             sum += p_current^(1 - fitness)
-            log_prob = ((1 - fitness) * log(2, p_current))
-            grammar.log_probabilities[rule_index] = log_prob
+            grammar.log_probabilities[rule_index] *= 1 - fitness
         end
     end
     total_sum = 0
     for rule_index in eachindex(grammar.rules)
-        grammar.log_probabilities[rule_index] = grammar.log_probabilities[rule_index] - log(2, sum)
-        total_sum += 2^(grammar.log_probabilities[rule_index])
+        grammar.log_probabilities[rule_index] -= log2(sum)
+        total_sum += exp2(grammar.log_probabilities[rule_index])
     end
     add_best_program!(grammar, PSols_with_eval_cache)
     @assert abs(total_sum - 1) <= 1e-4 "Total sum is $(total_sum) "
@@ -136,24 +134,23 @@ function update_grammar_5!(grammar::ContextSensitiveGrammar, PSols_with_eval_cac
 
         if grammar.types[rule_index] == :DIR
             log_prob = best_reward > 0 ? -1.0 : -2.0
-            sum += 2^(log_prob)
+            sum += exp2(log_prob)
             grammar.log_probabilities[rule_index] = log_prob
         elseif grammar.types[rule_index] == :TIMES
-            sum += 2^(grammar.log_probabilities[rule_index])
+            sum += exp2(grammar.log_probabilities[rule_index])
         else
             fitness = min(best_reward / 100, 1)
 
-            p_current = 2^(grammar.log_probabilities[rule_index])
+            p_current = exp2(grammar.log_probabilities[rule_index])
 
             sum += p_current^(1 - fitness)
-            log_prob = ((1 - fitness) * log(2, p_current))
-            grammar.log_probabilities[rule_index] = log_prob
+            grammar.log_probabilities[rule_index] *= 1 - fitness
         end
     end
     total_sum = 0
     for rule_index in eachindex(grammar.rules)
-        grammar.log_probabilities[rule_index] = grammar.log_probabilities[rule_index] - log(2, sum)
-        total_sum += 2^(grammar.log_probabilities[rule_index])
+        grammar.log_probabilities[rule_index] -= log2(sum)
+        total_sum += exp2(grammar.log_probabilities[rule_index])
     end
     add_best_program!(grammar, PSols_with_eval_cache)
     @assert abs(total_sum - 1) <= 1e-4 "Total sum is $(total_sum) "
@@ -202,12 +199,12 @@ function randomise_costs!(grammar::ContextSensitiveGrammar)
     for rule_index in eachindex(grammar.rules)
         log_prob = Float64(-rand(1:3))
         grammar.log_probabilities[rule_index] = log_prob
-        sum += 2^(log_prob)
+        sum += exp2(log_prob)
     end
     total_sum = 0
     for rule_index in eachindex(grammar.rules)
-        grammar.log_probabilities[rule_index] = grammar.log_probabilities[rule_index] - log(2, sum)
-        total_sum += 2^(grammar.log_probabilities[rule_index])
+        grammar.log_probabilities[rule_index] -= log2(sum)
+        total_sum += exp2(grammar.log_probabilities[rule_index])
     end
     @assert abs(total_sum - 1) <= 1e-4 "Total sum is $(total_sum) "
 end
