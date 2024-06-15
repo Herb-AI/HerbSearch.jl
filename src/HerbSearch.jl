@@ -125,6 +125,13 @@ export
   test_output_equality,
   test_output_equal_or_greater,
   test_output_equal,
+  on_fragments_mined,
+  on_fragment_used,
+  on_iteration,
+  on_intialization,
+  on_program_evaluated,
+  on_new_program_generated,
+  should_mine_for_symbol,
 
   LongHashMap,
   init_long_hash_map,

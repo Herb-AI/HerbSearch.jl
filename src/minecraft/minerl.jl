@@ -3,7 +3,6 @@ pyimport("minerl")
 
 gym = pyimport("gym")
 
-# WARNING: !!! NEVER MOVE THIS. It should ALWAYS be after the `pyimport`. I spent hours debugging this !!!
 using HerbGrammar
 mutable struct Environment
     env::PyObject
@@ -103,12 +102,20 @@ function soft_reset_env(environment::Environment, start_pos::Tuple{Float64, Floa
 
     obs = env.step(action)[1]
     obsx, obsy, obsz = get_xyz_from_obs(obs)
+    start_time = time()
     while obsx != x_player_start || obsy != y_player_start || obsz != z_player_start
         obs = env.step(action)[1]
         obsx, obsy, obsz = get_xyz_from_obs(obs)
+
+        if time() - start_time > 5
+            throw("Can't reset properly to position $(start_pos)")
+        end
     end
 end
 
+############################################
+###### To be used within the programs ######
+############################################
 
 """
     The state of a program in the Minecraft environment.
@@ -204,10 +211,6 @@ Move the player in the Minecraft environment.
 - `jump::Bool = false`: Whether to jump while moving.
 """
 function mc_move!(program_state::ProgramState, directions, times::Int = 1, sprint::Bool = false, jump::Bool = false)
-    if program_state.total_reward < -8
-        return
-    end
-
     # set action
     action = environment.env.action_space.noop()
     for direction in directions
@@ -222,16 +225,7 @@ function mc_move!(program_state::ProgramState, directions, times::Int = 1, sprin
 
     # execute action and update state accordingly
     for i in 1:times
-        obs, reward, done, _ = environment.env.step(action)
-        update_state!(program_state, obs, reward, done)
-
-        if program_state.total_reward < -8
-            return
-        end
-
-        if RENDER
-            environment.env.render()
-        end
+        mc_safe_move!(program_state, action)
     end
 end
 
@@ -281,7 +275,7 @@ function mc_has_moved(program_state::ProgramState)::Bool
 end
 
 """
-    is_done(progarm_state::ProgramState)::Bool
+    mc_is_done(progarm_state::ProgramState)::Bool
 
 Check if the program is done.
 
@@ -291,6 +285,32 @@ Check if the program is done.
 # Returns
 - Whether the program is done.
 """
-function is_done(progarm_state::ProgramState)::Bool
+function mc_is_done(progarm_state::ProgramState)::Bool
     return progarm_state.is_done
+end
+
+function mc_safe_move!(program_state::ProgramState, action)
+    if program_state.total_reward < -10
+        return
+    end
+
+    try
+        obs, reward, done, _ = environment.env.step(action)
+        update_state!(program_state, obs, reward, done)
+
+        if RENDER
+            environment.env.render()
+        end
+    catch ex
+        if isa(ex, PyCall.PyError)
+            if environment.env.done
+                program_state.is_done = true
+                return
+            end
+            println(environment.env)
+            rethrow(ex)
+        end
+
+        rethrow(ex)
+    end
 end

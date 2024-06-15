@@ -162,10 +162,14 @@ function frangel(
 
     # Main loop
     iterationCount, checkedProgram = 0, 0
+
+    on_intialization()
+
     while time() - start_time < config.max_time
         iterationCount += 1
         # Generate random program
         program, state = (state === nothing) ? iterate(iter) : iterate(iter, state)
+        on_iteration()
 
         if checkedProgram < verbose_level
             println("==== Iteration #", iterationCount, " ====")
@@ -188,6 +192,7 @@ function frangel(
             continue
         end
         lhm_put!(visited, program_hash)
+        on_new_program_generated(program)
 
         checkedProgram += 1
         if checkedProgram <= verbose_level
@@ -198,7 +203,7 @@ function frangel(
 
         passed_tests = BitVector([false for _ in spec])
         # If it does not pass any tests, discard
-        program_expr = update_passed_tests!(program, grammar, symboltable, spec, passed_tests, angelic_conditions, config.angelic)
+        program_expr = update_passed_tests!(program, grammar, symboltable, spec, passed_tests, angelic_conditions, config.angelic, true)
         if !any(passed_tests)
             continue
         end
@@ -211,7 +216,7 @@ function frangel(
             if contains_hole(program)
                 continue
             end
-            program_expr = update_passed_tests!(program, grammar, symboltable, spec, passed_tests, angelic_conditions, config.angelic)
+            program_expr = update_passed_tests!(program, grammar, symboltable, spec, passed_tests, angelic_conditions, config.angelic, true)
         end
 
         # Simplify and rerun over examples
@@ -235,7 +240,7 @@ function frangel(
             if config.try_to_simplify
                 program =  simplify_quick(program, grammar, spec, passed_tests, fragment_base_rules_offset)
             end
-            return (program, iterationCount)
+            return program
         end
 
         # Update remember programs and fragments
@@ -278,5 +283,5 @@ function frangel(
         println("Total iterations:", iterationCount)
         println("Checked programs:", checkedProgram)
     end
-    (best_program, iterationCount)
+    best_program
 end

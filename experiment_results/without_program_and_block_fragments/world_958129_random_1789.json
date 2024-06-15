@@ -1,0 +1,173 @@
+{
+    "checkpoint_times": [
+        0.0009999275207519531,
+        10.775000095367432,
+        16.317000150680542
+    ],
+    "world_seed": 958129,
+    "frangel_config": {
+        "max_time": 40.0,
+        "try_to_simplify": false,
+        "compare_programs_by_length": true,
+        "verbose_level": 0,
+        "generation": {
+            "max_size": 40,
+            "use_fragments_chance": 0.5,
+            "use_entire_fragment_chance": 0.5,
+            "use_angelic_conditions_chance": 0.2,
+            "similar_new_extra_size": 8,
+            "gen_similar_prob_new": 0.25
+        },
+        "angelic": {
+            "max_time": 0.1,
+            "boolean_expr_max_size": 6,
+            "max_execute_attempts": 4,
+            "max_allowed_fails": 0.75,
+            "angelic_rulenode": null
+        }
+    },
+    "frangel_seed": 1789,
+    "solved": true,
+    "used_fragments": [],
+    "experiment_description": "Limited fragment symbols - In this experiment, there are no fragments of symbols Program and Blocks.",
+    "iterations": [
+        {
+            "final_grammar": "1: Program = begin\n    state = Init\n    Blocks\n    End\nend\n2: Init = mc_init(start_pos)\n3: Blocks = Block\n4: Blocks = begin\n    Block\n    Blocks\nend\n5: Block = while true\n    Move\n    Bool || break\nend\n6: Block = Move\n7: Block = if Bool\n    Move\nend\n8: Move = mc_move!(state, Direction, Times, Sprint, Jump)\n9: Direction = [\"forward\"]\n10: Direction = [\"back\"]\n11: Direction = [\"left\"]\n12: Direction = [\"right\"]\n13: Direction = [\"forward\", \"left\"]\n14: Direction = [\"forward\", \"right\"]\n15: Direction = [\"back\", \"left\"]\n16: Direction = [\"back\", \"right\"]\n17: Bool = mc_was_good_move(state)\n18: Bool = mc_has_moved(state)\n19: Bool = mc_is_done(state)\n20: Bool = !Bool\n21: End = mc_end(state)\n22: Times = 1\n23: Times = 2\n24: Times = 3\n25: Times = 4\n26: Sprint = true\n27: Sprint = false\n28: Jump = true\n29: Jump = false\n",
+            "initial_position": [
+                169.5,
+                71.0,
+                234.5
+            ],
+            "iterations": 7,
+            "runtime": 10.7739999294281
+        },
+        {
+            "final_grammar": "1: Program = begin\n    state = Init\n    Blocks\n    End\nend\n2: Init = mc_init(start_pos)\n3: Blocks = Block\n4: Blocks = begin\n    Block\n    Blocks\nend\n5: Block = while true\n    Move\n    Bool || break\nend\n6: Block = Move\n7: Block = if Bool\n    Move\nend\n8: Move = mc_move!(state, Direction, Times, Sprint, Jump)\n9: Direction = [\"forward\"]\n10: Direction = [\"back\"]\n11: Direction = [\"left\"]\n12: Direction = [\"right\"]\n13: Direction = [\"forward\", \"left\"]\n14: Direction = [\"forward\", \"right\"]\n15: Direction = [\"back\", \"left\"]\n16: Direction = [\"back\", \"right\"]\n17: Bool = mc_was_good_move(state)\n18: Bool = mc_has_moved(state)\n19: Bool = mc_is_done(state)\n20: Bool = !Bool\n21: End = mc_end(state)\n22: Times = 1\n23: Times = 2\n24: Times = 3\n25: Times = 4\n26: Sprint = true\n27: Sprint = false\n28: Jump = true\n29: Jump = false\n",
+            "initial_position": [
+                208.54382294690623,
+                66.7531999805212,
+                297.46671814317324
+            ],
+            "iterations": 2,
+            "runtime": 5.54200005531311
+        },
+        {
+            "final_grammar": "1: Program = begin\n    state = Init\n    Blocks\n    End\nend\n2: Init = mc_init(start_pos)\n3: Blocks = Block\n4: Blocks = begin\n    Block\n    Blocks\nend\n5: Block = while true\n    Move\n    Bool || break\nend\n6: Block = Move\n7: Block = if Bool\n    Move\nend\n8: Move = mc_move!(state, Direction, Times, Sprint, Jump)\n9: Direction = [\"forward\"]\n10: Direction = [\"back\"]\n11: Direction = [\"left\"]\n12: Direction = [\"right\"]\n13: Direction = [\"forward\", \"left\"]\n14: Direction = [\"forward\", \"right\"]\n15: Direction = [\"back\", \"left\"]\n16: Direction = [\"back\", \"right\"]\n17: Bool = mc_was_good_move(state)\n18: Bool = mc_has_moved(state)\n19: Bool = mc_is_done(state)\n20: Bool = !Bool\n21: End = mc_end(state)\n22: Times = 1\n23: Times = 2\n24: Times = 3\n25: Times = 4\n26: Sprint = true\n27: Sprint = false\n28: Jump = true\n29: Jump = false\n",
+            "initial_position": [
+                214.27676708518405,
+                66.0,
+                294.30000001192093
+            ],
+            "iterations": 2,
+            "runtime": 0.32899999618530273
+        }
+    ],
+    "specification_config": {
+        "max_reward": 74.0,
+        "reward_percentages": [
+            0.1,
+            0.2,
+            0.3,
+            0.4,
+            0.5,
+            0.6,
+            0.7,
+            0.8,
+            0.9
+        ],
+        "require_done": false
+    },
+    "world_description": "Relatively flat. Some trees. Small cave opening.",
+    "generated_programs": [
+        {
+            "time": 0.0009999275207519531,
+            "program": "1{2,3{6{8{15,24,26,29}}}21}"
+        },
+        {
+            "time": 0.28299999237060547,
+            "program": "1{2,3{5{8{13,24,27,28}hole[Bool[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]]}}21}"
+        },
+        {
+            "time": 3.821000099182129,
+            "program": "1{2,3{7{hole[Bool[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]],8{9,22,27,28}}}21}"
+        },
+        {
+            "time": 4.352999925613403,
+            "program": "1{2,3{6{8{15,23,26,29}}}21}"
+        },
+        {
+            "time": 4.41700005531311,
+            "program": "1{2,3{6{8{12,22,27,28}}}21}"
+        },
+        {
+            "time": 4.4690001010894775,
+            "program": "1{2,3{5{8{11,23,26,28}19}}21}"
+        },
+        {
+            "time": 4.531000137329102,
+            "program": "1{2,3{5{8{13,25,26,28}17}}21}"
+        },
+        {
+            "time": 10.775000095367432,
+            "program": "1{2,3{5{8{16,25,27,29}hole[Bool[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]]}}21}"
+        },
+        {
+            "time": 15.348000049591064,
+            "program": "1{2,3{5{8{15,23,27,29}17}}21}"
+        },
+        {
+            "time": 16.317000150680542,
+            "program": "1{2,3{5{8{12,25,27,29}18}}21}"
+        },
+        {
+            "time": 16.55400013923645,
+            "program": "1{2,3{5{8{9,25,26,29}19}}21}"
+        }
+    ],
+    "try_index": 1,
+    "runtime": 16.644999980926514,
+    "mined_fragments": [],
+    "grammar": "1: Program = begin\n    state = Init\n    Blocks\n    End\nend\n2: Init = mc_init(start_pos)\n3: Blocks = Block\n4: Blocks = begin\n    Block\n    Blocks\nend\n5: Block = while true\n    Move\n    Bool || break\nend\n6: Block = Move\n7: Block = if Bool\n    Move\nend\n8: Move = mc_move!(state, Direction, Times, Sprint, Jump)\n9: Direction = [\"forward\"]\n10: Direction = [\"back\"]\n11: Direction = [\"left\"]\n12: Direction = [\"right\"]\n13: Direction = [\"forward\", \"left\"]\n14: Direction = [\"forward\", \"right\"]\n15: Direction = [\"back\", \"left\"]\n16: Direction = [\"back\", \"right\"]\n17: Bool = mc_was_good_move(state)\n18: Bool = mc_has_moved(state)\n19: Bool = mc_is_done(state)\n20: Bool = !Bool\n21: End = mc_end(state)\n22: Times = 1\n23: Times = 2\n24: Times = 3\n25: Times = 4\n26: Sprint = true\n27: Sprint = false\n28: Jump = true\n29: Jump = false\n",
+    "evaluated_programs": [
+        {
+            "time": 0.28299999237060547,
+            "reward": -0.067169189453125,
+            "program": "1{2,3{6{8{15,24,26,29}}}21}"
+        },
+        {
+            "time": 4.41700005531311,
+            "reward": -0.0386505126953125,
+            "program": "1{2,3{6{8{15,23,26,29}}}21}"
+        },
+        {
+            "time": 4.4690001010894775,
+            "reward": -0.09250640869140625,
+            "program": "1{2,3{6{8{12,22,27,28}}}21}"
+        },
+        {
+            "time": 4.531000137329102,
+            "reward": 0.03713226318359375,
+            "program": "1{2,3{5{8{11,23,26,28}19}}21}"
+        },
+        {
+            "time": 7.515000104904175,
+            "reward": 69.10329914093018,
+            "program": "1{2,3{5{8{13,25,26,28}17}}21}"
+        },
+        {
+            "time": 15.83400011062622,
+            "reward": 74.06933832168579,
+            "program": "1{2,3{5{8{15,23,27,29}17}}21}"
+        },
+        {
+            "time": 16.55400013923645,
+            "reward": 72.35787081718445,
+            "program": "1{2,3{5{8{12,25,27,29}18}}21}"
+        },
+        {
+            "time": 16.644999980926514,
+            "reward": 174.27388453483582,
+            "program": "1{2,3{5{8{9,25,26,29}19}}21}"
+        }
+    ]
+}

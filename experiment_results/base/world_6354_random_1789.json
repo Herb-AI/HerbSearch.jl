@@ -1,0 +1,70 @@
+{
+    "checkpoint_times": [
+        0.0009999275207519531
+    ],
+    "world_seed": 6354,
+    "frangel_config": {
+        "max_time": 40.0,
+        "try_to_simplify": false,
+        "compare_programs_by_length": true,
+        "verbose_level": 0,
+        "generation": {
+            "max_size": 40,
+            "use_fragments_chance": 0.5,
+            "use_entire_fragment_chance": 0.5,
+            "use_angelic_conditions_chance": 0.2,
+            "similar_new_extra_size": 8,
+            "gen_similar_prob_new": 0.25
+        },
+        "angelic": {
+            "max_time": 0.1,
+            "boolean_expr_max_size": 6,
+            "max_execute_attempts": 4,
+            "max_allowed_fails": 0.75,
+            "angelic_rulenode": null
+        }
+    },
+    "frangel_seed": 1789,
+    "solved": true,
+    "used_fragments": [],
+    "experiment_description": "Base setup - used to compare with other experiments.",
+    "iterations": [
+        {
+            "final_grammar": "1: Program = begin\n    state = Init\n    Blocks\n    End\nend\n2: Init = mc_init(start_pos)\n3: Blocks = Block\n4: Blocks = begin\n    Block\n    Blocks\nend\n5: Block = while true\n    Move\n    Bool || break\nend\n6: Block = Move\n7: Block = if Bool\n    Move\nend\n8: Move = mc_move!(state, Direction, Times, Sprint, Jump)\n9: Direction = [\"forward\"]\n10: Direction = [\"back\"]\n11: Direction = [\"left\"]\n12: Direction = [\"right\"]\n13: Direction = [\"forward\", \"left\"]\n14: Direction = [\"forward\", \"right\"]\n15: Direction = [\"back\", \"left\"]\n16: Direction = [\"back\", \"right\"]\n17: Bool = mc_was_good_move(state)\n18: Bool = mc_has_moved(state)\n19: Bool = mc_is_done(state)\n20: Bool = !Bool\n21: End = mc_end(state)\n22: Times = 1\n23: Times = 2\n24: Times = 3\n25: Times = 4\n26: Sprint = true\n27: Sprint = false\n28: Jump = true\n29: Jump = false\n",
+            "initial_position": [
+                -128.5,
+                70.0,
+                245.5
+            ],
+            "iterations": 1,
+            "runtime": 0.002000093460083008
+        }
+    ],
+    "specification_config": {
+        "max_reward": 74.0,
+        "reward_percentages": [
+            0.1,
+            0.2,
+            0.3,
+            0.4,
+            0.5,
+            0.6,
+            0.7,
+            0.8,
+            0.9
+        ],
+        "require_done": false
+    },
+    "world_description": "Many trees. Small hill. Ocean on the way and goal on island",
+    "generated_programs": [
+        {
+            "time": 0.0009999275207519531,
+            "program": "1{2,3{6{8{15,24,26,29}}}21}"
+        }
+    ],
+    "try_index": 1,
+    "runtime": 0.002000093460083008,
+    "mined_fragments": [],
+    "grammar": "1: Program = begin\n    state = Init\n    Blocks\n    End\nend\n2: Init = mc_init(start_pos)\n3: Blocks = Block\n4: Blocks = begin\n    Block\n    Blocks\nend\n5: Block = while true\n    Move\n    Bool || break\nend\n6: Block = Move\n7: Block = if Bool\n    Move\nend\n8: Move = mc_move!(state, Direction, Times, Sprint, Jump)\n9: Direction = [\"forward\"]\n10: Direction = [\"back\"]\n11: Direction = [\"left\"]\n12: Direction = [\"right\"]\n13: Direction = [\"forward\", \"left\"]\n14: Direction = [\"forward\", \"right\"]\n15: Direction = [\"back\", \"left\"]\n16: Direction = [\"back\", \"right\"]\n17: Bool = mc_was_good_move(state)\n18: Bool = mc_has_moved(state)\n19: Bool = mc_is_done(state)\n20: Bool = !Bool\n21: End = mc_end(state)\n22: Times = 1\n23: Times = 2\n24: Times = 3\n25: Times = 4\n26: Sprint = true\n27: Sprint = false\n28: Jump = true\n29: Jump = false\n",
+    "evaluated_programs": []
+}

@@ -9,16 +9,16 @@ struct ExperimentalRandomIteratorState
     probabilities::Vector{Float16}
     cumulative_probs::Vector{Float16}
     rule_usage_count::Vector{UInt32}
-    symbol_inverse_counts_sum::Dict{Symbol,Float16}
 end
 
 function Base.iterate(iter::ExperimentalRandomIterator)
-    return Base.iterate(iter, ExperimentalRandomIteratorState(Vector{Int16}(), Vector{Float16}(), Vector{Float16}(), zeros(UInt32, iter.basic_rules_count, 1), Dict{Symbol,Float16}()))
+    symbol_inverse_counts_sum = Dict{Symbol,Float16}()
+    return Base.iterate(iter, ExperimentalRandomIteratorState(Vector{Int16}(), Vector{Float16}(), Vector{Float16}(), vec(zeros(UInt32, iter.basic_rules_count, 1))))
 end
 
 function Base.iterate(iter::ExperimentalRandomIterator, state::ExperimentalRandomIteratorState)
     return (sample!(iter.solver.grammar, get_starting_symbol(iter.solver), iter.rule_minsize, iter.symbol_minsize, 
-        state.filtered_indices, state.probabilities, state.cumulative_probs, state.rule_usage_count, state.symbol_inverse_counts_sum, UInt8(iter.solver.max_depth)), state)
+        state.filtered_indices, state.probabilities, state.cumulative_probs, state.rule_usage_count, UInt8(iter.solver.max_depth)), state)
 end
 
 function sample!(
@@ -30,31 +30,28 @@ function sample!(
     probabilities::Vector{Float16},
     cumulative_probs::Vector{Float16},
     rule_usage_count::Vector{UInt32},
-    symbol_inverse_counts_sum::Dict{Symbol,Float16},
     max_size::UInt8=UInt8(40)
 )::RuleNode
     max_size = max(max_size, symbol_minsize[symbol])
     empty!(filtered_indices)
     empty!(probabilities)
-    for pair in symbol_inverse_counts_sum
-        symbol_inverse_counts_sum[pair[1]] = 0.0
-    end
+    inverse_counts_sum = 0.0
+    updated_indices = Vector{Int}()
     # Only consider rules that have defined a minimal size defined
     for i in grammar[symbol]
         if rule_minsize[i] ≤ max_size
             push!(filtered_indices, i)
             if i ≤ length(rule_usage_count)
-                symbol_inverse_counts_sum[grammar.types[i]] += (1 / (1 + rule_usage_count[i]))
+                inverse_counts_sum += (1 / (1 + rule_usage_count[i]))
                 push!(probabilities, grammar.log_probabilities[i] * (1 / (1 + rule_usage_count[i])))
+                push!(updated_indices, length(probabilities))
             else 
                 push!(probabilities, grammar.log_probabilities[i])
             end
         end
     end
-    for i in grammar[symbol]
-        if rule_minsize[i] ≤ max_size && i ≤ length(rule_usage_count)
-            probabilities[i] = probabilities[i] / symbol_inverse_counts_sum[grammar.types[i]]
-        end
+    for i in updated_indices
+        probabilities[i] = probabilities[i] / inverse_counts_sum    
     end
 
     empty!(cumulative_probs)
@@ -84,7 +81,7 @@ function sample!(
         for (index, child_type) in enumerate(children_types)
             rule_node.children[index] = sample!(
                 grammar, child_type, rule_minsize, symbol_minsize,
-                filtered_indices, probabilities, cumulative_probs, rule_usage_count, symbol_inverse_counts_sum, sizes[index]
+                filtered_indices, probabilities, cumulative_probs, rule_usage_count, sizes[index]
             )
         end
     end

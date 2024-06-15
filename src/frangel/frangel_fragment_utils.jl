@@ -16,11 +16,15 @@ function mine_fragments(grammar::AbstractGrammar, program::RuleNode)::Set{RuleNo
     fragments = Set{RuleNode}()
     # Push terminals as they are
     if isterminal(grammar, program)
-        push!(fragments, program)
+        if should_mine_for_symbol(grammar.types[program.ind])
+            push!(fragments, program)
+        end
     else
         # Only complete programs count as fragments by FrAngel spec
         if iscomplete(grammar, program)
-            push!(fragments, program)
+            if should_mine_for_symbol(grammar.types[program.ind])
+                push!(fragments, program)
+            end
         end
         for child in program.children
             fragments = union(fragments, mine_fragments(grammar, child))
@@ -99,9 +103,7 @@ function remember_programs!(
     new_program::RuleNode,
     new_program_expr,
     fragments::AbstractVector{RuleNode},
-    grammar::AbstractGrammar,
-    iter_start_time::Float64 = time(),
-    iter_fragments_mined::Vector{Float64} = Vector{Float64}()
+    grammar::AbstractGrammar
 )::Tuple{AbstractVector{RuleNode},Bool}
     node_count = count_nodes(grammar, new_program)
     # Use program length only if an expression is provided -> saves time in many cases
@@ -125,14 +127,10 @@ function remember_programs!(
             end
         end
     end
-    # println("Simplest program for tests: ", passing_tests)
-    # println(rulenode2expr(new_program, grammar))
-    # println()
-
+    
     # Add new program to remembered ones
     old_remembered[passing_tests] = (new_program, node_count, program_length)
-    # println("Simplest program for tests: ", passing_tests)
-    # println(rulenode2expr(new_program, grammar))
-    push!(iter_fragments_mined, time() - iter_start_time)
-    collect(mine_fragments(grammar, Set(values(old_remembered)))), true
+    fragments = collect(mine_fragments(grammar, Set(values(old_remembered))))
+    on_fragments_mined(fragments)
+    fragments, true
 end

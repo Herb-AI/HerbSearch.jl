@@ -23,7 +23,8 @@ function update_passed_tests!(
     tests::AbstractVector{<:IOExample},
     prev_passed_tests::BitVector,
     angelic_conditions::Dict{UInt16,UInt8},
-    config::FrAngelConfigAngelic
+    config::FrAngelConfigAngelic,
+    call_on_program_evaluated::Bool=false
 )
     # If angelic -> evaluate optimistically
     if contains_hole(program)
@@ -50,11 +51,17 @@ function update_passed_tests!(
             output = execute_on_input(symboltable, expr, tests[1].in)
             
             for (index, test) in enumerate(tests)
-                    prev_passed_tests[index] = test_output_equality(output, test.out)
+                prev_passed_tests[index] = test_output_equality(output, test.out)
+            end
+            if call_on_program_evaluated
+                on_program_evaluated(program, prev_passed_tests, output)
             end
         catch ex
-            println(ex, catch_backtrace())
-            prev_passed_tests .= false
+            if isa(ex, PyCall.PyError)
+                prev_passed_tests .= true
+            else
+                prev_passed_tests .= false 
+            end
         end
         expr
     end
@@ -408,3 +415,17 @@ Checks if the output of the execution is equal to the expected output.
 function test_output_equal(exec_output::Any, out::Any)::Bool
     exec_output == out
 end
+
+on_intialization() = nothing
+
+on_fragments_mined(fragments::AbstractVector{RuleNode}) = nothing
+
+on_fragment_used(fragment::RuleNode) = nothing
+
+on_program_evaluated(program::RuleNode, passed_tests::BitVector, program_state) = nothing
+
+on_iteration() = nothing
+
+on_new_program_generated(program::RuleNode) = nothing
+
+should_mine_for_symbol(symbol::Symbol) = true
