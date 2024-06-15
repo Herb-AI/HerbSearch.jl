@@ -133,7 +133,7 @@ function update_grammar_5!(grammar::ContextSensitiveGrammar, PSols_with_eval_cac
         end
 
         if grammar.types[rule_index] == :DIR
-            log_prob = best_reward > 0 ? -1.0 : -2.0
+            log_prob = best_reward > 0 ? -1.0 : -10.0
             sum += exp2(log_prob)
             grammar.log_probabilities[rule_index] = log_prob
         elseif grammar.types[rule_index] == :TIMES
