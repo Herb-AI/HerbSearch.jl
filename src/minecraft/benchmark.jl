@@ -56,7 +56,7 @@ experiment_data["experiment"] = Dict{String,Any}(
 
 experiment_data["world"] = Dict{String,Any}(
     "seed" => seed,
-    "description" => world_descriptions[seed]
+    "description" => get(world_descriptions, seed, "")
 )
 
 
