@@ -132,5 +132,5 @@ export
   BitTrieNode,
   trie_add!,
   trie_contains
-  
+
 end # module HerbSearch

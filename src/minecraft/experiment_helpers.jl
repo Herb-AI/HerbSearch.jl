@@ -71,7 +71,8 @@ function run_frangel_once(;
 
     start_time = time()
     has_solved_task = false
-    reward_over_time = Vector{Tuple{Float64,Float64}}()
+    fragment_complexity_over_time = Vector{Float64}()
+    program_complexity_over_time = Vector{UInt8}()
     starting_position = environment.start_pos
     start_reward = 0.0
 
@@ -92,7 +93,7 @@ function run_frangel_once(;
         iterator = FrAngelRandomIterator(deepcopy(grammar), :Program, rules_min, symbol_min, max_depth=frangel_config.generation.max_size)
         # Generate next FrAngel program, and update environment state
         try
-            solution = frangel(problem_specification, frangel_config, angelic_conditions, iterator, rules_min, symbol_min, reward_over_time, start_time, start_reward)
+            solution = frangel(problem_specification, frangel_config, angelic_conditions, iterator, rules_min, symbol_min, fragment_complexity_over_time, program_complexity_over_time)
             # If the solution passes at least one test
             if !isnothing(solution)
                 state = execute_on_input(grammar, solution, Dict{Symbol,Any}(:start_pos => starting_position))
@@ -116,7 +117,8 @@ function run_frangel_once(;
     # Experiment is done, gather data 
     try_data = Dict(
         "runtime" => time() - start_time,
-        "reward_over_time" => reward_over_time,
+        "fragment_complexity_over_time" => fragment_complexity_over_time,
+        "program_complexity_over_time" => program_complexity_over_time,
         "solved" => has_solved_task,
         "frangel_config" => frangel_config,
         "specification_config" => specification_config,

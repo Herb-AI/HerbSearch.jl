@@ -105,7 +105,7 @@ will be changed at initialization to:
     Bool = (Num == Num) | (Num < Num)
     Num = Fragment_Num
     Bool = Fragment_Bool
-    Fragment_Num = (5 + x)
+    Fragment_Num = (5 + x) | 5 | x | 3
     Fragment_Bool = (x == 3)
 ```.
 
@@ -129,9 +129,8 @@ function frangel(
     iter::ProgramIterator,
     rule_minsize::AbstractVector{UInt8},
     symbol_minsize::Dict{Symbol,UInt8},
-    rewards_over_time::Vector{Tuple{Float64,Float64}} = Vector{Tuple{Float64,Float64}}(),
-    logging_start_time::Float64 = time(),
-    start_reward::Float64 = 0.0
+    fragment_complexity_over_time::Vector{Float64}=Vector{Float64}(),
+    program_complexity_over_time::Vector{UInt8}=Vector{UInt8}(),
 )
     # Setup algorithm
     remembered_programs = Dict{BitVector,Tuple{RuleNode,Int,Int}}()
@@ -201,7 +200,7 @@ function frangel(
 
         passed_tests = BitVector([false for _ in spec])
         # If it does not pass any tests, discard
-        program_expr = update_passed_tests!(program, grammar, symboltable, spec, passed_tests, angelic_conditions, config.angelic, rewards_over_time, logging_start_time, start_reward)
+        program_expr = update_passed_tests!(program, grammar, symboltable, spec, passed_tests, angelic_conditions, config.angelic)
         if !any(passed_tests)
             continue
         end
@@ -214,13 +213,15 @@ function frangel(
             if contains_hole(program)
                 continue
             end
-            program_expr = update_passed_tests!(program, grammar, symboltable, spec, passed_tests, angelic_conditions, config.angelic, rewards_over_time, logging_start_time, start_reward)
+            program_expr = update_passed_tests!(program, grammar, symboltable, spec, passed_tests, angelic_conditions, config.angelic)
         end
+
+        push!(program_complexity_over_time, count_nodes(grammar, program))
 
         # Simplify and rerun over examples
         if config.try_to_simplify
             program = simplify_quick(program, grammar, spec, passed_tests, fragment_base_rules_offset)
-            program_expr = update_passed_tests!(program, grammar, symboltable, spec, passed_tests, angelic_conditions, config.angelic, rewards_over_time, logging_start_time, start_reward)
+            program_expr = update_passed_tests!(program, grammar, symboltable, spec, passed_tests, angelic_conditions, config.angelic)
         end
         if count(passed_tests) > best_program_passing_tests_count
             best_program_passing_tests_count = count(passed_tests)
@@ -274,6 +275,14 @@ function frangel(
                     println("Minimal size per symbol: ", symbol_minsize)
                 end
             end
+
+            fragment_complexity = 0.0
+            for f in fragments
+                if !isterminal(grammar, f)
+                    fragment_complexity += count_nodes(grammar, f)
+                end
+            end
+            push!(fragment_complexity_over_time, fragment_complexity / length(fragments))
         end
     end
     if verbose_level > 0

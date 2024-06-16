@@ -24,10 +24,7 @@ function update_passed_tests!(
     tests::AbstractVector{<:IOExample},
     prev_passed_tests::BitVector,
     angelic_conditions::Dict{UInt16,UInt8},
-    config::FrAngelConfigAngelic,
-    rewards_over_time::Vector{Tuple{Float64,Float64}}=Vector{Tuple{Float64,Float64}}(),
-    start_time=time(),
-    start_reward=0.0
+    config::FrAngelConfigAngelic
 )
     # If angelic -> evaluate optimistically
     if contains_hole(program)
@@ -52,7 +49,6 @@ function update_passed_tests!(
         expr = rulenode2expr(program, grammar)
         try
             output = execute_on_input(symboltable, expr, tests[1].in)
-            push!(rewards_over_time, (time() - start_time, start_reward + output.total_reward))
             for (index, test) in enumerate(tests)
 
                 prev_passed_tests[index] = test_output_equality(output, test.out)
@@ -384,7 +380,7 @@ Checks if the output of the execution is equal to the expected output.
 # Returns
 `true` if the output of the execution is equal to the expected output, `false` otherwise.
 """
-test_output_equality(exec_output::Any, out::Any) = test_output_equal(exec_output, out)
+test_output_equality(exec_output::Any, out::Any) = test_output_equal_or_greater(exec_output, out)
 
 """
     test_output_equal_or_greater(exec_output::Any, out::Any)::Bool
@@ -399,7 +395,7 @@ Checks if the output of the execution is equal to or greater than the expected o
 `true` if the output of the test is equal to or greater than the expected output, `false` otherwise.
 """
 function test_output_equal_or_greater(exec_output::Any, out::Any)::Bool
-    exec_output >= out
+    exec_output <= out
 end
 
 """
