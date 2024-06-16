@@ -1,6 +1,15 @@
 {
     "checkpoint_times": [
-        0.0010001659393310547
+        0.0009999275207519531,
+        42.07800006866455,
+        81.81500005722046,
+        107.93300008773804,
+        113.81500005722046,
+        116.46900010108948,
+        116.69700002670288,
+        116.77600002288818,
+        116.94700002670288,
+        117.0090000629425
     ],
     "world_seed": 958129,
     "frangel_config": {
@@ -26,7 +35,716 @@
     },
     "frangel_seed": 8615,
     "solved": true,
-    "used_fragments": [],
+    "used_fragments": [
+        {
+            "fragment": "1{2,3{5{8{13,23,26,28}17}}21}",
+            "time": 56.187000036239624
+        },
+        {
+            "fragment": "1{2,3{5{8{13,23,26,28}17}}21}",
+            "time": 56.35199999809265
+        },
+        {
+            "fragment": "1{2,3{5{8{13,23,26,28}17}}21}",
+            "time": 56.35199999809265
+        },
+        {
+            "fragment": "1{2,3{5{8{13,23,26,28}17}}21}",
+            "time": 56.44000005722046
+        },
+        {
+            "fragment": "1{2,3{5{8{13,23,26,28}17}}21}",
+            "time": 56.513999938964844
+        },
+        {
+            "fragment": "2,",
+            "time": 56.59299993515015
+        },
+        {
+            "fragment": "5{8{13,23,26,28}17}",
+            "time": 56.59299993515015
+        },
+        {
+            "fragment": "21,",
+            "time": 56.59299993515015
+        },
+        {
+            "fragment": "1{2,3{5{8{13,23,26,28}17}}21}",
+            "time": 56.59299993515015
+        },
+        {
+            "fragment": "2,",
+            "time": 56.59299993515015
+        },
+        {
+            "fragment": "8{13,23,26,28}",
+            "time": 56.59299993515015
+        },
+        {
+            "fragment": "17,",
+            "time": 56.59299993515015
+        },
+        {
+            "fragment": "1{2,3{5{8{13,23,26,28}17}}21}",
+            "time": 59.15700006484985
+        },
+        {
+            "fragment": "2,",
+            "time": 59.15700006484985
+        },
+        {
+            "fragment": "3{5{8{13,23,26,28}17}}",
+            "time": 59.15700006484985
+        },
+        {
+            "fragment": "21,",
+            "time": 59.15700006484985
+        },
+        {
+            "fragment": "1{2,3{5{8{13,23,26,28}17}}21}",
+            "time": 63.05800008773804
+        },
+        {
+            "fragment": "5{8{13,23,26,28}17}",
+            "time": 63.12000012397766
+        },
+        {
+            "fragment": "21,",
+            "time": 63.12000012397766
+        },
+        {
+            "fragment": "2,",
+            "time": 63.12000012397766
+        },
+        {
+            "fragment": "5{8{13,23,26,28}17}",
+            "time": 63.12000012397766
+        },
+        {
+            "fragment": "3{5{8{13,23,26,28}17}}",
+            "time": 63.12000012397766
+        },
+        {
+            "fragment": "21,",
+            "time": 63.12000012397766
+        },
+        {
+            "fragment": "1{2,3{5{8{13,23,26,28}17}}21}",
+            "time": 65.12700009346008
+        },
+        {
+            "fragment": "1{2,3{5{8{13,23,26,28}17}}21}",
+            "time": 65.12700009346008
+        },
+        {
+            "fragment": "1{2,3{5{8{13,23,26,28}17}}21}",
+            "time": 65.21300005912781
+        },
+        {
+            "fragment": "3{5{8{13,23,26,28}17}}",
+            "time": 65.21300005912781
+        },
+        {
+            "fragment": "21,",
+            "time": 65.21300005912781
+        },
+        {
+            "fragment": "1{2,3{5{8{13,23,26,28}17}}21}",
+            "time": 65.21300005912781
+        },
+        {
+            "fragment": "1{2,3{5{8{13,23,26,28}17}}21}",
+            "time": 65.21300005912781
+        },
+        {
+            "fragment": "1{2,3{5{8{13,23,26,28}17}}21}",
+            "time": 67.23300004005432
+        },
+        {
+            "fragment": "3{5{8{13,23,26,28}17}}",
+            "time": 67.29900002479553
+        },
+        {
+            "fragment": "21,",
+            "time": 67.29900002479553
+        },
+        {
+            "fragment": "2,",
+            "time": 67.29900002479553
+        },
+        {
+            "fragment": "8{13,23,26,28}",
+            "time": 67.29900002479553
+        },
+        {
+            "fragment": "5{8{13,23,26,28}17}",
+            "time": 67.29900002479553
+        },
+        {
+            "fragment": "2,",
+            "time": 70.04099988937378
+        },
+        {
+            "fragment": "3{5{8{13,23,26,28}17}}",
+            "time": 70.04099988937378
+        },
+        {
+            "fragment": "21,",
+            "time": 70.04099988937378
+        },
+        {
+            "fragment": "2,",
+            "time": 70.04099988937378
+        },
+        {
+            "fragment": "5{8{13,23,26,28}17}",
+            "time": 70.04099988937378
+        },
+        {
+            "fragment": "21,",
+            "time": 70.04099988937378
+        },
+        {
+            "fragment": "23,",
+            "time": 70.04099988937378
+        },
+        {
+            "fragment": "28,",
+            "time": 70.04099988937378
+        },
+        {
+            "fragment": "1{2,3{5{8{13,23,26,28}17}}21}",
+            "time": 70.10199999809265
+        },
+        {
+            "fragment": "1{2,3{5{8{13,23,26,28}17}}21}",
+            "time": 70.10199999809265
+        },
+        {
+            "fragment": "1{2,3{5{8{13,23,26,28}17}}21}",
+            "time": 70.10199999809265
+        },
+        {
+            "fragment": "1{2,3{5{8{13,23,26,28}17}}21}",
+            "time": 70.10199999809265
+        },
+        {
+            "fragment": "3{5{8{13,23,26,28}17}}",
+            "time": 70.14000010490417
+        },
+        {
+            "fragment": "2,",
+            "time": 70.18700003623962
+        },
+        {
+            "fragment": "17,",
+            "time": 70.18700003623962
+        },
+        {
+            "fragment": "8{13,23,26,28}",
+            "time": 70.18700003623962
+        },
+        {
+            "fragment": "1{2,3{5{8{13,23,26,28}17}}21}",
+            "time": 70.2279999256134
+        },
+        {
+            "fragment": "17,",
+            "time": 70.29299998283386
+        },
+        {
+            "fragment": "13,",
+            "time": 70.29299998283386
+        },
+        {
+            "fragment": "3{5{8{13,23,26,28}17}}",
+            "time": 70.29299998283386
+        },
+        {
+            "fragment": "3{5{8{13,23,26,28}17}}",
+            "time": 71.11899995803833
+        },
+        {
+            "fragment": "21,",
+            "time": 71.11899995803833
+        },
+        {
+            "fragment": "1{2,3{5{8{13,23,26,28}17}}21}",
+            "time": 71.11899995803833
+        },
+        {
+            "fragment": "1{2,3{5{8{13,23,26,28}17}}21}",
+            "time": 71.22200012207031
+        },
+        {
+            "fragment": "1{2,3{5{8{13,23,26,28}17}}21}",
+            "time": 71.22200012207031
+        },
+        {
+            "fragment": "1{2,3{5{8{13,23,26,28}17}}21}",
+            "time": 73.02500009536743
+        },
+        {
+            "fragment": "26,",
+            "time": 73.02500009536743
+        },
+        {
+            "fragment": "21,",
+            "time": 73.02500009536743
+        },
+        {
+            "fragment": "1{2,3{5{8{13,23,26,28}17}}21}",
+            "time": 73.12899994850159
+        },
+        {
+            "fragment": "1{2,3{5{8{13,23,26,28}17}}21}",
+            "time": 73.12899994850159
+        },
+        {
+            "fragment": "1{2,3{5{8{13,23,26,28}17}}21}",
+            "time": 73.12899994850159
+        },
+        {
+            "fragment": "2,",
+            "time": 73.20600008964539
+        },
+        {
+            "fragment": "3{5{8{13,23,26,28}17}}",
+            "time": 73.20600008964539
+        },
+        {
+            "fragment": "1{2,3{5{8{13,23,26,28}17}}21}",
+            "time": 73.20600008964539
+        },
+        {
+            "fragment": "2,",
+            "time": 73.20600008964539
+        },
+        {
+            "fragment": "3{5{8{13,23,26,28}17}}",
+            "time": 73.20600008964539
+        },
+        {
+            "fragment": "21,",
+            "time": 73.20600008964539
+        },
+        {
+            "fragment": "13,",
+            "time": 75.08800005912781
+        },
+        {
+            "fragment": "23,",
+            "time": 75.08800005912781
+        },
+        {
+            "fragment": "26,",
+            "time": 75.08800005912781
+        },
+        {
+            "fragment": "2,",
+            "time": 75.15899991989136
+        },
+        {
+            "fragment": "5{8{13,23,26,28}17}",
+            "time": 75.15899991989136
+        },
+        {
+            "fragment": "13,",
+            "time": 76.1340000629425
+        },
+        {
+            "fragment": "5{8{13,23,26,28}17}",
+            "time": 76.1340000629425
+        },
+        {
+            "fragment": "21,",
+            "time": 76.1340000629425
+        },
+        {
+            "fragment": "1{2,3{5{8{13,23,26,28}17}}21}",
+            "time": 76.27500009536743
+        },
+        {
+            "fragment": "2,",
+            "time": 76.27500009536743
+        },
+        {
+            "fragment": "13,",
+            "time": 76.27600002288818
+        },
+        {
+            "fragment": "26,",
+            "time": 76.27600002288818
+        },
+        {
+            "fragment": "28,",
+            "time": 76.27600002288818
+        },
+        {
+            "fragment": "1{2,3{5{8{13,23,26,28}17}}21}",
+            "time": 76.31399989128113
+        },
+        {
+            "fragment": "3{5{8{13,23,26,28}17}}",
+            "time": 76.31399989128113
+        },
+        {
+            "fragment": "21,",
+            "time": 76.31399989128113
+        },
+        {
+            "fragment": "5{8{13,23,26,28}17}",
+            "time": 76.33599996566772
+        },
+        {
+            "fragment": "21,",
+            "time": 76.33599996566772
+        },
+        {
+            "fragment": "2,",
+            "time": 87.89300012588501
+        },
+        {
+            "fragment": "3{5{8{11,22,27,29}17}}",
+            "time": 87.89300012588501
+        },
+        {
+            "fragment": "21,",
+            "time": 87.89300012588501
+        },
+        {
+            "fragment": "2,",
+            "time": 87.97200012207031
+        },
+        {
+            "fragment": "3{5{8{11,22,27,29}17}}",
+            "time": 87.97200012207031
+        },
+        {
+            "fragment": "1{2,3{5{8{11,22,27,29}17}}21}",
+            "time": 88.31599998474121
+        },
+        {
+            "fragment": "1{2,3{5{8{11,22,27,29}17}}21}",
+            "time": 90.15899991989136
+        },
+        {
+            "fragment": "3{5{8{11,22,27,29}17}}",
+            "time": 90.2260000705719
+        },
+        {
+            "fragment": "21,",
+            "time": 90.2260000705719
+        },
+        {
+            "fragment": "1{2,3{5{8{11,22,27,29}17}}21}",
+            "time": 90.2260000705719
+        },
+        {
+            "fragment": "1{2,3{5{8{11,22,27,29}17}}21}",
+            "time": 90.2260000705719
+        },
+        {
+            "fragment": "1{2,3{5{8{11,22,27,29}17}}21}",
+            "time": 91.3050000667572
+        },
+        {
+            "fragment": "1{2,3{5{8{11,22,27,29}17}}21}",
+            "time": 91.3050000667572
+        },
+        {
+            "fragment": "1{2,3{5{8{11,22,27,29}17}}21}",
+            "time": 91.3050000667572
+        },
+        {
+            "fragment": "1{2,3{5{8{11,22,27,29}17}}21}",
+            "time": 91.36700010299683
+        },
+        {
+            "fragment": "2,",
+            "time": 92.23900008201599
+        },
+        {
+            "fragment": "5{8{11,22,27,29}17}",
+            "time": 92.23900008201599
+        },
+        {
+            "fragment": "3{5{8{11,22,27,29}17}}",
+            "time": 92.24000000953674
+        },
+        {
+            "fragment": "1{2,3{5{8{11,22,27,29}17}}21}",
+            "time": 94.29399991035461
+        },
+        {
+            "fragment": "1{2,3{5{8{11,22,27,29}17}}21}",
+            "time": 94.35199999809265
+        },
+        {
+            "fragment": "1{2,3{5{8{11,22,27,29}17}}21}",
+            "time": 94.35199999809265
+        },
+        {
+            "fragment": "1{2,3{5{8{11,22,27,29}17}}21}",
+            "time": 94.48600006103516
+        },
+        {
+            "fragment": "1{2,3{5{8{11,23,27,29}18}}21}",
+            "time": 98.7170000076294
+        },
+        {
+            "fragment": "1{2,3{5{8{11,22,27,29}17}}21}",
+            "time": 98.79699993133545
+        },
+        {
+            "fragment": "2,",
+            "time": 98.84400010108948
+        },
+        {
+            "fragment": "5{8{11,22,27,29}17}",
+            "time": 98.84400010108948
+        },
+        {
+            "fragment": "21,",
+            "time": 98.84400010108948
+        },
+        {
+            "fragment": "1{2,3{5{8{11,22,26,29}17}}21}",
+            "time": 99.1819999217987
+        },
+        {
+            "fragment": "1{2,3{5{8{11,22,26,29}17}}21}",
+            "time": 99.26200008392334
+        },
+        {
+            "fragment": "2,",
+            "time": 101.25
+        },
+        {
+            "fragment": "3{5{8{11,22,26,29}17}}",
+            "time": 101.25
+        },
+        {
+            "fragment": "21,",
+            "time": 101.25
+        },
+        {
+            "fragment": "2,",
+            "time": 101.59500002861023
+        },
+        {
+            "fragment": "8{11,22,26,29}",
+            "time": 101.59500002861023
+        },
+        {
+            "fragment": "11,",
+            "time": 101.59500002861023
+        },
+        {
+            "fragment": "22,",
+            "time": 101.59500002861023
+        },
+        {
+            "fragment": "29,",
+            "time": 101.59500002861023
+        },
+        {
+            "fragment": "21,",
+            "time": 101.59500002861023
+        },
+        {
+            "fragment": "2,",
+            "time": 101.68700003623962
+        },
+        {
+            "fragment": "22,",
+            "time": 101.68700003623962
+        },
+        {
+            "fragment": "26,",
+            "time": 101.68700003623962
+        },
+        {
+            "fragment": "8{11,22,26,29}",
+            "time": 101.68700003623962
+        },
+        {
+            "fragment": "2,",
+            "time": 101.74600005149841
+        },
+        {
+            "fragment": "3{5{8{11,22,26,29}17}}",
+            "time": 101.74600005149841
+        },
+        {
+            "fragment": "21,",
+            "time": 101.74600005149841
+        },
+        {
+            "fragment": "1{2,3{5{8{11,22,26,29}17}}21}",
+            "time": 101.74600005149841
+        },
+        {
+            "fragment": "1{2,3{5{8{11,22,26,29}17}}21}",
+            "time": 101.74600005149841
+        },
+        {
+            "fragment": "1{2,3{5{8{11,22,26,29}17}}21}",
+            "time": 103.58299994468689
+        },
+        {
+            "fragment": "1{2,3{5{8{11,22,26,29}17}}21}",
+            "time": 103.65199995040894
+        },
+        {
+            "fragment": "1{2,3{5{8{11,22,26,29}17}}21}",
+            "time": 103.69799995422363
+        },
+        {
+            "fragment": "3{5{8{11,22,26,29}17}}",
+            "time": 103.69799995422363
+        },
+        {
+            "fragment": "21,",
+            "time": 103.69799995422363
+        },
+        {
+            "fragment": "3{5{8{11,22,26,29}17}}",
+            "time": 103.69799995422363
+        },
+        {
+            "fragment": "21,",
+            "time": 103.69799995422363
+        },
+        {
+            "fragment": "1{2,3{5{8{11,22,26,29}17}}21}",
+            "time": 103.69799995422363
+        },
+        {
+            "fragment": "1{2,3{5{8{11,22,26,29}17}}21}",
+            "time": 103.69799995422363
+        },
+        {
+            "fragment": "2,",
+            "time": 103.69799995422363
+        },
+        {
+            "fragment": "3{5{8{11,22,26,29}17}}",
+            "time": 103.69799995422363
+        },
+        {
+            "fragment": "21,",
+            "time": 103.69799995422363
+        },
+        {
+            "fragment": "1{2,3{5{8{11,22,26,29}17}}21}",
+            "time": 103.69799995422363
+        },
+        {
+            "fragment": "2,",
+            "time": 103.69799995422363
+        },
+        {
+            "fragment": "3{5{8{11,22,26,29}17}}",
+            "time": 103.69799995422363
+        },
+        {
+            "fragment": "21,",
+            "time": 103.69799995422363
+        },
+        {
+            "fragment": "1{2,3{5{8{11,22,26,29}17}}21}",
+            "time": 103.69799995422363
+        },
+        {
+            "fragment": "5{8{11,22,26,29}17}",
+            "time": 103.76699995994568
+        },
+        {
+            "fragment": "1{2,3{5{8{11,22,26,29}17}}21}",
+            "time": 103.76699995994568
+        },
+        {
+            "fragment": "3{5{8{11,22,26,29}17}}",
+            "time": 103.76699995994568
+        },
+        {
+            "fragment": "1{2,3{5{8{11,22,26,29}17}}21}",
+            "time": 103.98499989509583
+        },
+        {
+            "fragment": "2,",
+            "time": 103.98499989509583
+        },
+        {
+            "fragment": "5{8{11,22,26,29}17}",
+            "time": 103.98499989509583
+        },
+        {
+            "fragment": "3{5{8{11,22,26,29}17}}",
+            "time": 103.98499989509583
+        },
+        {
+            "fragment": "1{2,3{5{8{11,22,26,29}17}}21}",
+            "time": 106.63100004196167
+        },
+        {
+            "fragment": "2,",
+            "time": 106.63100004196167
+        },
+        {
+            "fragment": "21,",
+            "time": 106.63100004196167
+        },
+        {
+            "fragment": "1{2,3{5{8{11,22,26,29}17}}21}",
+            "time": 106.69099998474121
+        },
+        {
+            "fragment": "5{8{11,22,26,29}17}",
+            "time": 106.69099998474121
+        },
+        {
+            "fragment": "21,",
+            "time": 106.69099998474121
+        },
+        {
+            "fragment": "2,",
+            "time": 106.69099998474121
+        },
+        {
+            "fragment": "3{5{8{11,22,26,29}17}}",
+            "time": 106.69099998474121
+        },
+        {
+            "fragment": "21,",
+            "time": 106.69099998474121
+        },
+        {
+            "fragment": "1{2,3{5{8{11,22,26,29}17}}21}",
+            "time": 106.69099998474121
+        },
+        {
+            "fragment": "1{2,3{5{8{11,22,26,29}17}}21}",
+            "time": 107.04800009727478
+        },
+        {
+            "fragment": "1{2,3{6{8{16,24,27,29}}}21}",
+            "time": 116.84299993515015
+        },
+        {
+            "fragment": "2,",
+            "time": 116.84400010108948
+        },
+        {
+            "fragment": "6{8{16,24,27,29}}",
+            "time": 116.84400010108948
+        },
+        {
+            "fragment": "21,",
+            "time": 116.84400010108948
+        }
+    ],
     "experiment_description": "Different beginning reward checkpoints - In this experiment, the smallest reward checkpoints are increased and decreased, such that the length of the pure exploration part of the FrAngel algorithm could be increased or decreased and eventually provide different quality fragments that can be explored after that. ",
     "iterations": [
         {
@@ -36,8 +754,98 @@
                 71.0,
                 234.5
             ],
+            "iterations": 80,
+            "runtime": 42.07699990272522
+        },
+        {
+            "final_grammar": "1: Program = begin\n    state = Init\n    Blocks\n    End\nend\n2: Init = mc_init(start_pos)\n3: Blocks = Block\n4: Blocks = begin\n    Block\n    Blocks\nend\n5: Block = while true\n    Move\n    Bool || break\nend\n6: Block = Move\n7: Block = if Bool\n    Move\nend\n8: Move = mc_move!(state, Direction, Times, Sprint, Jump)\n9: Direction = [\"forward\"]\n10: Direction = [\"back\"]\n11: Direction = [\"left\"]\n12: Direction = [\"right\"]\n13: Direction = [\"forward\", \"left\"]\n14: Direction = [\"forward\", \"right\"]\n15: Direction = [\"back\", \"left\"]\n16: Direction = [\"back\", \"right\"]\n17: Bool = mc_was_good_move(state)\n18: Bool = mc_has_moved(state)\n19: Bool = mc_is_done(state)\n20: Bool = !Bool\n21: End = mc_end(state)\n22: Times = 1\n23: Times = 2\n24: Times = 3\n25: Times = 4\n26: Sprint = true\n27: Sprint = false\n28: Jump = true\n29: Jump = false\n",
+            "initial_position": [
+                169.5,
+                71.0,
+                234.5
+            ],
+            "iterations": 73,
+            "runtime": 39.73800015449524
+        },
+        {
+            "final_grammar": "1: Program = begin\n    state = Init\n    Blocks\n    End\nend\n2: Init = mc_init(start_pos)\n3: Blocks = Block\n4: Blocks = begin\n    Block\n    Blocks\nend\n5: Block = while true\n    Move\n    Bool || break\nend\n6: Block = Move\n7: Block = if Bool\n    Move\nend\n8: Move = mc_move!(state, Direction, Times, Sprint, Jump)\n9: Direction = [\"forward\"]\n10: Direction = [\"back\"]\n11: Direction = [\"left\"]\n12: Direction = [\"right\"]\n13: Direction = [\"forward\", \"left\"]\n14: Direction = [\"forward\", \"right\"]\n15: Direction = [\"back\", \"left\"]\n16: Direction = [\"back\", \"right\"]\n17: Bool = mc_was_good_move(state)\n18: Bool = mc_has_moved(state)\n19: Bool = mc_is_done(state)\n20: Bool = !Bool\n21: End = mc_end(state)\n22: Times = 1\n23: Times = 2\n24: Times = 3\n25: Times = 4\n26: Sprint = true\n27: Sprint = false\n28: Jump = true\n29: Jump = false\n",
+            "initial_position": [
+                208.54382294690623,
+                66.7531999805212,
+                297.46671814317324
+            ],
+            "iterations": 75,
+            "runtime": 26.118000030517578
+        },
+        {
+            "final_grammar": "1: Program = begin\n    state = Init\n    Blocks\n    End\nend\n2: Init = mc_init(start_pos)\n3: Blocks = Block\n4: Blocks = begin\n    Block\n    Blocks\nend\n5: Block = while true\n    Move\n    Bool || break\nend\n6: Block = Move\n7: Block = if Bool\n    Move\nend\n8: Move = mc_move!(state, Direction, Times, Sprint, Jump)\n9: Direction = [\"forward\"]\n10: Direction = [\"back\"]\n11: Direction = [\"left\"]\n12: Direction = [\"right\"]\n13: Direction = [\"forward\", \"left\"]\n14: Direction = [\"forward\", \"right\"]\n15: Direction = [\"back\", \"left\"]\n16: Direction = [\"back\", \"right\"]\n17: Bool = mc_was_good_move(state)\n18: Bool = mc_has_moved(state)\n19: Bool = mc_is_done(state)\n20: Bool = !Bool\n21: End = mc_end(state)\n22: Times = 1\n23: Times = 2\n24: Times = 3\n25: Times = 4\n26: Sprint = true\n27: Sprint = false\n28: Jump = true\n29: Jump = false\n",
+            "initial_position": [
+                214.12101669675354,
+                66.0,
+                294.30000001192093
+            ],
+            "iterations": 3,
+            "runtime": 5.880999803543091
+        },
+        {
+            "final_grammar": "1: Program = begin\n    state = Init\n    Blocks\n    End\nend\n2: Init = mc_init(start_pos)\n3: Blocks = Block\n4: Blocks = begin\n    Block\n    Blocks\nend\n5: Block = while true\n    Move\n    Bool || break\nend\n6: Block = Move\n7: Block = if Bool\n    Move\nend\n8: Move = mc_move!(state, Direction, Times, Sprint, Jump)\n9: Direction = [\"forward\"]\n10: Direction = [\"back\"]\n11: Direction = [\"left\"]\n12: Direction = [\"right\"]\n13: Direction = [\"forward\", \"left\"]\n14: Direction = [\"forward\", \"right\"]\n15: Direction = [\"back\", \"left\"]\n16: Direction = [\"back\", \"right\"]\n17: Bool = mc_was_good_move(state)\n18: Bool = mc_has_moved(state)\n19: Bool = mc_is_done(state)\n20: Bool = !Bool\n21: End = mc_end(state)\n22: Times = 1\n23: Times = 2\n24: Times = 3\n25: Times = 4\n26: Sprint = true\n27: Sprint = false\n28: Jump = true\n29: Jump = false\n",
+            "initial_position": [
+                214.12101669675354,
+                66.0,
+                294.30000001192093
+            ],
+            "iterations": 6,
+            "runtime": 2.6530001163482666
+        },
+        {
+            "final_grammar": "1: Program = begin\n    state = Init\n    Blocks\n    End\nend\n2: Init = mc_init(start_pos)\n3: Blocks = Block\n4: Blocks = begin\n    Block\n    Blocks\nend\n5: Block = while true\n    Move\n    Bool || break\nend\n6: Block = Move\n7: Block = if Bool\n    Move\nend\n8: Move = mc_move!(state, Direction, Times, Sprint, Jump)\n9: Direction = [\"forward\"]\n10: Direction = [\"back\"]\n11: Direction = [\"left\"]\n12: Direction = [\"right\"]\n13: Direction = [\"forward\", \"left\"]\n14: Direction = [\"forward\", \"right\"]\n15: Direction = [\"back\", \"left\"]\n16: Direction = [\"back\", \"right\"]\n17: Bool = mc_was_good_move(state)\n18: Bool = mc_has_moved(state)\n19: Bool = mc_is_done(state)\n20: Bool = !Bool\n21: End = mc_end(state)\n22: Times = 1\n23: Times = 2\n24: Times = 3\n25: Times = 4\n26: Sprint = true\n27: Sprint = false\n28: Jump = true\n29: Jump = false\n",
+            "initial_position": [
+                214.12101669675354,
+                66.0,
+                294.30000001192093
+            ],
+            "iterations": 4,
+            "runtime": 0.23000001907348633
+        },
+        {
+            "final_grammar": "1: Program = begin\n    state = Init\n    Blocks\n    End\nend\n2: Init = mc_init(start_pos)\n3: Blocks = Block\n4: Blocks = begin\n    Block\n    Blocks\nend\n5: Block = while true\n    Move\n    Bool || break\nend\n6: Block = Move\n7: Block = if Bool\n    Move\nend\n8: Move = mc_move!(state, Direction, Times, Sprint, Jump)\n9: Direction = [\"forward\"]\n10: Direction = [\"back\"]\n11: Direction = [\"left\"]\n12: Direction = [\"right\"]\n13: Direction = [\"forward\", \"left\"]\n14: Direction = [\"forward\", \"right\"]\n15: Direction = [\"back\", \"left\"]\n16: Direction = [\"back\", \"right\"]\n17: Bool = mc_was_good_move(state)\n18: Bool = mc_has_moved(state)\n19: Bool = mc_is_done(state)\n20: Bool = !Bool\n21: End = mc_end(state)\n22: Times = 1\n23: Times = 2\n24: Times = 3\n25: Times = 4\n26: Sprint = true\n27: Sprint = false\n28: Jump = true\n29: Jump = false\n",
+            "initial_position": [
+                214.12101669675354,
+                66.0,
+                294.30000001192093
+            ],
             "iterations": 1,
-            "runtime": 0.06700015068054199
+            "runtime": 0.07800006866455078
+        },
+        {
+            "final_grammar": "1: Program = begin\n    state = Init\n    Blocks\n    End\nend\n2: Init = mc_init(start_pos)\n3: Blocks = Block\n4: Blocks = begin\n    Block\n    Blocks\nend\n5: Block = while true\n    Move\n    Bool || break\nend\n6: Block = Move\n7: Block = if Bool\n    Move\nend\n8: Move = mc_move!(state, Direction, Times, Sprint, Jump)\n9: Direction = [\"forward\"]\n10: Direction = [\"back\"]\n11: Direction = [\"left\"]\n12: Direction = [\"right\"]\n13: Direction = [\"forward\", \"left\"]\n14: Direction = [\"forward\", \"right\"]\n15: Direction = [\"back\", \"left\"]\n16: Direction = [\"back\", \"right\"]\n17: Bool = mc_was_good_move(state)\n18: Bool = mc_has_moved(state)\n19: Bool = mc_is_done(state)\n20: Bool = !Bool\n21: End = mc_end(state)\n22: Times = 1\n23: Times = 2\n24: Times = 3\n25: Times = 4\n26: Sprint = true\n27: Sprint = false\n28: Jump = true\n29: Jump = false\n",
+            "initial_position": [
+                214.05030603027586,
+                66.0,
+                294.30000001192093
+            ],
+            "iterations": 3,
+            "runtime": 0.17199993133544922
+        },
+        {
+            "final_grammar": "1: Program = begin\n    state = Init\n    Blocks\n    End\nend\n2: Init = mc_init(start_pos)\n3: Blocks = Block\n4: Blocks = begin\n    Block\n    Blocks\nend\n5: Block = while true\n    Move\n    Bool || break\nend\n6: Block = Move\n7: Block = if Bool\n    Move\nend\n8: Move = mc_move!(state, Direction, Times, Sprint, Jump)\n9: Direction = [\"forward\"]\n10: Direction = [\"back\"]\n11: Direction = [\"left\"]\n12: Direction = [\"right\"]\n13: Direction = [\"forward\", \"left\"]\n14: Direction = [\"forward\", \"right\"]\n15: Direction = [\"back\", \"left\"]\n16: Direction = [\"back\", \"right\"]\n17: Bool = mc_was_good_move(state)\n18: Bool = mc_has_moved(state)\n19: Bool = mc_is_done(state)\n20: Bool = !Bool\n21: End = mc_end(state)\n22: Times = 1\n23: Times = 2\n24: Times = 3\n25: Times = 4\n26: Sprint = true\n27: Sprint = false\n28: Jump = true\n29: Jump = false\n",
+            "initial_position": [
+                214.05030603027586,
+                66.0,
+                294.4273999929428
+            ],
+            "iterations": 1,
+            "runtime": 0.06099987030029297
+        },
+        {
+            "final_grammar": "1: Program = begin\n    state = Init\n    Blocks\n    End\nend\n2: Init = mc_init(start_pos)\n3: Blocks = Block\n4: Blocks = begin\n    Block\n    Blocks\nend\n5: Block = while true\n    Move\n    Bool || break\nend\n6: Block = Move\n7: Block = if Bool\n    Move\nend\n8: Move = mc_move!(state, Direction, Times, Sprint, Jump)\n9: Direction = [\"forward\"]\n10: Direction = [\"back\"]\n11: Direction = [\"left\"]\n12: Direction = [\"right\"]\n13: Direction = [\"forward\", \"left\"]\n14: Direction = [\"forward\", \"right\"]\n15: Direction = [\"back\", \"left\"]\n16: Direction = [\"back\", \"right\"]\n17: Bool = mc_was_good_move(state)\n18: Bool = mc_has_moved(state)\n19: Bool = mc_is_done(state)\n20: Bool = !Bool\n21: End = mc_end(state)\n22: Times = 1\n23: Times = 2\n24: Times = 3\n25: Times = 4\n26: Sprint = true\n27: Sprint = false\n28: Jump = true\n29: Jump = false\n",
+            "initial_position": [
+                214.05030603027586,
+                66.0,
+                294.4273999929428
+            ],
+            "iterations": 3,
+            "runtime": 0.3210000991821289
         }
     ],
     "specification_config": {
@@ -57,13 +865,1677 @@
     "world_description": "Relatively flat. Some trees. Small cave opening.",
     "generated_programs": [
         {
-            "time": 0.0010001659393310547,
+            "time": 0.0009999275207519531,
             "program": "1{2,3{5{8{9,23,26,28}17}}21}"
+        },
+        {
+            "time": 0.8169999122619629,
+            "program": "1{2,4{6{8{16,24,26,28}}3{5{8{9,24,27,29}17}}}21}"
+        },
+        {
+            "time": 0.9240000247955322,
+            "program": "1{2,3{5{8{16,22,27,28}hole[Bool[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]]}}21}"
+        },
+        {
+            "time": 2.8959999084472656,
+            "program": "1{2,3{7{17,8{11,25,26,28}}}21}"
+        },
+        {
+            "time": 2.938999891281128,
+            "program": "1{2,3{6{8{10,23,26,28}}}21}"
+        },
+        {
+            "time": 2.9830000400543213,
+            "program": "1{2,3{6{8{10,24,26,29}}}21}"
+        },
+        {
+            "time": 3.058000087738037,
+            "program": "1{2,3{5{8{9,25,27,28}20{19}}}21}"
+        },
+        {
+            "time": 7.000999927520752,
+            "program": "1{2,3{6{8{13,23,27,29}}}21}"
+        },
+        {
+            "time": 7.072999954223633,
+            "program": "1{2,4{6{8{9,22,27,28}}3{6{8{13,24,26,29}}}}21}"
+        },
+        {
+            "time": 7.16100001335144,
+            "program": "1{2,3{7{17,8{15,23,27,28}}}21}"
+        },
+        {
+            "time": 7.206000089645386,
+            "program": "1{2,3{7{19,8{11,22,26,28}}}21}"
+        },
+        {
+            "time": 7.227999925613403,
+            "program": "1{2,3{5{8{13,22,26,29}hole[Bool[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]]}}21}"
+        },
+        {
+            "time": 9.158999919891357,
+            "program": "1{2,3{6{8{14,24,27,28}}}21}"
+        },
+        {
+            "time": 9.233000040054321,
+            "program": "1{2,3{5{8{14,22,26,28}hole[Bool[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]]}}21}"
+        },
+        {
+            "time": 11.516999959945679,
+            "program": "1{2,4{6{8{10,22,26,29}}3{6{8{13,22,27,29}}}}21}"
+        },
+        {
+            "time": 11.57800006866455,
+            "program": "1{2,3{5{8{14,23,26,29}19}}21}"
+        },
+        {
+            "time": 11.635999917984009,
+            "program": "1{2,4{5{8{9,25,26,28}hole[Bool[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]]}3{5{8{16,25,26,29}hole[Bool[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]]}}}21}"
+        },
+        {
+            "time": 16.35599994659424,
+            "program": "1{2,3{5{8{13,22,27,29}hole[Bool[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]]}}21}"
+        },
+        {
+            "time": 18.194999933242798,
+            "program": "1{2,3{7{18,8{12,24,26,28}}}21}"
+        },
+        {
+            "time": 18.233999967575073,
+            "program": "1{2,3{6{8{13,24,26,28}}}21}"
+        },
+        {
+            "time": 18.283999919891357,
+            "program": "1{2,3{6{8{12,24,26,29}}}21}"
+        },
+        {
+            "time": 18.352999925613403,
+            "program": "1{2,3{5{8{15,22,26,28}20{19}}}21}"
+        },
+        {
+            "time": 19.426000118255615,
+            "program": "1{2,4{6{8{16,24,26,29}}3{7{20{17}8{16,23,27,28}}}}21}"
+        },
+        {
+            "time": 19.533999919891357,
+            "program": "1{2,3{6{8{12,22,27,29}}}21}"
+        },
+        {
+            "time": 19.58299994468689,
+            "program": "1{2,3{5{8{10,24,26,28}18}}21}"
+        },
+        {
+            "time": 20.313999891281128,
+            "program": "1{2,4{6{8{10,25,27,29}}3{6{8{10,24,26,28}}}}21}"
+        },
+        {
+            "time": 20.45199990272522,
+            "program": "1{2,3{6{8{9,24,27,29}}}21}"
+        },
+        {
+            "time": 20.522000074386597,
+            "program": "1{2,3{7{19,8{15,25,26,28}}}21}"
+        },
+        {
+            "time": 20.561000108718872,
+            "program": "1{2,4{6{8{16,22,26,28}}3{6{8{15,22,27,29}}}}21}"
+        },
+        {
+            "time": 20.598999977111816,
+            "program": "1{2,4{6{8{12,24,26,28}}3{7{18,8{10,25,26,28}}}}21}"
+        },
+        {
+            "time": 20.707000017166138,
+            "program": "1{2,3{6{8{11,25,26,29}}}21}"
+        },
+        {
+            "time": 20.782000064849854,
+            "program": "1{2,3{6{8{11,23,26,28}}}21}"
+        },
+        {
+            "time": 20.838000059127808,
+            "program": "1{2,4{7{17,8{11,24,26,29}}3{7{19,8{12,22,27,29}}}}21}"
+        },
+        {
+            "time": 20.875999927520752,
+            "program": "1{2,3{5{8{9,24,27,29}hole[Bool[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]]}}21}"
+        },
+        {
+            "time": 24.04800009727478,
+            "program": "1{2,3{6{8{11,23,26,29}}}21}"
+        },
+        {
+            "time": 24.10599994659424,
+            "program": "1{2,4{6{8{10,22,26,28}}3{5{8{11,24,26,29}19}}}21}"
+        },
+        {
+            "time": 24.18400001525879,
+            "program": "1{2,3{7{19,8{13,24,26,28}}}21}"
+        },
+        {
+            "time": 24.223999977111816,
+            "program": "1{2,3{6{8{11,25,27,29}}}21}"
+        },
+        {
+            "time": 24.283999919891357,
+            "program": "1{2,3{6{8{12,22,26,29}}}21}"
+        },
+        {
+            "time": 24.342999935150146,
+            "program": "1{2,3{6{8{9,25,27,29}}}21}"
+        },
+        {
+            "time": 24.42300009727478,
+            "program": "1{2,3{6{8{13,25,27,28}}}21}"
+        },
+        {
+            "time": 24.503000020980835,
+            "program": "1{2,3{6{8{12,25,26,29}}}21}"
+        },
+        {
+            "time": 24.581000089645386,
+            "program": "1{2,3{6{8{15,24,26,29}}}21}"
+        },
+        {
+            "time": 24.64800000190735,
+            "program": "1{2,3{5{8{9,24,27,28}19}}21}"
+        },
+        {
+            "time": 24.71399998664856,
+            "program": "1{2,4{5{8{11,24,27,29}18}4{7{18,8{11,25,27,28}}3{6{8{14,22,27,28}}}}}21}"
+        },
+        {
+            "time": 26.628000020980835,
+            "program": "1{2,4{7{hole[Bool[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]],8{16,23,27,28}}4{7{hole[Bool[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]],8{15,23,26,28}}3{6{8{16,22,26,28}}}}}21}"
+        },
+        {
+            "time": 28.641000032424927,
+            "program": "1{2,3{7{18,8{13,24,27,29}}}21}"
+        },
+        {
+            "time": 28.680999994277954,
+            "program": "1{2,3{5{8{15,22,26,29}17}}21}"
+        },
+        {
+            "time": 28.710000038146973,
+            "program": "1{2,4{7{18,8{14,22,26,29}}3{7{17,8{14,25,27,29}}}}21}"
+        },
+        {
+            "time": 28.749000072479248,
+            "program": "1{2,3{7{19,8{9,25,27,28}}}21}"
+        },
+        {
+            "time": 28.76699995994568,
+            "program": "1{2,3{5{8{11,22,27,28}19}}21}"
+        },
+        {
+            "time": 28.796000003814697,
+            "program": "1{2,3{6{8{9,25,27,28}}}21}"
+        },
+        {
+            "time": 28.875999927520752,
+            "program": "1{2,3{6{8{14,23,27,29}}}21}"
+        },
+        {
+            "time": 28.937000036239624,
+            "program": "1{2,3{6{8{16,22,27,28}}}21}"
+        },
+        {
+            "time": 28.983999967575073,
+            "program": "1{2,3{7{20{20{18}}8{9,24,27,28}}}21}"
+        },
+        {
+            "time": 29.02300000190735,
+            "program": "1{2,3{6{8{13,22,26,29}}}21}"
+        },
+        {
+            "time": 29.052000045776367,
+            "program": "1{2,3{5{8{9,24,26,28}17}}21}"
+        },
+        {
+            "time": 29.69099998474121,
+            "program": "1{2,4{6{8{10,24,26,29}}3{6{8{10,25,26,28}}}}21}"
+        },
+        {
+            "time": 29.80299997329712,
+            "program": "1{2,3{6{8{16,24,27,29}}}21}"
+        },
+        {
+            "time": 29.871999979019165,
+            "program": "1{2,3{5{8{15,22,27,28}19}}21}"
+        },
+        {
+            "time": 29.92199993133545,
+            "program": "1{2,3{7{18,8{14,22,27,28}}}21}"
+        },
+        {
+            "time": 29.963000059127808,
+            "program": "1{2,4{6{8{11,24,27,29}}3{6{8{13,25,26,28}}}}21}"
+        },
+        {
+            "time": 30.052000045776367,
+            "program": "1{2,3{7{hole[Bool[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]],8{11,22,27,29}}}21}"
+        },
+        {
+            "time": 30.546000003814697,
+            "program": "1{2,3{7{19,8{14,22,26,29}}}21}"
+        },
+        {
+            "time": 30.585000038146973,
+            "program": "1{2,3{7{hole[Bool[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]],8{11,24,26,29}}}21}"
+        },
+        {
+            "time": 31.187999963760376,
+            "program": "1{2,3{5{8{15,25,26,29}20{19}}}21}"
+        },
+        {
+            "time": 32.72099995613098,
+            "program": "1{2,3{6{8{12,24,26,28}}}21}"
+        },
+        {
+            "time": 32.831000089645386,
+            "program": "1{2,4{5{8{15,24,26,28}18}3{6{8{16,23,27,29}}}}21}"
+        },
+        {
+            "time": 34.54099988937378,
+            "program": "1{2,3{5{8{10,24,27,28}hole[Bool[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]]}}21}"
+        },
+        {
+            "time": 37.861000061035156,
+            "program": "1{2,3{6{8{11,22,26,28}}}21}"
+        },
+        {
+            "time": 37.91100001335144,
+            "program": "1{2,3{6{8{12,25,27,29}}}21}"
+        },
+        {
+            "time": 37.98900008201599,
+            "program": "1{2,3{5{8{10,23,26,28}19}}21}"
+        },
+        {
+            "time": 38.0460000038147,
+            "program": "1{2,4{5{8{16,25,27,29}17}3{5{8{9,25,27,28}17}}}21}"
+        },
+        {
+            "time": 39.06500005722046,
+            "program": "1{2,4{7{18,8{12,24,27,28}}3{6{8{10,22,27,28}}}}21}"
+        },
+        {
+            "time": 39.115999937057495,
+            "program": "1{2,3{6{8{16,25,26,28}}}21}"
+        },
+        {
+            "time": 39.199000120162964,
+            "program": "1{2,4{6{8{10,25,27,28}}3{6{8{13,22,26,29}}}}21}"
+        },
+        {
+            "time": 39.289000034332275,
+            "program": "1{2,3{5{8{15,23,27,28}19}}21}"
+        },
+        {
+            "time": 39.354000091552734,
+            "program": "1{2,4{5{8{9,22,27,28}hole[Bool[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]]}3{5{8{11,24,26,29}hole[Bool[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]]}}}21}"
+        },
+        {
+            "time": 42.07800006866455,
+            "program": "1{2,3{6{8{12,23,26,28}}}21}"
+        },
+        {
+            "time": 42.13700008392334,
+            "program": "1{2,3{6{8{14,22,27,29}}}21}"
+        },
+        {
+            "time": 42.19000005722046,
+            "program": "1{2,3{7{hole[Bool[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]],8{12,22,27,29}}}21}"
+        },
+        {
+            "time": 42.6710000038147,
+            "program": "1{2,3{5{8{9,23,27,29}hole[Bool[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]]}}21}"
+        },
+        {
+            "time": 45.2720000743866,
+            "program": "1{2,3{5{8{14,25,27,28}19}}21}"
+        },
+        {
+            "time": 45.348000049591064,
+            "program": "1{2,4{5{8{13,25,27,28}hole[Bool[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]]}3{5{8{11,24,27,29}hole[Bool[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]]}}}21}"
+        },
+        {
+            "time": 49.53099989891052,
+            "program": "1{2,3{7{17,8{12,23,26,29}}}21}"
+        },
+        {
+            "time": 49.57299995422363,
+            "program": "1{2,3{6{8{15,23,26,29}}}21}"
+        },
+        {
+            "time": 49.61400008201599,
+            "program": "1{2,4{6{8{16,25,27,28}}3{6{8{16,23,26,28}}}}21}"
+        },
+        {
+            "time": 49.736000061035156,
+            "program": "1{2,3{5{8{9,25,27,29}19}}21}"
+        },
+        {
+            "time": 49.818000078201294,
+            "program": "1{2,3{6{8{14,22,26,29}}}21}"
+        },
+        {
+            "time": 49.86899995803833,
+            "program": "1{2,4{6{8{10,24,26,28}}3{5{8{13,25,27,29}19}}}21}"
+        },
+        {
+            "time": 49.979000091552734,
+            "program": "1{2,3{7{hole[Bool[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]],8{9,22,26,29}}}21}"
+        },
+        {
+            "time": 50.467000007629395,
+            "program": "1{2,4{6{8{10,25,26,28}}3{7{20{17}8{15,24,27,29}}}}21}"
+        },
+        {
+            "time": 50.574000120162964,
+            "program": "1{2,3{6{8{12,22,26,28}}}21}"
+        },
+        {
+            "time": 50.62400007247925,
+            "program": "1{2,4{5{8{16,24,26,29}hole[Bool[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]]}3{5{8{14,23,27,29}hole[Bool[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]]}}}21}"
+        },
+        {
+            "time": 53.95199990272522,
+            "program": "1{2,3{6{8{13,22,26,28}}}21}"
+        },
+        {
+            "time": 54.00500011444092,
+            "program": "1{2,3{7{20{17}8{14,24,27,29}}}21}"
+        },
+        {
+            "time": 54.074000120162964,
+            "program": "1{2,3{5{8{13,23,26,28}17}}21}"
+        },
+        {
+            "time": 56.187000036239624,
+            "program": "1{2,3{6{8{9,25,26,28}}}21}"
+        },
+        {
+            "time": 56.35199999809265,
+            "program": "1{2,3{6{8{12,25,27,28}}}21}"
+        },
+        {
+            "time": 56.44000005722046,
+            "program": "1{2,3{7{20{19}8{13,24,26,29}}}21}"
+        },
+        {
+            "time": 56.513999938964844,
+            "program": "1{2,3{5{8{14,25,27,28}17}}21}"
+        },
+        {
+            "time": 56.59299993515015,
+            "program": "1{2,3{5{8{13,23,26,28}hole[Bool[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]]}}21}"
+        },
+        {
+            "time": 59.15700006484985,
+            "program": "1{2,3{5{8{13,25,27,28}hole[Bool[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]]}}21}"
+        },
+        {
+            "time": 63.05900001525879,
+            "program": "1{2,3{5{8{14,23,27,28}17}}21}"
+        },
+        {
+            "time": 63.12000012397766,
+            "program": "1{2,4{5{8{13,23,26,28}17}3{5{8{13,23,26,28}17}}}21}"
+        },
+        {
+            "time": 65.12700009346008,
+            "program": "1{2,3{7{17,8{16,25,27,29}}}21}"
+        },
+        {
+            "time": 65.21300005912781,
+            "program": "1{2,3{5{8{13,25,26,29}17}}21}"
+        },
+        {
+            "time": 67.23300004005432,
+            "program": "1{2,3{6{8{12,22,27,29}}}21}"
+        },
+        {
+            "time": 67.29900002479553,
+            "program": "1{2,4{5{8{13,23,26,28}hole[Bool[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]]}3{5{8{13,23,26,28}hole[Bool[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]]}}}21}"
+        },
+        {
+            "time": 70.04099988937378,
+            "program": "1{2,3{6{8{16,23,27,28}}}21}"
+        },
+        {
+            "time": 70.10199999809265,
+            "program": "1{2,3{7{18,8{13,23,26,29}}}21}"
+        },
+        {
+            "time": 70.14000010490417,
+            "program": "1{2,3{6{8{13,24,27,28}}}21}"
+        },
+        {
+            "time": 70.18700003623962,
+            "program": "1{2,3{7{17,8{13,23,27,28}}}21}"
+        },
+        {
+            "time": 70.2279999256134,
+            "program": "1{2,4{7{19,8{16,25,26,28}}3{6{8{10,25,26,28}}}}21}"
+        },
+        {
+            "time": 70.29299998283386,
+            "program": "1{2,4{7{20{17}8{13,22,26,29}}3{5{8{13,23,26,28}17}}}21}"
+        },
+        {
+            "time": 71.11899995803833,
+            "program": "1{2,4{6{8{14,24,27,28}}3{6{8{14,23,26,29}}}}21}"
+        },
+        {
+            "time": 71.22200012207031,
+            "program": "1{2,3{5{8{11,25,26,29}17}}21}"
+        },
+        {
+            "time": 73.02500009536743,
+            "program": "1{2,3{6{8{11,24,26,29}}}21}"
+        },
+        {
+            "time": 73.12899994850159,
+            "program": "1{2,3{5{8{13,24,26,28}19}}21}"
+        },
+        {
+            "time": 73.20600008964539,
+            "program": "1{2,3{5{8{13,23,26,29}17}}21}"
+        },
+        {
+            "time": 75.08800005912781,
+            "program": "1{2,3{6{8{13,23,26,29}}}21}"
+        },
+        {
+            "time": 75.15899991989136,
+            "program": "1{2,3{5{8{13,22,27,29}17}}21}"
+        },
+        {
+            "time": 76.1340000629425,
+            "program": "1{2,4{6{8{13,25,26,29}}3{5{8{12,23,27,28}17}}}21}"
+        },
+        {
+            "time": 76.27600002288818,
+            "program": "1{2,3{7{18,8{13,22,26,28}}}21}"
+        },
+        {
+            "time": 76.31399989128113,
+            "program": "1{2,3{7{20{20{18}}8{11,24,26,28}}}21}"
+        },
+        {
+            "time": 76.33599996566772,
+            "program": "1{2,3{5{8{13,24,26,28}17}}21}"
+        },
+        {
+            "time": 81.81500005722046,
+            "program": "1{2,3{6{8{10,23,26,29}}}21}"
+        },
+        {
+            "time": 81.8989999294281,
+            "program": "1{2,3{5{8{16,24,26,29}18}}21}"
+        },
+        {
+            "time": 82.74300003051758,
+            "program": "1{2,3{6{8{15,23,26,28}}}21}"
+        },
+        {
+            "time": 82.84700012207031,
+            "program": "1{2,3{5{8{9,22,27,28}19}}21}"
+        },
+        {
+            "time": 82.89599990844727,
+            "program": "1{2,4{6{8{11,23,27,28}}3{6{8{14,24,26,28}}}}21}"
+        },
+        {
+            "time": 82.9909999370575,
+            "program": "1{2,3{5{8{10,23,26,28}17}}21}"
+        },
+        {
+            "time": 83.0699999332428,
+            "program": "1{2,4{7{20{19}8{13,25,26,29}}3{6{8{10,24,26,29}}}}21}"
+        },
+        {
+            "time": 83.17899990081787,
+            "program": "1{2,3{5{8{9,24,27,28}18}}21}"
+        },
+        {
+            "time": 83.62700009346008,
+            "program": "1{2,3{5{8{14,24,27,29}17}}21}"
+        },
+        {
+            "time": 83.7260000705719,
+            "program": "1{2,3{6{8{9,22,26,29}}}21}"
+        },
+        {
+            "time": 83.77600002288818,
+            "program": "1{2,3{6{8{11,22,26,29}}}21}"
+        },
+        {
+            "time": 83.82599997520447,
+            "program": "1{2,3{6{8{16,24,26,28}}}21}"
+        },
+        {
+            "time": 83.8970000743866,
+            "program": "1{2,3{5{8{11,22,27,29}19}}21}"
+        },
+        {
+            "time": 83.95000004768372,
+            "program": "1{2,3{6{8{15,22,26,28}}}21}"
+        },
+        {
+            "time": 84.00300002098083,
+            "program": "1{2,3{6{8{12,22,26,28}}}21}"
+        },
+        {
+            "time": 84.05299997329712,
+            "program": "1{2,4{5{8{13,23,26,29}hole[Bool[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]]}3{5{8{15,23,27,28}hole[Bool[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]]}}}21}"
+        },
+        {
+            "time": 87.01099991798401,
+            "program": "1{2,3{5{8{9,23,26,28}17}}21}"
+        },
+        {
+            "time": 87.08899998664856,
+            "program": "1{2,3{7{18,8{10,22,26,29}}}21}"
+        },
+        {
+            "time": 87.1340000629425,
+            "program": "1{2,4{7{20{18}8{11,25,27,28}}4{7{19,8{12,22,26,29}}3{6{8{12,22,26,29}}}}}21}"
+        },
+        {
+            "time": 87.22399997711182,
+            "program": "1{2,3{5{8{13,23,27,28}17}}21}"
+        },
+        {
+            "time": 87.30599999427795,
+            "program": "1{2,3{6{8{15,25,27,28}}}21}"
+        },
+        {
+            "time": 87.3840000629425,
+            "program": "1{2,4{6{8{13,23,27,28}}3{5{8{12,25,27,29}19}}}21}"
+        },
+        {
+            "time": 87.48499989509583,
+            "program": "1{2,3{6{8{12,24,27,28}}}21}"
+        },
+        {
+            "time": 87.55399990081787,
+            "program": "1{2,4{7{19,8{16,25,27,28}}3{5{8{11,22,27,29}17}}}21}"
+        },
+        {
+            "time": 87.89300012588501,
+            "program": "1{2,3{5{8{14,22,27,29}17}}21}"
+        },
+        {
+            "time": 87.97200012207031,
+            "program": "1{2,3{5{8{11,22,27,29}17}}21}"
+        },
+        {
+            "time": 88.31599998474121,
+            "program": "1{2,3{5{8{11,22,27,29}hole[Bool[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]]}}21}"
+        },
+        {
+            "time": 90.15899991989136,
+            "program": "1{2,3{5{8{16,24,26,29}20{17}}}21}"
+        },
+        {
+            "time": 90.2260000705719,
+            "program": "1{2,3{5{8{13,22,27,28}18}}21}"
+        },
+        {
+            "time": 91.3050000667572,
+            "program": "1{2,3{7{19,8{12,24,26,29}}}21}"
+        },
+        {
+            "time": 91.36700010299683,
+            "program": "1{2,4{5{8{12,25,26,28}18}3{6{8{12,22,27,29}}}}21}"
+        },
+        {
+            "time": 92.24000000953674,
+            "program": "1{2,4{5{8{11,22,27,29}hole[Bool[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]]}3{5{8{11,22,27,29}hole[Bool[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]]}}}21}"
+        },
+        {
+            "time": 94.29399991035461,
+            "program": "1{2,3{6{8{12,23,27,29}}}21}"
+        },
+        {
+            "time": 94.35199999809265,
+            "program": "1{2,3{5{8{12,22,26,28}17}}21}"
+        },
+        {
+            "time": 94.48600006103516,
+            "program": "1{2,3{5{8{11,23,27,29}hole[Bool[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]]}}21}"
+        },
+        {
+            "time": 98.7170000076294,
+            "program": "1{2,3{5{8{13,25,27,28}19}}21}"
+        },
+        {
+            "time": 98.79699993133545,
+            "program": "1{2,3{6{8{15,22,26,29}}}21}"
+        },
+        {
+            "time": 98.84400010108948,
+            "program": "1{2,3{5{8{11,22,26,29}17}}21}"
+        },
+        {
+            "time": 99.18300008773804,
+            "program": "1{2,3{5{8{14,25,26,28}17}}21}"
+        },
+        {
+            "time": 99.26200008392334,
+            "program": "1{2,3{5{8{11,22,26,28}hole[Bool[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]]}}21}"
+        },
+        {
+            "time": 101.25,
+            "program": "1{2,3{5{8{11,23,26,29}17}}21}"
+        },
+        {
+            "time": 101.59500002861023,
+            "program": "1{2,4{6{8{10,25,27,29}}3{7{18,8{11,22,27,29}}}}21}"
+        },
+        {
+            "time": 101.68700003623962,
+            "program": "1{2,4{6{8{9,22,26,29}}3{6{8{11,22,26,29}}}}21}"
+        },
+        {
+            "time": 101.74699997901917,
+            "program": "1{2,3{5{8{11,22,26,29}hole[Bool[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]]}}21}"
+        },
+        {
+            "time": 103.58299994468689,
+            "program": "1{2,3{6{8{11,24,27,29}}}21}"
+        },
+        {
+            "time": 103.65199995040894,
+            "program": "1{2,3{7{19,8{13,25,27,29}}}21}"
+        },
+        {
+            "time": 103.69799995422363,
+            "program": "1{2,3{6{8{10,23,26,28}}}21}"
+        },
+        {
+            "time": 103.76699995994568,
+            "program": "1{2,3{5{8{13,22,26,29}17}}21}"
+        },
+        {
+            "time": 103.98499989509583,
+            "program": "1{2,3{5{8{13,23,26,29}hole[Bool[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]]}}21}"
+        },
+        {
+            "time": 106.63100004196167,
+            "program": "1{2,3{6{8{13,23,27,28}}}21}"
+        },
+        {
+            "time": 106.69099998474121,
+            "program": "1{2,3{5{8{11,23,27,29}17}}21}"
+        },
+        {
+            "time": 107.04800009727478,
+            "program": "1{2,3{5{8{15,24,27,29}17}}21}"
+        },
+        {
+            "time": 107.93300008773804,
+            "program": "1{2,4{7{hole[Bool[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]],8{9,24,26,28}}4{6{8{11,24,26,28}}3{6{8{12,24,26,28}}}}}21}"
+        },
+        {
+            "time": 109.6159999370575,
+            "program": "1{2,3{5{8{16,25,26,28}hole[Bool[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]]}}21}"
+        },
+        {
+            "time": 113.75300002098083,
+            "program": "1{2,3{7{17,8{15,25,26,29}}}21}"
+        },
+        {
+            "time": 113.81500005722046,
+            "program": "1{2,3{6{8{14,22,27,28}}}21}"
+        },
+        {
+            "time": 113.84299993515015,
+            "program": "1{2,3{5{8{15,25,26,28}18}}21}"
+        },
+        {
+            "time": 114.51399993896484,
+            "program": "1{2,3{5{8{10,23,26,28}18}}21}"
+        },
+        {
+            "time": 115.27900004386902,
+            "program": "1{2,4{5{8{14,25,27,28}19}3{6{8{10,22,26,28}}}}21}"
+        },
+        {
+            "time": 115.48200011253357,
+            "program": "1{2,4{6{8{9,22,26,28}}3{7{hole[Bool[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]],8{15,24,27,29}}}}21}"
+        },
+        {
+            "time": 116.40599989891052,
+            "program": "1{2,3{7{18,8{16,24,26,28}}}21}"
+        },
+        {
+            "time": 116.46900010108948,
+            "program": "1{2,3{6{8{14,22,27,28}}}21}"
+        },
+        {
+            "time": 116.49699997901917,
+            "program": "1{2,3{6{8{16,24,27,28}}}21}"
+        },
+        {
+            "time": 116.56699991226196,
+            "program": "1{2,3{7{20{19}8{11,24,27,28}}}21}"
+        },
+        {
+            "time": 116.63599991798401,
+            "program": "1{2,3{7{17,8{11,24,26,29}}}21}"
+        },
+        {
+            "time": 116.69700002670288,
+            "program": "1{2,4{6{8{16,22,27,29}}3{7{19,8{12,24,27,28}}}}21}"
+        },
+        {
+            "time": 116.77600002288818,
+            "program": "1{2,3{6{8{16,24,27,29}}}21}"
+        },
+        {
+            "time": 116.84400010108948,
+            "program": "1{2,3{6{8{9,22,27,29}}}21}"
+        },
+        {
+            "time": 116.94700002670288,
+            "program": "1{2,4{7{18,8{15,25,27,28}}3{7{18,8{11,22,27,29}}}}21}"
+        },
+        {
+            "time": 117.0090000629425,
+            "program": "1{2,4{6{8{13,24,27,29}}3{5{8{13,23,26,28}17}}}21}"
+        },
+        {
+            "time": 117.0789999961853,
+            "program": "1{2,3{6{8{12,23,27,28}}}21}"
+        },
+        {
+            "time": 117.14400005340576,
+            "program": "1{2,3{5{8{9,24,27,28}18}}21}"
         }
     ],
     "try_index": 1,
-    "runtime": 0.06700015068054199,
-    "mined_fragments": [],
+    "runtime": 117.32999992370605,
+    "mined_fragments": [
+        {
+            "fragments": "RuleNode[28,, 17,, 23,, 13,, 5{8{13,23,26,28}17}, 2,, 3{5{8{13,23,26,28}17}}, 8{13,23,26,28}, 26,, 21,, 1{2,3{5{8{13,23,26,28}17}}21}]",
+            "time": 56.18600010871887
+        },
+        {
+            "fragments": "RuleNode[7{19,8{16,25,27,28}}, 16,, 25,, 29,, 28,, 17,, 19,, 22,, 8{11,22,27,29}, 21,, 2,, 8{16,25,27,28}, 27,, 11,, 5{8{11,22,27,29}17}, 3{5{8{11,22,27,29}17}}, 1{2,4{7{19,8{16,25,27,28}}3{5{8{11,22,27,29}17}}}21}, 4{7{19,8{16,25,27,28}}3{5{8{11,22,27,29}17}}}]",
+            "time": 87.89300012588501
+        },
+        {
+            "fragments": "RuleNode[29,, 17,, 1{2,3{5{8{11,22,27,29}17}}21}, 22,, 8{11,22,27,29}, 21,, 2,, 11,, 27,, 5{8{11,22,27,29}17}, 3{5{8{11,22,27,29}17}}]",
+            "time": 88.31500005722046
+        },
+        {
+            "fragments": "RuleNode[17,, 23,, 1{2,3{5{8{11,23,27,29}18}}21}, 22,, 11,, 5{8{11,23,27,29}18}, 3{5{8{11,23,27,29}18}}, 8{11,23,27,29}, 29,, 1{2,3{5{8{11,22,27,29}17}}21}, 8{11,22,27,29}, 21,, 2,, 27,, 18,, 5{8{11,22,27,29}17}, 3{5{8{11,22,27,29}17}}]",
+            "time": 98.71600008010864
+        },
+        {
+            "fragments": "RuleNode[29,, 5{8{11,22,26,29}17}, 3{5{8{11,22,26,29}17}}, 8{11,22,26,29}, 17,, 22,, 21,, 2,, 11,, 26,, 1{2,3{5{8{11,22,26,29}17}}21}]",
+            "time": 99.1819999217987
+        },
+        {
+            "fragments": "RuleNode[16,, 6{8{16,24,27,29}}, 2,, 1{2,3{6{8{16,24,27,29}}}21}, 29,, 27,, 3{6{8{16,24,27,29}}}, 8{16,24,27,29}, 24,, 21,]",
+            "time": 116.84299993515015
+        }
+    ],
     "grammar": "1: Program = begin\n    state = Init\n    Blocks\n    End\nend\n2: Init = mc_init(start_pos)\n3: Blocks = Block\n4: Blocks = begin\n    Block\n    Blocks\nend\n5: Block = while true\n    Move\n    Bool || break\nend\n6: Block = Move\n7: Block = if Bool\n    Move\nend\n8: Move = mc_move!(state, Direction, Times, Sprint, Jump)\n9: Direction = [\"forward\"]\n10: Direction = [\"back\"]\n11: Direction = [\"left\"]\n12: Direction = [\"right\"]\n13: Direction = [\"forward\", \"left\"]\n14: Direction = [\"forward\", \"right\"]\n15: Direction = [\"back\", \"left\"]\n16: Direction = [\"back\", \"right\"]\n17: Bool = mc_was_good_move(state)\n18: Bool = mc_has_moved(state)\n19: Bool = mc_is_done(state)\n20: Bool = !Bool\n21: End = mc_end(state)\n22: Times = 1\n23: Times = 2\n24: Times = 3\n25: Times = 4\n26: Sprint = true\n27: Sprint = false\n28: Jump = true\n29: Jump = false\n",
-    "evaluated_programs": []
+    "evaluated_programs": [
+        {
+            "time": 0.8169999122619629,
+            "reward": 11.833969116210938,
+            "program": "1{2,3{5{8{9,23,26,28}17}}21}"
+        },
+        {
+            "time": 0.9240000247955322,
+            "reward": -0.49518585205078125,
+            "program": "1{2,4{6{8{16,24,26,28}}3{5{8{9,24,27,29}17}}}21}"
+        },
+        {
+            "time": 2.938999891281128,
+            "reward": 0.0,
+            "program": "1{2,3{7{17,8{11,25,26,28}}}21}"
+        },
+        {
+            "time": 2.9830000400543213,
+            "reward": -0.20107269287109375,
+            "program": "1{2,3{6{8{10,23,26,28}}}21}"
+        },
+        {
+            "time": 3.058000087738037,
+            "reward": -0.34590911865234375,
+            "program": "1{2,3{6{8{10,24,26,29}}}21}"
+        },
+        {
+            "time": 7.000999927520752,
+            "reward": 11.841842651367188,
+            "program": "1{2,3{5{8{9,25,27,28}20{19}}}21}"
+        },
+        {
+            "time": 7.072999954223633,
+            "reward": 0.250885009765625,
+            "program": "1{2,3{6{8{13,23,27,29}}}21}"
+        },
+        {
+            "time": 7.16100001335144,
+            "reward": 0.6962890625,
+            "program": "1{2,4{6{8{9,22,27,28}}3{6{8{13,24,26,29}}}}21}"
+        },
+        {
+            "time": 7.206000089645386,
+            "reward": 0.0,
+            "program": "1{2,3{7{17,8{15,23,27,28}}}21}"
+        },
+        {
+            "time": 7.227999925613403,
+            "reward": 0.0,
+            "program": "1{2,3{7{19,8{11,22,26,28}}}21}"
+        },
+        {
+            "time": 9.233000040054321,
+            "reward": -0.04742431640625,
+            "program": "1{2,3{6{8{14,24,27,28}}}21}"
+        },
+        {
+            "time": 11.57800006866455,
+            "reward": -0.02318572998046875,
+            "program": "1{2,4{6{8{10,22,26,29}}3{6{8{13,22,27,29}}}}21}"
+        },
+        {
+            "time": 11.634999990463257,
+            "reward": 0.04898834228515625,
+            "program": "1{2,3{5{8{14,23,26,29}19}}21}"
+        },
+        {
+            "time": 18.233999967575073,
+            "reward": 0.0,
+            "program": "1{2,3{7{18,8{12,24,26,28}}}21}"
+        },
+        {
+            "time": 18.283999919891357,
+            "reward": 0.5769729614257812,
+            "program": "1{2,3{6{8{13,24,26,28}}}21}"
+        },
+        {
+            "time": 18.35199999809265,
+            "reward": -0.25490570068359375,
+            "program": "1{2,3{6{8{12,24,26,29}}}21}"
+        },
+        {
+            "time": 19.426000118255615,
+            "reward": -4.329185485839844,
+            "program": "1{2,3{5{8{15,22,26,28}20{19}}}21}"
+        },
+        {
+            "time": 19.533999919891357,
+            "reward": -0.8212814331054688,
+            "program": "1{2,4{6{8{16,24,26,29}}3{7{20{17}8{16,23,27,28}}}}21}"
+        },
+        {
+            "time": 19.58299994468689,
+            "reward": -0.05792236328125,
+            "program": "1{2,3{6{8{12,22,27,29}}}21}"
+        },
+        {
+            "time": 20.313999891281128,
+            "reward": -10.005058288574219,
+            "program": "1{2,3{5{8{10,24,26,28}18}}21}"
+        },
+        {
+            "time": 20.45199990272522,
+            "reward": -0.9742965698242188,
+            "program": "1{2,4{6{8{10,25,27,29}}3{6{8{10,24,26,28}}}}21}"
+        },
+        {
+            "time": 20.522000074386597,
+            "reward": 0.34503936767578125,
+            "program": "1{2,3{6{8{9,24,27,29}}}21}"
+        },
+        {
+            "time": 20.561000108718872,
+            "reward": 0.0,
+            "program": "1{2,3{7{19,8{15,25,26,28}}}21}"
+        },
+        {
+            "time": 20.598999977111816,
+            "reward": -0.21894073486328125,
+            "program": "1{2,4{6{8{16,22,26,28}}3{6{8{15,22,27,29}}}}21}"
+        },
+        {
+            "time": 20.707000017166138,
+            "reward": -0.5603179931640625,
+            "program": "1{2,4{6{8{12,24,26,28}}3{7{18,8{10,25,26,28}}}}21}"
+        },
+        {
+            "time": 20.782000064849854,
+            "reward": 0.36856842041015625,
+            "program": "1{2,3{6{8{11,25,26,29}}}21}"
+        },
+        {
+            "time": 20.838000059127808,
+            "reward": 0.03713226318359375,
+            "program": "1{2,3{6{8{11,23,26,28}}}21}"
+        },
+        {
+            "time": 20.875999927520752,
+            "reward": 0.0,
+            "program": "1{2,4{7{17,8{11,24,26,29}}3{7{19,8{12,22,27,29}}}}21}"
+        },
+        {
+            "time": 24.10599994659424,
+            "reward": 0.14710235595703125,
+            "program": "1{2,3{6{8{11,23,26,29}}}21}"
+        },
+        {
+            "time": 24.18400001525879,
+            "reward": -0.23296356201171875,
+            "program": "1{2,4{6{8{10,22,26,28}}3{5{8{11,24,26,29}19}}}21}"
+        },
+        {
+            "time": 24.223999977111816,
+            "reward": 0.0,
+            "program": "1{2,3{7{19,8{13,24,26,28}}}21}"
+        },
+        {
+            "time": 24.283999919891357,
+            "reward": 0.30799102783203125,
+            "program": "1{2,3{6{8{11,25,27,29}}}21}"
+        },
+        {
+            "time": 24.342999935150146,
+            "reward": -0.05792236328125,
+            "program": "1{2,3{6{8{12,22,26,29}}}21}"
+        },
+        {
+            "time": 24.42300009727478,
+            "reward": 0.502471923828125,
+            "program": "1{2,3{6{8{9,25,27,29}}}21}"
+        },
+        {
+            "time": 24.503000020980835,
+            "reward": 0.25485992431640625,
+            "program": "1{2,3{6{8{13,25,27,28}}}21}"
+        },
+        {
+            "time": 24.581000089645386,
+            "reward": -0.3719635009765625,
+            "program": "1{2,3{6{8{12,25,26,29}}}21}"
+        },
+        {
+            "time": 24.64800000190735,
+            "reward": -0.067169189453125,
+            "program": "1{2,3{6{8{15,24,26,29}}}21}"
+        },
+        {
+            "time": 24.71399998664856,
+            "reward": 0.11981964111328125,
+            "program": "1{2,3{5{8{9,24,27,28}19}}21}"
+        },
+        {
+            "time": 26.628000020980835,
+            "reward": 14.36941909790039,
+            "program": "1{2,4{5{8{11,24,27,29}18}4{7{18,8{11,25,27,28}}3{6{8{14,22,27,28}}}}}21}"
+        },
+        {
+            "time": 28.680999994277954,
+            "reward": 0.0,
+            "program": "1{2,3{7{18,8{13,24,27,29}}}21}"
+        },
+        {
+            "time": 28.710000038146973,
+            "reward": -0.01508331298828125,
+            "program": "1{2,3{5{8{15,22,26,29}17}}21}"
+        },
+        {
+            "time": 28.749000072479248,
+            "reward": 0.0,
+            "program": "1{2,4{7{18,8{14,22,26,29}}3{7{17,8{14,25,27,29}}}}21}"
+        },
+        {
+            "time": 28.76699995994568,
+            "reward": 0.0,
+            "program": "1{2,3{7{19,8{9,25,27,28}}}21}"
+        },
+        {
+            "time": 28.796000003814697,
+            "reward": 0.0232086181640625,
+            "program": "1{2,3{5{8{11,22,27,28}19}}21}"
+        },
+        {
+            "time": 28.875999927520752,
+            "reward": 0.18273162841796875,
+            "program": "1{2,3{6{8{9,25,27,28}}}21}"
+        },
+        {
+            "time": 28.937000036239624,
+            "reward": 0.037811279296875,
+            "program": "1{2,3{6{8{14,23,27,29}}}21}"
+        },
+        {
+            "time": 28.983999967575073,
+            "reward": -0.13311004638671875,
+            "program": "1{2,3{6{8{16,22,27,28}}}21}"
+        },
+        {
+            "time": 29.02300000190735,
+            "reward": 0.0,
+            "program": "1{2,3{7{20{20{18}}8{9,24,27,28}}}21}"
+        },
+        {
+            "time": 29.052000045776367,
+            "reward": 0.12810516357421875,
+            "program": "1{2,3{6{8{13,22,26,29}}}21}"
+        },
+        {
+            "time": 29.69099998474121,
+            "reward": 11.833969116210938,
+            "program": "1{2,3{5{8{9,24,26,28}17}}21}"
+        },
+        {
+            "time": 29.80299997329712,
+            "reward": -0.9315948486328125,
+            "program": "1{2,4{6{8{10,24,26,29}}3{6{8{10,25,26,28}}}}21}"
+        },
+        {
+            "time": 29.871999979019165,
+            "reward": -0.43265533447265625,
+            "program": "1{2,3{6{8{16,24,27,29}}}21}"
+        },
+        {
+            "time": 29.92199993133545,
+            "reward": -0.0496826171875,
+            "program": "1{2,3{5{8{15,22,27,28}19}}21}"
+        },
+        {
+            "time": 29.963000059127808,
+            "reward": 0.0,
+            "program": "1{2,3{7{18,8{14,22,27,28}}}21}"
+        },
+        {
+            "time": 30.052000045776367,
+            "reward": 1.091796875,
+            "program": "1{2,4{6{8{11,24,27,29}}3{6{8{13,25,26,28}}}}21}"
+        },
+        {
+            "time": 30.58400011062622,
+            "reward": 0.0,
+            "program": "1{2,3{7{19,8{14,22,26,29}}}21}"
+        },
+        {
+            "time": 32.72099995613098,
+            "reward": -10.104476928710938,
+            "program": "1{2,3{5{8{15,25,26,29}20{19}}}21}"
+        },
+        {
+            "time": 32.831000089645386,
+            "reward": -0.2383880615234375,
+            "program": "1{2,3{6{8{12,24,26,28}}}21}"
+        },
+        {
+            "time": 34.54099988937378,
+            "reward": -10.072959899902344,
+            "program": "1{2,4{5{8{15,24,26,28}18}3{6{8{16,23,27,29}}}}21}"
+        },
+        {
+            "time": 37.91100001335144,
+            "reward": 0.0232086181640625,
+            "program": "1{2,3{6{8{11,22,26,28}}}21}"
+        },
+        {
+            "time": 37.98900008201599,
+            "reward": -0.3719635009765625,
+            "program": "1{2,3{6{8{12,25,27,29}}}21}"
+        },
+        {
+            "time": 38.0460000038147,
+            "reward": -0.20107269287109375,
+            "program": "1{2,3{5{8{10,23,26,28}19}}21}"
+        },
+        {
+            "time": 39.06500005722046,
+            "reward": 11.195167541503906,
+            "program": "1{2,4{5{8{16,25,27,29}17}3{5{8{9,25,27,28}17}}}21}"
+        },
+        {
+            "time": 39.115999937057495,
+            "reward": -0.11328887939453125,
+            "program": "1{2,4{7{18,8{12,24,27,28}}3{6{8{10,22,27,28}}}}21}"
+        },
+        {
+            "time": 39.199000120162964,
+            "reward": -0.45854949951171875,
+            "program": "1{2,3{6{8{16,25,26,28}}}21}"
+        },
+        {
+            "time": 39.289000034332275,
+            "reward": -0.44686126708984375,
+            "program": "1{2,4{6{8{10,25,27,28}}3{6{8{13,22,26,29}}}}21}"
+        },
+        {
+            "time": 39.354000091552734,
+            "reward": -0.09011077880859375,
+            "program": "1{2,3{5{8{15,23,27,28}19}}21}"
+        },
+        {
+            "time": 42.13700008392334,
+            "reward": -0.164825439453125,
+            "program": "1{2,3{6{8{12,23,26,28}}}21}"
+        },
+        {
+            "time": 42.18899989128113,
+            "reward": 0.01495361328125,
+            "program": "1{2,3{6{8{14,22,27,29}}}21}"
+        },
+        {
+            "time": 45.348000049591064,
+            "reward": -0.04831695556640625,
+            "program": "1{2,3{5{8{14,25,27,28}19}}21}"
+        },
+        {
+            "time": 49.57299995422363,
+            "reward": 0.0,
+            "program": "1{2,3{7{17,8{12,23,26,29}}}21}"
+        },
+        {
+            "time": 49.61400008201599,
+            "reward": -0.0264129638671875,
+            "program": "1{2,3{6{8{15,23,26,29}}}21}"
+        },
+        {
+            "time": 49.736000061035156,
+            "reward": -0.6950454711914062,
+            "program": "1{2,4{6{8{16,25,27,28}}3{6{8{16,23,26,28}}}}21}"
+        },
+        {
+            "time": 49.818000078201294,
+            "reward": 0.502471923828125,
+            "program": "1{2,3{5{8{9,25,27,29}19}}21}"
+        },
+        {
+            "time": 49.86899995803833,
+            "reward": 0.0194091796875,
+            "program": "1{2,3{6{8{14,22,26,29}}}21}"
+        },
+        {
+            "time": 49.979000091552734,
+            "reward": -0.34944915771484375,
+            "program": "1{2,4{6{8{10,24,26,28}}3{5{8{13,25,27,29}19}}}21}"
+        },
+        {
+            "time": 50.574000120162964,
+            "reward": -0.6018295288085938,
+            "program": "1{2,4{6{8{10,25,26,28}}3{7{20{17}8{15,24,27,29}}}}21}"
+        },
+        {
+            "time": 50.62400007247925,
+            "reward": -0.09250640869140625,
+            "program": "1{2,3{6{8{12,22,26,28}}}21}"
+        },
+        {
+            "time": 54.00500011444092,
+            "reward": 0.25389862060546875,
+            "program": "1{2,3{6{8{13,22,26,28}}}21}"
+        },
+        {
+            "time": 54.074000120162964,
+            "reward": 0.06467437744140625,
+            "program": "1{2,3{7{20{17}8{14,24,27,29}}}21}"
+        },
+        {
+            "time": 56.18600010871887,
+            "reward": 56.739837646484375,
+            "program": "1{2,3{5{8{13,23,26,28}17}}21}"
+        },
+        {
+            "time": 56.35199999809265,
+            "reward": 0.6664352416992188,
+            "program": "1{2,3{6{8{9,25,26,28}}}21}"
+        },
+        {
+            "time": 56.44000005722046,
+            "reward": -0.31188201904296875,
+            "program": "1{2,3{6{8{12,25,27,28}}}21}"
+        },
+        {
+            "time": 56.513999938964844,
+            "reward": 0.562347412109375,
+            "program": "1{2,3{7{20{19}8{13,24,26,29}}}21}"
+        },
+        {
+            "time": 56.59299993515015,
+            "reward": -0.04831695556640625,
+            "program": "1{2,3{5{8{14,25,27,28}17}}21}"
+        },
+        {
+            "time": 63.12000012397766,
+            "reward": -0.0377197265625,
+            "program": "1{2,3{5{8{14,23,27,28}17}}21}"
+        },
+        {
+            "time": 65.12700009346008,
+            "reward": 57.373878479003906,
+            "program": "1{2,4{5{8{13,23,26,28}17}3{5{8{13,23,26,28}17}}}21}"
+        },
+        {
+            "time": 65.21300005912781,
+            "reward": 0.0,
+            "program": "1{2,3{7{17,8{16,25,27,29}}}21}"
+        },
+        {
+            "time": 67.23300004005432,
+            "reward": 25.529098510742188,
+            "program": "1{2,3{5{8{13,25,26,29}17}}21}"
+        },
+        {
+            "time": 67.29900002479553,
+            "reward": -0.05792236328125,
+            "program": "1{2,3{6{8{12,22,27,29}}}21}"
+        },
+        {
+            "time": 70.10199999809265,
+            "reward": -0.2356414794921875,
+            "program": "1{2,3{6{8{16,23,27,28}}}21}"
+        },
+        {
+            "time": 70.14000010490417,
+            "reward": 0.0,
+            "program": "1{2,3{7{18,8{13,23,26,29}}}21}"
+        },
+        {
+            "time": 70.18700003623962,
+            "reward": 0.1720123291015625,
+            "program": "1{2,3{6{8{13,24,27,28}}}21}"
+        },
+        {
+            "time": 70.2279999256134,
+            "reward": 0.0,
+            "program": "1{2,3{7{17,8{13,23,27,28}}}21}"
+        },
+        {
+            "time": 70.29299998283386,
+            "reward": -0.38697052001953125,
+            "program": "1{2,4{7{19,8{16,25,26,28}}3{6{8{10,25,26,28}}}}21}"
+        },
+        {
+            "time": 71.11899995803833,
+            "reward": 20.580528259277344,
+            "program": "1{2,4{7{20{17}8{13,22,26,29}}3{5{8{13,23,26,28}17}}}21}"
+        },
+        {
+            "time": 71.22200012207031,
+            "reward": -0.0393524169921875,
+            "program": "1{2,4{6{8{14,24,27,28}}3{6{8{14,23,26,29}}}}21}"
+        },
+        {
+            "time": 73.02500009536743,
+            "reward": 14.32992935180664,
+            "program": "1{2,3{5{8{11,25,26,29}17}}21}"
+        },
+        {
+            "time": 73.12899994850159,
+            "reward": 0.2533111572265625,
+            "program": "1{2,3{6{8{11,24,26,29}}}21}"
+        },
+        {
+            "time": 73.20600008964539,
+            "reward": 0.5769729614257812,
+            "program": "1{2,3{5{8{13,24,26,28}19}}21}"
+        },
+        {
+            "time": 75.08800005912781,
+            "reward": 25.1688232421875,
+            "program": "1{2,3{5{8{13,23,26,29}17}}21}"
+        },
+        {
+            "time": 75.15899991989136,
+            "reward": 0.326141357421875,
+            "program": "1{2,3{6{8{13,23,26,29}}}21}"
+        },
+        {
+            "time": 76.1340000629425,
+            "reward": 16.761215209960938,
+            "program": "1{2,3{5{8{13,22,27,29}17}}21}"
+        },
+        {
+            "time": 76.27500009536743,
+            "reward": 0.8542861938476562,
+            "program": "1{2,4{6{8{13,25,26,29}}3{5{8{12,23,27,28}17}}}21}"
+        },
+        {
+            "time": 76.31399989128113,
+            "reward": 0.0,
+            "program": "1{2,3{7{18,8{13,22,26,28}}}21}"
+        },
+        {
+            "time": 76.33599996566772,
+            "reward": 0.0,
+            "program": "1{2,3{7{20{20{18}}8{11,24,26,28}}}21}"
+        },
+        {
+            "time": 79.00399994850159,
+            "reward": 69.10329914093018,
+            "program": "1{2,3{5{8{13,24,26,28}17}}21}"
+        },
+        {
+            "time": 81.8989999294281,
+            "reward": 69.21867752075195,
+            "program": "1{2,3{6{8{10,23,26,29}}}21}"
+        },
+        {
+            "time": 82.74300003051758,
+            "reward": 59.10184574127197,
+            "program": "1{2,3{5{8{16,24,26,29}18}}21}"
+        },
+        {
+            "time": 82.84700012207031,
+            "reward": 69.24911832809448,
+            "program": "1{2,3{6{8{15,23,26,28}}}21}"
+        },
+        {
+            "time": 82.89599990844727,
+            "reward": 69.1354513168335,
+            "program": "1{2,3{5{8{9,22,27,28}19}}21}"
+        },
+        {
+            "time": 82.9909999370575,
+            "reward": 68.81897926330566,
+            "program": "1{2,4{6{8{11,23,27,28}}3{6{8{14,24,26,28}}}}21}"
+        },
+        {
+            "time": 83.0699999332428,
+            "reward": 69.26567077636719,
+            "program": "1{2,3{5{8{10,23,26,28}17}}21}"
+        },
+        {
+            "time": 83.17899990081787,
+            "reward": 69.6023941040039,
+            "program": "1{2,4{7{20{19}8{13,25,26,29}}3{6{8{10,24,26,29}}}}21}"
+        },
+        {
+            "time": 83.62700009346008,
+            "reward": 65.05161190032959,
+            "program": "1{2,3{5{8{9,24,27,28}18}}21}"
+        },
+        {
+            "time": 83.7260000705719,
+            "reward": 68.65138149261475,
+            "program": "1{2,3{5{8{14,24,27,29}17}}21}"
+        },
+        {
+            "time": 83.77600002288818,
+            "reward": 69.1354513168335,
+            "program": "1{2,3{6{8{9,22,26,29}}}21}"
+        },
+        {
+            "time": 83.82599997520447,
+            "reward": 69.16060733795166,
+            "program": "1{2,3{6{8{11,22,26,29}}}21}"
+        },
+        {
+            "time": 83.8970000743866,
+            "reward": 69.20992994308472,
+            "program": "1{2,3{6{8{16,24,26,28}}}21}"
+        },
+        {
+            "time": 83.95000004768372,
+            "reward": 69.16060733795166,
+            "program": "1{2,3{5{8{11,22,27,29}19}}21}"
+        },
+        {
+            "time": 84.00300002098083,
+            "reward": 69.1614351272583,
+            "program": "1{2,3{6{8{15,22,26,28}}}21}"
+        },
+        {
+            "time": 84.05299997329712,
+            "reward": 69.125985622406,
+            "program": "1{2,3{6{8{12,22,26,28}}}21}"
+        },
+        {
+            "time": 87.08899998664856,
+            "reward": 68.94347286224365,
+            "program": "1{2,3{5{8{9,23,26,28}17}}21}"
+        },
+        {
+            "time": 87.1340000629425,
+            "reward": 69.10329914093018,
+            "program": "1{2,3{7{18,8{10,22,26,29}}}21}"
+        },
+        {
+            "time": 87.22399997711182,
+            "reward": 69.35791444778442,
+            "program": "1{2,4{7{20{18}8{11,25,27,28}}4{7{19,8{12,22,26,29}}3{6{8{12,22,26,29}}}}}21}"
+        },
+        {
+            "time": 87.30599999427795,
+            "reward": 69.2522873878479,
+            "program": "1{2,3{5{8{13,23,27,28}17}}21}"
+        },
+        {
+            "time": 87.3840000629425,
+            "reward": 69.40527820587158,
+            "program": "1{2,3{6{8{15,25,27,28}}}21}"
+        },
+        {
+            "time": 87.48499989509583,
+            "reward": 68.8684434890747,
+            "program": "1{2,4{6{8{13,23,27,28}}3{5{8{12,25,27,29}19}}}21}"
+        },
+        {
+            "time": 87.55399990081787,
+            "reward": 69.15049505233765,
+            "program": "1{2,3{6{8{12,24,27,28}}}21}"
+        },
+        {
+            "time": 87.89300012588501,
+            "reward": 72.65679168701172,
+            "program": "1{2,4{7{19,8{16,25,27,28}}3{5{8{11,22,27,29}17}}}21}"
+        },
+        {
+            "time": 87.97200012207031,
+            "reward": 69.0068531036377,
+            "program": "1{2,3{5{8{14,22,27,29}17}}21}"
+        },
+        {
+            "time": 88.31500005722046,
+            "reward": 72.65679168701172,
+            "program": "1{2,3{5{8{11,22,27,29}17}}21}"
+        },
+        {
+            "time": 90.2260000705719,
+            "reward": 69.20992994308472,
+            "program": "1{2,3{5{8{16,24,26,29}20{17}}}21}"
+        },
+        {
+            "time": 91.3050000667572,
+            "reward": 59.889076232910156,
+            "program": "1{2,3{5{8{13,22,27,28}18}}21}"
+        },
+        {
+            "time": 91.36700010299683,
+            "reward": 69.10329914093018,
+            "program": "1{2,3{7{19,8{12,24,26,29}}}21}"
+        },
+        {
+            "time": 92.23900008201599,
+            "reward": 59.39694786071777,
+            "program": "1{2,4{5{8{12,25,26,28}18}3{6{8{12,22,27,29}}}}21}"
+        },
+        {
+            "time": 94.3510000705719,
+            "reward": 69.14506912231445,
+            "program": "1{2,3{6{8{12,23,27,29}}}21}"
+        },
+        {
+            "time": 94.48600006103516,
+            "reward": 68.93758821487427,
+            "program": "1{2,3{5{8{12,22,26,28}17}}21}"
+        },
+        {
+            "time": 98.71600008010864,
+            "reward": 70.7630500793457,
+            "program": "1{2,3{5{8{11,23,27,29}18}}21}"
+        },
+        {
+            "time": 98.79699993133545,
+            "reward": 69.2522873878479,
+            "program": "1{2,3{5{8{13,25,27,28}19}}21}"
+        },
+        {
+            "time": 98.84400010108948,
+            "reward": 69.1614351272583,
+            "program": "1{2,3{6{8{15,22,26,29}}}21}"
+        },
+        {
+            "time": 99.1819999217987,
+            "reward": 72.65679168701172,
+            "program": "1{2,3{5{8{11,22,26,29}17}}21}"
+        },
+        {
+            "time": 99.26200008392334,
+            "reward": 68.78765106201172,
+            "program": "1{2,3{5{8{14,25,26,28}17}}21}"
+        },
+        {
+            "time": 101.59500002861023,
+            "reward": 72.63880395889282,
+            "program": "1{2,3{5{8{11,23,26,29}17}}21}"
+        },
+        {
+            "time": 101.68700003623962,
+            "reward": 69.46924877166748,
+            "program": "1{2,4{6{8{10,25,27,29}}3{7{18,8{11,22,27,29}}}}21}"
+        },
+        {
+            "time": 101.74600005149841,
+            "reward": 69.20338916778564,
+            "program": "1{2,4{6{8{9,22,26,29}}3{6{8{11,22,26,29}}}}21}"
+        },
+        {
+            "time": 103.65199995040894,
+            "reward": 69.34947872161865,
+            "program": "1{2,3{6{8{11,24,27,29}}}21}"
+        },
+        {
+            "time": 103.69700002670288,
+            "reward": 69.10329914093018,
+            "program": "1{2,3{7{19,8{13,25,27,29}}}21}"
+        },
+        {
+            "time": 103.76699995994568,
+            "reward": 69.21867752075195,
+            "program": "1{2,3{6{8{10,23,26,28}}}21}"
+        },
+        {
+            "time": 103.98499989509583,
+            "reward": 69.61722707748413,
+            "program": "1{2,3{5{8{13,22,26,29}17}}21}"
+        },
+        {
+            "time": 106.69099998474121,
+            "reward": 69.21577262878418,
+            "program": "1{2,3{6{8{13,23,27,28}}}21}"
+        },
+        {
+            "time": 107.04800009727478,
+            "reward": 72.63880395889282,
+            "program": "1{2,3{5{8{11,23,27,29}17}}21}"
+        },
+        {
+            "time": 107.49399995803833,
+            "reward": 74.0943374633789,
+            "program": "1{2,3{5{8{15,24,27,29}17}}21}"
+        },
+        {
+            "time": 113.79399991035461,
+            "reward": 74.0943374633789,
+            "program": "1{2,3{7{17,8{15,25,26,29}}}21}"
+        },
+        {
+            "time": 113.84299993515015,
+            "reward": 73.76697087287903,
+            "program": "1{2,3{6{8{14,22,27,28}}}21}"
+        },
+        {
+            "time": 114.51399993896484,
+            "reward": 64.05551338195801,
+            "program": "1{2,3{5{8{15,25,26,28}18}}21}"
+        },
+        {
+            "time": 115.27900004386902,
+            "reward": 64.07497692108154,
+            "program": "1{2,3{5{8{10,23,26,28}18}}21}"
+        },
+        {
+            "time": 115.48200011253357,
+            "reward": 73.02797389030457,
+            "program": "1{2,4{5{8{14,25,27,28}19}3{6{8{10,22,26,28}}}}21}"
+        },
+        {
+            "time": 116.44700002670288,
+            "reward": 74.0943374633789,
+            "program": "1{2,3{7{18,8{16,24,26,28}}}21}"
+        },
+        {
+            "time": 116.49699997901917,
+            "reward": 73.76697087287903,
+            "program": "1{2,3{6{8{14,22,27,28}}}21}"
+        },
+        {
+            "time": 116.56699991226196,
+            "reward": 73.19506168365479,
+            "program": "1{2,3{6{8{16,24,27,28}}}21}"
+        },
+        {
+            "time": 116.63599991798401,
+            "reward": 73.16727781295776,
+            "program": "1{2,3{7{20{19}8{11,24,27,28}}}21}"
+        },
+        {
+            "time": 116.67700004577637,
+            "reward": 74.0943374633789,
+            "program": "1{2,3{7{17,8{11,24,26,29}}}21}"
+        },
+        {
+            "time": 116.7260000705719,
+            "reward": 74.09928548336029,
+            "program": "1{2,4{6{8{16,22,27,29}}3{7{19,8{12,24,27,28}}}}21}"
+        },
+        {
+            "time": 116.84299993515015,
+            "reward": 74.07291328907013,
+            "program": "1{2,3{6{8{16,24,27,29}}}21}"
+        },
+        {
+            "time": 116.8989999294281,
+            "reward": 74.15267300605774,
+            "program": "1{2,3{6{8{9,22,27,29}}}21}"
+        },
+        {
+            "time": 116.98799991607666,
+            "reward": 74.16754686832428,
+            "program": "1{2,4{7{18,8{15,25,27,28}}3{7{18,8{11,22,27,29}}}}21}"
+        },
+        {
+            "time": 117.0789999961853,
+            "reward": 73.46704161167145,
+            "program": "1{2,4{6{8{13,24,27,29}}3{5{8{13,23,26,28}17}}}21}"
+        },
+        {
+            "time": 117.14300012588501,
+            "reward": 73.47268772125244,
+            "program": "1{2,3{6{8{12,23,27,28}}}21}"
+        },
+        {
+            "time": 117.3289999961853,
+            "reward": 173.98588931560516,
+            "program": "1{2,3{5{8{9,24,27,28}18}}21}"
+        }
+    ]
 }

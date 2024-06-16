@@ -260,8 +260,6 @@ function run_frangel_experiments(;
         experiment_data = Dict(
             "world_seed" => world_seed,
             "experiment_description" => experiment_configuration.experiment_description,
-            "grammar" => repr(grammar_config.minecraft_grammar),
-            "tries_data" => tries_data,
             "world_description" => world_description,
         )
         experiment_output_path = create_experiment_file(directory_path=experiment_configuration.directory_path, experiment_name="world_$(world_seed)")

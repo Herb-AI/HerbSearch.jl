@@ -1,7 +1,7 @@
 @programiterator ExperimentalRandomIterator(
     rule_minsize::AbstractVector{UInt8},
     symbol_minsize::Dict{Symbol,UInt8},
-    basic_rules_count::UInt8
+    basic_rules_count::Int
 )
 
 struct ExperimentalRandomIteratorState

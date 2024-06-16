@@ -107,7 +107,7 @@ end
 
 HerbSearch.should_mine_for_symbol(symbol::Symbol) = true
 
-create_iterator_experimental(grammar::AbstractGrammar, symbol::Symbol, rules_min::Vector{UInt8}, symbol_min::Dict{Symbol,UInt8}, frangel_config::FrAngelConfig) = ExperimentalRandomIterator(grammar, symbol, rules_min, symbol_min, length(grammar))
+create_iterator_experimental(grammar::AbstractGrammar, symbol::Symbol, rules_min::Vector{UInt8}, symbol_min::Dict{Symbol,UInt8}, frangel_config::FrAngelConfig) = ExperimentalRandomIterator(grammar, symbol, rules_min, symbol_min, length(grammar.rules), max_depth=frangel_config.generation.max_size)
 
 if 3 in experiments_to_run
     @time run_frangel_experiments(
@@ -122,7 +122,8 @@ if 3 in experiments_to_run
         worlds=WORLDS,
         frangel_seeds=RANDOM_GENERATOR_SEEDS,
         specification_config=SpecificationConfiguration(),
-        frangel_config=DEFAULT_CONFIG
+        frangel_config=DEFAULT_CONFIG,
+        create_iterator=create_iterator_experimental 
     )
 end
 
