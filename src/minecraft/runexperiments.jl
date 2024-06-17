@@ -30,7 +30,7 @@ end
 ### Main body -> run FrAngel experiments ###
 ############################################
 
-run_experiment = 1
+run_experiment = 3
 
 # Experiment #0 => Showcase "quantity" changes of FrAngel configuration
 # Try different max_time and max_size values
@@ -87,5 +87,51 @@ if run_experiment == 1
                 )
             end
         end
+    end
+end
+
+# Experiment #2 => Tweak FrAngel's implementation to remember more complex programs instead
+if run_experiment == 2
+    for tune_config in [false, true]
+        for store_simpler_programs in [false, true]
+            frangel_config = FrAngelConfig(max_time=10, generation=FrAngelConfigGeneration(use_angelic_conditions_chance=0), store_simpler_programs=store_simpler_programs)
+            if tune_config
+                frangel_config = FrAngelConfig(max_time=10, store_simpler_programs=store_simpler_programs,
+                    generation=FrAngelConfigGeneration(use_fragments_chance=0.3, use_entire_fragment_chance=0.3, gen_similar_prob_new=0.0, use_angelic_conditions_chance=0, max_size=60))
+            end
+            @time run_frangel_experiments(
+                grammar_config=get_minecraft_grammar(),
+                experiment_configuration=ExperimentConfiguration(
+                    directory_path="HerbSearch/src/minecraft/experiment_results/experiment_2",
+                    experiment_description="Experiment #2 => Tweak FrAngel's implementation to remember more complex programs instead",
+                    number_of_runs=3,
+                    max_run_time=300,
+                    render_moves=RENDER # Toggle if Minecraft should be rendered
+                ),
+                world_seeds=collect(keys(WORLDS)), # Seed for MineRL world environment
+                frangel_seeds=[1234], # Seed for FrAngel
+                specification_config=SpecificationConfiguration(),
+                frangel_config=frangel_config)
+        end
+    end
+end
+
+# Experiment #3 => Tweak FrAngel's grammar to give preference for recursive rulenodes
+if run_experiment == 3
+    for recursion_depth in 2:4
+        grammar = get_minecraft_grammar(recursion_depth)
+        @time run_frangel_experiments(
+            grammar_config=grammar,
+            experiment_configuration=ExperimentConfiguration(
+                directory_path="HerbSearch/src/minecraft/experiment_results/experiment_3",
+                experiment_description="Experiment #3 => Tweak FrAngel's grammar to give preference for recursive rulenodes",
+                number_of_runs=3,
+                max_run_time=300,
+                render_moves=RENDER # Toggle if Minecraft should be rendered
+            ),
+            world_seeds=collect(keys(WORLDS)), # Seed for MineRL world environment
+            frangel_seeds=[1234], # Seed for FrAngel
+            specification_config=SpecificationConfiguration(),
+            frangel_config=FrAngelConfig(max_time=10, generation=FrAngelConfigGeneration(use_angelic_conditions_chance=0), recursion_depth=recursion_depth))
     end
 end

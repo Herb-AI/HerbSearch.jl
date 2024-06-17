@@ -52,6 +52,8 @@ The full configuration struct for FrAngel. Includes generation and angelic sub-c
 - `try_to_simplify::Bool`: Whether to try to simplify the program before mining fragments.
 - `compare_programs_by_length::Bool`: Whether to compare programs by length if they have same number of AST nodes.
 - `verbose_level::Int`: The verbosity level of the output. This will print the program and all intermediate steps for the first `verbose_level` checked programs.
+- `store_simpler_programs::Bool`: A flag to indicate if simpler (or complex) programs will be remembered for fragment mining.
+- `recursion_depth::Int`: Indicates how many recursive statement rulenodes are there. By default only one (Statement = Statement ; Statement)
 - `generation::FrAngelConfigGeneration`: The generation configuration for FrAngel.
 - `angelic::FrAngelConfigAngelic`: The configuration for angelic conditions of FrAngel.
 
@@ -61,6 +63,8 @@ The full configuration struct for FrAngel. Includes generation and angelic sub-c
     try_to_simplify::Bool = false
     compare_programs_by_length::Bool = false
     verbose_level::Int = 0
+    store_simpler_programs::Bool = true
+    recursion_depth::Int = 1
     generation::FrAngelConfigGeneration = FrAngelConfigGeneration()
     angelic::FrAngelConfigAngelic = FrAngelConfigAngelic()
 end
@@ -243,7 +247,7 @@ function frangel(
 
         # Update remember programs and fragments
         if config.generation.use_fragments_chance != 0
-            fragments, updatedFragments = remember_programs!(remembered_programs, passed_tests, program, (!config.compare_programs_by_length ? nothing : program_expr), fragments, grammar)
+            fragments, updatedFragments = remember_programs!(remembered_programs, passed_tests, program, (!config.compare_programs_by_length ? nothing : program_expr), fragments, grammar, config.store_simpler_programs)
 
             if checkedProgram <= verbose_level
                 println("---- Fragments ----")

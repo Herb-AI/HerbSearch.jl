@@ -1,6 +1,6 @@
 from utils import analyze_data
 
-seed = '958129'
+seed = 958129
 base_exp_dir = '../experiment_results/experiment_0'
 output_loc = '../plots/experiment_0'
 paper_configs = [[(10, 40), (10, 60), (10, 10), (20, 10), (40, 40), (40, 60)]]
@@ -9,7 +9,7 @@ minmax_color = (0.25, 4.5)
 config_vars = ["max_time", "generation/max_size"]
 
 # Generate plots for experiment #0, world 958129
-analyze_data(base_exp_dir, seed, output_loc, paper_configs, legend_order, minmax_color, config_vars)
+analyze_data(base_exp_dir, seed, output_loc, paper_configs, legend_order, minmax_color, config_vars, plot_mean=True)
 
 seed = '6354'
 base_exp_dir = '../experiment_results/experiment_0_2'

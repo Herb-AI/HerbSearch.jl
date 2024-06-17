@@ -4,6 +4,8 @@ import os
 import numpy as np
 from collections import defaultdict
 from scipy.interpolate import interp1d
+from itertools import product
+from matplotlib.patches import Patch
 
 # Helper function for interpolating data
 def interpolate_and_average(arrays, num_points=100):
@@ -69,10 +71,13 @@ def get_nested_values(data, keys):
 # Function helper for loading data from JSONs
 def load_data(base_exp_dir, seed, config_vars, include_last):
     config_vars_names = list(map(lambda x: x.split('/')[-1], config_vars))
-    print(config_vars_names)
+    print(config_vars_names, seed)
     # Get all JSON files in the directory
     _, _, files = next(os.walk(base_exp_dir))
-    file_count = len(files)
+    file_count = 0
+    for f in files:
+        if f == f'Seed_{seed}.json' or f.startswith(f'Seed_{seed}_'):
+            file_count += 1
     # List of JSON filenames
     filenames = [f'{base_exp_dir}/Seed_{seed}.json'] + \
         [f'{base_exp_dir}/Seed_{seed}_{i}.json' for i in range(2, file_count + (1 if include_last else 0))]
@@ -183,8 +188,8 @@ def analyze_data(base_exp_dir, seed, output_loc, paper_configs, legend_order, mi
             plt.savefig(f'{output_loc}/fragment_complexity_over_time_{seed}{("" if i == 0 else f"_{i + 1}")}.png')
             plt.close()
 
-# Function for summarizing data with bar charts
-def summarize_data(config_vars, possible_vals, base_exp_dir, seed, output_loc):
+# Function for summarizing data with bar charts, based on config
+def summarize_data_on_config(config_vars, possible_vals, base_exp_dir, seed, output_loc):
     # Create plots directory if it doesn't exist
     os.makedirs(output_loc, exist_ok=True)
     config_data_fragment, _, average_program_complexities, config_vars_names = load_data(base_exp_dir, seed, config_vars, True)
@@ -242,4 +247,73 @@ def summarize_data(config_vars, possible_vals, base_exp_dir, seed, output_loc):
     plt.legend()
     plt.grid(True)
     plt.savefig(f'{output_loc}/fragment_complexity_over_time_{seed}_summary.png')
+    plt.close()
+
+# Function for summarizing data with bar charts, based on seed
+def summarize_data_on_seed(config_vars, possible_vals, base_exp_dir, seeds, output_loc):
+    # Create plots directory if it doesn't exist
+    os.makedirs(output_loc, exist_ok=True)
+    plt.subplots(figsize=(16, 8)) 
+    
+    prods = list(product(*possible_vals))
+    prod_len = len(prods)
+
+    bar_data = []
+    bar_program_data = []
+    colors = []
+    color_palette = plt.cm.get_cmap("tab10", prod_len)
+    bar_positions = []
+    barWidth = 0.05
+    
+    for (i, seed) in enumerate(seeds):
+        config_data_fragment, _, average_program_complexities, config_vars_names = load_data(base_exp_dir, seed, config_vars, True)
+        print('\n')
+    
+        for (j, conf) in enumerate(prods):
+            arrays = []
+            for fragment_key, fragment_data in config_data_fragment.items():
+                if fragment_key == conf:
+                    for arr in fragment_data:
+                        arrays.append(np.mean(arr))
+            bar_data.append(arrays)
+            colors.append(color_palette(j % len(prods)))
+            for program_key, program_data in average_program_complexities.items():
+                if program_key == conf:
+                    bar_program_data.append(program_data)
+
+        for j in range(prod_len):
+            bar_positions.append((i + 1) + j * barWidth * 2 - (barWidth if prod_len % 2 == 0 else 0))
+    
+    # Plot boxes
+    boxplot = plt.boxplot(bar_data, positions=bar_positions, widths = barWidth, patch_artist=True) 
+
+    for patch, color in zip(boxplot['boxes'], colors):
+        patch.set_facecolor(color)
+
+    legend_labels = []
+    for p in prods:
+        # legend_labels.append(f'Store {"simpler" if p[0] else "more complex"} programs, {"tuned" if p[1] == 0.3 else "original"} FrAngel')
+        legend_labels.append(', '.join([f"{k} = {v}" for k, v in zip(config_vars_names, p)]))
+    legend_patches = [Patch(facecolor=color, edgecolor='black', label=label) for color, label in zip(colors, legend_labels)]
+
+    plt.legend(handles=legend_patches, loc="best")
+
+    # Annotate
+    for i in range(len(bar_data)):
+        # Determine location of upper whisker
+        q1 = np.percentile(bar_data[i], 25)
+        q3 = np.percentile(bar_data[i], 75)
+        iqr = q3 - q1
+        upper_whisker_limit = q3 + 1.5 * iqr
+        upper_whisker = np.max([x for x in bar_data[i] if x <= upper_whisker_limit])
+
+        plt.annotate(str(round(np.mean(bar_program_data[i]), 2)), (bar_positions[i], upper_whisker + 0.01), ha='center')
+    
+    plt.xlabel('World seed', fontsize = 15) 
+    plt.ylabel('Fragment Complexity (average #nodes / fragment)', fontsize = 15) 
+    plt.xticks([(r + 1) + barWidth * 2 for r in range(len(seeds))], seeds)
+    plt.title(f"Summary of how isSimpler toggle affects fragment and program complexity", fontsize = 15)
+    
+    plt.grid(True)
+    plt.savefig(f'{output_loc}/fragment_complexity_over_time_summary.png')
     plt.close()

@@ -76,7 +76,7 @@ end
 """
     remember_programs!(
         old_remembered::Dict{BitVector, Tuple{RuleNode, Int, Int}}, passing_tests::BitVector, new_program::RuleNode, new_program_expr::Any, 
-        fragments::AbstractVector{RuleNode}, grammar::AbstractGrammar)::Tuple{AbstractVector{RuleNode},Bool}
+        fragments::AbstractVector{RuleNode}, grammar::AbstractGrammar, store_simpler_programs::Bool)::Tuple{AbstractVector{RuleNode},Bool}
 
 Updates the remembered programs by including `new_program` if it is simpler than all remembered programs that pass the same subset of tests, 
     and there is no simpler program passing a superset of the tests. It also removes any "worse" programs from the dictionary.
@@ -88,6 +88,7 @@ Updates the remembered programs by including `new_program` if it is simpler than
 - `new_program_expr`: The expression of the new program, used to calculate its length. If `nothing`, the length is set to 0.
 - `fragments`: A set of the fragments mined from the `old_remembered` dictionary.
 - `grammar`: The grammar rules of the program.
+- `store_simpler_programs`: A flag to indicate if simpler (or complex) programs will be remembered for fragment mining.
 
 # Returns
 The newly mined fragments from the updated remembered programs, and a flag to indicate if the new program was added to the dictionary.
@@ -100,6 +101,7 @@ function remember_programs!(
     new_program_expr,
     fragments::AbstractVector{RuleNode},
     grammar::AbstractGrammar,
+    store_simpler_programs::Bool=true
 )::Tuple{AbstractVector{RuleNode},Bool}
     node_count = count_nodes(grammar, new_program)
     # Use program length only if an expression is provided -> saves time in many cases
@@ -111,6 +113,10 @@ function remember_programs!(
     # Check the new program's testset over each remembered program
     for (key_tests, (_, p_node_count, p_program_length)) in old_remembered
         isSimpler = node_count < p_node_count || (node_count == p_node_count && program_length < p_program_length)
+        # Invert condition if needed
+        if !store_simpler_programs
+            isSimpler = !isSimpler
+        end
         # if the new program's passing testset is a subset of the old program's, discard new program if worse
         if all(passing_tests .== (passing_tests .& key_tests))
             if !isSimpler

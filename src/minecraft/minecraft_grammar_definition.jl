@@ -5,7 +5,7 @@ struct MinecraftGrammarConfiguration
     angelic_conditions::Dict{UInt16,UInt8}
 end
 
-function get_minecraft_grammar()
+function get_minecraft_grammar(recursion_depth::Int=0)
     minecraft_grammar = @csgrammar begin
         Program = (
             state = Init;
@@ -35,7 +35,16 @@ function get_minecraft_grammar()
         Bool = mc_was_good_move(state)
         Bool = mc_has_moved(state)
     end
-
+    
+    for n in 2:recursion_depth
+        expr = Expr(:block)
+        for _ in 1:n
+            push!(expr.args, :(Statement))
+        end
+        e = :(Statement = $expr)
+        add_rule!(minecraft_grammar, e)
+    end
+    
     angelic_conditions = Dict{UInt16,UInt8}(5 => 1, 8 => 2)
     return MinecraftGrammarConfiguration(deepcopy(minecraft_grammar), angelic_conditions)
 end
