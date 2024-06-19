@@ -224,7 +224,7 @@ def summarize_data_on_config(config_vars, possible_vals, base_exp_dir, seed, out
 
     # Plot boxes
     plt.subplots(figsize=(12, 8)) 
-    plt.boxplot(bar_data, positions=bar_positions, widths = barWidth) 
+    plt.boxplot(bar_data, positions=bar_positions, widths = barWidth, medianprops={'color': 'black'}) 
 
     # Annotate
     for i in range(len(bar_data)):
@@ -285,7 +285,7 @@ def summarize_data_on_seed(config_vars, possible_vals, base_exp_dir, seeds, outp
             bar_positions.append((i + 1) + j * barWidth * 2 - (barWidth if prod_len % 2 == 0 else 0))
     
     # Plot boxes
-    boxplot = plt.boxplot(bar_data, positions=bar_positions, widths = barWidth, patch_artist=True) 
+    boxplot = plt.boxplot(bar_data, positions=bar_positions, widths = barWidth, patch_artist=True, medianprops={'color': 'black'}) 
 
     for patch, color in zip(boxplot['boxes'], colors):
         patch.set_facecolor(color)
