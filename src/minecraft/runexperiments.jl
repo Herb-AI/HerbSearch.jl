@@ -45,7 +45,7 @@ if run_experiment == 0
                     experiment_configuration=ExperimentConfiguration(
                         directory_path="HerbSearch/src/minecraft/experiment_results/experiment_0_2",
                         experiment_description="Experiment #0_2 => Showcase \"quantity\" changes of FrAngel configuration",
-                        number_of_runs=3,
+                        number_of_runs=5,
                         max_run_time=300,
                         render_moves=RENDER # Toggle if Minecraft should be rendered
                     ),
@@ -104,7 +104,7 @@ if run_experiment == 2
                 experiment_configuration=ExperimentConfiguration(
                     directory_path="HerbSearch/src/minecraft/experiment_results/experiment_2",
                     experiment_description="Experiment #2 => Tweak FrAngel's implementation to remember more complex programs instead",
-                    number_of_runs=3,
+                    number_of_runs=5,
                     max_run_time=300,
                     render_moves=RENDER # Toggle if Minecraft should be rendered
                 ),
@@ -125,7 +125,7 @@ if run_experiment == 3
             experiment_configuration=ExperimentConfiguration(
                 directory_path="HerbSearch/src/minecraft/experiment_results/experiment_3",
                 experiment_description="Experiment #3 => Tweak FrAngel's grammar to give preference for recursive rulenodes",
-                number_of_runs=3,
+                number_of_runs=5,
                 max_run_time=300,
                 render_moves=RENDER # Toggle if Minecraft should be rendered
             ),

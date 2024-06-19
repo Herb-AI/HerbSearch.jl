@@ -1,0 +1,446 @@
+{
+    "experiment_description": "Experiment #3 => Tweak FrAngel's grammar to give preference for recursive rulenodes",
+    "world_seed": 958129,
+    "grammar": "1: Program = begin\n    state = Init\n    Statement\n    End\nend\n2: Init = mc_init(start_pos)\n3: InnerStatement = mc_move!(state, Direction, Times, Toggle, Toggle, false)\n4: InnerStatement = begin\n    InnerStatement\n    InnerStatement\nend\n5: InnerStatement = if Bool\n    Statement\nend\n6: Statement = InnerStatement\n7: Statement = begin\n    Statement\n    Statement\nend\n8: Statement = while true\n    InnerStatement\n    Bool || break\nend\n9: End = mc_end(state)\n10: Direction = [\"forward\"]\n11: Direction = [\"back\"]\n12: Direction = [\"left\"]\n13: Direction = [\"right\"]\n14: Direction = [\"forward\", \"left\"]\n15: Direction = [\"forward\", \"right\"]\n16: Direction = [\"back\", \"left\"]\n17: Direction = [\"back\", \"right\"]\n18: Toggle = false\n19: Toggle = true\n20: Times = 1\n21: Times = 2\n22: Times = 3\n23: Times = 4\n24: Bool = is_done(state)\n25: Bool = !Bool\n26: Bool = mc_was_good_move(state)\n27: Bool = mc_has_moved(state)\n28: Statement = begin\n    Statement\n    Statement\n    Statement\nend\n29: Statement = begin\n    Statement\n    Statement\n    Statement\n    Statement\nend\n",
+    "tries_data": [
+        {
+            "frangel_config": {
+                "max_time": 10.0,
+                "try_to_simplify": false,
+                "compare_programs_by_length": false,
+                "verbose_level": 0,
+                "store_simpler_programs": true,
+                "recursion_depth": 4,
+                "generation": {
+                    "max_size": 40,
+                    "use_fragments_chance": 0.5,
+                    "use_entire_fragment_chance": 0.5,
+                    "use_angelic_conditions_chance": 0.0,
+                    "similar_new_extra_size": 8,
+                    "gen_similar_prob_new": 0.25
+                },
+                "angelic": {
+                    "max_time": 0.1,
+                    "boolean_expr_max_size": 6,
+                    "max_execute_attempts": 55,
+                    "max_allowed_fails": 0.75,
+                    "angelic_rulenode": {
+                        "ind": 30,
+                        "_val": null,
+                        "children": []
+                    }
+                }
+            },
+            "specification_config": {
+                "max_reward": 74.0,
+                "reward_percentages": [
+                    0.05,
+                    0.1,
+                    0.2,
+                    0.3,
+                    0.4,
+                    0.5,
+                    0.6,
+                    0.7,
+                    0.8,
+                    0.9
+                ],
+                "require_done": false
+            },
+            "try_index": 1,
+            "frangel_seed": 1234,
+            "runtime": 70.7940001487732,
+            "program_complexity_over_time": [
+                10,
+                17,
+                18,
+                10,
+                10,
+                10,
+                24,
+                23,
+                10,
+                17,
+                10,
+                10,
+                10,
+                16,
+                16,
+                10
+            ],
+            "fragment_complexity_over_time": [
+                2.4444444444444446,
+                2.4444444444444446,
+                2.4444444444444446,
+                2.4444444444444446,
+                2.2,
+                2.2,
+                2.2,
+                2.2,
+                2.4444444444444446,
+                2.4444444444444446,
+                2.4444444444444446,
+                2.2,
+                2.2,
+                3.789473684210526,
+                3.5714285714285716
+            ],
+            "solved": true
+        },
+        {
+            "frangel_config": {
+                "max_time": 10.0,
+                "try_to_simplify": false,
+                "compare_programs_by_length": false,
+                "verbose_level": 0,
+                "store_simpler_programs": true,
+                "recursion_depth": 4,
+                "generation": {
+                    "max_size": 40,
+                    "use_fragments_chance": 0.5,
+                    "use_entire_fragment_chance": 0.5,
+                    "use_angelic_conditions_chance": 0.0,
+                    "similar_new_extra_size": 8,
+                    "gen_similar_prob_new": 0.25
+                },
+                "angelic": {
+                    "max_time": 0.1,
+                    "boolean_expr_max_size": 6,
+                    "max_execute_attempts": 55,
+                    "max_allowed_fails": 0.75,
+                    "angelic_rulenode": {
+                        "ind": 30,
+                        "_val": null,
+                        "children": []
+                    }
+                }
+            },
+            "specification_config": {
+                "max_reward": 74.0,
+                "reward_percentages": [
+                    0.05,
+                    0.1,
+                    0.2,
+                    0.3,
+                    0.4,
+                    0.5,
+                    0.6,
+                    0.7,
+                    0.8,
+                    0.9
+                ],
+                "require_done": false
+            },
+            "try_index": 2,
+            "frangel_seed": 1234,
+            "runtime": 84.91100001335144,
+            "program_complexity_over_time": [
+                10,
+                29,
+                29,
+                25,
+                10,
+                10,
+                16,
+                10,
+                10,
+                17,
+                40,
+                10,
+                15,
+                10,
+                10,
+                9,
+                16
+            ],
+            "fragment_complexity_over_time": [
+                2.4444444444444446,
+                6.333333333333333,
+                4.518518518518518,
+                4.611111111111111,
+                2.2,
+                2.2,
+                2.2,
+                2.2,
+                2.2,
+                2.2,
+                2.2,
+                2.4444444444444446,
+                2.4444444444444446,
+                2.4444444444444446,
+                2.4444444444444446,
+                2.2222222222222223
+            ],
+            "solved": true
+        },
+        {
+            "frangel_config": {
+                "max_time": 10.0,
+                "try_to_simplify": false,
+                "compare_programs_by_length": false,
+                "verbose_level": 0,
+                "store_simpler_programs": true,
+                "recursion_depth": 4,
+                "generation": {
+                    "max_size": 40,
+                    "use_fragments_chance": 0.5,
+                    "use_entire_fragment_chance": 0.5,
+                    "use_angelic_conditions_chance": 0.0,
+                    "similar_new_extra_size": 8,
+                    "gen_similar_prob_new": 0.25
+                },
+                "angelic": {
+                    "max_time": 0.1,
+                    "boolean_expr_max_size": 6,
+                    "max_execute_attempts": 55,
+                    "max_allowed_fails": 0.75,
+                    "angelic_rulenode": {
+                        "ind": 30,
+                        "_val": null,
+                        "children": []
+                    }
+                }
+            },
+            "specification_config": {
+                "max_reward": 74.0,
+                "reward_percentages": [
+                    0.05,
+                    0.1,
+                    0.2,
+                    0.3,
+                    0.4,
+                    0.5,
+                    0.6,
+                    0.7,
+                    0.8,
+                    0.9
+                ],
+                "require_done": false
+            },
+            "try_index": 3,
+            "frangel_seed": 1234,
+            "runtime": 152.82200002670288,
+            "program_complexity_over_time": [
+                17,
+                27,
+                10,
+                10,
+                10,
+                10,
+                10,
+                17,
+                17,
+                10,
+                24,
+                10,
+                18,
+                9,
+                9,
+                9,
+                9,
+                17,
+                17,
+                9
+            ],
+            "fragment_complexity_over_time": [
+                3.6,
+                3.6,
+                2.2,
+                2.2,
+                2.2,
+                2.2,
+                2.2,
+                3.6,
+                3.6,
+                2.2,
+                2.2,
+                2.4444444444444446,
+                2.5,
+                2.2222222222222223,
+                2.2222222222222223,
+                2.2222222222222223,
+                4.461538461538462
+            ],
+            "solved": true
+        },
+        {
+            "frangel_config": {
+                "max_time": 10.0,
+                "try_to_simplify": false,
+                "compare_programs_by_length": false,
+                "verbose_level": 0,
+                "store_simpler_programs": true,
+                "recursion_depth": 4,
+                "generation": {
+                    "max_size": 40,
+                    "use_fragments_chance": 0.5,
+                    "use_entire_fragment_chance": 0.5,
+                    "use_angelic_conditions_chance": 0.0,
+                    "similar_new_extra_size": 8,
+                    "gen_similar_prob_new": 0.25
+                },
+                "angelic": {
+                    "max_time": 0.1,
+                    "boolean_expr_max_size": 6,
+                    "max_execute_attempts": 55,
+                    "max_allowed_fails": 0.75,
+                    "angelic_rulenode": {
+                        "ind": 30,
+                        "_val": null,
+                        "children": []
+                    }
+                }
+            },
+            "specification_config": {
+                "max_reward": 74.0,
+                "reward_percentages": [
+                    0.05,
+                    0.1,
+                    0.2,
+                    0.3,
+                    0.4,
+                    0.5,
+                    0.6,
+                    0.7,
+                    0.8,
+                    0.9
+                ],
+                "require_done": false
+            },
+            "try_index": 4,
+            "frangel_seed": 1234,
+            "runtime": 32.967000007629395,
+            "program_complexity_over_time": [
+                13,
+                13
+            ],
+            "fragment_complexity_over_time": [
+                2.2222222222222223,
+                2.2222222222222223
+            ],
+            "solved": true
+        },
+        {
+            "frangel_config": {
+                "max_time": 10.0,
+                "try_to_simplify": false,
+                "compare_programs_by_length": false,
+                "verbose_level": 0,
+                "store_simpler_programs": true,
+                "recursion_depth": 4,
+                "generation": {
+                    "max_size": 40,
+                    "use_fragments_chance": 0.5,
+                    "use_entire_fragment_chance": 0.5,
+                    "use_angelic_conditions_chance": 0.0,
+                    "similar_new_extra_size": 8,
+                    "gen_similar_prob_new": 0.25
+                },
+                "angelic": {
+                    "max_time": 0.1,
+                    "boolean_expr_max_size": 6,
+                    "max_execute_attempts": 55,
+                    "max_allowed_fails": 0.75,
+                    "angelic_rulenode": {
+                        "ind": 30,
+                        "_val": null,
+                        "children": []
+                    }
+                }
+            },
+            "specification_config": {
+                "max_reward": 74.0,
+                "reward_percentages": [
+                    0.05,
+                    0.1,
+                    0.2,
+                    0.3,
+                    0.4,
+                    0.5,
+                    0.6,
+                    0.7,
+                    0.8,
+                    0.9
+                ],
+                "require_done": false
+            },
+            "try_index": 5,
+            "frangel_seed": 1234,
+            "runtime": 142.05999994277954,
+            "program_complexity_over_time": [
+                10,
+                10,
+                10,
+                10,
+                10,
+                16,
+                10,
+                10,
+                25,
+                10,
+                17,
+                14,
+                10,
+                26,
+                10,
+                10,
+                16,
+                10,
+                10,
+                9,
+                9,
+                9,
+                9,
+                9,
+                10,
+                9,
+                9,
+                10,
+                21,
+                22,
+                9,
+                9,
+                16,
+                9,
+                10
+            ],
+            "fragment_complexity_over_time": [
+                2.2,
+                2.2,
+                2.2,
+                2.2,
+                2.2,
+                4.0,
+                2.4444444444444446,
+                2.2,
+                2.2,
+                2.2,
+                2.2,
+                3.769230769230769,
+                2.2,
+                2.2,
+                2.4444444444444446,
+                2.4444444444444446,
+                2.4444444444444446,
+                2.4444444444444446,
+                2.4444444444444446,
+                2.5,
+                2.5,
+                2.5,
+                2.5,
+                2.2222222222222223,
+                2.2222222222222223,
+                2.2222222222222223,
+                2.2222222222222223,
+                2.2222222222222223,
+                2.2222222222222223,
+                2.2222222222222223,
+                2.2222222222222223,
+                2.2222222222222223,
+                4.615384615384615,
+                4.615384615384615
+            ],
+            "solved": true
+        }
+    ]
+}
