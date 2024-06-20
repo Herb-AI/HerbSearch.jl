@@ -78,14 +78,14 @@ function Base.iterate(iter::NewProgramsIterator, state::NewProgramsState)
 end
 
 """
-    calculate_rule_cost_prob(rule_index::Int, grammar::ContextSensitiveGrammar, log_base::Int=2)
+    calculate_rule_cost_prob(rule_index::Int, grammar::ContextSensitiveGrammar)
 
 Calculate cost of rule `rule_index` in `grammar` based on its probability.
 
 ``cost = -log_{base}(probability)``
 """
-function calculate_rule_cost_prob(rule_index::Int, grammar::ContextSensitiveGrammar, log_base::Int=2)
-    log_prob = grammar.log_probabilities[rule_index] / log(log_base)
+function calculate_rule_cost_prob(rule_index::Int, grammar::ContextSensitiveGrammar)
+    log_prob = grammar.log_probabilities[rule_index]
     return convert(Int64, round(-log_prob))
 end
 

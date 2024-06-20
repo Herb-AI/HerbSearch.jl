@@ -115,8 +115,7 @@ function probe(traces::Vector{Trace}, iterator::ProgramIterator; max_time::Int, 
     eval_cache = Set()
     state = nothing
     
-    initial_grammar = get_grammar(iterator.solver)
-    grammar = deepcopy(initial_grammar)
+    grammar = get_grammar(iterator.solver)
 
     probe_meta_data = Dict()
     probe_meta_data[:best_reward_over_time] = Vector{Tuple{Float64, Float64}}()

@@ -169,23 +169,12 @@ end
 HerbSearch.print_logo_frangel()
 minerl_grammar_config::MinecraftGrammarConfiguration = get_minecraft_grammar()
 
-function frangel_first_experiment()
-    fragment_chances=[0.2, 0.4, 0.6, 0.8]
-    max_time_frangel = 20.0
-    frangel_configs::Vector{FrAngelConfig} = Vector{FrAngelConfig}()
-    for fragement_prob in fragment_chances
-        frangel_config = FrAngelConfig(
-            max_time=max_time_frangel,
-            generation=FrAngelConfigGeneration(use_fragments_chance=fragement_prob, use_angelic_conditions_chance=0, max_size=40),
-        )
-        push!(frangel_configs, frangel_config)
-    end
-
+function run_different_configs(; experiment_name::String, experiment_description::String, frangel_configs::Vector{FrAngelConfig})
     @time runfrangel_experiment_with_different_configs(
         grammar_config = minerl_grammar_config, 
         experiment_configuration=ExperimentConfiguration(
-            directory_path="src/minecraft/experiments/frangel/experiment_different_use_fragement_probabilities/",
-            experiment_description="Experiment with different mining fragments probabilities",
+            directory_path="src/minecraft/experiments/frangel/$experiment_name",
+            experiment_description=experiment_description,
             number_of_runs=3,
             max_run_time=200,
             render_moves=RENDER
@@ -196,7 +185,26 @@ function frangel_first_experiment()
     )
 end
 
-function frangel_second_experiment()
+function frangel_experiment_fragment_chance()
+    fragment_chances=[0.2, 0.4, 0.6, 0.8]
+    max_time_frangel = 20.0
+    frangel_configs::Vector{FrAngelConfig} = Vector{FrAngelConfig}()
+    for fragment_prob in fragment_chances
+        frangel_config = FrAngelConfig(
+            max_time=max_time_frangel,
+            generation=FrAngelConfigGeneration(use_fragments_chance=fragment_prob, use_angelic_conditions_chance=0, max_size=40),
+        )
+        push!(frangel_configs, frangel_config)
+    end
+
+    run_different_configs(
+        experiment_name="experiment_different_use_fragement_probabilities",
+        experiment_description="Experiment with different mining fragments probabilities",
+        frangel_configs=frangel_configs,
+    )
+end
+
+function frangel_experiment_max_time()
     fragement_chance = 0.4
     frangel_configs::Vector{FrAngelConfig} = Vector{FrAngelConfig}()
     max_times_frangel = [5, 10, 20, 30]
@@ -208,19 +216,64 @@ function frangel_second_experiment()
         push!(frangel_configs, frangel_config)
     end
 
-    @time runfrangel_experiment_with_different_configs(
-        grammar_config = minerl_grammar_config, 
-        experiment_configuration=ExperimentConfiguration(
-            directory_path="src/minecraft/experiments/frangel/experiment_different_frangel_max_time/",
-            experiment_description="Experiment with different maximum running time for frangel synthesis cycle",
-            number_of_runs=3,
-            max_run_time=200,
-            render_moves=RENDER
-        ),
-        seeds=GLOBAL_SEEDS_FOR_EXPERIMENTS, 
+    run_different_configs(
+        experiment_name="experiment_different_frangel_max_time",
+        experiment_description="Experiment with different maximum running time for frangel synthesis cycle",
         frangel_configs=frangel_configs,
-        specification_config=SpecificationConfiguration(),
     )
 end
+
+function frangel_experiment_with_different_mutation_probabilities()
+    fragement_chance = 0.4
+    max_time = 20
+    mutation_probabilities = [0, 0.1, 0.2, 0.4, 0.5]
+
+    frangel_configs::Vector{FrAngelConfig} = Vector{FrAngelConfig}()
+    for mutation_probability in mutation_probabilities
+        frangel_config = FrAngelConfig(
+            max_time=max_time,
+            generation=FrAngelConfigGeneration(
+                gen_similar_prob_new=mutation_probability,
+                use_fragments_chance=fragement_chance, 
+                use_angelic_conditions_chance=0
+            )
+        )
+        push!(frangel_configs, frangel_config)
+    end
+
+    run_different_configs(
+        experiment_name="experiment_differrent_probabilities_of_mutating_programs",
+        experiment_description="Experiment with different probabilities of mutation when generating new programs",
+        frangel_configs=frangel_configs,
+    )
+end
+
+
+function frangel_experiment_with_different_use_entire_fragment_probabilities()
+    max_time = 20
+    use_entire_fragement_chances = [0, 0.2, 0.4, 0.6, 0.8]
+
+    frangel_configs::Vector{FrAngelConfig} = Vector{FrAngelConfig}()
+    for fragment_chance in use_entire_fragement_chances
+        frangel_config = FrAngelConfig(
+            max_time=max_time,
+            generation=FrAngelConfigGeneration(
+                use_entire_fragment_chance=fragment_chance, 
+                use_angelic_conditions_chance=0
+            )
+        )
+        push!(frangel_configs, frangel_config)
+    end
+
+    run_different_configs(
+        experiment_name="experiment_differrent_probabilities_use_entire_fragments_chance",
+        experiment_description="Experiment with different probabilities of reusing an entire fragement",
+        frangel_configs=frangel_configs,
+    )
+end
+
 # frangel_second_experiment()
-frangel_first_experiment()
+# frangel_experiment_fragement_chance()
+# frangel_experiment_with_different_mutation_probabilities()
+# frangel_experiment_with_different_use_entire_fragment_probabilities()
+frangel_experiment_with_different_mutation_probabilities()

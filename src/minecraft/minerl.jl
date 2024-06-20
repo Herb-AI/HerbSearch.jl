@@ -304,7 +304,6 @@ end
 Evaluate a program in MineRL `environment`. This function is used by the Probe algorithm.
 """
 function evaluate_trace_minerl(prog::AbstractRuleNode, grammar::ContextSensitiveGrammar, environment::Environment, show_moves::Bool)
-
     expr = rulenode2expr(prog, grammar)
     sequence_of_actions::Vector = eval(expr)
     evaluate_sequence_actions_minerl(sequence_of_actions, environment, show_moves)
