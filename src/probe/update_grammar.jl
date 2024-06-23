@@ -38,16 +38,18 @@ function update_grammar!(grammar::ContextSensitiveGrammar, PSols_with_eval_cache
     end
     @assert abs(total_sum - 1) <= 1e-4 "Total sum is $(total_sum) "
 end
-# count = ones(Int, 16)
-# best_rewards = zeros(Float64, 16)
+
+count = zeros(Int, 16)
+best_rewards = zeros(Float64, 16)
+experiment = 0
 function update_grammar!(grammar::ContextSensitiveGrammar, PSols_with_eval_cache::Vector{ProgramCacheTrace})
     sum = 0
-    # mean_reward = mean(p.reward for p in PSols_with_eval_cache)
-    
-    # Track the best reward for each rule
-    count = zeros(Int, 16)
-    best_rewards = zeros(Float64, 16)
 
+    if experiment == 18  || experiment == 13
+        reset_grammar_node_count()
+    end
+    # mean_reward = mean(p.reward for p in PSols_with_eval_cache)
+    # Track the best reward for each rule
     for rule_index in eachindex(grammar.rules)
         # best_reward = 0
         for psol in PSols_with_eval_cache
@@ -57,37 +59,40 @@ function update_grammar!(grammar::ContextSensitiveGrammar, PSols_with_eval_cache
             # if contains_rule(program, rule_index) && reward > best_reward
             #     best_reward = reward
             # end
-            # contains_num = contains_rule(program, rule_index, grammar)
-            if contains_rule(program, rule_index)
+            contains_num = contains_rule(program, rule_index, grammar)
+            # if contains_rule(program, rule_index)
             
-            # if contains_num > 0
-                # count[rule_index] += contains_num
-                count[rule_index] += 1
+            if contains_num > 0
+                count[rule_index] += contains_num
+                # count[rule_index] += 1
                 if reward > best_rewards[rule_index]
                     best_rewards[rule_index] = reward
                 end
             end
         end
-        # fitness higher is better
-        # TODO: think about better thing here
-        # fitness = min(best_reward / 100, 1)
-        # k = 1/mean_reward
-        # fitness = 1 - exp(-k * best_reward)
-
-        # p_current = 2^(grammar.log_probabilities[rule_index])
-
-        # sum += p_current^(1 - fitness)
-        # log_prob = ((1 - fitness) * log(2, p_current))
-        # grammar.log_probabilities[rule_index] = log_prob
     end
-    println(best_rewards)
-    println(count)
+    # println(best_rewards)
+    # println(count)
     for rule_index in eachindex(grammar.rules)
         best_reward = best_rewards[rule_index]
         appearances = count[rule_index]
-        # fitness = (best_reward / 100) * (log(1 + appearances))
-        # fitness = (best_reward / 100) / (log(1+appearnaces))
-        fitness = (best_reward / 100)
+        fitness = 0
+        if (experiment == 11 || experiment == 1)
+            fitness = (best_reward / 100)
+        elseif (experiment == 13 || experiment == 3)
+            fitness = 1 - exp(-((best_reward / 55)^3))
+        elseif (experiment == 14 || experiment == 4)
+            fitness = (best_reward / 100) * (log(1 + appearances))
+        elseif (experiment == 15 || experiment == 5)
+            fitness = 0
+        elseif (experiment == 16 || experiment == 6)
+            fitness = appearances > 0 ? 0.3 : 0
+        elseif (experiment == 17 || experiment == 7)
+            fitness = log(10, best_reward+1)/2
+        elseif (experiment == 18 || experiment == 8)
+            fitness = 1 - (best_reward/100)
+        end
+        # println("fitness = $(fitness)")
 
         fitness = min(fitness, 1)
         p_current = 2^(grammar.log_probabilities[rule_index])
@@ -95,7 +100,6 @@ function update_grammar!(grammar::ContextSensitiveGrammar, PSols_with_eval_cache
         log_prob = ((1 - fitness) * log(2, p_current))
         grammar.log_probabilities[rule_index] = log_prob
     end
-    println(grammar.log_probabilities)
     total_sum = 0
     for rule_index in eachindex(grammar.rules)
         grammar.log_probabilities[rule_index] = grammar.log_probabilities[rule_index] - log(2, sum)
@@ -103,7 +107,6 @@ function update_grammar!(grammar::ContextSensitiveGrammar, PSols_with_eval_cache
     end
     expr = rulenode2expr(PSols_with_eval_cache[begin].program, grammar)
     grammar.rules[1] = :([$expr; ACT])
-    println(total_sum)
     @assert abs(total_sum - 1) <= 1e-4 "Total sum is $(total_sum) "
 end
 
@@ -155,4 +158,16 @@ function flatten_nested_vector(v::Vector{RuleNode}, result=[])
         end
     end
     return result
+end
+
+function reset_grammar_node_count()
+    global count 
+    count = ones(Int, 16)
+    global best_rewards 
+    best_rewards = zeros(Float64, 16)
+end
+
+function update_experiment_number(e::Int)
+    global experiment
+    experiment = e
 end

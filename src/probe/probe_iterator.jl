@@ -36,7 +36,6 @@ function probe(examples::Vector{<:IOExample}, iterator::ProgramIterator; max_tim
         next = state === nothing ? iterate(iterator) : iterate(iterator, state)
         while next !== nothing && i < cycle_length # run one cycle
             program, state = next
-
             # evaluate program
             program, eval_observation = get_prog_eval(iterator, program)
             correct_examples = Vector{Int}()
@@ -132,10 +131,10 @@ function probe(traces::Vector{Trace}, iterator::ProgramIterator; max_time::Int, 
 
             # evaluate
             program, evaluation = get_prog_eval(iterator, program)
-            eval_observation, is_done, reward = isempty(evaluation) ? evaluate_trace(program, grammar, show_moves=true) : evaluation
+            eval_observation, is_done, reward = isempty(evaluation) ? evaluate_trace(program, grammar, show_moves=false) : evaluation
             eval_observation_rounded = round.(eval_observation, digits=1)
             is_partial_sol = false
-            if reward > best_reward
+            if reward > best_reward +0.1
                 best_reward = reward
                 printstyled("Best reward: $best_reward\n", color=:red)
                 push!(best_reward_over_time, (time() - start_time, best_reward))

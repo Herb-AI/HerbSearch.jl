@@ -1,7 +1,10 @@
 # Manual setting of parameters instead of command line
-experiment_number = 4
+# experiment_number = 8
+experiments = [1,3,4,5,6,7,11,13,15,16,17]
+# experiments = [18]
 env_seed = [958129, 95812, 11248956, 6354, 999999]
-# env_seed = [6354]
+# env_seed = [958129, 999999, 6354]
+# env_seed = [999999]
 number_of_tries = 3
 max_time = 900
 
@@ -20,11 +23,18 @@ world_descriptions = Dict(
     999999 => "Desert. No obstacles."
 )
 
+# minerl_grammar = @pcsgrammar begin
+#     1:SEQ = [ACT]
+#     1:ACT = (TIMES, Dict("move" => DIR, "sprint" => 1, "jump" => 1))
+#     8:DIR = 0b0001 | 0b0010 | 0b0100 | 0b1000 | 0b0101 | 0b1001 | 0b0110 | 0b1010 # forward | back | left | right | forward-left | forward-right | back-left | back-right
+#     6:TIMES = 5 | 10 | 25 | 50 | 75 | 100 
+# end
+
 minerl_grammar = @pcsgrammar begin
     1:SEQ = [ACT]
     1:ACT = (TIMES, Dict("move" => DIR, "sprint" => 1, "jump" => 1))
     8:DIR = 0b0001 | 0b0010 | 0b0100 | 0b1000 | 0b0101 | 0b1001 | 0b0110 | 0b1010 # forward | back | left | right | forward-left | forward-right | back-left | back-right
-    6:TIMES = 5 | 10 | 25 | 50 | 75 | 100
+    6:TIMES = 1 | 5 | 10 | 25 | 50 | 75 
 end
 
 """
@@ -45,13 +55,13 @@ end
 
 
 # make sure the probabilities are equal 
-@assert all(prob -> prob == minerl_grammar.log_probabilities[begin], minerl_grammar.log_probabilities)
+# @assert all(prob -> prob == minerl_grammar.log_probabilities[begin], minerl_grammar.log_probabilities)
 
 # override the evaluate trace function
 # HerbSearch.evaluate_trace(prog::RuleNode, grammar::ContextSensitiveGrammar; show_moves=false) = evaluate_trace_minerl(prog, grammar, environment, show_moves)
 # HerbSearch.calculate_rule_cost(rule_index::Int, grammar::ContextSensitiveGrammar) = HerbSearch.calculate_rule_cost_prob(rule_index, grammar)
 print_logo()
-
+for experiment_number in experiments
 for seed in env_seed
     tries = []
     global time_sum = 0
@@ -72,7 +82,17 @@ for seed in env_seed
     )
 
     # set experiment parameters
-    cycle_length = 0
+    cycle_length = 6
+
+    if experiment_number > 10
+        temp_grammar = deepcopy(minerl_grammar)
+        HerbSearch.update_experiment_number(experiment_number)
+        iter = HerbSearch.GuidedSearchTraceIterator(temp_grammar, :SEQ, time(), max_time)
+        program, best_reward_over_time = @time probe(Vector{Trace}(), iter, max_time=max_time, cycle_length=cycle_length)
+        temp_grammar.rules[1] = :([ACT])
+
+        reset_env(environment)
+    end
 
     if experiment_number == 1
         experiment_data["experiment"]["description"] = """
@@ -84,16 +104,16 @@ for seed in env_seed
             fit = min(best_reward / 100, 1)"""
         experiment_data["experiment"]["grammar"] = grammar_to_list(minerl_grammar)
         cycle_length = 6
-    elseif experiment_number == 2        
-        experiment_data["experiment"]["description"] = """
-        Look at lower amount of partial solutions
-        Partial solution: reward > best_reward
-        Cycle length 4.
-        Select 3 programs with highest reward.
-        Update based on last action. 
-        fit = min(best_reward / 100, 1)"""
-        experiment_data["experiment"]["grammar"] = grammar_to_list(minerl_grammar)
-        cycle_length = 4
+    # elseif experiment_number == 2        
+    #     experiment_data["experiment"]["description"] = """
+    #     Look at lower amount of partial solutions
+    #     Partial solution: reward > best_reward
+    #     Cycle length 4.
+    #     Select 3 programs with highest reward.
+    #     Update based on last action. 
+    #     fit = min(best_reward / 100, 1)"""
+    #     experiment_data["experiment"]["grammar"] = grammar_to_list(minerl_grammar)
+    #     cycle_length = 4
     elseif experiment_number == 3
         experiment_data["experiment"]["description"] = """
         Use a different fitness algorithm
@@ -101,10 +121,10 @@ for seed in env_seed
         Cycle length 6.
         Select 5 programs with highest reward.
         Update based on last action. 
-        fit = 1 - exp(-(1/mean_reward) * best_reward)"""
+        fit = 1 - exp(-((best_reward / 55)^3))"""
         experiment_data["experiment"]["grammar"] = grammar_to_list(minerl_grammar)
         cycle_length = 6
-    elseif experiment_number == 4
+    elseif experiment_number == 4 
         experiment_data["experiment"]["description"] = """
         Use a different fitness algorithm
         Partial solution: reward > best_reward
@@ -114,6 +134,116 @@ for seed in env_seed
         fit = min(1,(best_reward / 100) * (log(1 + appearances)))"""
         experiment_data["experiment"]["grammar"] = grammar_to_list(minerl_grammar)
         cycle_length = 6
+    elseif experiment_number == 5
+        experiment_data["experiment"]["description"] = """
+        Grammar probabilities doesnt change
+        Partial solution: reward > best_reward
+        Cycle length 6.
+        Select 5 programs with highest reward.
+        Update based on last action. 
+        fit = 0"""
+        experiment_data["experiment"]["grammar"] = grammar_to_list(minerl_grammar)
+        cycle_length = 6
+    elseif experiment_number == 6
+        experiment_data["experiment"]["description"] = """
+        Grammar probabilities changes in constant time
+        Partial solution: reward > best_reward
+        Cycle length 6.
+        Select 5 programs with highest reward.
+        Update based on last action. 
+        fit = 0.3"""
+        experiment_data["experiment"]["grammar"] = grammar_to_list(minerl_grammar)
+        cycle_length = 6
+    elseif experiment_number == 7
+        experiment_data["experiment"]["description"] = """
+        Grammar probabilities changes in constant time
+        Partial solution: reward > best_reward
+        Cycle length 6.
+        Select 5 programs with highest reward.
+        Update based on last action. 
+        fit = log(10, best_reward+1)/2"""
+        experiment_data["experiment"]["grammar"] = grammar_to_list(minerl_grammar)
+        cycle_length = 6
+    elseif experiment_number == 17
+        experiment_data["experiment"]["description"] = """
+        Grammar probabilities changes in constant time
+        Partial solution: reward > best_reward
+        Cycle length 6.
+        Select 5 programs with highest reward.
+        Update based on last action. 
+        fit = log(10, best_reward+1)/2"""
+        experiment_data["experiment"]["grammar"] = grammar_to_list(temp_grammar)
+        cycle_length = 6
+    elseif experiment_number == 16
+        experiment_data["experiment"]["description"] = """
+        Grammar probabilities changes in constant time
+        Partial solution: reward > best_reward
+        Cycle length 6.
+        Select 5 programs with highest reward.
+        Update based on last action. 
+        fit = 0.3"""
+        experiment_data["experiment"]["grammar"] = grammar_to_list(temp_grammar)
+        cycle_length = 6
+    elseif experiment_number == 15
+        experiment_data["experiment"]["description"] = """
+        Grammar probabilities doesnt change
+        Partial solution: reward > best_reward
+        Cycle length 6.
+        Select 5 programs with highest reward.
+        Update based on last action. 
+        fit = 0"""
+        experiment_data["experiment"]["grammar"] = grammar_to_list(temp_grammar)
+        cycle_length = 6
+    elseif experiment_number == 11
+        experiment_data["experiment"]["description"] = """
+        Base case
+            Partial solution: reward > best_reward
+            Cycle length 6.
+            Select 5 programs with highest reward.
+            Update based on last action. 
+            fit = min(best_reward / 100, 1)"""
+        experiment_data["experiment"]["grammar"] = grammar_to_list(temp_grammar)
+        cycle_length = 6
+    elseif experiment_number == 12        
+        experiment_data["experiment"]["description"] = """
+        Look at lower amount of partial solutions
+        Partial solution: reward > best_reward
+        Cycle length 4.
+        Select 3 programs with highest reward.
+        Update based on last action. 
+        fit = min(best_reward / 100, 1)"""
+        experiment_data["experiment"]["grammar"] = grammar_to_list(temp_grammar)
+        cycle_length = 4
+    elseif experiment_number == 13
+        experiment_data["experiment"]["description"] = """
+        Use a different fitness algorithm
+        Partial solution: reward > best_reward
+        Cycle length 6.
+        Select 5 programs with highest reward.
+        Update based on last action. 
+        fit = 1 - exp(-((best_reward / 55)^3))"""
+        experiment_data["experiment"]["grammar"] = grammar_to_list(temp_grammar)
+        cycle_length = 6
+    elseif experiment_number == 14 
+        experiment_data["experiment"]["description"] = """
+        Use a different fitness algorithm
+        Partial solution: reward > best_reward
+        Cycle length 6.
+        Select 5 programs with highest reward.
+        Update based on last action. 
+        fit = min(1,(best_reward / 100) * (log(1 + appearances)))"""
+        experiment_data["experiment"]["grammar"] = grammar_to_list(temp_grammar)
+        cycle_length = 6
+    elseif experiment_number == 18
+        experiment_data["experiment"]["description"] = """
+        Use a different fitness algorithm
+        Partial solution: reward > best_reward
+        Cycle length 6.
+        Select 5 programs with highest reward.
+        Update based on last action. 
+        fit = min(1,(1-best_reward / 100))"""
+        experiment_data["experiment"]["grammar"] = grammar_to_list(temp_grammar)
+        cycle_length = 6
     end
 
     # run experiment
@@ -122,11 +252,16 @@ for seed in env_seed
     println("Seed value: $(seed)")
     for i in 1:number_of_tries
         println("try number:  $(i)")
-        if experiment_number == 4
-            count = zeros(Int, length(minerl_grammar.rules))
-            best_rewards = zeros(Float64, length(minerl_grammar.rules))
+        if experiment_number == 4 || experiment_number == 14
+            println(HerbSearch.count)
+            HerbSearch.reset_grammar_node_count()
         end
-        grammar = deepcopy(minerl_grammar)
+        if experiment_number > 10 
+            grammar = deepcopy(temp_grammar)
+        else
+            grammar = deepcopy(minerl_grammar)
+        end
+        # grammar = deepcopy(minerl_grammar)
         global number_of_evals = 0
         start_time = time()
         iter = HerbSearch.GuidedSearchTraceIterator(grammar, :SEQ, start_time, max_time)
@@ -167,4 +302,5 @@ for seed in env_seed
     JSON.print(file, experiment_data, 4)
     close(file)
     close_env(environment)
+end
 end

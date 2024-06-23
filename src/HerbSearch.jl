@@ -82,6 +82,7 @@ export
   GuidedSearchIterator,
   GuidedSearchTraceIterator,
   probe,
+  reset_grammar_node_count,
 
   mean_squared_error,
   misclassification,
