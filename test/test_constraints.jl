@@ -33,6 +33,8 @@ using HerbCore, HerbGrammar, HerbConstraints
 
     forbidden_sequence2 = ForbiddenSequence([4, 5], ignore_if=[3])
 
+    forbidden_sequence3 = ForbiddenSequence([4, 1], ignore_if=[5])
+
     forbidden = Forbidden(RuleNode(3, [RuleNode(3, [VarNode(:a)])]))
 
     forbidden2 = Forbidden(RuleNode(4, [
@@ -82,6 +84,7 @@ using HerbCore, HerbGrammar, HerbConstraints
         ("Contains", contains),
         ("ForbiddenSequence", forbidden_sequence),
         ("ForbiddenSequence2", forbidden_sequence2),
+        ("ForbiddenSequence3", forbidden_sequence3),
         ("Forbidden", forbidden),
         ("Forbidden2", forbidden2),
         ("Ordered", ordered),
