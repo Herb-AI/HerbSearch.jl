@@ -8,7 +8,7 @@ grammar = @pcsgrammar begin
     0.188:S = my_replace(S, S, S)
     0.059:S = S * S
 end
-@testset "Simulate using the grammar from paper" begin
+@testset verbose=true "Simulate using the grammar from paper" begin
 
     @testset "Grammar works without errors" begin
         # run grammar multiple times on some inputs. It should not crash..
