@@ -115,7 +115,6 @@ export
   FrAngelRandomIterator,
   FrAngelRandomIteratorState,
 
-  count_nodes,
   simplify_quick,
   _simplify_quick_once,
   symbols_minsize,

@@ -101,7 +101,7 @@ function remember_programs!(
     fragments::AbstractVector{RuleNode},
     grammar::AbstractGrammar,
 )::Tuple{AbstractVector{RuleNode},Bool}
-    node_count = count_nodes(grammar, new_program)
+    node_count = length(new_program)
     # Use program length only if an expression is provided -> saves time in many cases
     if new_program_expr === nothing
         program_length = 0

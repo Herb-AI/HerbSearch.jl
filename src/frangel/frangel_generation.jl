@@ -142,7 +142,7 @@ function random_modify_children!(
         # Generate a new program as a replacement
         if rand() < config.gen_similar_prob_new
             node.children[index] = generate_random_program(grammar, return_type(grammar, child), config, fragment_base_rules_offset,
-                count_nodes(grammar, child) + config.similar_new_extra_size, rule_minsize, symbol_minsize)
+                UInt8(length(child)) + config.similar_new_extra_size, rule_minsize, symbol_minsize)
             # Traverse into the child
         else
             random_modify_children!(grammar, child, config, fragment_base_rules_offset, rule_minsize, symbol_minsize)
@@ -203,7 +203,7 @@ function get_replacements(node::RuleNode, grammar::AbstractGrammar, fragment_bas
     # D⊤ for all descendant nodes D of N.
     get_descendant_replacements!(node, symbol, grammar, replacements)
     # Order by replacement size
-    sort!(collect(replacements), by=x -> count_nodes(grammar, x))
+    sort!(collect(replacements), by=x -> length(x))
 end
 
 """

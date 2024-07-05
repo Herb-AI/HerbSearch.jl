@@ -57,26 +57,6 @@ function update_passed_tests!(
     end
 end
 
-"""
-    count_nodes(grammar::AbstractGrammar, program::RuleNode)::UInt8
-
-Count the number of nodes in a given `RuleNode` program.
-
-# Arguments
-- `grammar`: The grammar rules of the program.
-- `program`: The program to count the nodes of.
-
-# Returns
-The number of nodes in the program's AST representation.
-
-"""
-function count_nodes(grammar::AbstractGrammar, program::RuleNode)::UInt8
-    if isterminal(grammar, program)
-        return 1
-    else
-        return 1 + sum(count_nodes(grammar, c) for c in program.children)
-    end
-end
 
 """
     random_partition(grammar::AbstractGrammar, rule_index::Int16, size::UInt8, symbol_minsize::Dict{Symbol,Int})::AbstractVector{UInt8}
@@ -341,7 +321,7 @@ function update_min_sizes!(grammar::AbstractGrammar, fragment_base_rules_offset:
     # For each fragment, update its rule, and possibly the return symbol
     resize!(rule_minsize, length(grammar.rules))
     for (i, fragment) in enumerate(fragments)
-        rule_minsize[fragment_rules_offset+i] = count_nodes(grammar, fragment)
+        rule_minsize[fragment_rules_offset+i] = length(fragment)
         ret_typ = return_type(grammar, fragment_rules_offset + i)
         if haskey(symbol_minsize, ret_typ)
             symbol_minsize[ret_typ] = min(symbol_minsize[ret_typ], rule_minsize[fragment_rules_offset+i])

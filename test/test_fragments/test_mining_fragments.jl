@@ -162,19 +162,19 @@ end
     # Add first remembered program
     first_program = RuleNode(13, [RuleNode(2), RuleNode(3)])
     first_program_tests = BitVector([1, 0, 1])
-    first_program_value = (first_program, count_nodes(g, first_program), length(string(rulenode2expr(first_program, g))))
+    first_program_value = (first_program, length(first_program), length(string(rulenode2expr(first_program, g))))
     old_remembered = Dict{BitVector,Tuple{RuleNode,Int,Int}}()
     remember_programs!(old_remembered, first_program_tests, first_program, rulenode2expr(first_program, g), Vector{RuleNode}(), g)
 
     # Second program to consider
     longer_program = RuleNode(13, [RuleNode(13, [RuleNode(1), RuleNode(2)]), RuleNode(1)])
-    longer_program_value = (longer_program, count_nodes(g, longer_program), length(string(rulenode2expr(longer_program, g))))
+    longer_program_value = (longer_program, length(longer_program), length(string(rulenode2expr(longer_program, g))))
 
     same_length_program = RuleNode(13, [RuleNode(1), RuleNode(2)])
-    same_length_program_value = (same_length_program, count_nodes(g, same_length_program), length(string(rulenode2expr(same_length_program, g))))
+    same_length_program_value = (same_length_program, length(same_length_program), length(string(rulenode2expr(same_length_program, g))))
 
     shorter_program = RuleNode(1)
-    shorter_program_value = (shorter_program, count_nodes(g, shorter_program), length(string(rulenode2expr(shorter_program, g))))
+    shorter_program_value = (shorter_program, length(shorter_program), length(string(rulenode2expr(shorter_program, g))))
 
     function one_test_case(new_program::RuleNode, passing_tests::BitVector, expected_result::Dict{BitVector,Tuple{RuleNode,Int,Int}})
         new_remembered = deepcopy(old_remembered)
