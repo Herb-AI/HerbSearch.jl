@@ -32,7 +32,8 @@ Random.seed!(1234)
     # include("test_fragments/test_fragment_grammar_utils.jl")
 
     # include("test_angelic_conditions/test_bit_trie.jl")
-    # include("test_angelic_conditions/test_frangel_angelic_utils.jl")
+    # include("test_angelic_conditions/test_execute_angelic.jl")
+    # include("test_angelic_conditions/test_generate_angelic.jl")
 
     # Excluded because it contains long tests
     # include("test_realistic_searches.jl")

@@ -138,6 +138,7 @@ function frangel(
     verbose_level = config.verbose_level
     grammar = iter.solver.grammar
     symboltable = SymbolTable(grammar)
+    replacement_strategy = [replace_first_angelic!, replace_last_angelic!]
 
     # Add angelic rule and save index if not provided
     if isnothing(config.angelic.angelic_rulenode)
@@ -202,7 +203,7 @@ function frangel(
 
         # If it contains angelic conditions, resolve them
         if contains_hole(program)
-            program = resolve_angelic!(program, passed_tests, grammar, symboltable, spec, replace_first_angelic!, angelic_conditions,
+            program = resolve_angelic!(program, passed_tests, grammar, symboltable, spec, replacement_strategy, angelic_conditions,
                 config, fragment_base_rules_offset, rule_minsize, symbol_minsize)
             # Still contains angelic conditions -> unresolved
             if contains_hole(program)

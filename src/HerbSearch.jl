@@ -47,7 +47,9 @@ include("frangel/long_hash_map.jl")
 include("fragments/fragment_grammar_utils.jl")
 include("fragments/mining_fragments.jl")
 
-include("angelic_conditions/frangel_angelic_utils.jl")
+include("angelic_conditions/execute_angelic.jl")
+include("angelic_conditions/generate_angelic.jl")
+include("angelic_conditions/angelic_replacement_strategies.jl")
 include("angelic_conditions/bit_trie.jl")
 
 export 
