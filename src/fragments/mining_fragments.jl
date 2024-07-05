@@ -18,7 +18,7 @@ function mine_fragments(grammar::AbstractGrammar, program::RuleNode)::Set{RuleNo
     if isterminal(grammar, program)
         push!(fragments, program)
     else
-        # Only complete programs count as fragments by FrAngel spec
+        # Only complete programs count are considered
         if iscomplete(grammar, program)
             push!(fragments, program)
         end

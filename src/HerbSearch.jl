@@ -42,10 +42,10 @@ include("frangel/frangel.jl")
 include("frangel/frangel_utils.jl")
 include("frangel/frangel_generation.jl")
 include("frangel/frangel_random_iterator.jl")
-include("frangel/frangel_grammar_utils.jl")
 include("frangel/long_hash_map.jl")
 
-include("fragments/frangel_fragment_utils.jl")
+include("fragments/fragment_grammar_utils.jl")
+include("fragments/mining_fragments.jl")
 
 include("angelic_conditions/frangel_angelic_utils.jl")
 include("angelic_conditions/bit_trie.jl")
@@ -107,7 +107,6 @@ export
   modify_and_replace_program_fragments!,
   add_angelic_conditions!,
 
-  buildProgrammingProblemGrammar,
   add_fragments_prob!,
   setup_grammar_with_fragments!,
   add_fragment_base_rules!,
