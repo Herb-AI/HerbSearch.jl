@@ -1,5 +1,3 @@
-include("evaluation_utility.jl")
-
 @programiterator GuidedSearchIterator(
     spec::Vector{<:IOExample},
     symboltable::SymbolTable,
@@ -52,6 +50,7 @@ function Base.iterate(iter::GuidedSearchIterator, state::GuidedSearchState)::Uni
                 if eval_observation in state.eval_cache # program already cached
                     continue
                 end
+                prog._val = (eval_observation, correct_examples)
                 
                 push!(state.eval_cache, eval_observation) # add result to cache
                 push!(state.bank[state.level+1], prog) # add program to bank

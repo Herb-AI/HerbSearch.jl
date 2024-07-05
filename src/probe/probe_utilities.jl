@@ -1,4 +1,20 @@
 """
+    struct ProgramCache 
+
+Stores the evaluation cost and the program in a structure.
+This 
+"""
+mutable struct ProgramCache
+    program::RuleNode
+    correct_examples::Vector{Int}
+    cost::Int
+end
+function Base.:(==)(a::ProgramCache, b::ProgramCache)
+    return a.program == b.program
+end
+Base.hash(a::ProgramCache) = hash(a.program)
+
+"""
     evaluate_program(program::RuleNode, grammar::AbstractGrammar, examples::Vector{<:IOExample}, symboltable::SymbolTable)
 
 Evaluates a program using the given examples and returns a tuple of two things:

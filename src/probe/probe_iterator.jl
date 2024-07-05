@@ -1,18 +1,4 @@
-"""
-    struct ProgramCache 
-
-Stores the evaluation cost and the program in a structure.
-This 
-"""
-mutable struct ProgramCache
-    program::RuleNode
-    correct_examples::Vector{Int}
-    cost::Int
-end
-function Base.:(==)(a::ProgramCache, b::ProgramCache)
-    return a.program == b.program
-end
-Base.hash(a::ProgramCache) = hash(a.program)
+include("probe_utilities.jl")
 
 include("sum_iterator.jl")
 include("new_program_iterator.jl")
@@ -48,8 +34,13 @@ function probe(examples::Vector{<:IOExample}, iterator::ProgramIterator, max_tim
         while next !== nothing && i < iteration_size # run one iteration
             program, state = next
 
-            # evaluate program
-            eval_observation, correct_examples = evaluate_program(program, grammar, examples, symboltable)
+            # evaluate program if it was not evaluated already
+            if !isnothing(program._val)
+                eval_observation, correct_examples = program._val
+            else
+                println("This should not happen now!")
+                eval_observation, correct_examples = evaluate_program(program, grammar, examples, symboltable)
+            end
 
             nr_correct_examples = length(correct_examples)
             if nr_correct_examples == length(examples) # found solution
