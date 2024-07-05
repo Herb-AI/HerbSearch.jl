@@ -24,6 +24,7 @@ include("update_grammar.jl")
 select_partial_solution(partial_sols::Vector{ProgramCache}, all_selected_psols::Set{ProgramCache}) = HerbSearch.selectpsol_largest_subset(partial_sols, all_selected_psols)
 update_grammar!(grammar::ContextSensitiveGrammar, PSols_with_eval_cache::Vector{ProgramCache}, examples::Vector{<:IOExample}) = update_grammar(grammar, PSols_with_eval_cache, examples)
 
+
 """
     probe(examples::Vector{<:IOExample}, iterator::ProgramIterator, max_time::Int, iteration_size::Int)
 
@@ -48,17 +49,7 @@ function probe(examples::Vector{<:IOExample}, iterator::ProgramIterator, max_tim
             program, state = next
 
             # evaluate program
-            eval_observation = []
-            correct_examples = Vector{Int}()
-            expr = rulenode2expr(program, grammar)
-            for (example_index, example) ∈ enumerate(examples)
-                output = execute_on_input(symboltable, expr, example.in)
-                push!(eval_observation, output)
-
-                if output == example.out
-                    push!(correct_examples, example_index)
-                end
-            end
+            eval_observation, correct_examples = evaluate_program(program, grammar, examples, symboltable)
 
             nr_correct_examples = length(correct_examples)
             if nr_correct_examples == length(examples) # found solution

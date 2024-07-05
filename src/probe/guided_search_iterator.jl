@@ -1,3 +1,4 @@
+include("evaluation_utility.jl")
 
 @programiterator GuidedSearchIterator(
     spec::Vector{<:IOExample},
@@ -46,12 +47,7 @@ function Base.iterate(iter::GuidedSearchIterator, state::GuidedSearchState)::Uni
 
             # evaluate program if starting symbol
             if return_type(grammar, prog.ind) == start_symbol
-                eval_observation = []
-                expr = rulenode2expr(prog, grammar)
-                for example ∈ iter.spec
-                    output = execute_on_input(iter.symboltable, expr, example.in)
-                    push!(eval_observation, output)
-                end
+                eval_observation, correct_examples = evaluate_program(prog, grammar, iter.spec, iter.symboltable)
 
                 if eval_observation in state.eval_cache # program already cached
                     continue
