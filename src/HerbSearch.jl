@@ -40,13 +40,15 @@ include("random_iterator.jl")
 
 include("frangel/frangel.jl")
 include("frangel/frangel_utils.jl")
-include("frangel/frangel_fragment_utils.jl")
 include("frangel/frangel_generation.jl")
-include("frangel/frangel_angelic_utils.jl")
 include("frangel/frangel_random_iterator.jl")
 include("frangel/frangel_grammar_utils.jl")
 include("frangel/long_hash_map.jl")
-include("frangel/bit_trie.jl")
+
+include("fragments/frangel_fragment_utils.jl")
+
+include("angelic_conditions/frangel_angelic_utils.jl")
+include("angelic_conditions/bit_trie.jl")
 
 export 
   ProgramIterator,

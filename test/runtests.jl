@@ -26,7 +26,12 @@ Random.seed!(1234)
     # include("test_unique.jl")
 
     # include("test_constraints.jl")
-    include("test_frangel/test_frangel.jl")
+    # include("test_frangel/test_frangel.jl")
+
+    # include("test_fragments/test_frangel_fragment_utils.jl")
+
+    # include("test_angelic_conditions/test_bit_trie.jl")
+    # include("test_angelic_conditions/test_frangel_angelic_utils.jl")
 
     # Excluded because it contains long tests
     # include("test_realistic_searches.jl")
