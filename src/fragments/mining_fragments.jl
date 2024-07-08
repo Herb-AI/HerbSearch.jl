@@ -52,7 +52,7 @@ function mine_fragments(grammar::AbstractGrammar, programs::Set{RuleNode})::Set{
 end
 
 """
-    mine_fragments(grammar::AbstractGrammar, programs::Set{Tuple{RuleNode,Int,Int}}) -> Set{RuleNode}
+    mine_fragments(grammar::AbstractGrammar, programs::Set{Tuple{RuleNode,Int,Int}})::Set{RuleNode}
 
 Finds all the fragments from the provided `programs` set. The result is a set of the distinct fragments found within all programs.
 A fragment is any complete subprogram of the original program.

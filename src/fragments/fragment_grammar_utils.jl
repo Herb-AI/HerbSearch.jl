@@ -67,10 +67,10 @@ end
 
 
 """
-    setup_grammar_with_fragments(grammar::AbstractGrammar, use_fragments_chance::Float16, rule_minsize::AbstractVector{UInt8})
+    setup_grammar_with_fragments!(grammar::AbstractGrammar, use_fragments_chance::Float16, rule_minsize::AbstractVector{UInt8})::Tuple{Int16,Int16}
 
-Sets up the grammar with fragments by adding fragment base/identity rules (eg. `<symbol> = Fragment_<symbol>`), resizes the rule minimum size, and adds fragment probabilities.
-The grammar is updated in-place.
+Sets up the grammar with fragments by adding fragment base/identity rules (eg. `<symbol> = Fragment_<symbol>`), resizes the rule minimum size, 
+and adds fragment probabilities. The grammar is updated in-place.
 
 # Arguments
 - `grammar`: The grammar object to set up.
