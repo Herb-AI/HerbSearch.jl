@@ -138,9 +138,7 @@ function frangel(
     ############################################
 
     # Main loop
-    iterationCount, checkedProgram = 0, 0
     while time() - start_time < config.max_time
-        iterationCount += 1
         # Generate random program
         program, state = (state === nothing) ? iterate(iter) : iterate(iter, state)
 
