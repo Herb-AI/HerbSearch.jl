@@ -1,64 +1,4 @@
 """
-    update_passed_tests!(
-        program::RuleNode, grammar::AbstractGrammar, symboltable::SymbolTable, tests::AbstractVector{<:IOExample},
-        prev_passed_tests::BitVector, angelic_conditions::Dict{UInt16, UInt8}, config::FrAngelConfigAngelic)
-
-Updates the tests that the program passes. This is done by running `program` for all `tests`, and updates the `prev_passed_tests` vector with the results.
-
-# Arguments
-- `program`: The program to be tested.
-- `grammar`: The grammar rules of the program.
-- `symboltable`: A symbol table for the grammar.
-- `tests`: A vector of `IOExample` objects representing the input-output test cases.
-- `prev_passed_tests`: A `BitVector` representing the tests that the program has previously passed.
-- `angelic_conditions`: A dictionary mapping indices of angelic condition candidates, to the child index that may be changed.
-- `config`: The configuration for angelic conditions of FrAngel.
-
-"""
-function update_passed_tests!(
-    program::RuleNode,
-    grammar::AbstractGrammar,
-    symboltable::SymbolTable,
-    tests::AbstractVector{<:IOExample},
-    prev_passed_tests::BitVector,
-    angelic_conditions::Dict{UInt16,UInt8},
-    config::FrAngelConfigAngelic
-)
-    # If angelic -> evaluate optimistically
-    if contains_hole(program)
-        @assert !isa(config.angelic_rulenode, Nothing)
-        angelic_rulenode = config.angelic_rulenode::RuleNode
-        fails = 0
-        for (index, test) in enumerate(tests)
-            # Angelically evaluate the program for this test
-            prev_passed_tests[index] = execute_angelic_on_input(symboltable, program, grammar, test.in, test.out,
-                angelic_rulenode, config.max_execute_attempts, angelic_conditions)
-            if !prev_passed_tests[index]
-                fails += 1
-                # If it fails too many tests, preemtively end evaluation
-                if config.max_allowed_fails < fails / length(tests)
-                    return nothing
-                end
-            end
-        end
-        nothing
-        # Otherwise, evaluate regularly
-    else
-        expr = rulenode2expr(program, grammar)
-        for (index, test) in enumerate(tests)
-            try
-                output = execute_on_input(symboltable, expr, test.in)
-                prev_passed_tests[index] = output == test.out
-            catch _
-                prev_passed_tests[index] = false
-            end
-        end
-        expr
-    end
-end
-
-
-"""
     random_partition(grammar::AbstractGrammar, rule_index::Int16, size::UInt8, symbol_minsize::Dict{Symbol,Int})::AbstractVector{UInt8}
 
 Randomly partitions the allowed size into a vector of sizes for each child of the provided rule index.
@@ -175,41 +115,7 @@ function _simplify_quick_once(
     node
 end
 
-"""
-    passes_the_same_tests_or_more(program::RuleNode, grammar::AbstractGrammar, tests::AbstractVector{<:IOExample}, passed_tests::BitVector)::Bool
 
-Checks if the provided program passes all the tests (or more) that have been provided. The function breaks early if a test fails.
-
-# Arguments
-- `program`: The program to test.
-- `grammar`: The grammar rules of the program.
-- `tests`: A vector of `IOExample` objects representing the input-output test cases.
-- `passed_tests`: A BitVector representing the tests that the program has already passed.
-
-# Returns
-Returns true if the program passes all the tests in marked in `passed_Tests`, false otherwise.
-
-"""
-function passes_the_same_tests_or_more(program::RuleNode, grammar::AbstractGrammar, tests::AbstractVector{<:IOExample}, passed_tests::BitVector)::Bool
-    symboltable = SymbolTable(grammar)
-    expr = rulenode2expr(program, grammar)
-    for (index, test) in enumerate(tests)
-        # If original does not pass, then skip
-        if !passed_tests[index]
-            continue
-        end
-        # Else check that new program also passes the test
-        try
-            output = execute_on_input(symboltable, expr, test.in)
-            if (output != test.out)
-                return false
-            end
-        catch _
-            return false
-        end
-    end
-    true
-end
 
 """
     symbols_minsize(grammar::AbstractGrammar, min_sizes::AbstractVector{Int})::Dict{Symbol,Int}

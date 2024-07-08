@@ -32,35 +32,30 @@ function resolve_angelic!(
     tests::AbstractVector{<:IOExample},
     replacement_funcs::Vector{Function},
     angelic_conditions::Dict{UInt16,UInt8},
-    config::FrAngelConfig,
-    fragment_base_rules_offset::Int16,
-    rule_minsize::AbstractVector{UInt8},
-    symbol_minsize::Dict{Symbol,UInt8}
+    angelic_config::ConfigAngelic,
+    evaluation_grammar::AbstractGrammar=grammar
 )::RuleNode
     num_holes = number_of_holes(program)
     # Try each replacement strategy
     for replacement_strategy in replacement_funcs
-        angelic = config.angelic
         new_tests = BitVector([false for _ in tests])
         # Continue resolution until all holes are filled
         while num_holes != 0
             success = false
             start_time = time()
-            max_time = config.angelic.max_time
             # Keep track of visited replacements - avoid duplicates
             visited = init_long_hash_map()
-            while time() - start_time < max_time
+            while time() - start_time < angelic_config.max_time
                 # Generate a replacement
-                boolean_expr = generate_random_program(grammar, :Bool, config.generation, fragment_base_rules_offset, angelic.boolean_expr_max_size,
-                    rule_minsize, symbol_minsize)
+                boolean_expr = rand(RuleNode, grammar, :Bool, angelic_config.boolean_expr_max_depth)
                 program_hash = hash(boolean_expr)
                 if lhm_contains(visited, program_hash)
                     continue
                 end
                 lhm_put!(visited, program_hash)
                 # Either replace 'first' or 'last' hole
-                changed = replacement_strategy(program, boolean_expr, config.angelic.angelic_rulenode, angelic_conditions)
-                update_passed_tests!(program, grammar, symboltable, tests, new_tests, angelic_conditions, angelic)
+                changed = replacement_strategy(program, boolean_expr, angelic_config.angelic_rulenode, angelic_conditions)
+                update_passed_tests!(program, evaluation_grammar, symboltable, tests, new_tests, angelic_conditions, angelic_config)
                 # If the new program passes all the tests the original program did, replacement is successful
                 if all(passing_tests .== (passing_tests .& new_tests))
                     passing_tests = new_tests
@@ -73,7 +68,7 @@ function resolve_angelic!(
             end
             if success
                 num_holes -= 1
-            else 
+            else
                 break
             end
         end

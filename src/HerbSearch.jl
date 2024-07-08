@@ -38,19 +38,18 @@ include("genetic_search_iterator.jl")
 
 include("random_iterator.jl")
 
+include("fragments/fragment_grammar_utils.jl")
+include("fragments/mining_fragments.jl")
+
+include("angelic_conditions/generate_angelic.jl")
+include("angelic_conditions/angelic_replacement_strategies.jl")
+
 include("frangel/frangel.jl")
 include("frangel/frangel_utils.jl")
 include("frangel/frangel_generation.jl")
 include("frangel/frangel_random_iterator.jl")
 include("frangel/long_hash_map.jl")
 
-include("fragments/fragment_grammar_utils.jl")
-include("fragments/mining_fragments.jl")
-
-include("angelic_conditions/execute_angelic.jl")
-include("angelic_conditions/generate_angelic.jl")
-include("angelic_conditions/angelic_replacement_strategies.jl")
-include("angelic_conditions/bit_trie.jl")
 
 export 
   ProgramIterator,
@@ -93,14 +92,12 @@ export
   sample,
   rand,
 
-  frangel,
   FrAngelConfig,
   FrAngelConfigGeneration,
-  FrAngelConfigAngelic,
+  frangel,
 
   replace_first_angelic!,
-  execute_angelic_on_input,
-  get_code_paths!,
+  replace_last_angelic!,
 
   mine_fragments,
   remember_programs!,
@@ -125,11 +122,6 @@ export
   LongHashMap,
   init_long_hash_map,
   lhm_put!,
-  lhm_contains,
-
-  BitTrie,
-  BitTrieNode,
-  trie_add!,
-  trie_contains
+  lhm_contains
   
 end # module HerbSearch

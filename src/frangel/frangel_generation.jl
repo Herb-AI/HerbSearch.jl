@@ -1,53 +1,4 @@
 """
-    generate_random_program(
-        grammar::AbstractGrammar, type::Symbol, config::FrAngelConfigGeneration, fragment_base_rules_offset::Int16, 
-        max_size::UInt8, rule_minsize::AbstractVector{UInt8}, symbol_minsize::Dict{Symbol,UInt8})::RuleNode
-
-Generates a random program of the provided `type` using the provided `grammar`. The program is generated with a maximum size of `max_size`.
-The function will exclude fragment rules with an index greater than `fragment_base_rules_offset` from the generation process.
-In case it is not possible to generate a program with the given maximum size, the function will generate a complete program with the smallest possible size.
-
-# Arguments
-- `grammar`: The grammar rules of the program.
-- `type`: The type of the program to generate.
-- `config`: The configuration for program generation of FrAngel.
-- `fragment_base_rules_offset`: The offset for fragment base/identity rules.
-- `max_size`: The maximum size of the program to generate. If the value is too small, the function will use the minimum size of the type.
-- `rule_minsize`: A vector of minimum sizes for each production rule in the grammar. Can be obtained from [`rules_minsize`](@ref).
-- `symbol_minsize`: A dictionary with the minimum size achievable for each symbol in the grammar. Can be obtained from [`symbols_minsize`](@ref).
-
-# Returns
-A random program of the provided type.
-
-"""
-function generate_random_program(
-    grammar::AbstractGrammar,
-    type::Symbol,
-    config::FrAngelConfigGeneration,
-    fragment_base_rules_offset::Int16,
-    max_size::UInt8,
-    rule_minsize::AbstractVector{UInt8},
-    symbol_minsize::Dict{Symbol,UInt8}
-)::RuleNode
-    max_size = max(max_size, symbol_minsize[type])
-    # Only consider non-fragment rules with enough space to fit
-    possible_rules = filter(r -> r <= fragment_base_rules_offset && rule_minsize[r] ≤ max_size, grammar[type])
-    # Randomly choose a rule
-    rule_index = StatsBase.sample(possible_rules)
-    rule_node = RuleNode(rule_index)
-    # Fill its children -> partition sizes for each child
-    if !grammar.isterminal[rule_index]
-        sizes = random_partition(grammar, Int16(rule_index), max_size, symbol_minsize)
-        # Generate child
-        for (index, child_type) in enumerate(child_types(grammar, rule_index))
-            push!(rule_node.children, generate_random_program(grammar, child_type, config, fragment_base_rules_offset, sizes[index],
-                rule_minsize, symbol_minsize))
-        end
-    end
-    rule_node
-end
-
-"""
     modify_and_replace_program_fragments!(
         program::RuleNode, fragments::AbstractVector{RuleNode}, fragment_base_rules_offset::Int16, fragment_rules_offset::Int16, 
         config::FrAngelConfigGeneration, grammar::AbstractGrammar, rule_minsize::AbstractVector{UInt8}, 
@@ -78,8 +29,6 @@ function modify_and_replace_program_fragments!(
     fragment_rules_offset::Int16,
     config::FrAngelConfigGeneration,
     grammar::AbstractGrammar,
-    rule_minsize::AbstractVector{UInt8},
-    symbol_minsize::Dict{Symbol,UInt8},
     use_angelic::Bool
 )::RuleNode
     # If an identity fragment rule is picked -> fragments will be used
@@ -94,7 +43,7 @@ function modify_and_replace_program_fragments!(
             # Or modify fragment
         else
             modified_fragment = deepcopy(fragments[fragment_rule_index-fragment_rules_offset])
-            random_modify_children!(grammar, modified_fragment, config, fragment_base_rules_offset, rule_minsize, symbol_minsize)
+            random_modify_children!(grammar, modified_fragment, config)
             return modified_fragment
         end
         # If non-fragment program -> traverse into its children to find other fragments for replacement
@@ -104,7 +53,7 @@ function modify_and_replace_program_fragments!(
         end
         for (index, child) in enumerate(program.children)
             program.children[index] = modify_and_replace_program_fragments!(child, fragments, fragment_base_rules_offset, fragment_rules_offset, config,
-                grammar, rule_minsize, symbol_minsize, use_angelic)
+                grammar, use_angelic)
         end
         program
         # Cannot pick regular fragment rule directly; or an out-of-bounds index was chosen
@@ -115,8 +64,7 @@ end
 
 """
     random_modify_children!(
-        grammar::AbstractGrammar, node::RuleNode, config::FrAngelConfigGeneration, fragment_base_rules_offset::Int16, 
-        rule_minsize::AbstractVector{UInt8}, symbol_minsize::Dict{Symbol,UInt8})
+        grammar::AbstractGrammar, node::RuleNode, config::FrAngelConfigGeneration)
 
 Randomly modifies the children of a given node. The modification can be either a new random program or a modification of the existing children.
 Only non-fragment rules are considered while modifiying by excluding rules with an index greater than `fragment_base_rules_offset`.
@@ -125,27 +73,20 @@ Only non-fragment rules are considered while modifiying by excluding rules with 
 - `grammar`: The grammar rules of the program.
 - `node`: The node to modify the children of.
 - `config`: The configuration for program generation of FrAngel.
-- `fragment_base_rules_offset`: The offset for fragment base/identity rules.
-- `rule_minsize`: A vector of minimum sizes for each production rule in the grammar. Can be obtained from [`rules_minsize`](@ref).
-- `symbol_minsize`: A dictionary with the minimum size achievable for each symbol in the grammar. Can be obtained from [`symbols_minsize`](@ref).
 
 """
 function random_modify_children!(
     grammar::AbstractGrammar,
     node::RuleNode,
-    config::FrAngelConfigGeneration,
-    fragment_base_rules_offset::Int16,
-    rule_minsize::AbstractVector{UInt8},
-    symbol_minsize::Dict{Symbol,UInt8}
+    config::FrAngelConfigGeneration
 )
     for (index, child) in enumerate(node.children)
         # Generate a new program as a replacement
         if rand() < config.gen_similar_prob_new
-            node.children[index] = generate_random_program(grammar, return_type(grammar, child), config, fragment_base_rules_offset,
-                UInt8(length(child)) + config.similar_new_extra_size, rule_minsize, symbol_minsize)
+            node.children[index] = rand(RuleNode, grammar, return_type(grammar, child), 2)#UInt8(length(child)) + config.similar_new_extra_size)
             # Traverse into the child
         else
-            random_modify_children!(grammar, child, config, fragment_base_rules_offset, rule_minsize, symbol_minsize)
+            random_modify_children!(grammar, child, config)
         end
     end
 end

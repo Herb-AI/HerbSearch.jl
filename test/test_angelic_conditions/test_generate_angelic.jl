@@ -50,7 +50,7 @@ end
     @test contains_hole(p) && number_of_holes(p) == 1
 
     new_tests = BitVector([false for _ in 1:5])
-    boolean_expr = generate_random_program(grammar, :Bool, config.generation, fragment_base_rules_offset, config.angelic.boolean_expr_max_size, rules_min, symbol_min)
+    boolean_expr = rand(RuleNode, grammar, :Bool, config.angelic.boolean_expr_max_depth)
     replace_first_angelic!(p, boolean_expr, RuleNode(0), Dict{UInt16,UInt8}(15 => 1))
     @test !contains_hole(p)
 end

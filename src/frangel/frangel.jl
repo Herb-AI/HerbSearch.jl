@@ -22,27 +22,6 @@ A configuration struct for FrAngel generation.
 end
 
 """
-    struct FrAngelConfigAngelic
-
-A configuration struct for the angelic mode of FrAngel.
-
-# Fields
-- `max_time::Float16`: The maximum time allowed for resolving a single angelic expression.
-- `boolean_expr_max_size::Int`: The maximum size of boolean expressions when resolving angelic conditions.
-- `max_execute_attempts::Int`: The maximal attempts of executing the program with angelic evaluation.
-- `max_allowed_fails::Float16`: The maximum allowed fraction of failed tests during evaluation before short-circuit failure.
-- `angelic_rulenode::Union{Nothing,RuleNode}`: The angelic rulenode. Used to replace angelic conditions/holes right before evaluation.
-
-"""
-@kwdef mutable struct FrAngelConfigAngelic
-    max_time::Float16 = 0.1
-    boolean_expr_max_size::UInt8 = 6
-    max_execute_attempts::Int = 55
-    max_allowed_fails::Float16 = 0.75
-    angelic_rulenode::Union{Nothing,RuleNode} = nothing
-end
-
-"""
     struct FrAngelConfig
 
 The full configuration struct for FrAngel. Includes generation and angelic sub-configurations.
@@ -53,7 +32,7 @@ The full configuration struct for FrAngel. Includes generation and angelic sub-c
 - `compare_programs_by_length::Bool`: Whether to compare programs by length if they have same number of AST nodes.
 - `verbose_level::Int`: The verbosity level of the output. This will print the program and all intermediate steps for the first `verbose_level` checked programs.
 - `generation::FrAngelConfigGeneration`: The generation configuration for FrAngel.
-- `angelic::FrAngelConfigAngelic`: The configuration for angelic conditions of FrAngel.
+- `angelic::ConfigAngelic`: The configuration for angelic conditions of FrAngel.
 
 """
 @kwdef struct FrAngelConfig
@@ -62,7 +41,7 @@ The full configuration struct for FrAngel. Includes generation and angelic sub-c
     compare_programs_by_length::Bool = false
     verbose_level::Int = 0
     generation::FrAngelConfigGeneration = FrAngelConfigGeneration()
-    angelic::FrAngelConfigAngelic = FrAngelConfigAngelic()
+    angelic::ConfigAngelic = ConfigAngelic()
 end
 
 """
@@ -137,6 +116,7 @@ function frangel(
 
     verbose_level = config.verbose_level
     grammar = iter.solver.grammar
+    base_grammar = deepcopy(grammar)
     symboltable = SymbolTable(grammar)
     replacement_strategy = [replace_first_angelic!, replace_last_angelic!]
 
@@ -174,7 +154,7 @@ function frangel(
 
         # Modify the program with fragments
         program = modify_and_replace_program_fragments!(program, fragments, fragment_base_rules_offset, fragment_rules_offset, config.generation,
-            grammar, rule_minsize, symbol_minsize, use_angelic)
+            base_grammar, use_angelic)
         # Modify the program with angelic conditions
         if use_angelic
             program = add_angelic_conditions!(program, grammar, angelic_conditions)
@@ -203,8 +183,7 @@ function frangel(
 
         # If it contains angelic conditions, resolve them
         if contains_hole(program)
-            program = resolve_angelic!(program, passed_tests, grammar, symboltable, spec, replacement_strategy, angelic_conditions,
-                config, fragment_base_rules_offset, rule_minsize, symbol_minsize)
+            program = resolve_angelic!(program, passed_tests, base_grammar, symboltable, spec, replacement_strategy, angelic_conditions, config.angelic, grammar)
             # Still contains angelic conditions -> unresolved
             if contains_hole(program)
                 continue
