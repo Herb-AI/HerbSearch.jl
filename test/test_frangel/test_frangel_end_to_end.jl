@@ -67,85 +67,85 @@ end
     # println(program)
 end
 
-# @testset "getRange" begin
-#     grammar = buildProgrammingProblemGrammar([(:endd, :Num), (:start, :Num)], :List)
-#     spec = [
-#         IOExample(Dict(:start => 10, :endd => 15), [10, 11, 12, 13, 14]),
-#         IOExample(Dict(:start => 10, :endd => 11), [10]),
-#         IOExample(Dict(:start => 0, :endd => 1), [0]),
-#     ]
-#     problem = Problem(spec)
-#     angelic_conditions = Dict{UInt16,UInt8}(6 => 1, 7 => 1)
+"""
+    buildProgrammingProblemGrammar(input_parameters::AbstractVector{Tuple{Symbol,Symbol}}, return_type::Symbol, intermediate_variables_count::Int=0)::ContextSensitiveGrammar
 
-#     config = FrAngelConfig(max_time=10, generation=FrAngelConfigGeneration(use_fragments_chance=0.5, use_angelic_conditions_chance=0.5))
+Builds a context-sensitive grammar for a generalized programming problem that FrAngel can use.
 
-#     rules_min = rules_minsize(grammar)
-#     symbol_min = symbols_minsize(grammar, rules_min)
-#     @time begin
-#         iterator = FrAngelRandomIterator(grammar, :Program, rules_min, symbol_min, max_depth=config.generation.max_size)
-#         solution = frangel(spec, config, angelic_conditions, iterator, rules_min, symbol_min)
-#     end
-#     program = rulenode2expr(solution, grammar)
-#     println(program)
-# end
+# Arguments
+- `input_parameters`: An abstract vector of tuples representing the input parameters of the problem. 
+Each tuple consists of a symbol representing the parameter name and a symbol representing the parameter type.
+- `return_type`: A symbol representing the return type of the problem.
+- `intermediate_variables_count`: An optional integer representing the number of intermediate variables to be used in the problem. Default is 0.
 
-# """
-#     buildProgrammingProblemGrammar(input_parameters::AbstractVector{Tuple{Symbol,Symbol}}, return_type::Symbol, intermediate_variables_count::Int=0)::ContextSensitiveGrammar
+# Returns
+A `ContextSensitiveGrammar` object representing the grammar for the programming problem.
 
-# Builds a context-sensitive grammar for a generalized programming problem that FrAngel can use.
+"""
+function buildProgrammingProblemGrammar(
+    input_parameters::AbstractVector{Tuple{Symbol,Symbol}},
+    return_type::Symbol,
+    intermediate_variables_count::Int=0
+)::ContextSensitiveGrammar
+    base = deepcopy(@cfgrammar begin
+        Program = (VariableDefintion; Statement; Return) | (Statement; Return) | Return
+        VariableDefintion = ListVariable = List
 
-# # Arguments
-# - `input_parameters`: An abstract vector of tuples representing the input parameters of the problem. 
-# Each tuple consists of a symbol representing the parameter name and a symbol representing the parameter type.
-# - `return_type`: A symbol representing the return type of the problem.
-# - `intermediate_variables_count`: An optional integer representing the number of intermediate variables to be used in the problem. Default is 0.
+        Statement = (Statement; Statement)
+        Statement = (
+            i = 0;
+            while Bool
+                InnerStatement
+                i = i + 1
+            end)
+        Statement = (
+            if Bool
+                Statement
+            end
+        )
+        Statement = push!(ListVariable, Num)
 
-# # Returns
-# A `ContextSensitiveGrammar` object representing the grammar for the programming problem.
+        InnerNum = Num | i | (InnerNum + InnerNum) | (InnerNum - InnerNum)
+        InnerStatement = push!(ListVariable, InnerNum)
 
-# """
-# function buildProgrammingProblemGrammar(
-#     input_parameters::AbstractVector{Tuple{Symbol,Symbol}},
-#     return_type::Symbol,
-#     intermediate_variables_count::Int=0
-# )::ContextSensitiveGrammar
-#     base = deepcopy(@cfgrammar begin
-#         Program = (VariableDefintion; Statement; Return) | (Statement; Return) | Return
-#         VariableDefintion = ListVariable = List
+        Num = |(0:9) | (Num + Num) | (Num - Num)
+        Num = getindex(ListVariable, Num)
 
-#         Statement = (Statement; Statement)
-#         Statement = (
-#             i = 0;
-#             while Bool
-#                 InnerStatement
-#                 i = i + 1
-#             end)
-#         Statement = (
-#             if Bool
-#                 Statement
-#             end
-#         )
-#         Statement = push!(ListVariable, Num)
+        Bool = true | false | (InnerNum < InnerNum)
 
-#         InnerNum = Num | i | (InnerNum + InnerNum) | (InnerNum - InnerNum)
-#         InnerStatement = push!(ListVariable, InnerNum)
+        List = [] | ListVariable
 
-#         Num = |(0:9) | (Num + Num) | (Num - Num)
-#         Num = getindex(ListVariable, Num)
+        ListVariable = list
+    end)
+    # Add input variables
+    for input_parameter in input_parameters
+        add_rule!(base, :($(input_parameter[2]) = $(input_parameter[1])))
+    end
+    #TODO: Add intermediate variables
 
-#         Bool = true | false | (InnerNum < InnerNum)
+    # Add return statement
+    add_rule!(base, :(Return = return $return_type))
+    base
+end
 
-#         List = [] | ListVariable
+@testset "getRange" begin
+    grammar = buildProgrammingProblemGrammar([(:endd, :Num), (:start, :Num)], :List)
+    spec = [
+        IOExample(Dict(:start => 10, :endd => 15), [10, 11, 12, 13, 14]),
+        IOExample(Dict(:start => 10, :endd => 11), [10]),
+        IOExample(Dict(:start => 0, :endd => 1), [0]),
+    ]
+    problem = Problem(spec)
+    angelic_conditions = Dict{UInt16,UInt8}(6 => 1, 7 => 1)
 
-#         ListVariable = list
-#     end)
-#     # Add input variables
-#     for input_parameter in input_parameters
-#         add_rule!(base, :($(input_parameter[2]) = $(input_parameter[1])))
-#     end
-#     #TODO: Add intermediate variables
+    config = FrAngelConfig(max_time=10, generation=FrAngelConfigGeneration(use_fragments_chance=0.5, use_angelic_conditions_chance=0.5))
 
-#     # Add return statement
-#     add_rule!(base, :(Return = return $return_type))
-#     base
-# end
+    rules_min = rules_minsize(grammar)
+    symbol_min = symbols_minsize(grammar, rules_min)
+    @time begin
+        iterator = FrAngelRandomIterator(grammar, :Program, rules_min, symbol_min, max_depth=config.generation.max_size)
+        solution = frangel(spec, config, angelic_conditions, iterator, rules_min, symbol_min)
+    end
+    program = rulenode2expr(solution, grammar)
+    println(program)
+end
