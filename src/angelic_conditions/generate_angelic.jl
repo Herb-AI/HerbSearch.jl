@@ -1,24 +1,21 @@
 """
     resolve_angelic!(
         program::RuleNode, passing_tests::BitVector, grammar::AbstractGrammar, symboltable::SymbolTable, tests::AbstractVector{<:IOExample}, 
-        replacement_func::Function, angelic_conditions::Dict{UInt16,UInt8}, config::FrAngelConfig, fragment_base_rules_offset::Int16,
-        rule_minsize::AbstractVector{UInt8}, symbol_minsize::Dict{Symbol,UInt8})::RuleNode
+        replacement_func::Function, angelic_conditions::Dict{UInt16,UInt8}, angelic_config::ConfigAngelic, evaluation_grammar::AbstractGrammar)::RuleNode
 
 Resolve angelic conditions in the given program by generating random boolean expressions and replacing the holes in the expression.
-The program is modified in-place.
+The program is modified in-place. All replacement strategies are attempted sequentially as provided.
 
 # Arguments
 - `program`: The program to resolve angelic conditions in.
 - `passing_tests`: A BitVector representing the tests that the program has already passed.
-- `grammar`: The grammar rules of the program.
+- `grammar`: The grammar rules of the program to be used for sampling angelic condition candidates.
 - `symboltable`: A symbol table for the grammar.
 - `tests`: A vector of `IOExample` objects representing the input-output test cases.
 - `replacement_func`: The function to use for replacement -> either `replace_first_angelic!` or `replace_last_angelic!`.
 - `angelic_conditions`: A dictionary mapping indices of angelic condition candidates, to the child index that may be changed.
-- `config`: The configuration object for FrAngel.
-- `fragment_base_rules_offset`: The offset for fragment base/identity rules.
-- `rule_minsize`: A vector of minimum sizes for each production rule in the grammar. Can be obtained from [`rules_minsize`](@ref).
-- `symbol_minsize`: A dictionary with the minimum size achievable for each symbol in the grammar. Can be obtained from [`symbols_minsize`](@ref).
+- `angelic_config`: The configuration for angelic conditions.
+- `evaluation_grammar`: The grammar rules of the program to be used for evaluation. Usually the same as `grammar`, or augmented with fragments.
 
 # Returns
 The resolved program with angelic values replaced, or an unresolved program if it times out.

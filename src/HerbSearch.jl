@@ -99,17 +99,19 @@ export
   replace_first_angelic!,
   replace_last_angelic!,
 
-  mine_fragments,
-  remember_programs!,
-  
   generate_random_program,
   modify_and_replace_program_fragments!,
   add_angelic_conditions!,
+  resolve_angelic!,
 
+  mine_fragments,
+  remember_programs!,
+  
   add_fragments_prob!,
   setup_grammar_with_fragments!,
   add_fragment_base_rules!,
   add_fragment_rules!,
+  updateGrammarWithFragments!,
 
   FrAngelRandomIterator,
   FrAngelRandomIteratorState,

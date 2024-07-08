@@ -67,7 +67,7 @@ end
 
 
 """
-    setup_grammar_with_fragments!(grammar::AbstractGrammar, use_fragments_chance::Float16, rule_minsize::AbstractVector{UInt8})::Tuple{Int16,Int16}
+    setup_grammar_with_fragments!(grammar::AbstractGrammar, use_fragments_chance::Float16)::Tuple{Int16,Int16}
 
 Sets up the grammar with fragments by adding fragment base/identity rules (eg. `<symbol> = Fragment_<symbol>`), resizes the rule minimum size, 
 and adds fragment probabilities. The grammar is updated in-place.
@@ -75,24 +75,17 @@ and adds fragment probabilities. The grammar is updated in-place.
 # Arguments
 - `grammar`: The grammar object to set up.
 - `use_fragments_chance`: The chance of using fragments.
-- `rule_minsize`: The minimum size of each rule.
-
 # Returns
 A tuple `(fragment_base_rules_offset, fragment_rules_offset)` representing the offsets of fragments base rules (i.e. the start and end indices of the fragments base rules).
 The latter is also the starting index of the regular fragment rules (`Fragment_<symbol> = <expression>`)
 
 """
-function setup_grammar_with_fragments!(grammar::AbstractGrammar, use_fragments_chance::Float16, rule_minsize::AbstractVector{UInt8})::Tuple{Int16,Int16}
+function setup_grammar_with_fragments!(grammar::AbstractGrammar, use_fragments_chance::Float16)::Tuple{Int16,Int16}
     # Add identity fragment rules
     fragment_base_rules_offset::Int16 = length(grammar.rules)
     add_fragment_base_rules!(grammar)
     fragment_rules_offset::Int16 = length(grammar.rules)
 
-    # Resize rule_minsize
-    resize!(rule_minsize, fragment_rules_offset)
-    for i in fragment_base_rules_offset+1:fragment_rules_offset
-        rule_minsize[i] = 255
-    end
 
     # Add probabilities of identity fragment rules based on config
     add_fragments_prob!(grammar, use_fragments_chance, fragment_base_rules_offset, fragment_rules_offset)
@@ -172,4 +165,30 @@ function add_fragment_rules!(g::AbstractGrammar, fragments::AbstractVector{RuleN
     g.childtypes = [get_childtypes(rule, alltypes) for rule ∈ g.rules]
     g.bychildtypes = [BitVector([g.childtypes[i1] == g.childtypes[i2] for i2 ∈ 1:length(g.rules)]) for i1 ∈ 1:length(g.rules)]
     g.domains = Dict(type => BitArray(r ∈ g.bytype[type] for r ∈ 1:length(g.rules)) for type ∈ keys(g.bytype))
+end
+
+"""
+    updateGrammarWithFragments!(grammar::AbstractGrammar, fragments, fragment_base_rules_offset, fragment_rules_offset, use_fragments_chance)
+
+A helper function for updating a grammar with fragments. Replaces any existing fragments with new ones, and updates the probabilities.
+
+# Arguments
+- `grammar`: The grammar to update.
+- `fragments`: The new fragments to add.
+- `fragment_base_rules_offset`: The offset for fragment base/identity rules.
+- `fragment_rules_offset`: The offset for regular fragment rules.
+- `use_fragments_chance`: The chance of using fragments. Used for updating the probabilities.
+
+"""
+function updateGrammarWithFragments!(grammar::AbstractGrammar, fragments::Vector{RuleNode}, fragment_base_rules_offset::Int16,
+    fragment_rules_offset::Int16, use_fragments_chance::Float16)
+    # Remove old fragments from grammar (by removing fragment rules)
+    for i in reverse(fragment_rules_offset+1:length(grammar.rules))
+        remove_rule!(grammar, i)
+    end
+    cleanup_removed_rules!(grammar)
+
+    # Add new fragments to grammar and update probabilities
+    add_fragment_rules!(grammar, fragments)
+    add_fragments_prob!(grammar, use_fragments_chance, fragment_base_rules_offset, fragment_rules_offset)
 end

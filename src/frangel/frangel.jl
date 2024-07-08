@@ -111,14 +111,13 @@ function frangel(
 )
     # Setup algorithm
     remembered_programs = Dict{BitVector,Tuple{RuleNode,Int,Int}}()
-    visited = init_long_hash_map()
     fragments = Vector{RuleNode}()
-
-    verbose_level = config.verbose_level
     grammar = iter.solver.grammar
     base_grammar = deepcopy(grammar)
     symboltable = SymbolTable(grammar)
     replacement_strategy = [replace_first_angelic!, replace_last_angelic!]
+    state = nothing
+    start_time = time()
 
     # Add angelic rule and save index if not provided
     if isnothing(config.angelic.angelic_rulenode)
@@ -127,16 +126,16 @@ function frangel(
     end
 
     # Setup grammar with fragments
-    (fragment_base_rules_offset, fragment_rules_offset) = setup_grammar_with_fragments!(grammar, config.generation.use_fragments_chance, rule_minsize)
-    state = nothing
-    start_time = time()
-
-    if verbose_level > 0
-        println("Grammar:")
-        print_grammar(grammar)
-        println("Minimal sizes per rule: ", rule_minsize)
-        println("Minimal size per symbol: ", symbol_minsize)
+    (fragment_base_rules_offset, fragment_rules_offset) = setup_grammar_with_fragments!(grammar, config.generation.use_fragments_chance)
+    # Resize rule_minsize
+    ############################################
+    #### REMOVE ONCE RANDOMSTATEITERATOR IS USED
+    ############################################
+    resize!(rule_minsize, fragment_rules_offset)
+    for i in fragment_base_rules_offset+1:fragment_rules_offset
+        rule_minsize[i] = 255
     end
+    ############################################
 
     # Main loop
     iterationCount, checkedProgram = 0, 0
@@ -145,33 +144,13 @@ function frangel(
         # Generate random program
         program, state = (state === nothing) ? iterate(iter) : iterate(iter, state)
 
-        if checkedProgram < verbose_level
-            println("==== Iteration #", iterationCount, " ====")
-            println(program)
-        end
-
         use_angelic = config.generation.use_angelic_conditions_chance != 0 && rand() < config.generation.use_angelic_conditions_chance
-
         # Modify the program with fragments
         program = modify_and_replace_program_fragments!(program, fragments, fragment_base_rules_offset, fragment_rules_offset, config.generation,
             base_grammar, use_angelic)
         # Modify the program with angelic conditions
         if use_angelic
             program = add_angelic_conditions!(program, grammar, angelic_conditions)
-        end
-
-        # Do not check visited program space
-        program_hash = hash(program)
-        if lhm_contains(visited, program_hash)
-            continue
-        end
-        lhm_put!(visited, program_hash)
-
-        checkedProgram += 1
-        if checkedProgram <= verbose_level
-            println("Checked program #", checkedProgram)
-            println(program)
-            println(rulenode2expr(program, grammar))
         end
 
         passed_tests = BitVector([false for _ in spec])
@@ -199,52 +178,23 @@ function frangel(
 
         # Early return -> if it passes all tests, then final round of simplification and return
         if all(passed_tests)
-            # TODO program = simplify_slow(program, grammar, spec, angelic_conditions, (time() - start_time) / 10)
-            if verbose_level > 0
-                println("Total iterations:", iterationCount)
-                println("Checked programs:", checkedProgram)
-            end
             return simplify_quick(program, grammar, spec, passed_tests, fragment_base_rules_offset)
         end
 
         # Update remember programs and fragments
         if config.generation.use_fragments_chance != 0
-            fragments, updatedFragments = remember_programs!(remembered_programs, passed_tests, program, (!config.compare_programs_by_length ? nothing : program_expr), fragments, grammar)
-
-            if checkedProgram <= verbose_level
-                println("---- Fragments ----")
-                for f in fragments
-                    println(f)
-                end
-                println("--------------------")
-            end
-
+            fragments, updatedFragments = remember_programs!(remembered_programs, passed_tests, program,
+                (!config.compare_programs_by_length ? nothing : program_expr), fragments, grammar)
             # Only run if there is a change in remembered programs
             if updatedFragments
-                # Remove old fragments from grammar (by removing fragment rules)
-                for i in reverse(fragment_rules_offset+1:length(grammar.rules))
-                    remove_rule!(grammar, i)
-                end
-                cleanup_removed_rules!(grammar)
-
-                # Add new fragments to grammar and update probabilities
-                add_fragment_rules!(grammar, fragments)
-                add_fragments_prob!(grammar, config.generation.use_fragments_chance, fragment_base_rules_offset, fragment_rules_offset)
-
+                updateGrammarWithFragments!(grammar, fragments, fragment_base_rules_offset, fragment_rules_offset, config.generation.use_fragments_chance)
                 # Update minimal sizes
+                ############################################
+                #### REMOVE ONCE RANDOMSTATEITERATOR IS USED
+                ############################################
                 update_min_sizes!(grammar, fragment_base_rules_offset, fragment_rules_offset, fragments, rule_minsize, symbol_minsize)
-
-                if checkedProgram <= verbose_level
-                    println("Grammar:")
-                    print_grammar(grammar)
-                    println("Minimal sizes per rule: ", rule_minsize)
-                    println("Minimal size per symbol: ", symbol_minsize)
-                end
+                ############################################
             end
         end
-    end
-    if verbose_level > 0
-        println("Total iterations:", iterationCount)
-        println("Checked programs:", checkedProgram)
     end
 end
