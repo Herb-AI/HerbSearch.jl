@@ -49,11 +49,9 @@ end
                     RuleNode(9)
                 ])
             ]),
-            RuleNode(16),
             RuleNode(14, [
                 RuleNode(9)
             ]),
-            RuleNode(9),
             RuleNode(22, [
                 RuleNode(14, [
                     RuleNode(8)
@@ -61,8 +59,7 @@ end
             ]),
             RuleNode(14, [
                 RuleNode(8)
-            ]),
-            RuleNode(8)
+            ])
         ])
 
         @test expected_fragments == fragments
@@ -142,10 +139,7 @@ end
             ]),
             RuleNode(15, [
                 RuleNode(16)
-            ]),
-            RuleNode(8),
-            RuleNode(9),
-            RuleNode(16)
+            ])
         ])
 
         @test expected_fragments == fragments

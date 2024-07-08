@@ -15,9 +15,7 @@ All the found fragments in the provided program.
 function mine_fragments(grammar::AbstractGrammar, program::RuleNode)::Set{RuleNode}
     fragments = Set{RuleNode}()
     # Push terminals as they are
-    if isterminal(grammar, program)
-        push!(fragments, program)
-    else
+    if !isterminal(grammar, program)
         # Only complete programs count are considered
         if iscomplete(grammar, program)
             push!(fragments, program)
