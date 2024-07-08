@@ -83,7 +83,7 @@ function random_modify_children!(
     for (index, child) in enumerate(node.children)
         # Generate a new program as a replacement
         if rand() < config.gen_similar_prob_new
-            node.children[index] = rand(RuleNode, grammar, return_type(grammar, child), 2)#UInt8(length(child)) + config.similar_new_extra_size)
+            node.children[index] = rand(RuleNode, grammar, return_type(grammar, child), config.new_children_max_depth)
             # Traverse into the child
         else
             random_modify_children!(grammar, child, config)

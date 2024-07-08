@@ -8,7 +8,7 @@ A configuration struct for FrAngel generation.
 - `use_fragments_chance::Float16`: The chance of using fragments during generation.
 - `use_entire_fragment_chance::Float16`: The chance of using the entire fragment during replacement over modifying a program's children.
 - `use_angelic_conditions_chance::Float16`: The chance of using angelic conditions during generation.
-- `similar_new_extra_size::UInt8`: The extra size allowed for newly generated children during replacement.
+- `new_children_max_depth::Int64`: The extra size allowed for newly generated children during replacement.
 - `gen_similar_prob_new::Float16`: The chance of generating a new child / replacing a node randomly. 
 
 """
@@ -17,7 +17,7 @@ A configuration struct for FrAngel generation.
     use_fragments_chance::Float16 = 0.5
     use_entire_fragment_chance::Float16 = 0.5
     use_angelic_conditions_chance::Float16 = 0.5
-    similar_new_extra_size::UInt8 = 8
+    new_children_max_depth::Int64 = 2
     gen_similar_prob_new::Float16 = 0.25
 end
 
@@ -30,7 +30,6 @@ The full configuration struct for FrAngel. Includes generation and angelic sub-c
 - `max_time::Float16`: The maximum time allowed for execution of whole iterator.
 - `try_to_simplify::Bool`: Whether to try to simplify the program before mining fragments.
 - `compare_programs_by_length::Bool`: Whether to compare programs by length if they have same number of AST nodes.
-- `verbose_level::Int`: The verbosity level of the output. This will print the program and all intermediate steps for the first `verbose_level` checked programs.
 - `generation::FrAngelConfigGeneration`: The generation configuration for FrAngel.
 - `angelic::ConfigAngelic`: The configuration for angelic conditions of FrAngel.
 
@@ -39,7 +38,6 @@ The full configuration struct for FrAngel. Includes generation and angelic sub-c
     max_time::Float16 = 5
     try_to_simplify::Bool = false
     compare_programs_by_length::Bool = false
-    verbose_level::Int = 0
     generation::FrAngelConfigGeneration = FrAngelConfigGeneration()
     angelic::ConfigAngelic = ConfigAngelic()
 end
