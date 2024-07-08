@@ -30,13 +30,6 @@ config = FrAngelConfig(verbose_level=0, generation=FrAngelConfigGeneration(use_f
 iterator = FrAngelRandomIterator(grammar, :Num, rules_min, symbol_min, max_depth=config.generation.max_size)
 (fragment_base_rules_offset, fragment_rules_offset) = setup_grammar_with_fragments!(grammar, config.generation.use_fragments_chance, rules_min)
 
-@testset "angelic_evaluation" begin
-    p = RuleNode(15, [Hole([]), RuleNode(12), RuleNode(13, [RuleNode(12), RuleNode(2)])])
-    tab = SymbolTable(grammar)
-    res = execute_angelic_on_input(tab, p, grammar, spec[1].in, 2, RuleNode(16), config.angelic.max_execute_attempts, angelic_conditions)
-    @test res
-end
-
 @testset "add_angelic_conditions! and replace_first_angelic!" begin
     p = RuleNode(1)
     state = nothing

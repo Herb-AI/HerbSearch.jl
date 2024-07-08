@@ -43,12 +43,12 @@ include("fragments/mining_fragments.jl")
 
 include("angelic_conditions/generate_angelic.jl")
 include("angelic_conditions/angelic_replacement_strategies.jl")
+include("angelic_conditions/long_hash_map.jl")
 
 include("frangel/frangel.jl")
 include("frangel/frangel_utils.jl")
 include("frangel/frangel_generation.jl")
 include("frangel/frangel_random_iterator.jl")
-include("frangel/long_hash_map.jl")
 
 
 export 
