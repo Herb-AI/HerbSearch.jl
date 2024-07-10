@@ -99,11 +99,13 @@ function supervised_search(
         expr = rulenode2expr(h, g)
         
         # Evaluate the expression on the examples
-        total_error = 0
-        outputs = [ (example.out, execute_on_input(symboltable, expr, example.in)) for example ∈ problem.spec ]
+        # TODO: Find a better way that does not involve hardcoding the output vector type. 
+        # If I do not hardcode I get Vector{Tuple{Any, Int}} the multiple dispatch fails when called with mean_squared_error
+        outputs::Vector{Tuple{<:Number,<:Number}} = [ (example.out, execute_on_input(symboltable, expr, example.in)) for example ∈ problem.spec ]
         total_error = mean_squared_error(outputs)
 
         if total_error == 0
+            # if we have a stop channel to stop other threads signal that all threads should stop 
             if !isnothing(stop_channel) 
                 safe_put!(stop_channel,true)
                 close(stop_channel)

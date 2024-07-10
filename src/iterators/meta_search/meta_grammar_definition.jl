@@ -3,7 +3,7 @@ abstract type ParallelThreads <: ParallelType end
 abstract type ParallelNoThreads <: ParallelType end
 
 abstract type MetaSearchIterator end
-struct VannilaIterator{F1} <: MetaSearchIterator 
+struct VanillaIterator{F1} <: MetaSearchIterator 
     iterator::ProgramIterator
     stopping_condition::F1
     problem::Problem
@@ -25,7 +25,8 @@ MAX_SEQUENCE_RUNNING_TIME = 8 # Max sequence running time in seconds
 
 # input is grammar and problem
 meta_grammar = @csgrammar begin
-    S = function f(input_problem::Problem, input_grammar::G) where {G<:AbstractGrammar}
+    # Question: Is it better to generate a function or a lambda?
+    S = function f(input_problem::Problem, input_grammar::AbstractGrammar)
         generic_run(COMBINATOR)
     end
 	problemExamples = input_problem.spec
@@ -39,15 +40,15 @@ meta_grammar = @csgrammar begin
     vlsn_enumeration_depth = 1 | 2
 
     # SA configuration
-    sa_inital_temperature = 1 | 2 | 3 | 4 | 5
+    sa_inital_temperature = 1 | 2 | 3 | 4 | 5 | 6 
     sa_temperature_decreasing_factor = 0.9 | 0.91 | 0.92 | 0.93 | 0.94 | 0.95 | 0.96 | 0.97 | 0.98 | 0.99 
 
     # TODO: Fix algorithm
-    ALGORITHM = # MHSearchIterator(input_grammar, :X, problemExamples, mean_squared_error, max_depth=MAX_DEPTH) |
-                # SASearchIterator(input_grammar, :X, problemExamples, mean_squared_error, initial_temperature = sa_inital_temperature, temperature_decreasing_factor = sa_temperature_decreasing_factor, max_depth=MAX_DEPTH) |
-                # VLSNSearchIterator(input_grammar, :X, problemExamples, mean_squared_error, vlsn_neighbourhood_depth = vlsn_enumeration_depth)
+    ALGORITHM = MHSearchIterator(input_grammar, :X, problemExamples, mean_squared_error, max_depth=MAX_DEPTH) |
+                SASearchIterator(input_grammar, :X, problemExamples, mean_squared_error, initial_temperature = sa_inital_temperature, temperature_decreasing_factor = sa_temperature_decreasing_factor, max_depth=MAX_DEPTH) |
+                VLSNSearchIterator(input_grammar, :X, problemExamples, mean_squared_error, vlsn_neighbourhood_depth = vlsn_enumeration_depth) | 
                 BFSIterator(input_grammar, :X, max_depth=4)
-    SimpleIterator = VannilaIterator(ALGORITHM, STOPFUNCTION, input_problem)
+    SimpleIterator = VanillaIterator(ALGORITHM, STOPFUNCTION, input_problem)
     # A = ga,STOP
     # A = dfs,STOP
     # A = bfs,STOP
@@ -57,7 +58,7 @@ meta_grammar = @csgrammar begin
     ALIST = [MS; MS]
     ALIST = [MS; ALIST]
     # SELECT = best | crossover | mutate
-    STOPFUNCTION = (time, iteration, cost) -> time > 4  # bigger running time
+    STOPFUNCTION = (time, iteration, cost) -> time > sa_inital_temperature || ITERATION_STOP  # bigger running time
     ITERATION_STOP = iteration > VALUE
     # STOPTERM = OPERAND < VALUE
     # OPERAND = time | iteration | cost
@@ -65,7 +66,7 @@ meta_grammar = @csgrammar begin
     # VALUE = 10 * VALUE
 end
 
-function evaluate_meta_program(meta_expression, problem::Problem, grammar :: G) where G <: AbstractGrammar
+function evaluate_meta_program(meta_expression, problem::Problem, grammar :: AbstractGrammar)
     # get the function (problem,examples) -> run program
     program = eval(meta_expression)
     # provide the problem and the grammar for that problem 

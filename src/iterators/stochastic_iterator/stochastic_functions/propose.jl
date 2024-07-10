@@ -23,7 +23,7 @@ The return function is a function that produces a list with all the subprograms 
 """
 function enumerate_neighbours_propose(enumeration_depth::Int64)
     return (solver::Solver, path::Vector{Int}, dict::Union{Nothing,Dict{String,Any}}) -> begin
-        return BFSIterator(solver)
+        return BFSIterator(solver=solver, max_size=typemax(Int),  max_depth=enumeration_depth)
     end
 end
     
