@@ -20,6 +20,17 @@
 
     # Expressions: [1, 2, 1 * 1, 1 * 2, 2 * 1, 2 * 2] 
     @test length(BFSIterator(g1, :Real, max_depth=2)) == 6
+
+    # Initialize solver with a rulenode
+    solver = GenericSolver(g1, RuleNode(3,[RuleNode(1),RuleNode(2)]))
+    remove_node!(solver, [1])
+    # add a hole 
+    #      * 
+    #  hole   2
+
+    # All expressions of depth 2 can be put inside the hole  
+    @test length(BFSIterator(solver=solver, max_depth=3)) == 6
+
   end
 
   @testset "length on different arithmetic operators" begin

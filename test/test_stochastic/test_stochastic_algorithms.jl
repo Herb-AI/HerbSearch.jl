@@ -70,11 +70,18 @@ end
     end
     
     @testset verbose = true "Very Large Scale Neighbourhood" begin
-        @testvlsn "x"  1
-        @testvlsn "2"  1
-        @testvlsn "4"  1
-        @testvlsn "10" 2
+        @testvlsn "x"  1 2
+        @testvlsn "2"  1 2
+        @testvlsn "4"  1 2
+        @testvlsn "10" 3 2
+        @testset "Does not keep running BFS but stops after max_time" begin
+            problem, examples = create_problem(x -> x * x * 5)
+            iterator = VLSNSearchIterator(grammar, :X, examples, mean_squared_error, vlsn_neighbourhood_depth=2, max_depth=3)
 
+            runtime = @timed solution, flag = synth(problem, iterator, max_time=3)
+            @test runtime.time <= 3 + 1
+            @test flag == suboptimal_program
+        end
     end
     
     @testset verbose = true "Simulated Annealing" begin
