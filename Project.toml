@@ -14,7 +14,6 @@ HerbSpecification = "6d54aada-062f-46d8-85cf-a1ceaf058a06"
 Logging = "56ddb016-857b-54e1-b83d-db4d58db5568"
 MLStyle = "d8e11817-5142-5d16-987a-aa16d5891078"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
-Revise = "295af30f-e4ad-537b-8983-00126c2a3abe"
 StatsBase = "2913bbd2-ae8a-5f71-8c99-4fb6c76f3a91"
 
 [compat]
