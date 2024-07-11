@@ -69,7 +69,7 @@ export
   MLFSIterator,
 
   BottomUpIterator,
-  BasicIterator,
+  DepthIterator,
 
   MHSearchIterator,
   VLSNSearchIterator,

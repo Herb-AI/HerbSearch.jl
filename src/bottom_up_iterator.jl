@@ -1,5 +1,5 @@
 """
-	mutable struct BottomUpIterator <: ProgramIterator
+	abstract type BottomUpIterator <: ProgramIterator
 
 Enumerates programs in a bottom-up fashion. This means that it starts with the smallest programs and gradually builds up to larger programs.
 The exploration of the search space is done by making use of the priority function, which associates each program with its cost.
@@ -12,235 +12,211 @@ Concrete implementations of this iterator should implement the following methods
 abstract type BottomUpIterator <: ProgramIterator end
 
 Base.@doc """
-    @programiterator BasicIterator(problem::Problem{Vector{IOExample}}) <: BottomUpIterator
+    @programiterator DepthIterator(problem::Problem{Vector{IOExample}}) <: BottomUpIterator
 
 A basic implementation of the bottom-up iterator. It will enumerate all programs in increasing order based on their depth.
-""" BasicIterator
-@programiterator BasicIterator(problem::Problem{Vector{IOExample}}) <: BottomUpIterator
+""" DepthIterator
+@programiterator DepthIterator(problem::Problem{Vector{IOExample}}) <: BottomUpIterator
 
-"""
-	struct BottomUpState
+mutable struct BottomUpState
+    bank::Any
+    data::Any
+    hash_set::Set{UInt}
+end
 
-Holds the state of the bottom-up iterator. This includes the priority bank, the hashes of the outputs of the programs, and the current programs that are being enumerated.
-"""
-struct BottomUpState
-    priority_bank::Dict{Symbol, Dict{RuleNode,Int64}}
-    hashes::Set{UInt}
-    current_programs::Queue{RuleNode}
+mutable struct DepthIteratorData
+    next_programs_iterable::Any
+    next_programs_result::Union{Nothing, Tuple{Tuple{Int, Any}, Any}}
+
+    new_programs::Vector{RuleNode}
+
+    ordered_rules::Vector{Int}
+    current_rule::Int
+    depth::Int
 end
 
 """
-	order(iter::BottomUpIterator, grammar::ContextSensitiveGrammar)::Vector{Int64}
+	priority_function(iter::DepthIterator, program::RuleNode)::Int64
 
-Returns the order in which the rules should be enumerated.
+Returns the depth of the RuleNode that describes the given program.
 """
-function order(
-    ::BottomUpIterator,
-    grammar::ContextSensitiveGrammar
+function cost_function(
+    iter::DepthIterator,
+    program::RuleNode
 )
-    # the default order function is the BasicIterator's function
-    return order(BasicIterator, grammar)
+    return depth(program)
 end
 
 """
-	pick(iter::BottomUpIterator, grammar::ContextSensitiveGrammar, state::BottomUpState, rule::Int64)::Vector{RuleNode}
-
-Returns a non-zero number of programs that can be created by applying the given rule.
-"""
-function pick(
-    ::BottomUpIterator,
-    grammar::ContextSensitiveGrammar,
-    state::BottomUpState,
-    rule::Int64
-)
-    # the default pick function is the BasicIterator's function
-    return pick(BasicIterator, grammar, state, rule)
-end
-
-"""
-	priority_function(iter::BottomUpIterator, grammar::ContextSensitiveGrammar, program::RuleNode, state::BottomUpState)::Int64
-
-Returns the priority associated with the given program.
-"""
-function priority_function(
-    ::BottomUpIterator,
-    grammar::ContextSensitiveGrammar,
-    program::RuleNode,
-    state::BottomUpState
-)
-    # the default priority function is the BasicIterator's function
-    return priority_function(BasicIterator, grammar, program, state)
-end
-
-"""
-	order(::BasicIterator, grammar::ContextSensitiveGrammar)
+	order(iter::DepthIterator)
 
 Returns the non-terminal rules in the order in which they appear in the grammar.
 """
 function order(
-    ::BasicIterator,
-    grammar::ContextSensitiveGrammar
+    iter::DepthIterator
 )
+    grammar::ContextSensitiveGrammar = get_grammar(iter.solver)
+
     return findall(isterminal -> !isterminal, grammar.isterminal)
 end
 
-"""
-	pick(::BasicIterator, grammar::ContextSensitiveGrammar, state::BottomUpState, rule::Int64)::Vector{RuleNode}
+function init_bank(
+    iter::DepthIterator
+)::Dict{Symbol, Vector{RuleNode}}
+    grammar::ContextSensitiveGrammar = get_grammar(iter.solver)
+    bank::Dict{Symbol, Vector{RuleNode}} = Dict{Symbol, Vector{RuleNode}}()
 
-Function returns all possible programs that can be created by applying the given rule.
-"""
-function pick(
-    ::BasicIterator,
-    grammar::ContextSensitiveGrammar,
-    state::BottomUpState,
-    rule::Int64
-)::Vector{RuleNode}
-    new_programs = []
-    childtypes = grammar.childtypes[rule]
-    candidate_programs = map(symbol -> collect(keys(get(state.priority_bank, symbol, Dict{RuleNode, Int64}()))), childtypes)
-
-    for combination ∈ Iterators.product(candidate_programs...)
-        new_program = RuleNode(rule, nothing, collect(combination))
-        push!(new_programs, new_program)
+    for symbol ∈ grammar.types
+        bank[symbol] = Vector{RuleNode}()
     end
 
-    return new_programs
+    return bank
 end
 
-"""
-	priority_function(::BasicIterator, grammar::ContextSensitiveGrammar, program::RuleNode, state::BottomUpState)::Int64
-
-Returns the depth of the RuleNode that describes the given program.
-"""
-function priority_function(
-    ::BasicIterator,
-    grammar::ContextSensitiveGrammar,
-    program::RuleNode,
-    state::BottomUpState
-)::Int64
-    max_depth::Int64 = 0
-    program_symbol::Symbol = grammar.types[program.ind]
-
-    for child ∈ program.children
-        child_symbol::Symbol = grammar.types[child.ind]
-        max_depth = max(max_depth, state.priority_bank[child_symbol][child])
-    end
-
-    return max_depth + 1
-end
-
-"""
-	Base.iterate(iter::BottomUpIterator)::Union{Nothing,Tuple{RuleNode,BottomUpState}}
-
-Describes the iteration for a given [`BottomUpIterator`](@ref) over the grammar. 
-The iterations constructs the initial set of programs, which consists of the set of terminals.
-It also constructs the ['BottomUpState'](@ref) which will be used in future iterations.
-"""
-function Base.iterate(iter::BottomUpIterator)::Union{Nothing,Tuple{RuleNode,BottomUpState}}
-    priority_bank::Base.Dict{Symbol, Dict{RuleNode,Int64}} = Dict()
-	hashes::Set{UInt} = Set{UInt}()
-    current_programs = Queue{RuleNode}()
-
+function init_data(
+    iter::DepthIterator
+)::DepthIteratorData
     grammar::ContextSensitiveGrammar = get_grammar(iter.solver)
 
+    next_programs_iterable::Vector{Tuple{Int, Vector{RuleNode}}} = Vector{Tuple{Int, Vector{RuleNode}}}()
     for terminal ∈ findall(grammar.isterminal)
-        current_single_program::RuleNode = RuleNode(terminal, nothing, [])
-        enqueue!(current_programs, current_single_program)
+        push!(next_programs_iterable, (terminal, []))
     end
 
-    state::BottomUpState = BottomUpState(priority_bank, hashes, current_programs)
-    return _get_next_program(iter, state)
+    next_programs_result = iterate(next_programs_iterable)
+
+    new_programs::Vector{RuleNode} = Vector{RuleNode}()
+
+    ordered_rules::Vector{Int} = order(iter)
+    current_rule::Int = 0
+
+    # TODO: change the implementation to start with depth at 1
+    return DepthIteratorData(next_programs_iterable, next_programs_result, new_programs, ordered_rules, current_rule, 1)
 end
 
-"""
-	Base.iterate(iter::BottomUpIterator, state::BottomUpState)
-
-Describes the iteration for a given [`BottomUpIterator`](@ref) over the grammar. 
-It first checks for programs that were generated by not returned yet.
-Otherwise, it constructs other programs by combining those from the bank and returns one of them.
-"""
-function Base.iterate(iter::BottomUpIterator, state::BottomUpState)::Union{Nothing,Tuple{RuleNode,BottomUpState}}
-    next_program = _get_next_program(iter, state)
-    if next_program ≠ nothing
-        return next_program
+function _update_bank!(
+    bank::Dict{Symbol, Vector{RuleNode}},
+    data::DepthIteratorData,
+    grammar::ContextSensitiveGrammar
+)::Nothing
+    for program ∈ data.new_programs
+        symbol::Symbol = grammar.types[program.ind]
+        push!(bank[symbol], program)
     end
 
+    data.new_programs = Vector{RuleNode}()
+    return nothing
+end
+
+function create_program(
+    iter::DepthIterator,
+    bank::Dict{Symbol, Vector{RuleNode}},
+    data::DepthIteratorData
+)::Union{Nothing, RuleNode}
+    while data.next_programs_result === nothing
+        grammar::ContextSensitiveGrammar = get_grammar(iter.solver)
+
+        data.current_rule += 1
+        if data.current_rule > length(data.ordered_rules)
+            data.depth += 1
+            if data.depth > get_max_depth(iter.solver)
+                return nothing
+            end
+
+            # New depth reached, so we can add the new programs to the bank
+            _update_bank!(bank, data, grammar)
+            data.current_rule = 1
+        end
+
+        childtypes::Vector{Symbol} = grammar.childtypes[data.ordered_rules[data.current_rule]]
+        children_combinations::Vector{Vector{RuleNode}} = map(symbol -> bank[symbol], childtypes)
+        
+        data.next_programs_iterable = Iterators.product(data.ordered_rules[data.current_rule], Iterators.product(children_combinations...))
+        data.next_programs_result = iterate(data.next_programs_iterable)
+    end
+
+    ((next_program_rule, next_program_children), next_program_state) = data.next_programs_result
+    data.next_programs_result = iterate(data.next_programs_iterable, next_program_state)
+
+    return RuleNode(next_program_rule, nothing, collect(next_program_children))
+
+end
+
+function update_state!(
+    iter::DepthIterator,
+    bank::Dict{Symbol, Vector{RuleNode}},
+    data::DepthIteratorData,
+    program::RuleNode
+)::Nothing
     grammar::ContextSensitiveGrammar = get_grammar(iter.solver)
 
-    rules::Vector{Int64} = order(iter, grammar)
-    for rule in rules
-        new_programs = pick(iter, grammar, state, rule)
-        for new_program ∈ new_programs
-            enqueue!(state.current_programs, new_program)
-        end
-    end
+    symbol::Symbol = grammar.types[program.ind]
+    push!(data.new_programs, program)
 
+    return nothing
+end
+
+function Base.iterate(iter::BottomUpIterator)::Union{Nothing,Tuple{RuleNode,BottomUpState}}
+    grammar::ContextSensitiveGrammar = get_grammar(iter.solver)
+
+    bank::Any = init_bank(iter)
+    data::Any = init_data(iter)
+    hash_set::Set{UInt64} = Set{UInt64}()
+
+    state::BottomUpState = BottomUpState(bank, data, hash_set)
     return _get_next_program(iter, state)
 end
 
-"""
-	_get_next_program(iter::BottomUpIterator, state::BottomUpState)::Union{Nothing,Tuple{RuleNode,BottomUpState}}
+function Base.iterate(
+    iter::BottomUpIterator,
+    state::BottomUpState
+)::Union{Nothing,Tuple{RuleNode,BottomUpState}}
+    return _get_next_program(iter, state)
+end
 
-Iterates through the generated programs. Once it finds a program which is not observationally equivalent to an already-returned program,
-inserts it into the bank and returns it.
-"""
 function _get_next_program(
     iter::BottomUpIterator,
     state::BottomUpState
-)::Union{Nothing,Tuple{RuleNode, BottomUpState}}
-    grammar::ContextSensitiveGrammar = get_grammar(iter.solver)
+)::Union{Nothing,Tuple{RuleNode,BottomUpState}}
+    program::Union{Nothing, RuleNode} = create_program(iter, state.bank, state.data)
 
-    while !isempty(state.current_programs) 
-        current_program = dequeue!(state.current_programs)
-        if depth(current_program) > get_max_depth(iter.solver) || _contains_equivalent(iter, state, current_program)
-            continue
+    while program !== nothing
+        # TODO: optimize this to avoid calling depth for all programs
+        if depth(program) <= get_max_depth(iter.solver) && !_contains_equivalent!(iter, state, program)
+            update_state!(iter, state.bank, state.data, program)
+
+            new_state!(iter.solver, program)
+            if isfeasible(iter.solver)
+                return program, state
+            end
         end
 
-        current_program_symbol::Symbol = grammar.types[current_program.ind]
-        symbol_dict = get!(state.priority_bank, current_program_symbol, Dict{RuleNode, Int64}())
-        symbol_dict[current_program] = priority_function(iter, grammar, current_program, state)
-
-        new_state!(iter.solver, current_program)
-        if isfeasible(iter.solver)
-            return current_program, state
-        end
+        program = create_program(iter, state.bank, state.data)
     end
-
+    
     return nothing
 end
 
 """
 	_contains_equivalent(iter::BottomUpIterator, state::BottomUpState, program::RuleNode)::Bool
 
-Checks if the program is equivalent to the ones that have already been enumerated.
+Checks if the program is equivalent to the ones that have already been enumerated. If it is unique, its hashed is pushed to hash_set
 """
-function _contains_equivalent(
+function _contains_equivalent!(
 	iter::BottomUpIterator,
-	state::BottomUpState,
-	program::RuleNode
+    state::BottomUpState,
+    program::RuleNode
 )::Bool
-	hashed_output = _hash_outputs_for_program(iter, program, iter.problem)
+    grammar::ContextSensitiveGrammar = get_grammar(iter.solver)
+    problem = iter.problem
 
-	if hashed_output ∈ state.hashes
+    output = map(example -> execute_on_input(SymbolTable(grammar), rulenode2expr(program, grammar), example.in), problem.spec)
+    hashed_output = hash(output)
+
+	if hashed_output ∈ state.hash_set
 		return true
 	end
 
-	push!(state.hashes, hashed_output)
+    push!(state.hash_set, hashed_output)
 	return false
-end
-
-"""
-	_hash_outputs_for_program(iter::BottomUpIterator, program::RuleNode, problem::Problem{Vector{IOExample}})::UInt
-
-Hashes the outputs of the programs for observing equivalent programs.
-"""	
-function _hash_outputs_for_program(
-	iter::BottomUpIterator,
-	program::RuleNode,
-    problem::Problem{Vector{IOExample}}
-)::UInt
-    grammar::ContextSensitiveGrammar = iter.solver.grammar
-
-    outputs = map(example -> execute_on_input(SymbolTable(grammar), rulenode2expr(program, grammar), example.in), problem.spec)
-    return hash(outputs)
 end
