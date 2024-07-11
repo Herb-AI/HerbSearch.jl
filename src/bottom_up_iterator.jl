@@ -30,8 +30,7 @@ mutable struct DepthIteratorData
 
     new_programs::Vector{RuleNode}
 
-    ordered_rules::Vector{Int}
-    current_rule::Int
+    rules::Queue{Int}
     depth::Int
 end
 
@@ -54,10 +53,17 @@ Returns the non-terminal rules in the order in which they appear in the grammar.
 """
 function order(
     iter::DepthIterator
-)
+)::Queue{Int}
     grammar::ContextSensitiveGrammar = get_grammar(iter.solver)
+    rules::Queue{Int} = Queue{Int}()
 
-    return findall(isterminal -> !isterminal, grammar.isterminal)
+    for (rule_index, is_terminal) ∈ enumerate(grammar.isterminal)
+        if !is_terminal
+            enqueue!(rules, rule_index)
+        end
+    end
+
+    return rules
 end
 
 function init_bank(
@@ -82,16 +88,9 @@ function init_data(
     for terminal ∈ findall(grammar.isterminal)
         push!(next_programs_iterable, (terminal, []))
     end
-
     next_programs_result = iterate(next_programs_iterable)
 
-    new_programs::Vector{RuleNode} = Vector{RuleNode}()
-
-    ordered_rules::Vector{Int} = order(iter)
-    current_rule::Int = 0
-
-    # TODO: change the implementation to start with depth at 1
-    return DepthIteratorData(next_programs_iterable, next_programs_result, new_programs, ordered_rules, current_rule, 1)
+    return DepthIteratorData(next_programs_iterable, next_programs_result, Vector{RuleNode}(), Queue{Int}(), 1)
 end
 
 function _update_bank!(
@@ -116,8 +115,9 @@ function create_program(
     while data.next_programs_result === nothing
         grammar::ContextSensitiveGrammar = get_grammar(iter.solver)
 
-        data.current_rule += 1
-        if data.current_rule > length(data.ordered_rules)
+        if isempty(data.rules)
+            data.rules = order(iter)
+
             data.depth += 1
             if data.depth > get_max_depth(iter.solver)
                 return nothing
@@ -125,13 +125,14 @@ function create_program(
 
             # New depth reached, so we can add the new programs to the bank
             _update_bank!(bank, data, grammar)
-            data.current_rule = 1
         end
 
-        childtypes::Vector{Symbol} = grammar.childtypes[data.ordered_rules[data.current_rule]]
+        current_rule::Int = dequeue!(data.rules)
+
+        childtypes::Vector{Symbol} = grammar.childtypes[current_rule]
         children_combinations::Vector{Vector{RuleNode}} = map(symbol -> bank[symbol], childtypes)
         
-        data.next_programs_iterable = Iterators.product(data.ordered_rules[data.current_rule], Iterators.product(children_combinations...))
+        data.next_programs_iterable = Iterators.product(current_rule, Iterators.product(children_combinations...))
         data.next_programs_result = iterate(data.next_programs_iterable)
     end
 
