@@ -47,14 +47,15 @@ meta_grammar = @csgrammar begin
     ALGORITHM = MHSearchIterator(input_grammar, :X, problemExamples, mean_squared_error, max_depth=MAX_DEPTH) |
                 SASearchIterator(input_grammar, :X, problemExamples, mean_squared_error, initial_temperature = sa_inital_temperature, temperature_decreasing_factor = sa_temperature_decreasing_factor, max_depth=MAX_DEPTH) |
                 VLSNSearchIterator(input_grammar, :X, problemExamples, mean_squared_error, neighbourhood_size = vlsn_neighbourhood_size) | 
-                BFSIterator(input_grammar, :X, max_depth=4)
+                BFSIterator(input_grammar, :X, max_depth=4) | 
+                DFSIterator(input_grammar, :X, max_depth=4)  
     SimpleIterator = VanillaIterator(ALGORITHM, STOPFUNCTION, input_problem)
     # A = ga,STOP
     # A = dfs,STOP
     # A = bfs,STOP
     # A = astar,STOP
     COMBINATOR = SequenceCombinatorIterator(ALIST)
-    COMBINATOR = ParallelCombinatorIterator(ParallelNoThreads, ALIST)
+    COMBINATOR = ParallelCombinatorIterator(ParallelThreads, ALIST)
     ALIST = [MS; MS]
     ALIST = [MS; ALIST]
     # SELECT = best | crossover | mutate

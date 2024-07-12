@@ -91,15 +91,3 @@ Random.seed!(1)
 # overwrite genetic fitness function with the meta search fitness
 HerbSearch.fitness(::GeneticSearchIterator, program::RuleNode, results::AbstractVector{<:Tuple{Any,Any}}) = meta_search_fitness_function(program)
 get_meta_algorithm()
-
-function runthis(input_problem::Problem, input_grammar::ContextSensitiveGrammar)
-    problem = HerbSearch.problems_train[4][1]
-    
-    HerbSearch.generic_run(SequenceCombinatorIterator([VanillaIterator(MHSearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, max_depth = 10), ((time, iteration, cost)->begin
-                            time > 3 || iteration > 3000
-                        end), input_problem); [VanillaIterator(VLSNSearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, neighbourhood_size = 1), ((time, iteration, cost)->begin
-                                time > 3 || iteration > 3
-                            end), input_problem); VanillaIterator(SASearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, initial_temperature = 4, temperature_decreasing_factor = 0.98, max_depth = 10), ((time, iteration, cost)->begin
-                                time > 4 || iteration > 5000
-                            end), input_problem)]]))
-end
