@@ -90,6 +90,7 @@ function supervised_search(
     best_error = typemax(Int)
     best_rulenode::Union{AbstractRuleNode, Nothing} = nothing
     for (i, h) ∈ enumerate(iterator)
+        @assert !contains_hole(h) "$h has a hole inside!"
         # check to stop or not
         if !isnothing(stop_channel) && !isempty(stop_channel)
             return best_rulenode, best_error
@@ -114,21 +115,29 @@ function supervised_search(
         elseif total_error < best_error
             # Update the best found example so far
             best_error = total_error
-            best_rulenode = h
+            best_rulenode = deepcopy(h) # the best rulenode needs to be deepcopied because some iterators modify the output in place
+            @assert !contains_hole(best_rulenode) "$best_rulenode has a hole inside!"
         end
 
         # Check stopping conditions
         current_time = time() - start_time
         if vanilla_iterator.stopping_condition(current_time, i, total_error) || (max_running_time > 0 && current_time > max_running_time)
+            if !isnothing(best_rulenode)
+                @assert !contains_hole(best_rulenode) "$best_rulenode has a hole inside!"
+            end
             return best_rulenode, best_error
         end
+    end
+    if !isnothing(best_rulenode)
+        @assert !contains_hole(best_rulenode) "$best_rulenode has a hole inside!"
     end
     return best_rulenode, best_error
 end
 
 
 function meta_search(
-    iterator::ProgramIterator; 
+    iterator::ProgramIterator,
+    grammar::AbstractGrammar;
     max_time = typemax(Int),
     max_iterations = typemax(Int),
 )
@@ -138,6 +147,7 @@ function meta_search(
 
 
     best_fitness = 0
+    iteration    = 0
     best_program = nothing
     println("Starting meta search!! ")
     prev_it_time = time()
@@ -146,7 +156,7 @@ function meta_search(
         rulenode, state = next 
         fitness = state.best_fitness
         # Create expression from rulenode representation of AST
-        expr = rulenode2expr(rulenode, g)
+        expr = rulenode2expr(rulenode, grammar)
         if fitness > best_fitness
             best_fitness = fitness 
             best_program = expr
@@ -156,11 +166,10 @@ function meta_search(
         timer = time() - prev_it_time
         println("""
         Meta Search status
-            - genetic iteration   : $i 
+            - genetic iteration   : $iteration
             - current fitness     : $fitness
             - Best fitness        : $best_fitness
             - time of iteration   : $timer
-            - estimate of runtime : $(estimate_runtime_of_one_genetic_iteration())
         """)
 
         println(repeat("_",100))
@@ -171,9 +180,10 @@ function meta_search(
         prev_it_time = time()
         # Evaluate the expression on the examples
         current_time = time() - start_time
-        if current_time > max_time || i > max_iterations 
+        if current_time > max_time || iteration > max_iterations 
             return best_program, best_fitness
         end
+        iteration += 1
     end
     return best_program, best_fitness
 end
