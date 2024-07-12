@@ -1,178 +1,105 @@
 using HerbInterpret
 using HerbGrammar
 using HerbSpecification
+using HerbConstraints
 using HerbSearch
 using Logging
-# using Statistics
-# using PlotlyJS
 
 import Random
-include("meta_search.jl")
 
-function read_configuration()
-    global meta_configuration = from_toml(MetaConfiguration, "src/iterators/meta_search/configuration.toml")
-    global fitness_configuration = meta_configuration.fitness
-    global genetic_configuration = meta_configuration.genetic
+include("configuration.jl")
+
+"""
+    meta_search_fitness_function(program)
+
+The fitness function used for a given program from the meta-grammar.
+To evaluate a possible combinator/algorithm for the meta-search we don't have access any input and outputs examples.
+
+The current fitness is given by:
+```julia
+1 / (mean_cost * 100 + mean_running_time)
+```
+
+"""
+function meta_search_fitness_function(program)
+    expression_to_evaluate = rulenode2expr(program, meta_grammar)
+
+    # evaluate the search 3 times to account for variable time of running a program
+    RUNS = fitness_configuration.number_of_runs_to_average_over
+
+    mean_cost = 0
+    mean_running_time = 0
+
+    lk = Threads.ReentrantLock()
+    for i ∈ eachindex(HerbSearch.problems_train)
+        (problem, problem_text) = HerbSearch.problems_train[i]
+        for _ in 1:RUNS
+            # get a program that needs a problem and a grammar to be able to run
+            output = @timed best_program, program_cost = evaluate_meta_program(expression_to_evaluate, problem, HerbSearch.arithmetic_grammar)
+            
+            lock(lk) do
+                mean_cost += program_cost
+                mean_running_time += output.time
+            end
+        end
+    end
+
+    # print("Program has depth: ", depth(program))
+
+    mean_cost /= (length(HerbSearch.problems_train) * RUNS)
+    mean_running_time /= (length(HerbSearch.problems_train) * RUNS)
+    fitness_value = 1 / (mean_cost * 100 + mean_running_time)
+    return fitness_value
 end
 
-function print_meta_configuration()
-    read_configuration()
-    println("CONFIGURATION")
-    println("- Number of available threads: ", Threads.nthreads())
-    println("- Maximum sequence running time: $MAX_SEQUENCE_RUNNING_TIME")
-    println("- Longest time maximum given to an algorithm: $LONGEST_RUNNING_ALG_TIME")
 
-    dump(meta_configuration)
-    println("=========================================")
-    @show meta_grammar
-    println("=========================================")
-    println("Genetic algorithm always adds the best program so far in the population")
+"""
+    run_meta_search(stopping_condition)
 
-    # The estimates below do not take into account the threads
-    function estimate_runtime_of_one_algorithm()
-        return LONGEST_RUNNING_ALG_TIME
-    end
+Runs meta search with the stopping condition. 
+"""
+function run_meta_search_with_genetic(; max_time::Int64, max_iterations::Int64)
+    # creates a genetic enumerator with no examples and with the desired fitness function 
+    println("Creating initial population with random programs of maxdepth $(genetic_configuration.initial_population_size)")
+    genetic_iterator = GeneticSearchIterator(
+        meta_grammar, :S,
+        Vector{IOExample}(),
+        maximum_initial_population_depth = genetic_configuration.initial_program_max_depth,
+        population_size          = genetic_configuration.initial_population_size
+    )
 
-    function estimate_runtime_of_fitness_function()
-        return estimate_runtime_of_one_algorithm() * length(problems_train) * fitness_configuration.number_of_runs_to_average_over
-    end
+    # run the meta search
+    @time best_program, best_fitness = meta_search(genetic_iterator, meta_grammar, max_time = max_time, max_iterations = max_iterations)
 
-    function estimate_runtime_of_one_genetic_iteration()
-        # hope that the each chromosome fitness computation runs in parallel
-        # add a bit of extra time to do cross over and mutation
-        return estimate_runtime_of_fitness_function() + 2
-    end
-
-    println("ESTIMATES")
-    println("Estimate one run       : ", estimate_runtime_of_one_algorithm())
-    println("Estimate one fitness   : ", estimate_runtime_of_fitness_function())
-    println("Estimate one iteration : ", estimate_runtime_of_one_genetic_iteration())
-    println("Estimates do not take into account the number of threads used")
+    # get the meta_program found so far.
+    println("Best meta program is :", best_program)
+    println("Best fitness found :", best_fitness)
+    return best_program
 end
 
-using Logging
-Logging.disable_logging(Logging.LogLevel(0))
-
-function run_grammar_multiple_times()
-    program = rand(RuleNode, meta_grammar, :S, 10)
-    for _ in 1:10
-        problem, problem_text = problems_train[6]
-        expr = rulenode2expr(program, meta_grammar)
-        @show expr
-        evaluate_meta_program(expr, problem, arithmetic_grammar)
-    end
-end
 
 function get_meta_algorithm()
-    Logging.disable_logging(Logging.LogLevel(1))
+    Logging.disable_logging(Logging.LogLevel(Logging.Info))
     print_meta_configuration()
 
-    @time output = run_meta_search(max_time=typemax(Int), max_iterations=4)
+    @time output = run_meta_search_with_genetic(max_time=typemax(Int), max_iterations=4)
     println("Output of meta search is: ", output)
     return output
 end
 
-function create_plot()
-    mh_runner(examples, error_on_array) = get_mh_enumerator(examples, error_on_array)
+Random.seed!(1)
+# overwrite genetic fitness function with the meta search fitness
+HerbSearch.fitness(::GeneticSearchIterator, program::RuleNode, results::AbstractVector{<:Tuple{Any,Any}}) = meta_search_fitness_function(program)
+get_meta_algorithm()
 
-    # TODO : Change before running on super computer
-    VLNS_ENUMERATION_DEPTH = 2
-    vlns_runner(examples, error_on_array) = get_vlsn_enumerator(examples, error_on_array, VLNS_ENUMERATION_DEPTH)
-
-    max_time_to_run = 30
-    mh_run = test_algorithm(mh_runner, max_time_to_run)
-    println("MH: ", mh_run)
-
-    vlns_run = test_algorithm(vlns_runner, max_time_to_run)
-    println("vlns: ", vlns_run)
-
-    # meta_arr = test_meta_algorithm()
-    meta_arr = [4, 3, 3, 4, 3, 4, 3, 3, 3, 4, 4, 3, 3, 3, 4, 4, 3, 4, 3, 3]
-
-    boxplot1 = box(y=mh_run, name="MH", boxpoints="all")
-    boxplot2 = box(y=vlns_run, name="VLNS", boxpoints="all")
-    boxplot3 = box(y=meta_arr, name="MetaSearch", boxpoints="all")
-
-    plot([boxplot1, boxplot2, boxplot3],
-        Layout(
-            xaxis_title="Algorithm",
-            yaxis_title="Solved problems out of 5",
-            title="Nr of solved problems for each algorithm. 30 seconds for each algorithm",
-            xanchor="center",
-            yanchor="top",
-            x=0.9,
-            y=0.5)
-    )
+function runthis(input_problem::Problem, input_grammar::ContextSensitiveGrammar)
+    problem = HerbSearch.problems_train[4][1]
+    
+    HerbSearch.generic_run(SequenceCombinatorIterator([VanillaIterator(MHSearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, max_depth = 10), ((time, iteration, cost)->begin
+                            time > 3 || iteration > 3000
+                        end), input_problem); [VanillaIterator(VLSNSearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, neighbourhood_size = 1), ((time, iteration, cost)->begin
+                                time > 3 || iteration > 3
+                            end), input_problem); VanillaIterator(SASearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, initial_temperature = 4, temperature_decreasing_factor = 0.98, max_depth = 10), ((time, iteration, cost)->begin
+                                time > 4 || iteration > 5000
+                            end), input_problem)]]))
 end
-
-function test_runtime_of_a_single_fitness_evaluation()
-    # max sequence is
-    for i ∈ 1:10
-        random_meta_program = rand(RuleNode, meta_grammar, :S)
-        expression = rulenode2expr(random_meta_program, meta_grammar)
-        specs = @timed output = HerbSearch.fitness_function(random_meta_program, 1)
-
-        maximum_time_single_run = HerbSearch.MAX_SEQUENCE_RUNNING_TIME + HerbSearch.LONGEST_RUNNING_ALG_TIME
-        total_max_time = length(problems_train) * 3 * maximum_time_single_run
-
-        println("Total runtime $(specs.time) seconds. Maximum $total_max_time")
-        @assert (specs.time <= total_max_time + 0.2) "$(specs.time) exceeded $total_max_time. \n$expression"
-        println("===================")
-    end
-end
-
-# get_meta_algorithm()
-# run_grammar_multiple_times()
-
-expr = :(function f(input_problem::Problem, input_grammar::G) where {G<:AbstractGrammar}
-    generic_run(
-        SequenceCombinatorIterator(
-            [
-            VannilaIterator(
-                GeneticSearchIterator(input_grammar, :X,
-                    problem.spec,
-                    population_size=3,
-                    mutation_probability=0.2,
-                    always_keep_best_program=false,
-                    maximum_initial_population_depth=3),
-                ((time, iteration, cost) -> time > 3),
-                input_problem
-            ),
-            VannilaIterator(
-                GeneticSearchIterator(input_grammar, :X,
-                    problem.spec,
-                    population_size=1,
-                    mutation_probability=0.2,
-                    always_keep_best_program=false,
-                    maximum_initial_population_depth=3),
-                ((time, iteration, cost) -> time > 4),
-                input_problem
-            ),
-            VannilaIterator( BFSIterator(input_grammar, :X, max_depth=5), 
-                ((time, iteration, cost) -> time > 4),
-                input_problem
-            )
-        ]
-        )
-    )
-end)
-
-problem, problem_text = problems_train[4]
-# Random.seed!(42)
-
-@show expr
-evaluate_meta_program(expr, problem, arithmetic_grammar)
-
-# function f(input_problem::Problem, input_grammar::G) where {G<:AbstractGrammar}
-#     vlns = VLSNSearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, vlsn_neighbourhood_depth=2, max_depth=6)
-#     mh = MHSearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, max_depth=10)
-#     iterator = VannilaIterator(vlns, (time, iteration, cost) -> time > 1, input_problem)
-#     prog, cost= generic_run(SequenceCombinatorIterator([iterator], input_grammar, 10))
-#     # prog, cost= generic_run(iterator)
-#     if cost == 0
-#         println(rulenode2expr(prog, input_grammar))
-#     end
-# end
-# index = 2
-# @time f(problems_train[index][1], arithmetic_grammar)
-# println(problems_train[index][2])
