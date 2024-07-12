@@ -5,9 +5,8 @@ using HerbInterpret
 using HerbConstraints
 using HerbSpecification
 using Test
-``
-using Pkg
-# Pkg.add(name="HerbGrammar",rev="fix-normalizing")
+
+
 
 include("test_helpers.jl")
 using Random
