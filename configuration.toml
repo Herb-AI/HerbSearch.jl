@@ -1,6 +1,0 @@
-[fitness]
-number_of_runs_to_average_over = 3
-
-[genetic]
-initial_population_size = 10
-initial_program_max_depth = 10
