@@ -243,9 +243,6 @@ end
         for cost_func ∈ cost_functions
             for select_func ∈ select_functions
                 for grammar_to_use ∈ [uniform_grammar, grammar]
-                    @testset "Uniform grammar is uniform" begin
-                        sum(exp.(grammar.log_probabilities)) ≈ 1
-                    end
                     # overwrite calculate cost
                     HerbSearch.calculate_rule_cost(rule_index::Int, g::ContextSensitiveGrammar) = cost_func(rule_index, g)
                     # overwrite select function
