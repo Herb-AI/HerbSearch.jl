@@ -1,5 +1,3 @@
-using Logging
-disable_logging(LogLevel(1))
 
 
 grammar = @csgrammar begin
@@ -76,13 +74,13 @@ end
         @testvlsn "10" 3 20
         @testset "Specific tests" begin
             problem, examples = create_problem(x -> x * x * 5)
-@testset "Does not keep running BFS but stops after max_time" begin
-            iterator = VLSNSearchIterator(grammar, :X, examples, mean_squared_error, neighbourhood_size=2, max_depth=3)
+            @testset "Does not keep running BFS but stops after max_time" begin
+                iterator = VLSNSearchIterator(grammar, :X, examples, mean_squared_error, neighbourhood_size=2, max_depth=3)
 
-            runtime = @timed solution, flag = synth(problem, iterator, max_time=3)
-            @test runtime.time <= 3 + 1
-            @test flag == suboptimal_program
-end
+                runtime = @timed solution, flag = synth(problem, iterator, max_time=3)
+                @test runtime.time <= 3 + 1
+                @test flag == suboptimal_program
+            end
             @testset "VLNS propose test" begin 
                 solver = GenericSolver(grammar, RuleNode(6,[RuleNode(1),RuleNode(2)])) # start with 1 * x
                 remove_node!(solver, [2])  # the tree is now 1 * hole
@@ -131,7 +129,7 @@ end
                 end
             end
             
-        end
+        end 
     end
     
     @testset verbose = true "Simulated Annealing" begin
