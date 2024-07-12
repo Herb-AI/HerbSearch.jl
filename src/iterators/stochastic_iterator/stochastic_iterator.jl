@@ -123,7 +123,7 @@ function Base.iterate(iter::StochasticSearchIterator, iterator_state::IteratorSt
     possible_programs = propose(iter, path, dict)
     
     # try to improve the program using any of the possible replacements
-    improved_program = try_improve_program!(iter, possible_programs, neighbourhood_node_location, new_temperature, current_cost)
+    improved_program = try_improve_program!(iter, possible_programs, new_temperature, current_cost)
     
     if isnothing(improved_program)
         load_state!(solver, original_state)
@@ -139,7 +139,7 @@ function Base.iterate(iter::StochasticSearchIterator, iterator_state::IteratorSt
 end
 
 
-function try_improve_program!(iter::StochasticSearchIterator, possible_programs, neighbourhood_node_location::NodeLoc, new_temperature, current_cost)
+function try_improve_program!(iter::StochasticSearchIterator, possible_programs, new_temperature, current_cost)
     best_program = nothing
     for possible_program in possible_programs
         program_cost = calculate_cost(iter, possible_program)
