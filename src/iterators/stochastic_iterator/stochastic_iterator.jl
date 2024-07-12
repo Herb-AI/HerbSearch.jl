@@ -204,26 +204,26 @@ temperature(::MHSearchIterator, current_temperature::Real) = const_temperature(c
 accept(::MHSearchIterator, current_cost::Real, next_cost::Real, temperature::Real) = probabilistic_accept(current_cost, next_cost, temperature)
 
 Base.@doc """
-    VLSNSearchIterator(spec, cost_function, enumeration_depth = 2, evaluation_function::Function=HerbInterpret.execute_on_input) = StochasticSearchIterator(
+    VLSNSearchIterator(spec, cost_function, neighbourhood_size = 2, evaluation_function::Function=HerbInterpret.execute_on_input) = StochasticSearchIterator(
 
 Returns an iterator that runs according to the Very Large Scale Neighbourhood Search algorithm.
 - `spec` : array of examples
 - `cost_function` : cost function to evaluate the programs proposed
-- `vlsn_neighbourhood_depth` : the enumeration depth to search for a best program at a time
+- `neighbourhood_size` : the enumeration depth to search for a best program at a time
 - `evaluation_function` : evaluation function that evaluates the program generated and produces an output
-The propose function consists of all possible programs of the given `enumeration_depth`. The accept function accepts the program
+The propose function uses BFS to enumerate `neighbourhood_size` programs. The accept function accepts the program
 with the lowest cost according to the `cost_function`.
 The temperature value of the algorithm remains constant over time.
 """ VLSNSearchIterator
 @programiterator VLSNSearchIterator(
     spec::Vector{<:IOExample},
     cost_function::Function,
-    vlsn_neighbourhood_depth::Int = 2,
+    neighbourhood_size::Int = 2,
     initial_temperature::Real = 1,
     evaluation_function::Function = execute_on_input
 ) <: StochasticSearchIterator
 
-propose(iter::VLSNSearchIterator, path::Vector{Int}, dict::Union{Nothing,Dict{String,Any}}) = enumerate_neighbours_propose(iter.vlsn_neighbourhood_depth)(iter.solver, path, dict)
+propose(iter::VLSNSearchIterator, path::Vector{Int}, dict::Union{Nothing,Dict{String,Any}}) = enumerate_neighbours_propose(iter.neighbourhood_size)(iter.solver, path, dict)
 
 temperature(::VLSNSearchIterator, current_temperature::Real) = const_temperature(current_temperature)
 

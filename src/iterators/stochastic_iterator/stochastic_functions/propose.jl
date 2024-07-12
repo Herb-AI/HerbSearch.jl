@@ -17,13 +17,13 @@ function random_fill_propose(solver::Solver, path::Vector{Int}, dict::Union{Noth
 end 
 
 """
-    enumerate_neighbours_propose(enumeration_depth::Int64)
+    enumerate_neighbours_propose(neighbourhood_size::Int64)
 
-The return function is a function that produces a list with all the subprograms with depth at most `enumeration_depth`.
+The return function is a function that produces a list of `neighbourhood_size` programs that are enumerated according to BFS.
 """
-function enumerate_neighbours_propose(enumeration_depth::Int64)
+function enumerate_neighbours_propose(neighbourhood_size::Int64)
     return (solver::Solver, path::Vector{Int}, dict::Union{Nothing,Dict{String,Any}}) -> begin
-        return BFSIterator(solver=solver, max_size=typemax(Int),  max_depth=enumeration_depth)
+        return Iterators.take(BFSIterator(solver=deepcopy(solver)),neighbourhood_size)
     end
 end
     

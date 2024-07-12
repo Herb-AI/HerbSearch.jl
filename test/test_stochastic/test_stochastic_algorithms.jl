@@ -44,7 +44,7 @@ macro testvlsn(expression::String, max_depth = 6, neighbourhood_depth = 4)
         @testset "vl $($expression)" begin
         e = Meta.parse("x -> $($expression)")
         problem, examples = create_problem(eval(e))
-        iterator = VLSNSearchIterator(grammar, :X, examples, mean_squared_error, vlsn_neighbourhood_depth=$neighbourhood_depth, max_depth=$max_depth)
+        iterator = VLSNSearchIterator(grammar, :X, examples, mean_squared_error, neighbourhood_size=$neighbourhood_depth, max_depth=$max_depth)
 
         #@TODO overwrite evaluate function within synth to showcase how you may use that
 
@@ -77,7 +77,7 @@ end
         @testset "Specific tests" begin
             problem, examples = create_problem(x -> x * x * 5)
 @testset "Does not keep running BFS but stops after max_time" begin
-            iterator = VLSNSearchIterator(grammar, :X, examples, mean_squared_error, vlsn_neighbourhood_depth=2, max_depth=3)
+            iterator = VLSNSearchIterator(grammar, :X, examples, mean_squared_error, neighbourhood_size=2, max_depth=3)
 
             runtime = @timed solution, flag = synth(problem, iterator, max_time=3)
             @test runtime.time <= 3 + 1
@@ -88,7 +88,7 @@ end
                 remove_node!(solver, [2])  # the tree is now 1 * hole
 
                 iterations = 10
-                iterator = VLSNSearchIterator(solver=deepcopy(solver), examples, mean_squared_error, vlsn_neighbourhood_depth=iterations, max_depth=3)
+                iterator = VLSNSearchIterator(solver=deepcopy(solver), examples, mean_squared_error, neighbourhood_size=iterations, max_depth=3)
                 proposed_programs_with_bfs = HerbSearch.propose(iterator, Vector{Int}(), nothing)
                 programs = []
                 for p ∈ proposed_programs_with_bfs
@@ -102,7 +102,7 @@ end
                 ]
 
                 # even though the number of iterations is 10 the output is contrained by max_depth which is 2
-                iterator = VLSNSearchIterator(solver=deepcopy(solver), examples, mean_squared_error, vlsn_neighbourhood_depth=iterations, max_depth=2)
+                iterator = VLSNSearchIterator(solver=deepcopy(solver), examples, mean_squared_error, neighbourhood_size=iterations, max_depth=2)
                 proposed_programs_with_bfs = HerbSearch.propose(iterator, Vector{Int}(), nothing)
                 programs = []
                 for p ∈ proposed_programs_with_bfs
@@ -115,7 +115,7 @@ end
 
                 @testset "Try improve prorgam gives the best possiblity" begin
                     problem, examples = create_problem(x -> 3)
-                    iterator = VLSNSearchIterator(grammar, :X, examples, mean_squared_error, vlsn_neighbourhood_depth=10, max_depth=2)
+                    iterator = VLSNSearchIterator(grammar, :X, examples, mean_squared_error, neighbourhood_size=10, max_depth=2)
                     options = BFSIterator(grammar, :X, max_depth=1)
 
                     output = HerbSearch.try_improve_program!(iterator, options, 1, 100.0) # best cost is 100
@@ -124,7 +124,7 @@ end
 
                     # complex problem
                     problem, examples = create_problem(x -> 50)
-                    iterator = VLSNSearchIterator(grammar, :X, examples, mean_squared_error, vlsn_neighbourhood_depth=10, max_depth=2)
+                    iterator = VLSNSearchIterator(grammar, :X, examples, mean_squared_error, neighbourhood_size=10, max_depth=2)
                     output = HerbSearch.try_improve_program!(iterator, options, 1, 0.0) # <- cost of 0. Every BFS program will have higher cost than 0
                     # -> No program has better cost than 0 -> output = nothing
                     @test isnothing(output)

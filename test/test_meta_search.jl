@@ -143,7 +143,7 @@ end
         runtime = @timed HerbSearch.generic_run(
             ParallelCombinatorIterator(ParallelNoThreads, 
             [
-                VanillaIterator(VLSNSearchIterator(input_grammar, :X, problem.spec, mean_squared_error, vlsn_neighbourhood_depth = 2), ((time, iteration, cost)-> time > 4 || iteration > 2000), problem),
+                VanillaIterator(VLSNSearchIterator(input_grammar, :X, problem.spec, mean_squared_error, neighbourhood_size = 2), ((time, iteration, cost)-> time > 4 || iteration > 2000), problem),
                 SequenceCombinatorIterator(
                     [
                         VanillaIterator(
@@ -156,7 +156,7 @@ end
                             ((time, iteration, cost) -> time > 4),
                             problem
                         ),
-                        VanillaIterator(VLSNSearchIterator(input_grammar, :X, problem.spec, mean_squared_error, vlsn_neighbourhood_depth = 2), ((time, iteration, cost)-> time > 4 || iteration > 2000), problem),
+                        VanillaIterator(VLSNSearchIterator(input_grammar, :X, problem.spec, mean_squared_error, neighbourhood_size = 2), ((time, iteration, cost)-> time > 4 || iteration > 2000), problem),
                     ]
                 ),   
                 ParallelCombinatorIterator(

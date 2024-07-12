@@ -37,7 +37,7 @@ meta_grammar = @csgrammar begin
     MAX_DEPTH = 10
 
     # VLSN configuration
-    vlsn_enumeration_depth = 1 | 2
+    vlsn_neighbourhood_size = 1 | 2
 
     # SA configuration
     sa_inital_temperature = 1 | 2 | 3 | 4 | 5 | 6 
@@ -46,7 +46,7 @@ meta_grammar = @csgrammar begin
     # TODO: Fix algorithm
     ALGORITHM = MHSearchIterator(input_grammar, :X, problemExamples, mean_squared_error, max_depth=MAX_DEPTH) |
                 SASearchIterator(input_grammar, :X, problemExamples, mean_squared_error, initial_temperature = sa_inital_temperature, temperature_decreasing_factor = sa_temperature_decreasing_factor, max_depth=MAX_DEPTH) |
-                VLSNSearchIterator(input_grammar, :X, problemExamples, mean_squared_error, vlsn_neighbourhood_depth = vlsn_enumeration_depth) | 
+                VLSNSearchIterator(input_grammar, :X, problemExamples, mean_squared_error, neighbourhood_size = vlsn_neighbourhood_size) | 
                 BFSIterator(input_grammar, :X, max_depth=4)
     SimpleIterator = VanillaIterator(ALGORITHM, STOPFUNCTION, input_problem)
     # A = ga,STOP
