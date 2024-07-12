@@ -1,3 +1,17 @@
+Base.@doc """
+    GuidedSearchIterator(spec::Vector{<:IOExample}, symboltable::SymbolTable)
+
+GuidedSearchIteartor is a bottom-up iterator that iterates programs in order of decreasing probabilities.
+This algorithm was taken from the Probe paper (Just-in-time learning for bottom-up enumerative synthesis: https://arxiv.org/abs/2010.08663).
+
+It generates programs level-by-level where the level means a given probability. To generate programs it looks at programs generated for previous levels by using 
+dynamic-programming. All generated programs are stored in the `bank`. For each level the bank stores the program corresponding to that level.
+
+This algorithm employs a powerful pruning technique called: Overvational Equivalence. This means that if two progams produce the same output on all examples they 
+are considered to be equivalent and only one of them is stored in the bank.
+This iterator uses the [`NewProgramsIterator`]@ref behind the scenes.
+""" GuidedSearchIterator
+
 @programiterator GuidedSearchIterator(
     spec::Vector{<:IOExample},
     symboltable::SymbolTable,

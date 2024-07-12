@@ -1,3 +1,27 @@
+Base.@doc """
+    NewProgramsIterator(level::Int,bank::Vector{Vector{RuleNode}}, grammar::ContextSensitiveGrammar)
+
+The `NewProgramsIterator` is an iterator that corresponds to the `NewPrograms` from the Algorithm 1 pseudocode from the Probe Paper 
+(Just-in-Time Learning for Bottom-Up Enumerative Synthesis: https://arxiv.org/abs/2010.08663)
+The pseudocode is shown below.
+
+```
+Input: PCFG G𝑝 , cost level Lvl, program bank B filled up to Lvl - 1
+Output: Iterator over all programs of cost Lvl
+
+16: procedure New-Programs(G𝑝 , Lvl, B)
+17:   for (R = N → (𝑡 N1 N2 . . . N𝑘 ) ∈ R) do       ⊲ For all production rules
+18:      if cost(R) = Lvl ∧ 𝑘 = 0 then                    ⊲ t has arity zero
+19:        yield 𝑡
+20:      else if cost(R) < Lvl ∧ 𝑘 > 0 then               ⊲ t has non-zero arity
+21:        for (c1, ..., ck) ∈ [1, Lvl] such that Σci = Lvl - cost(R) do   ⊲ For all subexpression costs
+22:           for (P1, ..., Pk) ∈ { B[c1] × ... × B[ck] | Ni ⇒* Pi }  do  ⊲ For all subexpressions
+23:              yield (t P1 ... Pk)
+```
+
+The NewProgramsIterator implements the _yielding_ by manually storing the indices of each for loop as the state of the iterator.
+""" NewProgramsIterator
+
 struct NewProgramsIterator
     level::Int
     bank::Vector{Vector{RuleNode}}
