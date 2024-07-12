@@ -65,6 +65,7 @@ function Base.iterate(iter::StochasticSearchIterator)
     dmap = mindepth_map(grammar)
 
     if typeof(get_tree(solver)) == RuleNode 
+        @info "Iter: $(typeof(iter)) starts from $(get_tree(solver))"
         return (get_tree(solver), IteratorState(iter.initial_temperature, dmap))  
     end
     # sample a random node using start symbol and grammar
@@ -107,8 +108,7 @@ function Base.iterate(iter::StochasticSearchIterator, iterator_state::IteratorSt
     # get the subprogram pointed by node-location
     subprogram = get(current_program, neighbourhood_node_location)
 
-
-    @info "Start: $(rulenode2expr(current_program, grammar)), subexpr: $(rulenode2expr(subprogram, grammar)), cost: $current_cost
+    @info "Iter: $(typeof(iter)), Start: $(rulenode2expr(current_program, grammar)), subexpr: $(rulenode2expr(subprogram, grammar)), cost: $current_cost
             temp $new_temperature"
 
     # remove the rule node by substituting it with a hole of the same symbol
@@ -117,7 +117,7 @@ function Base.iterate(iter::StochasticSearchIterator, iterator_state::IteratorSt
     original_state = save_state!(solver)
 
     remove_node!(solver, path)
-    
+
     # propose new programs to consider. They are programs to put in the place of the nodelocation
     # propose should give full programs
     possible_programs = propose(iter, path, dict)
@@ -142,6 +142,7 @@ end
 function try_improve_program!(iter::StochasticSearchIterator, possible_programs, new_temperature, current_cost)
     best_program = nothing
     for possible_program in possible_programs
+        @info "Iter: $(typeof(iter)), prog: $(rulenode2expr(possible_program, get_grammar(iter.solver)))"
         program_cost = calculate_cost(iter, possible_program)
         if accept(iter, current_cost, program_cost, new_temperature)
             best_program = freeze_state(possible_program)
