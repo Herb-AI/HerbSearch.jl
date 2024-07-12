@@ -1,5 +1,5 @@
 ## How to run
-1. `git pull` to fetch the latest changes on the `meta-search` branch. Run `git reset --hard` to discard any changes that prevent the pull. Alternatively, if you do not want to lose them you can run `git stash`
+1. `git pull` to fetch the latest changes on the `meta-search` branch. Run `git reset --hard` to discard any changes that prevent the pull. Alternatively, if you do not want to lose the local changes you can run `git stash`
 2. Open the `HerbSearch` folder in vscode and run `julia --project` in the terminal. This will open a julia REPL with the `HerbSearch` project activated.
 3. Enter package mode by typing `]`. This should show `(HerbSearch) pkg>`
 4. Now run  `add HerbGrammar#add-typechecking-for-insert!` to add a dependency to `add-typechecking-for-insert!` branch of `HerbGrammar` where I made some changes that are required by meta-search.
@@ -22,11 +22,11 @@
 8. Exit the REPL by pressing `Ctrl+D`
 
 ## Run tests
-Since there are some tests that test the thread-parallelism you need to make sure that you initialize julia with some threads (the default is 1) to pass the tests.
+Since some tests check if thread-parallelism works you need to make sure that you initialize Julia with some threads (the default is 1) to pass the tests.
 1. In the `HerbSearch` folder run `julia --project --threads 16`.
 2. Enter package mode using `]`
 3. Type `test`
-4. Wait and hopefully all the tests pass. If few tests fail from regarding some `abs(actual_runtime - desired_runtime) <= threshold` assertions is fine, it just means that there is fluctuation in the timing of tests but the setup works.
+4. Wait and hopefully all the tests pass. If a few tests fail regarding some `abs(actual_runtime - desired_runtime) <= threshold` assertions is fine, it just means that there is fluctuation in the timing of tests but the setup works.
 
  
 ## Files
@@ -36,7 +36,7 @@ Since there are some tests that test the thread-parallelism you need to make sur
 - [main.jl](./main.jl) : loads configuration from the [configuration.toml](./configuration.toml) file and runs meta_search with the fitness configured. This file is the _main_ file to run for experiments.
 - [configuration.jl](./configuration.jl) : code responsible for loading the configuration file into Julia structs.
 
-- [meta_search.jl](./meta-search.jl) : defines the configuration structs and the fitness function for evaluating meta programs. It also defines a function `run_meta_search` configures a genetic search algorithm to run on the meta grammar.
+- [meta_search.jl](./meta_search.jl) : defines the configuration structs and the fitness function for evaluating meta programs. It also defines a function `run_meta_search` configures a genetic search algorithm to run on the meta grammar.
 - [other.jl](./other.jl) : defines useful functions for plotting.
 - [run_algorithm.jl](./run_algorithm.jl) : runs algorithm on the test problems multiple times to account for randomness. It reports the number of correctly solved problems for each run.
 
