@@ -3,6 +3,7 @@ using HerbGrammar
 using HerbSpecification
 using HerbConstraints
 using HerbSearch
+using HerbCore
 using Logging
 
 import Random
