@@ -83,7 +83,7 @@ function get_meta_algorithm()
     Logging.disable_logging(Logging.LogLevel(Logging.Info))
     print_meta_configuration()
 
-    @time output = run_meta_search_with_genetic(max_time=typemax(Int), max_iterations=4)
+    @time output = run_meta_search_with_genetic(max_time=typemax(Int), max_iterations=200)
     println("Output of meta search is: ", output)
     return output
 end
