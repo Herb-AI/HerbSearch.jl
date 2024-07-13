@@ -31,7 +31,7 @@ function meta_search_fitness_function(program)
     mean_running_time = 0
 
     lk = Threads.ReentrantLock()
-    for i ∈ eachindex(HerbSearch.problems_train)
+    Threads.@threads for i ∈ eachindex(HerbSearch.problems_train)
         (problem, problem_text) = HerbSearch.problems_train[i]
         for _ in 1:RUNS
             # get a program that needs a problem and a grammar to be able to run
@@ -65,7 +65,8 @@ function run_meta_search_with_genetic(; max_time::Int64, max_iterations::Int64)
         meta_grammar, :S,
         Vector{IOExample}(),
         maximum_initial_population_depth = genetic_configuration.initial_program_max_depth,
-        population_size          = genetic_configuration.initial_population_size
+        population_size          = genetic_configuration.initial_population_size,
+        use_threads              = true
     )
 
     # run the meta search
