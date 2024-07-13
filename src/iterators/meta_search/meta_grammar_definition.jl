@@ -25,10 +25,8 @@ MAX_SEQUENCE_RUNNING_TIME = 8 # Max sequence running time in seconds
 
 # input is grammar and problem
 meta_grammar = @csgrammar begin
-    # Question: Is it better to generate a function or a lambda?
-    S = function f(input_problem::Problem, input_grammar::AbstractGrammar)
-        generic_run(COMBINATOR)
-    end
+    # In Julia 1.10.4 this has to be a lambda and not a function because of Method ambiguities.
+    S = (input_problem::Problem, input_grammar::AbstractGrammar) -> generic_run(COMBINATOR)
 	problemExamples = input_problem.spec
 
     # MS is either an algorithm or a combinator
