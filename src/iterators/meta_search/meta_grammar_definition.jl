@@ -19,7 +19,7 @@ end
 include("combinators.jl")
 
 # TODO : Move this away from here
-LONGEST_RUNNING_ALG_TIME = 5
+LONGEST_RUNNING_ALG_TIME = 6  # Maximum time a vanilla algorithm can run
 MAX_SEQUENCE_RUNNING_TIME = 8 # Max sequence running time in seconds
 
 
@@ -59,7 +59,7 @@ meta_grammar = @csgrammar begin
     ALIST = [MS; MS]
     ALIST = [MS; ALIST]
     # SELECT = best | crossover | mutate
-    STOPFUNCTION = (time, iteration, cost) -> time > sa_inital_temperature || ITERATION_STOP  # bigger running time
+    STOPFUNCTION = (time, iteration, cost) -> time > sa_inital_temperature || ITERATION_STOP  # longer running time is max(sa_inital_temperature) which is 6
     ITERATION_STOP = iteration > VALUE
     # STOPTERM = OPERAND < VALUE
     # OPERAND = time | iteration | cost
