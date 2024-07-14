@@ -170,7 +170,19 @@ end
         ]))
         @test runtime.time <= HerbSearch.MAX_SEQUENCE_RUNNING_TIME + 2
     end
+    @testset "Running algorithms consecutively" begin 
+        input_grammar = HerbSearch.arithmetic_grammar
+        for (input_problem, text) in HerbSearch.problems_train
+            output = HerbSearch.generic_run(SequenceCombinatorIterator(
+                [
+                    VanillaIterator(BFSIterator(input_grammar, :X, max_depth = 4), stopping_condition_with_max_time(1), input_problem),
+                    VanillaIterator(BFSIterator(input_grammar, :X, max_depth = 4), stopping_condition_with_max_time(1), input_problem),
+                    VanillaIterator(VLSNSearchIterator(input_grammar, :X, problem.spec, mean_squared_error, neighbourhood_size = 2), stopping_condition_with_max_time(1), input_problem),
+                    VanillaIterator(VLSNSearchIterator(input_grammar, :X, problem.spec, mean_squared_error, neighbourhood_size = 2), stopping_condition_with_max_time(1), input_problem),
+                    VanillaIterator(MHSearchIterator(input_grammar, :X, problem.spec, mean_squared_error), stopping_condition_with_max_time(1), input_problem),
+                    VanillaIterator(MHSearchIterator(input_grammar, :X, problem.spec, mean_squared_error), stopping_condition_with_max_time(1), input_problem),
+                ]
+            ))
+        end
+    end
 end
-
-
-

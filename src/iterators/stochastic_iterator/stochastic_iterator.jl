@@ -135,7 +135,7 @@ function Base.iterate(iter::StochasticSearchIterator, iterator_state::IteratorSt
     @assert !contains_hole(get_tree(solver))
     
     next_state = IteratorState(new_temperature,iterator_state.dmap)
-    return (deepcopy(get_tree(solver)), next_state)
+    return (get_tree(solver), next_state)
 end
 
 

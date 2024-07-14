@@ -9,7 +9,7 @@ include("program_iterator.jl")
 Sets the start program by subsituting the start program into the solver.
 """
 function set_start_program!(iter::ProgramIterator, start_program::AbstractRuleNode) 
-    substitute!(iter.solver, Vector{Int}(), start_program)
+    substitute!(iter.solver, Vector{Int}(), freeze_state(start_program))
 end
 
 
