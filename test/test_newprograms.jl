@@ -1,4 +1,3 @@
-
 function bruteforce(nr_elements, desired_sum, maximum_value)
     iterators = []
     for i ∈ 1:nr_elements
@@ -47,7 +46,7 @@ end
             # deep copy is needed because the iterator mutates the state in place
             push!(options, deepcopy(option))
         end
-        @assert options == [5]
+        @test options == [[5]]
     end
     @testset "Length based tests" begin
 
