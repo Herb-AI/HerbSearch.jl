@@ -261,13 +261,14 @@ end
 
         @testset "Demo running probe with BFS" begin 
             @testset "Can't find solution" begin
-                iter = BFSIterator(uniform_grammar, :S, max_depth = 3)
                 @testset "iterator finished" begin
+                    iter = BFSIterator(uniform_grammar, :S, max_depth = 3)
                     program = probe(examples, iter, 5, 100)
                     @test isnothing(program)
                 end
                 @testset "probe runs out of iterations" begin
-                    program = probe(examples, iter, 1, 1)
+                    iter = BFSIterator(uniform_grammar, :S, max_depth = 100)
+                    program = probe(examples, iter, 1, 100)
                     @test isnothing(program)
                 end
             end

@@ -40,8 +40,15 @@ end
 
         end)
     end
-
-
+    @testset "Edge case test with one element" begin 
+        sum_iter = HerbSearch.SumIterator(number_of_elements=1, desired_sum=5, max_value=6)
+        options = Vector{Vector{Int}}()
+        for option ∈ sum_iter
+            # deep copy is needed because the iterator mutates the state in place
+            push!(options, deepcopy(option))
+        end
+        @assert options == [5]
+    end
     @testset "Length based tests" begin
 
         # impossible to sum up to 3 using 2 numbers that are at most 1
