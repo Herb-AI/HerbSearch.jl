@@ -49,7 +49,7 @@ end
         @test options == [[5]]
     end
     @testset "Length based tests" begin
-
+        HerbSearch.calculate_rule_cost(rule_index::Int, grammar::ContextSensitiveGrammar) = HerbSearch.calculate_rule_cost_size(rule_index, grammar)
         # impossible to sum up to 3 using 2 numbers that are at most 1
         sum_iter = HerbSearch.SumIterator(number_of_elements=2, desired_sum=3, max_value=1)
         @test isnothing(iterate(sum_iter))
