@@ -91,5 +91,12 @@ end
 
 Random.seed!(1)
 # overwrite genetic fitness function with the meta search fitness
-HerbSearch.fitness(::GeneticSearchIterator, program::RuleNode, results::AbstractVector{<:Tuple{Any,Any}}) = meta_search_fitness_function(program)
+function HerbSearch.fitness(::GeneticSearchIterator, program::RuleNode, results::AbstractVector{<:Tuple{Any,Any}})
+    try
+        meta_search_fitness_function(program)
+    catch e 
+        error("Error occurred when evaluating $(rulenode2expr(program, meta_grammar))")
+        throw(e)
+    end
+end
 get_meta_algorithm()
