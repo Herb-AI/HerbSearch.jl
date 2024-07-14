@@ -64,7 +64,6 @@ end
 end
 @testset "Test new programs iterator" begin
     @testset "Multiple nonterminals" begin
-        HerbSearch.calculate_rule_cost(rule_index::Int, grammar::ContextSensitiveGrammar) = HerbSearch.calculate_rule_cost_size(rule_index, grammar)
         grammar = @pcsgrammar begin
             1 : S = A * B
             1 : A = "a"
