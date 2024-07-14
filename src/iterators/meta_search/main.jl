@@ -45,7 +45,7 @@ function meta_search_fitness_function(program)
         end
     end
 
-    print("Program $expression_to_evaluate has depth: ", depth(program))
+    # print("Program $expression_to_evaluate has depth: ", depth(program))
 
     mean_cost /= (length(HerbSearch.problems_train) * RUNS)
     mean_running_time /= (length(HerbSearch.problems_train) * RUNS)
