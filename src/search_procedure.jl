@@ -183,6 +183,7 @@ function meta_search(
         if current_time > max_time || iteration > max_iterations 
             return best_program, best_fitness
         end
+        next = iterate(iterator)
         iteration += 1
     end
     return best_program, best_fitness
