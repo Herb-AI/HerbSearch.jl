@@ -2,7 +2,7 @@
     struct ProgramCache 
 
 Stores the evaluation cost and the program in a structure.
-This 
+This should go away ... :P
 """
 mutable struct ProgramCache
     program::RuleNode
@@ -15,13 +15,13 @@ end
 Base.hash(a::ProgramCache) = hash(a.program)
 
 """
-    evaluate_program(program::RuleNode, grammar::AbstractGrammar, examples::Vector{<:IOExample}, symboltable::SymbolTable)
+    evaluate_program(program::AbstractRuleNode, grammar::AbstractGrammar, examples::Vector{<:IOExample}, symboltable::SymbolTable)
 
 Evaluates a program using the given examples and returns a tuple of two things:
 - an array that stores for each example the evaluation output.
 - an array that stores the indices of the examples that were correctly passed.
 """
-function evaluate_program(program::RuleNode, grammar::AbstractGrammar, examples::Vector{<:IOExample}, symboltable::SymbolTable)
+function evaluate_program(program::AbstractRuleNode, grammar::AbstractGrammar, examples::Vector{<:IOExample}, symboltable::SymbolTable)
     correct_examples = Vector{Int}()
     eval_observation = []
     expr = rulenode2expr(program, grammar)

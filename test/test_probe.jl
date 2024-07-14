@@ -83,6 +83,15 @@ end
                     [prog1, prog2, prog3]
                 ),
                 (
+                    HerbSearch.selectpsol_all_cheapest,
+                    [
+                        ProgramCache(prog1, [1, 2, 3], 100), # <- 2nd smallest cost solving 4 examples
+                        ProgramCache(prog2, [1, 2, 3], 60),  # <- smallest cost solving 4 examples
+                        ProgramCache(prog3, [1, 2], 2),      # <- smallest cost solving 2 examples
+                    ],
+                    [prog2, prog3]
+                ),
+                (
                     HerbSearch.selectpsol_largest_subset,
                     [
                         ProgramCache(prog1, [1, 2, 3, 4, 5], 100), # <- solves most programs
@@ -240,23 +249,55 @@ end
             1:S = my_replace(S, S, S)
             1:S = S * S
         end
-        for cost_func ∈ cost_functions
-            for select_func ∈ select_functions
-                for grammar_to_use ∈ [uniform_grammar, grammar]
-                    # overwrite calculate cost
-                    HerbSearch.calculate_rule_cost(rule_index::Int, g::ContextSensitiveGrammar) = cost_func(rule_index, g)
-                    # overwrite select function
-                    HerbSearch.select_partial_solution(partial_sols::Vector{ProgramCache}, all_selected_psols::Set{ProgramCache}) = select_func(partial_sols, all_selected_psols)
+        @testset "Demo running probe with guided search" begin 
+            iter = HerbSearch.GuidedSearchIterator(deepcopy(uniform_grammar), :S, examples, symboltable)
 
-                    deep_copy_grammar = deepcopy(grammar_to_use)
-                    iter = HerbSearch.GuidedSearchIterator(deep_copy_grammar, :S, examples, symboltable)
-                    max_time = 5
-                    runtime = @timed program = probe(examples, iter, max_time, 100)
-                    expression = rulenode2expr(program, grammar_to_use)
-                    @test runtime.time <= max_time
+            program = probe(examples, iter, 5, 100)
+            expression = rulenode2expr(program, uniform_grammar)
 
-                    received = execute_on_input(symboltable, expression, input)
-                    @test output == received
+            received = execute_on_input(symboltable, expression, input)
+            @test output == received
+        end
+
+        @testset "Demo running probe with BFS" begin 
+            @testset "Can't find solution" begin
+                iter = BFSIterator(uniform_grammar, :S, max_depth = 3)
+
+                program = probe(examples, iter, 5, 100)
+                @test isnothing(program)
+            end
+            @testset "Can find solution" begin
+                examples_easy = [
+                    IOExample(Dict(:arg => "a<4"), "a4")    # one replace operation
+                ]
+        
+                iter = BFSIterator(uniform_grammar, :S, max_depth = 3)
+                program = probe(examples_easy, iter, 5, 100)
+
+                received = execute_on_input(symboltable, rulenode2expr(program, uniform_grammar), [e.in for e in examples_easy])
+                @test ["a4"] == received
+            end
+
+        end
+        @testset "Running probe with all combinations of select and cost functions" begin
+            for cost_func ∈ cost_functions
+                for select_func ∈ select_functions
+                    for grammar_to_use ∈ [uniform_grammar, grammar]
+                        # overwrite calculate cost
+                        HerbSearch.calculate_rule_cost(rule_index::Int, g::ContextSensitiveGrammar) = cost_func(rule_index, g)
+                        # overwrite select function
+                        HerbSearch.select_partial_solution(partial_sols::Vector{ProgramCache}, all_selected_psols::Set{ProgramCache}) = select_func(partial_sols, all_selected_psols)
+
+                        deep_copy_grammar = deepcopy(grammar_to_use)
+                        iter = HerbSearch.GuidedSearchIterator(deep_copy_grammar, :S, examples, symboltable)
+                        max_time = 5
+                        runtime = @timed program = probe(examples, iter, max_time, 100)
+                        expression = rulenode2expr(program, grammar_to_use)
+                        @test runtime.time <= max_time
+
+                        received = execute_on_input(symboltable, expression, input)
+                        @test output == received
+                    end
                 end
             end
         end

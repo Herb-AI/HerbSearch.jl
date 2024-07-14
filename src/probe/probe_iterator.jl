@@ -33,12 +33,13 @@ function probe(examples::Vector{<:IOExample}, iterator::ProgramIterator, max_tim
         next = state === nothing ? iterate(iterator) : iterate(iterator, state)
         while next !== nothing && i < iteration_size # run one iteration
             program, state = next
+            # make sure the program is a RuleNode
+            program = freeze_state(program)
 
             # evaluate program if it was not evaluated already
             if !isnothing(program._val)
                 eval_observation, correct_examples = program._val
             else
-                println("This should not happen now!")
                 eval_observation, correct_examples = evaluate_program(program, grammar, examples, symboltable)
             end
 
