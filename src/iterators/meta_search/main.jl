@@ -67,7 +67,8 @@ function run_meta_search_with_genetic(; max_time::Int64, max_iterations::Int64)
         Vector{IOExample}(),
         maximum_initial_population_depth = genetic_configuration.initial_program_max_depth,
         population_size          = genetic_configuration.initial_population_size,
-        use_threads              = true
+        use_threads              = true,
+        always_keep_best_program = true
     )
 
     # run the meta search
