@@ -159,7 +159,7 @@ function StatsBase.sample(::Type{NodeLoc}, root::RuleNode, typ::Symbol, grammar:
         x.cnt += 1
     end
     _sample(NodeLoc, root, typ, grammar, x, maxdepth-1)
-    grammar.types[get(root,x.loc).ind] == typ || error("type $typ not found in RuleNode")
+    grammar.types[get(root,x.loc).ind] == typ || error("type $typ not found in $(rulenode2expr(root, grammar))")
     x.loc
 end
     
@@ -171,7 +171,7 @@ function _sample(::Type{NodeLoc}, node::RuleNode, typ::Symbol, grammar::Abstract
             if rand() <= 1/x.cnt
                 x.loc = NodeLoc(node, j)
             end
-            _sample(NodeLoc, child, typ, grammar, x, maxdepth-1)
         end
+        _sample(NodeLoc, child, typ, grammar, x, maxdepth-1)
     end
 end
