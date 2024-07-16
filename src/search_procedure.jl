@@ -146,7 +146,7 @@ function meta_search(
     next = iterate(iterator)
 
 
-    best_fitness = 0
+    best_fitness = typemin(Int)
     iteration    = 0
     best_program = nothing
     println("Starting meta search!! ")
@@ -183,7 +183,7 @@ function meta_search(
         if current_time > max_time || iteration > max_iterations 
             return best_program, best_fitness
         end
-        next = iterate(iterator)
+        next = iterate(iterator, state)
         iteration += 1
     end
     return best_program, best_fitness
