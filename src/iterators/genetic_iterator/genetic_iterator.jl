@@ -57,7 +57,7 @@ cross_over(::GeneticSearchIterator, parent1::RuleNode, parent2::RuleNode, gramma
 
 Mutates the program of an invididual.
 """
-mutate!(::GeneticSearchIterator, program::RuleNode, grammar::AbstractGrammar, max_depth::Int=2) = mutate_random!(program, grammar, max_depth)
+mutate!(::GeneticSearchIterator, program::RuleNode, grammar::AbstractGrammar, max_depth::Int=4) = mutate_random!(program, grammar, max_depth)
 
 """
     select_parents(::GeneticSearchIterator, population::Array{RuleNode}, fitness_array::Array{<:Real})
@@ -183,21 +183,9 @@ end
 Iterates the search space using a genetic algorithm. Takes the iterator and the current state to mutate and crossover random inviduals. Returns the best program-so-far and the state of the iterator.
 """
 function Base.iterate(iter::GeneticSearchIterator, current_state::GeneticIteratorState)
-
     current_population = current_state.population
-
-    # Calculate fitness
-    # zipped_outputs(chromosome) = zip([example.out for example in iter.spec], execute_on_input(get_grammar(iter.solver), chromosome, [example.in for example in iter.spec]))
-    # fitness_array = [fitness(iter, chromosome, collect(zipped_outputs(chromosome))) for chromosome in current_population]
-
     new_population = Vector{RuleNode}(undef,iter.population_size)
-
     index = 1
-    if iter.always_keep_best_program
-        new_population[begin] = current_state.best_program
-        index = 2
-    end
-
     # do crossover
     while index <= iter.population_size
         parent1, parent2 = select_parents(iter, current_population, current_state.fitness_array)
@@ -211,8 +199,7 @@ function Base.iterate(iter::GeneticSearchIterator, current_state::GeneticIterato
         end
     end
     # Do mutation (possibly mutation the best fitness program as well)
-    start_index = iter.always_keep_best_program ? 2 : 1 
-    for index in start_index:iter.population_size 
+    for index in 1:iter.population_size 
         chromosome = new_population[index]
         random_number = rand()
         if random_number < iter.mutation_probability
@@ -220,10 +207,21 @@ function Base.iterate(iter::GeneticSearchIterator, current_state::GeneticIterato
         end
     end
 
-    fitness_array, best_program, best_fitness = get_population_fitness(new_population, iter)
-    if iter.always_keep_best_program
-        # fitness should always increase
-        @assert best_fitness >= current_state.best_fitness "Best fitness $best_fitness is less than previous best fitness $(current_state.best_fitness)"
+    fitness_array, best_program, best_fitness = get_population_fitness(current_population, iter)
+    if iter.always_keep_best_program 
+        if best_fitness < current_state.best_fitness
+            # if fitness decreases add the previous best program in the place of the worst fitness program in the population
+
+            # find the index of the lowest fitness chromosome 
+            minimum_fitness, index_with_minimum_fitness = findmin(fitness_array)
+            # replace the program in the population and the fitness arrays
+            fitness_array[index_with_minimum_fitness] = current_state.best_fitness
+            new_population[index_with_minimum_fitness] = current_state.best_program
+            # change best program and best fitness
+            best_fitness = current_state.best_fitness
+            best_program = current_state.best_program
+        end
+        @assert (best_fitness >= current_state.best_fitness)
     end
 
 
