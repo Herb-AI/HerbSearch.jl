@@ -8,6 +8,8 @@ grammar = @pcsgrammar begin
     0.188:S = my_replace(S, S, S)
     0.059:S = S * S
 end
+# the normalization changes the values assigned so I need to reassign them again 
+grammar.log_probabilities = log.([0.188,0.188,0.188,0.188,0.188,0.059])
 @testset "Simulate using the grammar from paper" begin
 
     @testset "Grammar works without errors" begin
