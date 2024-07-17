@@ -27,13 +27,13 @@ function update_grammar(grammar::ContextSensitiveGrammar, PSols_with_eval_cache:
 
         # compute (log2(p_u) ^ (1 - fit)) = (1-fit) * log2(p_u)
         sum += p_uniform^(1 - fitnes)
-        log_prob = ((1 - fitnes) * log(2, p_uniform))
+        log_prob = ((1 - fitnes) * log(p_uniform))
         grammar.log_probabilities[rule_index] = log_prob
     end
     total_sum = 0
     for rule_index in eachindex(grammar.rules)
-        grammar.log_probabilities[rule_index] = grammar.log_probabilities[rule_index] - log(2, sum)
-        total_sum += 2^(grammar.log_probabilities[rule_index])
+        grammar.log_probabilities[rule_index] = grammar.log_probabilities[rule_index] - log(sum)
+        total_sum += exp.(grammar.log_probabilities[rule_index])
     end
     @assert abs(total_sum - 1) <= 1e-4 "Total sum is $(total_sum) "
 end
