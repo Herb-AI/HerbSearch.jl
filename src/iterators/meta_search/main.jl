@@ -9,6 +9,7 @@ using Logging
 import Random
 
 include("configuration.jl")
+include("evaluation.jl")
 
 """
     meta_search_fitness_function(program)
@@ -100,4 +101,5 @@ function HerbSearch.fitness(::GeneticSearchIterator, program::RuleNode, results:
         throw(e)
     end
 end
-get_meta_algorithm()
+
+run_alg_comparison()
