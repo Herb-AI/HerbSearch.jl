@@ -1,8 +1,8 @@
 using JSON
 using HerbSearch: generic_run
 using Logging 
-MAX_TIME_TO_RUN_ALG = 40 # 40 seconds 
-AVERAGE_RUNS = 50 # 50 repeated iterations of each algorithm
+MAX_TIME_TO_RUN_ALG = 20 # in seconds 
+AVERAGE_RUNS = 50        # nr repeated iterations of each algorithm
 include("meta_alg_options.jl")
 
 vannila_mh = (input_problem::Problem, input_grammar::AbstractGrammar)->begin 
@@ -74,7 +74,7 @@ function test_algorithm_on_problem(runner, alg_name; problem::Problem, max_time_
     lk = ReentrantLock()
 
     # run the problem multiple times
-    for _ ∈ 1:average_runs
+    Threads.@threads for _ ∈ 1:average_runs
 
         start_time = time()
         best_program, cost = runner(problem, HerbSearch.arithmetic_grammar)
@@ -103,12 +103,12 @@ function evaluate_algorithm(runner, alg_name; max_time_to_run::Int, average_runs
     # RUNS on test problems
     run_data = []
     # for each problem 
-    for (problem, problem_text) ∈ HerbSearch.problems_test     
-        push!(run_data,
-            Dict(
-                problem_text => test_algorithm_on_problem(runner,alg_name, problem=problem, max_time_to_run=max_time_to_run, average_runs = average_runs)
-            )
-        )
+    lk = ReentrantLock()
+    Threads.@threads for (problem, problem_text) ∈ HerbSearch.problems_test     
+        output = test_algorithm_on_problem(runner,alg_name, problem=problem, max_time_to_run=max_time_to_run, average_runs = average_runs)
+        lock(lk) do 
+            push!(run_data,Dict(problem_text => output))
+        end
     end
     return run_data
 end
@@ -117,12 +117,15 @@ end
 function run_alg_comparison()
     Logging.disable_logging(Info)
     output_data = []
-    for (algorithm, algorithm_name) in algorithm_options
+    lk = ReentrantLock()
+    Threads.@threads for (algorithm, algorithm_name) in algorithm_options
         output = evaluate_algorithm(algorithm, algorithm_name; max_time_to_run=MAX_TIME_TO_RUN_ALG, average_runs=AVERAGE_RUNS)
-        println("Finished running algorithm $algorithm_name with output: $output")
-        push!(output_data, Dict(algorithm_name => output))
-        open("output_data.json","w") do f
-            JSON.print(f, output_data, 4)
+        lock(lk) do 
+            println("Finished running algorithm $algorithm_name with output: $output")
+            push!(output_data, Dict(algorithm_name => output))
+            open("output_data.json","w") do f
+                JSON.print(f, output_data, 4)
+            end
         end
     end
 end
