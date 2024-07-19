@@ -12,7 +12,7 @@ complex_algorithm = (input_problem::Problem, input_grammar::AbstractGrammar) -> 
     generic_run(
         SequenceCombinatorIterator(
             [
-            VannilaIterator(
+            VanillaIterator(
                 GeneticSearchIterator(input_grammar, :X,
                     input_problem.spec,
                     population_size=3,
@@ -22,7 +22,7 @@ complex_algorithm = (input_problem::Problem, input_grammar::AbstractGrammar) -> 
                 ((time, iteration, cost) -> time > 3),
                 input_problem
             ),
-            VannilaIterator(
+            VanillaIterator(
                 GeneticSearchIterator(input_grammar, :X,
                     input_problem.spec,
                     population_size=1,
@@ -32,7 +32,7 @@ complex_algorithm = (input_problem::Problem, input_grammar::AbstractGrammar) -> 
                 ((time, iteration, cost) -> time > 4),
                 input_problem
             ),
-            VannilaIterator( BFSIterator(input_grammar, :X, max_depth=5), 
+            VanillaIterator( BFSIterator(input_grammar, :X, max_depth=5), 
                 ((time, iteration, cost) -> time > 4),
                 input_problem
             )
