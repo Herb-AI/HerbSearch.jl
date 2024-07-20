@@ -11,12 +11,12 @@
 more_mhs = (input_problem::Problem, input_grammar::AbstractGrammar)->begin 
     generic_run(ParallelCombinatorIterator(ParallelThreads,
         [
-            VanillaIterator(MHSearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, max_depth = 10), ((time, iteration, cost)->time > MAX_TIME_TO_RUN_ALG || iteration > 5000), input_problem),
-            VanillaIterator(MHSearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, max_depth = 10), ((time, iteration, cost)->time > MAX_TIME_TO_RUN_ALG || iteration > 5000), input_problem),
-            VanillaIterator(MHSearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, max_depth = 10), ((time, iteration, cost)->time > MAX_TIME_TO_RUN_ALG || iteration > 5000), input_problem),
-            VanillaIterator(MHSearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, max_depth = 10), ((time, iteration, cost)->time > MAX_TIME_TO_RUN_ALG || iteration > 5000), input_problem),
-            VanillaIterator(MHSearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, max_depth = 10), ((time, iteration, cost)->time > MAX_TIME_TO_RUN_ALG || iteration > 5000), input_problem),
-            VanillaIterator(MHSearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, max_depth = 10), ((time, iteration, cost)->time > MAX_TIME_TO_RUN_ALG || iteration > 5000), input_problem),
+            VanillaIterator(MHSearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, max_depth = 10), ((time, iteration, cost)->time > MAX_TIME_TO_RUN_ALG), input_problem),
+            VanillaIterator(MHSearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, max_depth = 10), ((time, iteration, cost)->time > MAX_TIME_TO_RUN_ALG), input_problem),
+            VanillaIterator(MHSearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, max_depth = 10), ((time, iteration, cost)->time > MAX_TIME_TO_RUN_ALG), input_problem),
+            VanillaIterator(MHSearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, max_depth = 10), ((time, iteration, cost)->time > MAX_TIME_TO_RUN_ALG), input_problem),
+            VanillaIterator(MHSearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, max_depth = 10), ((time, iteration, cost)->time > MAX_TIME_TO_RUN_ALG), input_problem),
+            VanillaIterator(MHSearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, max_depth = 10), ((time, iteration, cost)->time > MAX_TIME_TO_RUN_ALG), input_problem),
         ]
     ))
 end
