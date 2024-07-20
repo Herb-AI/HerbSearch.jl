@@ -55,16 +55,17 @@ end
 
 algorithm_options = 
 [
+    (more_mhs,"MH paralell"),
     (vannila_mh,"MH"),
-    (vannila_vlns,"VLNS"),
-    (vannila_sa,"SA"),
-    (vannila_bfs,"BFS"),
-    (vannila_dfs,"DFS"),
-    (supercomputer_run_3averages,"Run supercomputer 3 averages"),
-    (supercomputer_run_5averages_moredepth,"Run supercomputer 5 averages and more depth"),
-    (two_sa,"Two sas in parallel"),
-    (complex_algorithm,"Very complex algorithm"),
-    (my_alg,"My algorithm"),
+    # (vannila_vlns,"VLNS"),
+    # (vannila_sa,"SA"),
+    # (vannila_bfs,"BFS"),
+    # (vannila_dfs,"DFS"),
+    # (supercomputer_run_3averages,"Run supercomputer 3 averages"),
+    # (supercomputer_run_5averages_moredepth,"Run supercomputer 5 averages and more depth"),
+    # (two_sa,"Two sas in parallel"),
+    # (complex_algorithm,"Very complex algorithm"),
+    # (my_alg,"My algorithm"),
 ]
 
 
@@ -123,26 +124,9 @@ function run_alg_comparison()
         lock(lk) do 
             println("Finished running algorithm $algorithm_name with output: $output")
             push!(output_data, Dict(algorithm_name => output))
-            open("output_data.json","w") do f
+            open("output_data_2.json","w") do f
                 JSON.print(f, output_data, 4)
             end
         end
     end
-end
-
-function create_plot(data_array::Vector{Dict{String, Any}})
-    boxplot1 = box(y=mh_run, name="MH", boxpoints="all")
-    boxplot2 = box(y=vlns_run, name="VLNS", boxpoints="all")
-    boxplot3 = box(y=meta_arr, name="MetaSearch", boxpoints="all")
-
-    plot([boxplot1, boxplot2, boxplot3],
-        Layout(
-            xaxis_title="Algorithm",
-            yaxis_title="Solved problems out of 5",
-            title="Nr of solved problems for each algorithm. 30 seconds for each algorithm",
-            xanchor="center",
-            yanchor="top",
-            x=0.9,
-            y=0.5)
-    )
 end
