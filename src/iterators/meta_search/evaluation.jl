@@ -1,7 +1,7 @@
 using JSON
 using HerbSearch: generic_run
 using Logging 
-MAX_TIME_TO_RUN_ALG = 6 # in seconds 
+MAX_TIME_TO_RUN_ALG = 12 # in seconds 
 AVERAGE_RUNS = 10       # nr repeated iterations of each algorithm
 include("meta_alg_options.jl")
 
