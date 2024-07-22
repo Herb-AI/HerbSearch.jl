@@ -1,8 +1,8 @@
 using JSON
 using HerbSearch: generic_run
 using Logging 
-MAX_TIME_TO_RUN_ALG = 20 # in seconds 
-AVERAGE_RUNS = 50        # nr repeated iterations of each algorithm
+MAX_TIME_TO_RUN_ALG = 6 # in seconds 
+AVERAGE_RUNS = 10       # nr repeated iterations of each algorithm
 include("meta_alg_options.jl")
 
 vannila_mh = (input_problem::Problem, input_grammar::AbstractGrammar)->begin 
@@ -55,17 +55,13 @@ end
 
 algorithm_options = 
 [
-    (more_mhs,"MH paralell"),
     (vannila_mh,"MH"),
-    # (vannila_vlns,"VLNS"),
-    # (vannila_sa,"SA"),
-    # (vannila_bfs,"BFS"),
-    # (vannila_dfs,"DFS"),
-    # (supercomputer_run_3averages,"Run supercomputer 3 averages"),
-    # (supercomputer_run_5averages_moredepth,"Run supercomputer 5 averages and more depth"),
-    # (two_sa,"Two sas in parallel"),
-    # (complex_algorithm,"Very complex algorithm"),
-    # (my_alg,"My algorithm"),
+    (vannila_vlns,"VLNS"),
+    (vannila_sa,"SA"),
+    (vannila_bfs,"BFS"),
+    (vannila_dfs,"DFS"),
+    (supercomputer_run_3averages,"Run supercomputer 3 averages"),
+    (supercomputer_run_5averages_moredepth,"Run supercomputer 5 averages and more depth"),
 ]
 
 
@@ -124,7 +120,7 @@ function run_alg_comparison()
         lock(lk) do 
             println("Finished running algorithm $algorithm_name with output: $output")
             push!(output_data, Dict(algorithm_name => output))
-            open("output_data_2.json","w") do f
+            open("output_data.json","w") do f
                 JSON.print(f, output_data, 4)
             end
         end

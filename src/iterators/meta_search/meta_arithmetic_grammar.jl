@@ -21,10 +21,10 @@ problems_train = [
 ]
   
 problems_test = [
+    create_problem(x -> x - 5 * 5,"x -> x - 5 * 5"),
     create_problem(x -> x * x * x + 10,"x -> x * x * x + 10"),
-    create_problem(x -> x * x * x * x * x + x * 2 * x,"x -> x * x * x * x * x + x * 2 * x"),
-    create_problem(x -> x * x * x - 4 * x * x + x + 5,"x -> x * x * x - 4 * x * x + x + 5"),
-    create_problem(x -> x * (2 - x) * (x + 4) * x,"x -> x * (2 - x) * (x + 4) * x"),
-    create_problem(x -> 15 * x * (x + 2) * (x - 40) ,"x -> x * (2 - x) * (x + 4) * x"),
+    create_problem(x -> x * x * x * x ,"x -> x * x * x * x * x"),
+    create_problem(x -> 625 + 1 ,"5 * 5 * 5 * 5 + 1"),
+    create_problem(x -> x * x * x * x * x,"x -> x * x * x * x * x"),
 ]
   
