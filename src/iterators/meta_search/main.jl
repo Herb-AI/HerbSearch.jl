@@ -101,5 +101,5 @@ function HerbSearch.fitness(::GeneticSearchIterator, program::RuleNode, results:
         throw(e)
     end
 end
-
-run_alg_comparison()
+# get_meta_algorithm() # train algorithm
+# run_alg_comparison() # run evaluation

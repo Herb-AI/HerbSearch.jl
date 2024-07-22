@@ -1,0 +1,333 @@
+[0;31mshell.sh is: [0m
+[0;33m
+#!/bin/bash
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+CYAN='\033[0;33m'
+NC='\033[0m' # No Color
+
+function Usage() {
+    echo "Usage: $0 job_name nr_proc nr_threads"
+    echo ""
+    echo "where:"
+    echo "     job_name  : Name of the job"
+    echo "     nr_proc   : Nr of processors to run with"
+    echo ""
+}
+if [ $# -lt 2 ] ; then
+    echo -e "${RED}Not all arguments were provided to the script!\n${NC}"
+    Usage
+    exit 
+fi
+JOB_NAME=$1
+CORES=$2
+
+sbatch <<EOT
+#!/bin/bash
+#SBATCH --job-name="$JOB_NAME"
+#SBATCH --partition=compute
+#SBATCH --account=Education-EEMCS-honours
+#SBATCH --time=03:00:00
+#SBATCH --ntasks=1
+#SBATCH --cpus-per-task="$CORES"
+#SBATCH --cpu-freq=high
+#SBATCH --mem=20GB
+#SBATCH --mail-type=BEGIN,END,FAIL
+#SBATCH --mail-user=N.Filat@student.tudelft.nl
+#SBATCH --output=%x_%j.out
+
+module load 2023r1
+
+function Separator(){
+    echo "============================================="
+}
+
+echo -e "${RED}shell.sh is: ${NC}"
+echo -e "${CYAN}"
+cat shell.sh
+echo -e "${NC}"
+
+Separator
+
+echo -e "${GREEN}"
+echo "Git data:"
+git config color.ui auto
+git log -1 --pretty
+echo -e "${NC}"
+Separator
+
+echo -e "${CYAN}"
+echo 'JOB DATA:'
+echo "job name    : \$SLURM_JOB_NAME"
+echo "job id      : \$SLURM_JOBID"
+echo "job account : \$SLURM_JOB_ACCOUNT"
+echo "job threads : $CORES"
+echo "nr proc     : \$SLURM_CPUS_PER_TASK"
+
+echo ""
+echo "job start   : $(date)"
+echo -e "${NC}"
+
+Separator
+echo 'Job started'
+cd /scratch/nfilat/HerbSearch.jl
+srun julia --project=. --threads $CORES src/iterators/meta_search/main.jl 
+Separator
+
+echo -e "${RED}End     : $(date)${NC}"
+
+echo "Job done!"
+Separator
+
+echo "Stats about the cpu usage"
+echo -e "${GREEN}"
+seff \$SLURM_JOBID
+
+echo -e "${NC}"
+exit 0
+
+EOT
+echo "Submitted job with name: $JOB_NAME and cores : $CORES"
+
+jobs
+[0m
+=============================================
+[0;32m
+Git data:
+commit 964896350d2893f35796aae48c61fd0d110564c2
+Author: Nicolae Filat <nicolae.filat@gmail.com>
+Date:   Mon Jul 22 13:45:08 2024 +0300
+
+    Increase evaluation time to 12 seconds and add simpler problems such that BFS and DFS can solve them
+[0m
+=============================================
+[0;33m
+JOB DATA:
+job name    : Evaluation-less-training-problems-less-time-12secondstrain
+job id      : 4211200
+job account : education-eemcs-honours
+job threads : 48
+nr proc     : 48
+
+job start   : Mon Jul 22 12:46:38 CEST 2024
+[0m
+=============================================
+Job started
+┌ Warning: The algorithm VLNS took 13.032681941986084 seconds which is more than the threshold of 12 seconds.
+└ @ Main /scratch/nfilat/HerbSearch.jl/src/iterators/meta_search/evaluation.jl:81
+┌ Warning: The algorithm SA took 13.038444995880127 seconds which is more than the threshold of 12 seconds.
+└ @ Main /scratch/nfilat/HerbSearch.jl/src/iterators/meta_search/evaluation.jl:81
+┌ Warning: The algorithm VLNS took 13.60260796546936 seconds which is more than the threshold of 12 seconds.
+└ @ Main /scratch/nfilat/HerbSearch.jl/src/iterators/meta_search/evaluation.jl:81
+┌ Warning: The algorithm VLNS took 13.852467060089111 seconds which is more than the threshold of 12 seconds.
+└ @ Main /scratch/nfilat/HerbSearch.jl/src/iterators/meta_search/evaluation.jl:81
+┌ Warning: The algorithm SA took 14.464402198791504 seconds which is more than the threshold of 12 seconds.
+└ @ Main /scratch/nfilat/HerbSearch.jl/src/iterators/meta_search/evaluation.jl:81
+┌ Warning: The algorithm SA took 13.185081005096436 seconds which is more than the threshold of 12 seconds.
+└ @ Main /scratch/nfilat/HerbSearch.jl/src/iterators/meta_search/evaluation.jl:81
+┌ Warning: The algorithm VLNS took 13.389556169509888 seconds which is more than the threshold of 12 seconds.
+└ @ Main /scratch/nfilat/HerbSearch.jl/src/iterators/meta_search/evaluation.jl:81
+┌ Warning: The algorithm VLNS took 13.422599077224731 seconds which is more than the threshold of 12 seconds.
+└ @ Main /scratch/nfilat/HerbSearch.jl/src/iterators/meta_search/evaluation.jl:81
+┌ Warning: The algorithm VLNS took 13.467485904693604 seconds which is more than the threshold of 12 seconds.
+└ @ Main /scratch/nfilat/HerbSearch.jl/src/iterators/meta_search/evaluation.jl:81
+┌ Warning: The algorithm SA took 14.256777048110962 seconds which is more than the threshold of 12 seconds.
+└ @ Main /scratch/nfilat/HerbSearch.jl/src/iterators/meta_search/evaluation.jl:81
+┌ Warning: The algorithm VLNS took 14.212846994400024 seconds which is more than the threshold of 12 seconds.
+└ @ Main /scratch/nfilat/HerbSearch.jl/src/iterators/meta_search/evaluation.jl:81
+┌ Warning: The algorithm SA took 14.244472980499268 seconds which is more than the threshold of 12 seconds.
+└ @ Main /scratch/nfilat/HerbSearch.jl/src/iterators/meta_search/evaluation.jl:81
+┌ Warning: The algorithm Run supercomputer 3 averages took 14.776932001113892 seconds which is more than the threshold of 12 seconds.
+└ @ Main /scratch/nfilat/HerbSearch.jl/src/iterators/meta_search/evaluation.jl:81
+┌ Warning: The algorithm Run supercomputer 5 averages and more depth took 29.42115092277527 seconds which is more than the threshold of 12 seconds.
+└ @ Main /scratch/nfilat/HerbSearch.jl/src/iterators/meta_search/evaluation.jl:81
+┌ Warning: The algorithm Run supercomputer 3 averages took 18.084079027175903 seconds which is more than the threshold of 12 seconds.
+└ @ Main /scratch/nfilat/HerbSearch.jl/src/iterators/meta_search/evaluation.jl:81
+┌ Warning: The algorithm Run supercomputer 3 averages took 20.399739027023315 seconds which is more than the threshold of 12 seconds.
+└ @ Main /scratch/nfilat/HerbSearch.jl/src/iterators/meta_search/evaluation.jl:81
+┌ Warning: The algorithm Run supercomputer 3 averages took 23.937653064727783 seconds which is more than the threshold of 12 seconds.
+└ @ Main /scratch/nfilat/HerbSearch.jl/src/iterators/meta_search/evaluation.jl:81
+┌ Warning: The algorithm Run supercomputer 3 averages took 23.168275117874146 seconds which is more than the threshold of 12 seconds.
+└ @ Main /scratch/nfilat/HerbSearch.jl/src/iterators/meta_search/evaluation.jl:81
+┌ Warning: The algorithm Run supercomputer 5 averages and more depth took 42.42636013031006 seconds which is more than the threshold of 12 seconds.
+└ @ Main /scratch/nfilat/HerbSearch.jl/src/iterators/meta_search/evaluation.jl:81
+┌ Warning: The algorithm Run supercomputer 5 averages and more depth took 42.259856939315796 seconds which is more than the threshold of 12 seconds.
+└ @ Main /scratch/nfilat/HerbSearch.jl/src/iterators/meta_search/evaluation.jl:81
+┌ Warning: The algorithm Run supercomputer 3 averages took 13.464189052581787 seconds which is more than the threshold of 12 seconds.
+└ @ Main /scratch/nfilat/HerbSearch.jl/src/iterators/meta_search/evaluation.jl:81
+┌ Warning: The algorithm Run supercomputer 5 averages and more depth took 15.845839977264404 seconds which is more than the threshold of 12 seconds.
+└ @ Main /scratch/nfilat/HerbSearch.jl/src/iterators/meta_search/evaluation.jl:81
+┌ Warning: The algorithm Run supercomputer 3 averages took 14.768939971923828 seconds which is more than the threshold of 12 seconds.
+└ @ Main /scratch/nfilat/HerbSearch.jl/src/iterators/meta_search/evaluation.jl:81
+┌ Warning: The algorithm Run supercomputer 5 averages and more depth took 55.36086106300354 seconds which is more than the threshold of 12 seconds.
+└ @ Main /scratch/nfilat/HerbSearch.jl/src/iterators/meta_search/evaluation.jl:81
+┌ Warning: The algorithm Run supercomputer 3 averages took 14.601598978042603 seconds which is more than the threshold of 12 seconds.
+└ @ Main /scratch/nfilat/HerbSearch.jl/src/iterators/meta_search/evaluation.jl:81
+┌ Warning: The algorithm Run supercomputer 3 averages took 27.051575899124146 seconds which is more than the threshold of 12 seconds.
+└ @ Main /scratch/nfilat/HerbSearch.jl/src/iterators/meta_search/evaluation.jl:81
+┌ Warning: The algorithm Run supercomputer 3 averages took 20.994407176971436 seconds which is more than the threshold of 12 seconds.
+└ @ Main /scratch/nfilat/HerbSearch.jl/src/iterators/meta_search/evaluation.jl:81
+┌ Warning: The algorithm Run supercomputer 3 averages took 18.902232885360718 seconds which is more than the threshold of 12 seconds.
+└ @ Main /scratch/nfilat/HerbSearch.jl/src/iterators/meta_search/evaluation.jl:81
+┌ Warning: The algorithm Run supercomputer 5 averages and more depth took 58.212844133377075 seconds which is more than the threshold of 12 seconds.
+└ @ Main /scratch/nfilat/HerbSearch.jl/src/iterators/meta_search/evaluation.jl:81
+┌ Warning: The algorithm Run supercomputer 3 averages took 17.852823972702026 seconds which is more than the threshold of 12 seconds.
+└ @ Main /scratch/nfilat/HerbSearch.jl/src/iterators/meta_search/evaluation.jl:81
+┌ Warning: The algorithm Run supercomputer 3 averages took 19.571062088012695 seconds which is more than the threshold of 12 seconds.
+└ @ Main /scratch/nfilat/HerbSearch.jl/src/iterators/meta_search/evaluation.jl:81
+┌ Warning: The algorithm Run supercomputer 3 averages took 18.716346979141235 seconds which is more than the threshold of 12 seconds.
+└ @ Main /scratch/nfilat/HerbSearch.jl/src/iterators/meta_search/evaluation.jl:81
+┌ Warning: The algorithm Run supercomputer 3 averages took 19.152743101119995 seconds which is more than the threshold of 12 seconds.
+└ @ Main /scratch/nfilat/HerbSearch.jl/src/iterators/meta_search/evaluation.jl:81
+┌ Warning: The algorithm Run supercomputer 3 averages took 31.132202863693237 seconds which is more than the threshold of 12 seconds.
+└ @ Main /scratch/nfilat/HerbSearch.jl/src/iterators/meta_search/evaluation.jl:81
+┌ Warning: The algorithm Run supercomputer 3 averages took 18.49844217300415 seconds which is more than the threshold of 12 seconds.
+└ @ Main /scratch/nfilat/HerbSearch.jl/src/iterators/meta_search/evaluation.jl:81
+┌ Warning: The algorithm Run supercomputer 3 averages took 20.67942714691162 seconds which is more than the threshold of 12 seconds.
+└ @ Main /scratch/nfilat/HerbSearch.jl/src/iterators/meta_search/evaluation.jl:81
+┌ Warning: The algorithm Run supercomputer 3 averages took 21.29825711250305 seconds which is more than the threshold of 12 seconds.
+└ @ Main /scratch/nfilat/HerbSearch.jl/src/iterators/meta_search/evaluation.jl:81
+┌ Warning: The algorithm Run supercomputer 3 averages took 39.578540086746216 seconds which is more than the threshold of 12 seconds.
+└ @ Main /scratch/nfilat/HerbSearch.jl/src/iterators/meta_search/evaluation.jl:81
+┌ Warning: The algorithm Run supercomputer 3 averages took 28.070760011672974 seconds which is more than the threshold of 12 seconds.
+└ @ Main /scratch/nfilat/HerbSearch.jl/src/iterators/meta_search/evaluation.jl:81
+┌ Warning: The algorithm Run supercomputer 5 averages and more depth took 66.13538384437561 seconds which is more than the threshold of 12 seconds.
+└ @ Main /scratch/nfilat/HerbSearch.jl/src/iterators/meta_search/evaluation.jl:81
+┌ Warning: The algorithm Run supercomputer 3 averages took 24.609817028045654 seconds which is more than the threshold of 12 seconds.
+└ @ Main /scratch/nfilat/HerbSearch.jl/src/iterators/meta_search/evaluation.jl:81
+┌ Warning: The algorithm Run supercomputer 3 averages took 13.498269081115723 seconds which is more than the threshold of 12 seconds.
+└ @ Main /scratch/nfilat/HerbSearch.jl/src/iterators/meta_search/evaluation.jl:81
+┌ Warning: The algorithm Run supercomputer 3 averages took 17.692321062088013 seconds which is more than the threshold of 12 seconds.
+└ @ Main /scratch/nfilat/HerbSearch.jl/src/iterators/meta_search/evaluation.jl:81
+┌ Warning: The algorithm Run supercomputer 3 averages took 28.52233386039734 seconds which is more than the threshold of 12 seconds.
+└ @ Main /scratch/nfilat/HerbSearch.jl/src/iterators/meta_search/evaluation.jl:81
+┌ Warning: The algorithm Run supercomputer 5 averages and more depth took 66.38382291793823 seconds which is more than the threshold of 12 seconds.
+└ @ Main /scratch/nfilat/HerbSearch.jl/src/iterators/meta_search/evaluation.jl:81
+┌ Warning: The algorithm Run supercomputer 5 averages and more depth took 42.3049259185791 seconds which is more than the threshold of 12 seconds.
+└ @ Main /scratch/nfilat/HerbSearch.jl/src/iterators/meta_search/evaluation.jl:81
+┌ Warning: The algorithm Run supercomputer 3 averages took 21.048885822296143 seconds which is more than the threshold of 12 seconds.
+└ @ Main /scratch/nfilat/HerbSearch.jl/src/iterators/meta_search/evaluation.jl:81
+┌ Warning: The algorithm Run supercomputer 3 averages took 16.045873165130615 seconds which is more than the threshold of 12 seconds.
+└ @ Main /scratch/nfilat/HerbSearch.jl/src/iterators/meta_search/evaluation.jl:81
+┌ Warning: The algorithm Run supercomputer 5 averages and more depth took 66.066162109375 seconds which is more than the threshold of 12 seconds.
+└ @ Main /scratch/nfilat/HerbSearch.jl/src/iterators/meta_search/evaluation.jl:81
+┌ Warning: The algorithm Run supercomputer 5 averages and more depth took 15.153602838516235 seconds which is more than the threshold of 12 seconds.
+└ @ Main /scratch/nfilat/HerbSearch.jl/src/iterators/meta_search/evaluation.jl:81
+┌ Warning: The algorithm Run supercomputer 3 averages took 14.0369131565094 seconds which is more than the threshold of 12 seconds.
+└ @ Main /scratch/nfilat/HerbSearch.jl/src/iterators/meta_search/evaluation.jl:81
+┌ Warning: The algorithm Run supercomputer 5 averages and more depth took 27.715195894241333 seconds which is more than the threshold of 12 seconds.
+└ @ Main /scratch/nfilat/HerbSearch.jl/src/iterators/meta_search/evaluation.jl:81
+┌ Warning: The algorithm Run supercomputer 3 averages took 48.828513860702515 seconds which is more than the threshold of 12 seconds.
+└ @ Main /scratch/nfilat/HerbSearch.jl/src/iterators/meta_search/evaluation.jl:81
+┌ Warning: The algorithm Run supercomputer 3 averages took 14.5015230178833 seconds which is more than the threshold of 12 seconds.
+└ @ Main /scratch/nfilat/HerbSearch.jl/src/iterators/meta_search/evaluation.jl:81
+┌ Warning: The algorithm Run supercomputer 5 averages and more depth took 37.93414092063904 seconds which is more than the threshold of 12 seconds.
+└ @ Main /scratch/nfilat/HerbSearch.jl/src/iterators/meta_search/evaluation.jl:81
+┌ Warning: The algorithm Run supercomputer 5 averages and more depth took 72.15761804580688 seconds which is more than the threshold of 12 seconds.
+└ @ Main /scratch/nfilat/HerbSearch.jl/src/iterators/meta_search/evaluation.jl:81
+┌ Warning: The algorithm Run supercomputer 5 averages and more depth took 72.46244287490845 seconds which is more than the threshold of 12 seconds.
+└ @ Main /scratch/nfilat/HerbSearch.jl/src/iterators/meta_search/evaluation.jl:81
+┌ Warning: The algorithm Run supercomputer 3 averages took 21.99195408821106 seconds which is more than the threshold of 12 seconds.
+└ @ Main /scratch/nfilat/HerbSearch.jl/src/iterators/meta_search/evaluation.jl:81
+┌ Warning: The algorithm Run supercomputer 3 averages took 32.49662804603577 seconds which is more than the threshold of 12 seconds.
+└ @ Main /scratch/nfilat/HerbSearch.jl/src/iterators/meta_search/evaluation.jl:81
+┌ Warning: The algorithm Run supercomputer 5 averages and more depth took 33.32051086425781 seconds which is more than the threshold of 12 seconds.
+└ @ Main /scratch/nfilat/HerbSearch.jl/src/iterators/meta_search/evaluation.jl:81
+┌ Warning: The algorithm Run supercomputer 5 averages and more depth took 14.416759967803955 seconds which is more than the threshold of 12 seconds.
+└ @ Main /scratch/nfilat/HerbSearch.jl/src/iterators/meta_search/evaluation.jl:81
+┌ Warning: The algorithm Run supercomputer 5 averages and more depth took 43.614099979400635 seconds which is more than the threshold of 12 seconds.
+└ @ Main /scratch/nfilat/HerbSearch.jl/src/iterators/meta_search/evaluation.jl:81
+┌ Warning: The algorithm Run supercomputer 5 averages and more depth took 14.377524137496948 seconds which is more than the threshold of 12 seconds.
+└ @ Main /scratch/nfilat/HerbSearch.jl/src/iterators/meta_search/evaluation.jl:81
+┌ Warning: The algorithm Run supercomputer 3 averages took 21.80813694000244 seconds which is more than the threshold of 12 seconds.
+└ @ Main /scratch/nfilat/HerbSearch.jl/src/iterators/meta_search/evaluation.jl:81
+┌ Warning: The algorithm Run supercomputer 3 averages took 25.669188976287842 seconds which is more than the threshold of 12 seconds.
+└ @ Main /scratch/nfilat/HerbSearch.jl/src/iterators/meta_search/evaluation.jl:81
+┌ Warning: The algorithm Run supercomputer 5 averages and more depth took 25.366647958755493 seconds which is more than the threshold of 12 seconds.
+└ @ Main /scratch/nfilat/HerbSearch.jl/src/iterators/meta_search/evaluation.jl:81
+┌ Warning: The algorithm Run supercomputer 3 averages took 20.58736801147461 seconds which is more than the threshold of 12 seconds.
+└ @ Main /scratch/nfilat/HerbSearch.jl/src/iterators/meta_search/evaluation.jl:81
+┌ Warning: The algorithm Run supercomputer 5 averages and more depth took 79.21501111984253 seconds which is more than the threshold of 12 seconds.
+└ @ Main /scratch/nfilat/HerbSearch.jl/src/iterators/meta_search/evaluation.jl:81
+┌ Warning: The algorithm Run supercomputer 5 averages and more depth took 31.50008988380432 seconds which is more than the threshold of 12 seconds.
+└ @ Main /scratch/nfilat/HerbSearch.jl/src/iterators/meta_search/evaluation.jl:81
+┌ Warning: The algorithm Run supercomputer 5 averages and more depth took 81.87756705284119 seconds which is more than the threshold of 12 seconds.
+└ @ Main /scratch/nfilat/HerbSearch.jl/src/iterators/meta_search/evaluation.jl:81
+┌ Warning: The algorithm Run supercomputer 5 averages and more depth took 56.290395975112915 seconds which is more than the threshold of 12 seconds.
+└ @ Main /scratch/nfilat/HerbSearch.jl/src/iterators/meta_search/evaluation.jl:81
+┌ Warning: The algorithm Run supercomputer 5 averages and more depth took 14.918905019760132 seconds which is more than the threshold of 12 seconds.
+└ @ Main /scratch/nfilat/HerbSearch.jl/src/iterators/meta_search/evaluation.jl:81
+┌ Warning: The algorithm Run supercomputer 3 averages took 47.60971188545227 seconds which is more than the threshold of 12 seconds.
+└ @ Main /scratch/nfilat/HerbSearch.jl/src/iterators/meta_search/evaluation.jl:81
+┌ Warning: The algorithm Run supercomputer 3 averages took 21.010380029678345 seconds which is more than the threshold of 12 seconds.
+└ @ Main /scratch/nfilat/HerbSearch.jl/src/iterators/meta_search/evaluation.jl:81
+┌ Warning: The algorithm Run supercomputer 3 averages took 17.711090087890625 seconds which is more than the threshold of 12 seconds.
+└ @ Main /scratch/nfilat/HerbSearch.jl/src/iterators/meta_search/evaluation.jl:81
+┌ Warning: The algorithm Run supercomputer 3 averages took 47.211982011795044 seconds which is more than the threshold of 12 seconds.
+└ @ Main /scratch/nfilat/HerbSearch.jl/src/iterators/meta_search/evaluation.jl:81
+┌ Warning: The algorithm Run supercomputer 3 averages took 34.828468799591064 seconds which is more than the threshold of 12 seconds.
+└ @ Main /scratch/nfilat/HerbSearch.jl/src/iterators/meta_search/evaluation.jl:81
+┌ Warning: The algorithm Run supercomputer 5 averages and more depth took 82.04492092132568 seconds which is more than the threshold of 12 seconds.
+└ @ Main /scratch/nfilat/HerbSearch.jl/src/iterators/meta_search/evaluation.jl:81
+┌ Warning: The algorithm Run supercomputer 5 averages and more depth took 20.41088104248047 seconds which is more than the threshold of 12 seconds.
+└ @ Main /scratch/nfilat/HerbSearch.jl/src/iterators/meta_search/evaluation.jl:81
+┌ Warning: The algorithm Run supercomputer 5 averages and more depth took 82.3522539138794 seconds which is more than the threshold of 12 seconds.
+└ @ Main /scratch/nfilat/HerbSearch.jl/src/iterators/meta_search/evaluation.jl:81
+┌ Warning: The algorithm Run supercomputer 5 averages and more depth took 22.105606079101562 seconds which is more than the threshold of 12 seconds.
+└ @ Main /scratch/nfilat/HerbSearch.jl/src/iterators/meta_search/evaluation.jl:81
+┌ Warning: The algorithm Run supercomputer 5 averages and more depth took 29.701027154922485 seconds which is more than the threshold of 12 seconds.
+└ @ Main /scratch/nfilat/HerbSearch.jl/src/iterators/meta_search/evaluation.jl:81
+┌ Warning: The algorithm Run supercomputer 5 averages and more depth took 58.613332986831665 seconds which is more than the threshold of 12 seconds.
+└ @ Main /scratch/nfilat/HerbSearch.jl/src/iterators/meta_search/evaluation.jl:81
+┌ Warning: The algorithm Run supercomputer 3 averages took 38.69812512397766 seconds which is more than the threshold of 12 seconds.
+└ @ Main /scratch/nfilat/HerbSearch.jl/src/iterators/meta_search/evaluation.jl:81
+┌ Warning: The algorithm Run supercomputer 5 averages and more depth took 52.38346791267395 seconds which is more than the threshold of 12 seconds.
+└ @ Main /scratch/nfilat/HerbSearch.jl/src/iterators/meta_search/evaluation.jl:81
+┌ Warning: The algorithm Run supercomputer 3 averages took 55.07521200180054 seconds which is more than the threshold of 12 seconds.
+└ @ Main /scratch/nfilat/HerbSearch.jl/src/iterators/meta_search/evaluation.jl:81
+┌ Warning: The algorithm Run supercomputer 5 averages and more depth took 23.618799209594727 seconds which is more than the threshold of 12 seconds.
+└ @ Main /scratch/nfilat/HerbSearch.jl/src/iterators/meta_search/evaluation.jl:81
+┌ Warning: The algorithm Run supercomputer 5 averages and more depth took 15.279404878616333 seconds which is more than the threshold of 12 seconds.
+└ @ Main /scratch/nfilat/HerbSearch.jl/src/iterators/meta_search/evaluation.jl:81
+Finished running algorithm BFS with output: Any[Dict{String, Dict{String, Any}}("x -> x + 5" => Dict("costs" => Any[0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], "solve_count" => 10)), Dict{String, Dict{String, Any}}("x -> x - 5 * 5" => Dict("costs" => Any[0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], "solve_count" => 10)), Dict{String, Dict{String, Any}}("x -> x * x * x + 10" => Dict("costs" => Any[25.0, 25.0, 25.0, 25.0, 25.0, 25.0, 25.0, 25.0, 25.0, 25.0], "solve_count" => 0)), Dict{String, Dict{String, Any}}("5 * 5 * 5 * 5 + 1" => Dict("costs" => Any[1.0000000000000002, 1.0000000000000002, 1.0000000000000002, 1.0000000000000002, 1.0000000000000002, 1.0000000000000002, 1.0000000000000002, 1.0000000000000002, 1.0000000000000002, 1.0000000000000002], "solve_count" => 0)), Dict{String, Dict{String, Any}}("x -> x * x * x * x * x" => Dict("costs" => Any[1.0817900925818e12, 9.624556741877e11, 1.0817900925818e12, 1.0817900925818e12, 1.0817900925818e12, 1.0817900925818e12, 1.0817900925818e12, 1.0817900925818e12, 1.0817900925818e12, 1.0817900925818e12], "solve_count" => 0)), Dict{String, Dict{String, Any}}("x -> x * x * x * x" => Dict("costs" => Any[0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], "solve_count" => 10))]
+┌ Warning: The algorithm Run supercomputer 5 averages and more depth took 89.22854614257812 seconds which is more than the threshold of 12 seconds.
+└ @ Main /scratch/nfilat/HerbSearch.jl/src/iterators/meta_search/evaluation.jl:81
+┌ Warning: The algorithm Run supercomputer 5 averages and more depth took 88.38802719116211 seconds which is more than the threshold of 12 seconds.
+└ @ Main /scratch/nfilat/HerbSearch.jl/src/iterators/meta_search/evaluation.jl:81
+Finished running algorithm MH with output: Any[Dict{String, Dict{String, Any}}("x -> x * x * x * x * x" => Dict("costs" => Any[2.08676143775e10, 1.202359437679e12, 1.0926762451015e12, 4.14171801538e10, 1.1784722529745e12, 1.2070503609802e12, 1.205555330195e12, 1.1848082942395e12, 1.2035236639177e12, 1.1756088433225e12], "solve_count" => 0)), Dict{String, Dict{String, Any}}("x -> x * x * x * x" => Dict("costs" => Any[1.5802641481e9, 1.8505145623e9, 2.2527866288999996e9, 3.149927093e9, 3.2245262333e9, 1.3483562708e9, 2.4885601141000004e9, 2.987303977e8, 2.941140772e8, 1.3015768489e9], "solve_count" => 0)), Dict{String, Dict{String, Any}}("x -> x + 5" => Dict("costs" => Any[0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], "solve_count" => 10)), Dict{String, Dict{String, Any}}("x -> x * x * x + 10" => Dict("costs" => Any[1.7885225e6, 1.0933546e6, 29270.5, 7.0976465e6, 347877.7, 4.2361985e6, 25537.300000000003, 527332.5, 5.8641406e6, 8.2317362e6], "solve_count" => 0)), Dict{String, Dict{String, Any}}("5 * 5 * 5 * 5 + 1" => Dict("costs" => Any[225.0, 0.0, 96964.0, 69168.99999999997, 196.00000000000006, 27974.0, 74249.5, 138145.5, 53236.00000000001, 495.5], "solve_count" => 1)), Dict{String, Dict{String, Any}}("x -> x - 5 * 5" => Dict("costs" => Any[33.5, 1.0000000000000002, 4.000000000000001, 33.5, 33.5, 33.5, 25.0, 33.5, 33.5, 25.0], "solve_count" => 0))]
+Finished running algorithm VLNS with output: Any[Dict{String, Dict{String, Any}}("5 * 5 * 5 * 5 + 1" => Dict("costs" => Any[378873.5, 381924.0000000001, 384400.0, 353729.5, 389375.9999999999, 389375.9999999999, 386884.0000000001, 184695.99999999988, 386884.0000000001, 378873.5], "solve_count" => 0)), Dict{String, Dict{String, Any}}("x -> x * x * x * x * x" => Dict("costs" => Any[1.2081736507385e12, 1.2081736507385e12, 1.2081761173865e12, 1.2081761173865e12, 1.2081736507385e12, 1.2081724174175e12, 1.2081724174175e12, 1.2081477514175e12, 1.2081761173865e12, 1.2081687174665e12], "solve_count" => 0)), Dict{String, Dict{String, Any}}("x -> x + 5" => Dict("costs" => Any[215.5, 215.5, 165.5, 1.0000000000000002, 215.5, 165.5, 33.5, 215.5, 165.5, 215.5], "solve_count" => 0)), Dict{String, Dict{String, Any}}("x -> x * x * x * x" => Dict("costs" => Any[3.5268197425e9, 3.5268920040999994e9, 3.5268920040999994e9, 3.5268920040999994e9, 3.5258805237e9, 3.5268920040999994e9, 3.5266752253e9, 3.5268920040999994e9, 3.525586619e9, 3.5268920040999994e9], "solve_count" => 0)), Dict{String, Dict{String, Any}}("x -> x * x * x + 10" => Dict("costs" => Any[1.08537095e7, 1.0794657399999999e7, 1.08492865e7, 1.08581345e7, 1.08581345e7, 1.08581345e7, 1.0400695e7, 1.07612465e7, 1.08581345e7, 1.08581345e7], "solve_count" => 0)), Dict{String, Dict{String, Any}}("x -> x - 5 * 5" => Dict("costs" => Any[273.5, 273.5, 273.5, 273.5, 273.5, 273.5, 273.5, 273.5, 273.5, 273.5], "solve_count" => 0))]
+┌ Warning: The algorithm Run supercomputer 5 averages and more depth took 20.482871055603027 seconds which is more than the threshold of 12 seconds.
+└ @ Main /scratch/nfilat/HerbSearch.jl/src/iterators/meta_search/evaluation.jl:81
+┌ Warning: The algorithm Run supercomputer 3 averages took 50.49708795547485 seconds which is more than the threshold of 12 seconds.
+└ @ Main /scratch/nfilat/HerbSearch.jl/src/iterators/meta_search/evaluation.jl:81
+┌ Warning: The algorithm Run supercomputer 5 averages and more depth took 91.20779585838318 seconds which is more than the threshold of 12 seconds.
+└ @ Main /scratch/nfilat/HerbSearch.jl/src/iterators/meta_search/evaluation.jl:81
+┌ Warning: The algorithm Run supercomputer 5 averages and more depth took 91.1824951171875 seconds which is more than the threshold of 12 seconds.
+└ @ Main /scratch/nfilat/HerbSearch.jl/src/iterators/meta_search/evaluation.jl:81
+┌ Warning: The algorithm Run supercomputer 3 averages took 75.90588998794556 seconds which is more than the threshold of 12 seconds.
+└ @ Main /scratch/nfilat/HerbSearch.jl/src/iterators/meta_search/evaluation.jl:81
+Finished running algorithm Run supercomputer 3 averages with output: Any[Dict{String, Dict{String, Any}}("5 * 5 * 5 * 5 + 1" => Dict("costs" => Any[2115.9999999999995, 4.000000000000001, 532.0, 4.000000000000001, 23133.5, 1.0000000000000002, 319.50000000000006, 0.0, 256.00000000000006, 483.99999999999983], "solve_count" => 1)), Dict{String, Dict{String, Any}}("x -> x + 5" => Dict("costs" => Any[0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], "solve_count" => 10)), Dict{String, Dict{String, Any}}("x -> x * x * x * x * x" => Dict("costs" => Any[4.2946955143299995e10, 3.27740703338e10, 1.2721736747740001e11, 578132.8, 6.934554973209999e10, 1.7881809592e10, 9.8825874658e9, 4.3025726585e9, 5.1718789751e10, 5.90916661678e10], "solve_count" => 0)), Dict{String, Dict{String, Any}}("x -> x - 5 * 5" => Dict("costs" => Any[0.0, 0.0, 33.5, 1.0000000000000002, 1.0000000000000002, 33.5, 16.000000000000004, 0.0, 0.0, 16.000000000000004], "solve_count" => 4)), Dict{String, Dict{String, Any}}("x -> x * x * x * x" => Dict("costs" => Any[0.0, 2.4327914899999995e7, 3.93075772e7, 6.55378452e7, 7.785088329999998e7, 6.322997460000001e7, 2.991245733e8, 2.6190155509999996e8, 5.28652921e7, 1.381629367e8], "solve_count" => 1)), Dict{String, Dict{String, Any}}("x -> x * x * x + 10" => Dict("costs" => Any[234513.5, 87867.3, 214162.2, 334984.3, 325566.5, 192112.2, 751942.8999999999, 1.2200105e6, 33.5, 438325.10000000003], "solve_count" => 0))]
+┌ Warning: The algorithm Run supercomputer 5 averages and more depth took 89.63664197921753 seconds which is more than the threshold of 12 seconds.
+└ @ Main /scratch/nfilat/HerbSearch.jl/src/iterators/meta_search/evaluation.jl:81
+Finished running algorithm SA with output: Any[Dict{String, Dict{String, Any}}("x -> x + 5" => Dict("costs" => Any[0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], "solve_count" => 10)), Dict{String, Dict{String, Any}}("x -> x * x * x * x * x" => Dict("costs" => Any[6.2385679625e10, 1.138198768525e11, 7.74109787462e10, 9.4704803915e9, 1.0722945137e9, 5.19055463323e10, 1.13722474925e10, 4.6051336759419995e11, 4.7871907462899994e10, 6.39409050625e10], "solve_count" => 0)), Dict{String, Dict{String, Any}}("x -> x - 5 * 5" => Dict("costs" => Any[0.0, 33.5, 0.0, 0.0, 33.5, 1.0000000000000002, 33.5, 33.5, 33.5, 33.5], "solve_count" => 3)), Dict{String, Dict{String, Any}}("x -> x * x * x + 10" => Dict("costs" => Any[329190.5, 781137.8, 165816.09999999998, 239682.2, 33.5, 350749.0, 156205.7, 1.0202157999999999e6, 723895.3, 257551.0], "solve_count" => 0)), Dict{String, Dict{String, Any}}("5 * 5 * 5 * 5 + 1" => Dict("costs" => Any[15570.7, 33.5, 0.0, 5283.5, 196.00000000000006, 35.5, 7511.499999999997, 16.000000000000004, 536.0, 0.0], "solve_count" => 2)), Dict{String, Dict{String, Any}}("x -> x * x * x * x" => Dict("costs" => Any[2.448498253e8, 4.9941319699999996e7, 1.4083791139999998e8, 3.2900701079999995e8, 5.62480302e7, 0.0, 3.16863331e7, 3.8551853300000004e7, 1.3163224099999998e7, 2.2196991200000003e7], "solve_count" => 1))]
+Finished running algorithm DFS with output: Any[Dict{String, Dict{String, Any}}("x -> x - 5 * 5" => Dict("costs" => Any[0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], "solve_count" => 10)), Dict{String, Dict{String, Any}}("x -> x * x * x * x" => Dict("costs" => Any[0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], "solve_count" => 10)), Dict{String, Dict{String, Any}}("5 * 5 * 5 * 5 + 1" => Dict("costs" => Any[1.0000000000000002, 1.0000000000000002, 1.0000000000000002, 1.0000000000000002, 1.0000000000000002, 1.0000000000000002, 1.0000000000000002, 1.0000000000000002, 1.0000000000000002, 1.0000000000000002], "solve_count" => 0)), Dict{String, Dict{String, Any}}("x -> x * x * x + 10" => Dict("costs" => Any[25.0, 25.0, 25.0, 25.0, 25.0, 25.0, 25.0, 25.0, 25.0, 25.0], "solve_count" => 0)), Dict{String, Dict{String, Any}}("x -> x + 5" => Dict("costs" => Any[0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], "solve_count" => 10)), Dict{String, Dict{String, Any}}("x -> x * x * x * x * x" => Dict("costs" => Any[9.624556741877e11, 9.624556741877e11, 7.449490565993e11, 6.46776857405e11, 6.46776857405e11, 6.46776857405e11, 0.0, 7.449490565993e11, 6.46776857405e11, 0.0], "solve_count" => 2))]
+Finished running algorithm Run supercomputer 5 averages and more depth with output: Any[Dict{String, Dict{String, Any}}("x -> x - 5 * 5" => Dict("costs" => Any[0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], "solve_count" => 10)), Dict{String, Dict{String, Any}}("x -> x + 5" => Dict("costs" => Any[0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], "solve_count" => 10)), Dict{String, Dict{String, Any}}("x -> x * x * x * x * x" => Dict("costs" => Any[1.9757419622899998e10, 6.52315106e7, 1.10017470145e10, 2.06826374825e10, 1.24589169397e10, 2.02479110182e10, 9.529992243609999e10, 8.6134345532e9, 1.128078445265e11, 1.24589169397e10], "solve_count" => 0)), Dict{String, Dict{String, Any}}("x -> x * x * x + 10" => Dict("costs" => Any[100.0, 322456.9, 100.0, 100.0, 100.0, 100.0, 4.000000000000001, 100.0, 100.0, 100.0], "solve_count" => 0)), Dict{String, Dict{String, Any}}("5 * 5 * 5 * 5 + 1" => Dict("costs" => Any[36.0, 196.00000000000006, 5709.500000000001, 0.0, 9.0, 2916.0000000000005, 1.0000000000000002, 675.9999999999999, 576.0, 16.000000000000004], "solve_count" => 1)), Dict{String, Dict{String, Any}}("x -> x * x * x * x" => Dict("costs" => Any[4.56724445e7, 0.0, 0.0, 0.0, 143.5, 2.0199286900000002e7, 0.0, 1.08227905e7, 4.0861633300000004e7, 2.91815717e7], "solve_count" => 4))]
+=============================================
+[0;31mEnd     : Mon Jul 22 12:46:38 CEST 2024[0m
+Job done!
+=============================================
+Stats about the cpu usage
+[0;32m
+Job ID: 4211200
+Cluster: delftblue
+User/Group: nfilat/domain users
+State: RUNNING
+Nodes: 1
+Cores per node: 48
+CPU Utilized: 00:52:39
+CPU Efficiency: 46.02% of 01:54:24 core-walltime
+Job Wall-clock time: 00:02:23
+Memory Utilized: 0.00 MB (estimated maximum)
+Memory Efficiency: 0.00% of 20.00 GB (20.00 GB/node)
+WARNING: Efficiency statistics may be misleading for RUNNING jobs.
+[0m

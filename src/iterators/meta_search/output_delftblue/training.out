@@ -1,0 +1,1303 @@
+[0;31mshell.sh is: [0m
+[0;33m
+#!/bin/bash
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+CYAN='\033[0;33m'
+NC='\033[0m' # No Color
+
+function Usage() {
+    echo "Usage: $0 job_name nr_proc nr_threads"
+    echo ""
+    echo "where:"
+    echo "     job_name  : Name of the job"
+    echo "     nr_proc   : Nr of processors to run with"
+    echo ""
+}
+if [ $# -lt 2 ] ; then
+    echo -e "${RED}Not all arguments were provided to the script!\n${NC}"
+    Usage
+    exit 
+fi
+JOB_NAME=$1
+CORES=$2
+
+sbatch <<EOT
+#!/bin/bash
+#SBATCH --job-name="$JOB_NAME"
+#SBATCH --partition=compute
+#SBATCH --account=Education-EEMCS-honours
+#SBATCH --time=08:00:00
+#SBATCH --ntasks=1
+#SBATCH --cpus-per-task="$CORES"
+#SBATCH --cpu-freq=high
+#SBATCH --mem=80GB
+#SBATCH --mail-type=BEGIN,END,FAIL
+#SBATCH --mail-user=N.Filat@student.tudelft.nl
+#SBATCH --output=%x_%j.out
+
+module load 2023r1
+
+function Separator(){
+    echo "============================================="
+}
+
+echo -e "${RED}shell.sh is: ${NC}"
+echo -e "${CYAN}"
+cat shell.sh
+echo -e "${NC}"
+
+Separator
+
+echo -e "${GREEN}"
+echo "Git data:"
+git config color.ui auto
+git log -1 --pretty
+echo -e "${NC}"
+Separator
+
+echo -e "${CYAN}"
+echo 'JOB DATA:'
+echo "job name    : \$SLURM_JOB_NAME"
+echo "job id      : \$SLURM_JOBID"
+echo "job account : \$SLURM_JOB_ACCOUNT"
+echo "job threads : $CORES"
+echo "nr proc     : \$SLURM_CPUS_PER_TASK"
+
+echo ""
+echo "job start   : $(date)"
+echo -e "${NC}"
+
+Separator
+echo 'Job started'
+cd /scratch/nfilat/HerbSearch.jl
+srun julia --project=. --threads $CORES src/iterators/meta_search/main.jl 
+Separator
+
+echo -e "${RED}End     : $(date)${NC}"
+
+echo "Job done!"
+Separator
+
+echo "Stats about the cpu usage"
+echo -e "${GREEN}"
+seff \$SLURM_JOBID
+
+echo -e "${NC}"
+exit 0
+
+EOT
+echo "Submitted job with name: $JOB_NAME and cores : $CORES"
+
+jobs
+[0m
+=============================================
+[0;32m
+Git data:
+commit c1f4742384efa493f046391e518d7f98ffadf124
+Author: Nicolae Filat <nicolae.filat@gmail.com>
+Date:   Tue Jul 16 11:38:23 2024 +0300
+
+    Make sample with node type recursively sample even though children do not have the required type
+[0m
+=============================================
+[0;33m
+JOB DATA:
+job name    : Increase max_depth and number of runs to avg
+job id      : 4191102
+job account : education-eemcs-honours
+job threads : 48
+nr proc     : 48
+
+job start   : Tue Jul 16 12:58:06 CEST 2024
+[0m
+=============================================
+Job started
+CONFIGURATION
+- Number of available threads: 48
+- Maximum sequence running time: 8
+- Longest time maximum given to an algorithm: 6
+MetaConfiguration
+  fitness: FitnessFunctionConfiguration
+    number_of_runs_to_average_over: Int16 5
+  genetic: GeneticConfiguration
+    initial_population_size: Int64 10
+    initial_program_max_depth: Int64 20
+=========================================
+HerbSearch.meta_grammar = 1: S = (input_problem::Problem, input_grammar::AbstractGrammar)->begin
+        generic_run(COMBINATOR)
+    end
+2: problemExamples = input_problem.spec
+3: MS = SimpleIterator
+4: MS = COMBINATOR
+5: MAX_DEPTH = 10
+6: vlsn_neighbourhood_size = 1
+7: vlsn_neighbourhood_size = 2
+8: sa_inital_temperature = 3
+9: sa_inital_temperature = 4
+10: sa_inital_temperature = 5
+11: sa_inital_temperature = 6
+12: sa_temperature_decreasing_factor = 0.9
+13: sa_temperature_decreasing_factor = 0.91
+14: sa_temperature_decreasing_factor = 0.92
+15: sa_temperature_decreasing_factor = 0.93
+16: sa_temperature_decreasing_factor = 0.94
+17: sa_temperature_decreasing_factor = 0.95
+18: sa_temperature_decreasing_factor = 0.96
+19: sa_temperature_decreasing_factor = 0.97
+20: sa_temperature_decreasing_factor = 0.98
+21: sa_temperature_decreasing_factor = 0.99
+22: ALGORITHM = MHSearchIterator(input_grammar, :X, problemExamples, mean_squared_error, max_depth = MAX_DEPTH)
+23: ALGORITHM = SASearchIterator(input_grammar, :X, problemExamples, mean_squared_error, initial_temperature = sa_inital_temperature, temperature_decreasing_factor = sa_temperature_decreasing_factor, max_depth = MAX_DEPTH)
+24: ALGORITHM = VLSNSearchIterator(input_grammar, :X, problemExamples, mean_squared_error, neighbourhood_size = vlsn_neighbourhood_size)
+25: ALGORITHM = BFSIterator(input_grammar, :X, max_depth = 4)
+26: ALGORITHM = DFSIterator(input_grammar, :X, max_depth = 4)
+27: SimpleIterator = VanillaIterator(ALGORITHM, STOPFUNCTION, input_problem)
+28: COMBINATOR = SequenceCombinatorIterator(ALIST)
+29: COMBINATOR = ParallelCombinatorIterator(ParallelThreads, ALIST)
+30: ALIST = [MS; MS]
+31: ALIST = [MS; ALIST]
+32: STOPFUNCTION = (time, iteration, cost)->begin
+        time > sa_inital_temperature || ITERATION_STOP
+    end
+33: ITERATION_STOP = iteration > VALUE
+34: VALUE = 1000
+35: VALUE = 2000
+36: VALUE = 3000
+37: VALUE = 4000
+38: VALUE = 5000
+
+=========================================
+Genetic algorithm always adds the best program so far in the population
+Creating initial population with random programs of maxdepth 10
+Starting meta search!! 
+Meta Search status
+    - genetic iteration   : 0
+    - current fitness     : 2.679825368389042e-12
+    - Best fitness        : 2.679825368389042e-12
+    - time of iteration   : 0.00016617774963378906
+
+____________________________________________________________________________________________________
+Best expr: (input_problem::Problem, input_grammar::AbstractGrammar)->begin
+        generic_run(SequenceCombinatorIterator([VanillaIterator(SASearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, initial_temperature = 3, temperature_decreasing_factor = 0.95, max_depth = 10), ((time, iteration, cost)->begin
+                                time > 5 || iteration > 1000
+                            end), input_problem); [VanillaIterator(VLSNSearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, neighbourhood_size = 2), ((time, iteration, cost)->begin
+                                    time > 4 || iteration > 4000
+                                end), input_problem); [VanillaIterator(MHSearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, max_depth = 10), ((time, iteration, cost)->begin
+                                        time > 4 || iteration > 3000
+                                    end), input_problem); [SequenceCombinatorIterator([ParallelCombinatorIterator(ParallelThreads, [SequenceCombinatorIterator([VanillaIterator(SASearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, initial_temperature = 4, temperature_decreasing_factor = 0.92, max_depth = 10), ((time, iteration, cost)->begin
+                                                                    time > 6 || iteration > 3000
+                                                                end), input_problem); VanillaIterator(BFSIterator(input_grammar, :X, max_depth = 4), ((time, iteration, cost)->begin
+                                                                    time > 3 || iteration > 4000
+                                                                end), input_problem)]); VanillaIterator(SASearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, initial_temperature = 4, temperature_decreasing_factor = 0.97, max_depth = 10), ((time, iteration, cost)->begin
+                                                            time > 3 || iteration > 3000
+                                                        end), input_problem)]); ParallelCombinatorIterator(ParallelThreads, [VanillaIterator(MHSearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, max_depth = 10), ((time, iteration, cost)->begin
+                                                            time > 4 || iteration > 4000
+                                                        end), input_problem); VanillaIterator(BFSIterator(input_grammar, :X, max_depth = 4), ((time, iteration, cost)->begin
+                                                            time > 6 || iteration > 5000
+                                                        end), input_problem)])]); VanillaIterator(DFSIterator(input_grammar, :X, max_depth = 4), ((time, iteration, cost)->begin
+                                            time > 6 || iteration > 5000
+                                        end), input_problem)]]]]))
+    end
+____________________________________________________________________________________________________
+Meta Search status
+    - genetic iteration   : 1
+    - current fitness     : 1.6852610198954618e-11
+    - Best fitness        : 1.6852610198954618e-11
+    - time of iteration   : 314.2423379421234
+
+____________________________________________________________________________________________________
+Best expr: (input_problem::Problem, input_grammar::AbstractGrammar)->begin
+        generic_run(SequenceCombinatorIterator([ParallelCombinatorIterator(ParallelThreads, [VanillaIterator(VLSNSearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, neighbourhood_size = 1), ((time, iteration, cost)->begin
+                                        time > 3 || iteration > 2000
+                                    end), input_problem); [SequenceCombinatorIterator([VanillaIterator(DFSIterator(input_grammar, :X, max_depth = 4), ((time, iteration, cost)->begin
+                                                    time > 3 || iteration > 5000
+                                                end), input_problem); [ParallelCombinatorIterator(ParallelThreads, [VanillaIterator(SASearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, initial_temperature = 5, temperature_decreasing_factor = 0.96, max_depth = 10), ((time, iteration, cost)->begin
+                                                                time > 3 || iteration > 1000
+                                                            end), input_problem); VanillaIterator(MHSearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, max_depth = 10), ((time, iteration, cost)->begin
+                                                                time > 3 || iteration > 2000
+                                                            end), input_problem)]); ParallelCombinatorIterator(ParallelThreads, [VanillaIterator(BFSIterator(input_grammar, :X, max_depth = 4), ((time, iteration, cost)->begin
+                                                                time > 4 || iteration > 3000
+                                                            end), input_problem); [VanillaIterator(BFSIterator(input_grammar, :X, max_depth = 4), ((time, iteration, cost)->begin
+                                                                    time > 5 || iteration > 2000
+                                                                end), input_problem); VanillaIterator(MHSearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, max_depth = 10), ((time, iteration, cost)->begin
+                                                                    time > 3 || iteration > 5000
+                                                                end), input_problem)]])]]); [SequenceCombinatorIterator([VanillaIterator(SASearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, initial_temperature = 3, temperature_decreasing_factor = 0.92, max_depth = 10), ((time, iteration, cost)->begin
+                                                        time > 6 || iteration > 4000
+                                                    end), input_problem); ParallelCombinatorIterator(ParallelThreads, [VanillaIterator(VLSNSearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, neighbourhood_size = 2), ((time, iteration, cost)->begin
+                                                                time > 4 || iteration > 3000
+                                                            end), input_problem); [VanillaIterator(DFSIterator(input_grammar, :X, max_depth = 4), ((time, iteration, cost)->begin
+                                                                    time > 4 || iteration > 3000
+                                                                end), input_problem); VanillaIterator(DFSIterator(input_grammar, :X, max_depth = 4), ((time, iteration, cost)->begin
+                                                                    time > 5 || iteration > 5000
+                                                                end), input_problem)]])]); SequenceCombinatorIterator([VanillaIterator(MHSearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, max_depth = 10), ((time, iteration, cost)->begin
+                                                        time > 6 || iteration > 2000
+                                                    end), input_problem); SequenceCombinatorIterator([VanillaIterator(MHSearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, max_depth = 10), ((time, iteration, cost)->begin
+                                                                time > 5 || iteration > 5000
+                                                            end), input_problem); VanillaIterator(VLSNSearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, neighbourhood_size = 2), ((time, iteration, cost)->begin
+                                                                time > 4 || iteration > 3000
+                                                            end), input_problem)])])]]]); VanillaIterator(SASearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, initial_temperature = 6, temperature_decreasing_factor = 0.97, max_depth = 10), ((time, iteration, cost)->begin
+                                time > 5 || iteration > 5000
+                            end), input_problem)]))
+    end
+____________________________________________________________________________________________________
+Meta Search status
+    - genetic iteration   : 2
+    - current fitness     : 1.6852610198954618e-11
+    - Best fitness        : 1.6852610198954618e-11
+    - time of iteration   : 387.8942029476166
+
+____________________________________________________________________________________________________
+Best expr: (input_problem::Problem, input_grammar::AbstractGrammar)->begin
+        generic_run(SequenceCombinatorIterator([ParallelCombinatorIterator(ParallelThreads, [VanillaIterator(VLSNSearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, neighbourhood_size = 1), ((time, iteration, cost)->begin
+                                        time > 3 || iteration > 2000
+                                    end), input_problem); [SequenceCombinatorIterator([VanillaIterator(DFSIterator(input_grammar, :X, max_depth = 4), ((time, iteration, cost)->begin
+                                                    time > 3 || iteration > 5000
+                                                end), input_problem); [ParallelCombinatorIterator(ParallelThreads, [VanillaIterator(SASearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, initial_temperature = 5, temperature_decreasing_factor = 0.96, max_depth = 10), ((time, iteration, cost)->begin
+                                                                time > 3 || iteration > 1000
+                                                            end), input_problem); VanillaIterator(MHSearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, max_depth = 10), ((time, iteration, cost)->begin
+                                                                time > 3 || iteration > 2000
+                                                            end), input_problem)]); ParallelCombinatorIterator(ParallelThreads, [VanillaIterator(BFSIterator(input_grammar, :X, max_depth = 4), ((time, iteration, cost)->begin
+                                                                time > 4 || iteration > 3000
+                                                            end), input_problem); [VanillaIterator(BFSIterator(input_grammar, :X, max_depth = 4), ((time, iteration, cost)->begin
+                                                                    time > 5 || iteration > 2000
+                                                                end), input_problem); VanillaIterator(MHSearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, max_depth = 10), ((time, iteration, cost)->begin
+                                                                    time > 3 || iteration > 5000
+                                                                end), input_problem)]])]]); [SequenceCombinatorIterator([VanillaIterator(SASearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, initial_temperature = 3, temperature_decreasing_factor = 0.92, max_depth = 10), ((time, iteration, cost)->begin
+                                                        time > 6 || iteration > 4000
+                                                    end), input_problem); ParallelCombinatorIterator(ParallelThreads, [VanillaIterator(VLSNSearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, neighbourhood_size = 2), ((time, iteration, cost)->begin
+                                                                time > 4 || iteration > 3000
+                                                            end), input_problem); [VanillaIterator(DFSIterator(input_grammar, :X, max_depth = 4), ((time, iteration, cost)->begin
+                                                                    time > 4 || iteration > 3000
+                                                                end), input_problem); VanillaIterator(DFSIterator(input_grammar, :X, max_depth = 4), ((time, iteration, cost)->begin
+                                                                    time > 5 || iteration > 5000
+                                                                end), input_problem)]])]); SequenceCombinatorIterator([VanillaIterator(MHSearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, max_depth = 10), ((time, iteration, cost)->begin
+                                                        time > 6 || iteration > 2000
+                                                    end), input_problem); SequenceCombinatorIterator([VanillaIterator(MHSearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, max_depth = 10), ((time, iteration, cost)->begin
+                                                                time > 5 || iteration > 5000
+                                                            end), input_problem); VanillaIterator(VLSNSearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, neighbourhood_size = 2), ((time, iteration, cost)->begin
+                                                                time > 4 || iteration > 3000
+                                                            end), input_problem)])])]]]); VanillaIterator(SASearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, initial_temperature = 6, temperature_decreasing_factor = 0.97, max_depth = 10), ((time, iteration, cost)->begin
+                                time > 5 || iteration > 5000
+                            end), input_problem)]))
+    end
+____________________________________________________________________________________________________
+Meta Search status
+    - genetic iteration   : 3
+    - current fitness     : 1.6852610198954618e-11
+    - Best fitness        : 1.6852610198954618e-11
+    - time of iteration   : 346.38387393951416
+
+____________________________________________________________________________________________________
+Best expr: (input_problem::Problem, input_grammar::AbstractGrammar)->begin
+        generic_run(SequenceCombinatorIterator([ParallelCombinatorIterator(ParallelThreads, [VanillaIterator(VLSNSearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, neighbourhood_size = 1), ((time, iteration, cost)->begin
+                                        time > 3 || iteration > 2000
+                                    end), input_problem); [SequenceCombinatorIterator([VanillaIterator(DFSIterator(input_grammar, :X, max_depth = 4), ((time, iteration, cost)->begin
+                                                    time > 3 || iteration > 5000
+                                                end), input_problem); [ParallelCombinatorIterator(ParallelThreads, [VanillaIterator(SASearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, initial_temperature = 5, temperature_decreasing_factor = 0.96, max_depth = 10), ((time, iteration, cost)->begin
+                                                                time > 3 || iteration > 1000
+                                                            end), input_problem); VanillaIterator(MHSearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, max_depth = 10), ((time, iteration, cost)->begin
+                                                                time > 3 || iteration > 2000
+                                                            end), input_problem)]); ParallelCombinatorIterator(ParallelThreads, [VanillaIterator(BFSIterator(input_grammar, :X, max_depth = 4), ((time, iteration, cost)->begin
+                                                                time > 4 || iteration > 3000
+                                                            end), input_problem); [VanillaIterator(BFSIterator(input_grammar, :X, max_depth = 4), ((time, iteration, cost)->begin
+                                                                    time > 5 || iteration > 2000
+                                                                end), input_problem); VanillaIterator(MHSearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, max_depth = 10), ((time, iteration, cost)->begin
+                                                                    time > 3 || iteration > 5000
+                                                                end), input_problem)]])]]); [SequenceCombinatorIterator([VanillaIterator(SASearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, initial_temperature = 3, temperature_decreasing_factor = 0.92, max_depth = 10), ((time, iteration, cost)->begin
+                                                        time > 6 || iteration > 4000
+                                                    end), input_problem); ParallelCombinatorIterator(ParallelThreads, [VanillaIterator(VLSNSearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, neighbourhood_size = 2), ((time, iteration, cost)->begin
+                                                                time > 4 || iteration > 3000
+                                                            end), input_problem); [VanillaIterator(DFSIterator(input_grammar, :X, max_depth = 4), ((time, iteration, cost)->begin
+                                                                    time > 4 || iteration > 3000
+                                                                end), input_problem); VanillaIterator(DFSIterator(input_grammar, :X, max_depth = 4), ((time, iteration, cost)->begin
+                                                                    time > 5 || iteration > 5000
+                                                                end), input_problem)]])]); SequenceCombinatorIterator([VanillaIterator(MHSearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, max_depth = 10), ((time, iteration, cost)->begin
+                                                        time > 6 || iteration > 2000
+                                                    end), input_problem); SequenceCombinatorIterator([VanillaIterator(MHSearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, max_depth = 10), ((time, iteration, cost)->begin
+                                                                time > 5 || iteration > 5000
+                                                            end), input_problem); VanillaIterator(VLSNSearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, neighbourhood_size = 2), ((time, iteration, cost)->begin
+                                                                time > 4 || iteration > 3000
+                                                            end), input_problem)])])]]]); VanillaIterator(SASearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, initial_temperature = 6, temperature_decreasing_factor = 0.97, max_depth = 10), ((time, iteration, cost)->begin
+                                time > 5 || iteration > 5000
+                            end), input_problem)]))
+    end
+____________________________________________________________________________________________________
+Meta Search status
+    - genetic iteration   : 4
+    - current fitness     : 8.83487933756913e-11
+    - Best fitness        : 8.83487933756913e-11
+    - time of iteration   : 390.6979250907898
+
+____________________________________________________________________________________________________
+Best expr: (input_problem::Problem, input_grammar::AbstractGrammar)->begin
+        generic_run(SequenceCombinatorIterator([ParallelCombinatorIterator(ParallelThreads, [VanillaIterator(VLSNSearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, neighbourhood_size = 1), ((time, iteration, cost)->begin
+                                        time > 3 || iteration > 2000
+                                    end), input_problem); [SequenceCombinatorIterator([VanillaIterator(DFSIterator(input_grammar, :X, max_depth = 4), ((time, iteration, cost)->begin
+                                                    time > 3 || iteration > 5000
+                                                end), input_problem); [ParallelCombinatorIterator(ParallelThreads, [VanillaIterator(SASearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, initial_temperature = 5, temperature_decreasing_factor = 0.96, max_depth = 10), ((time, iteration, cost)->begin
+                                                                time > 3 || iteration > 1000
+                                                            end), input_problem); VanillaIterator(MHSearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, max_depth = 10), ((time, iteration, cost)->begin
+                                                                time > 3 || iteration > 2000
+                                                            end), input_problem)]); ParallelCombinatorIterator(ParallelThreads, [VanillaIterator(BFSIterator(input_grammar, :X, max_depth = 4), ((time, iteration, cost)->begin
+                                                                time > 4 || iteration > 3000
+                                                            end), input_problem); [VanillaIterator(BFSIterator(input_grammar, :X, max_depth = 4), ((time, iteration, cost)->begin
+                                                                    time > 5 || iteration > 2000
+                                                                end), input_problem); VanillaIterator(MHSearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, max_depth = 10), ((time, iteration, cost)->begin
+                                                                    time > 3 || iteration > 5000
+                                                                end), input_problem)]])]]); [SequenceCombinatorIterator([VanillaIterator(SASearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, initial_temperature = 3, temperature_decreasing_factor = 0.92, max_depth = 10), ((time, iteration, cost)->begin
+                                                        time > 6 || iteration > 4000
+                                                    end), input_problem); ParallelCombinatorIterator(ParallelThreads, [VanillaIterator(VLSNSearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, neighbourhood_size = 2), ((time, iteration, cost)->begin
+                                                                time > 4 || iteration > 3000
+                                                            end), input_problem); [VanillaIterator(DFSIterator(input_grammar, :X, max_depth = 4), ((time, iteration, cost)->begin
+                                                                    time > 4 || iteration > 3000
+                                                                end), input_problem); VanillaIterator(DFSIterator(input_grammar, :X, max_depth = 4), ((time, iteration, cost)->begin
+                                                                    time > 5 || iteration > 5000
+                                                                end), input_problem)]])]); SequenceCombinatorIterator([VanillaIterator(SASearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, initial_temperature = 4, temperature_decreasing_factor = 0.92, max_depth = 10), ((time, iteration, cost)->begin
+                                                        time > 6 || iteration > 3000
+                                                    end), input_problem); VanillaIterator(BFSIterator(input_grammar, :X, max_depth = 4), ((time, iteration, cost)->begin
+                                                        time > 3 || iteration > 4000
+                                                    end), input_problem)])]]]); VanillaIterator(SASearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, initial_temperature = 6, temperature_decreasing_factor = 0.97, max_depth = 10), ((time, iteration, cost)->begin
+                                time > 5 || iteration > 5000
+                            end), input_problem)]))
+    end
+____________________________________________________________________________________________________
+Meta Search status
+    - genetic iteration   : 5
+    - current fitness     : 8.83487933756913e-11
+    - Best fitness        : 8.83487933756913e-11
+    - time of iteration   : 468.1775572299957
+
+____________________________________________________________________________________________________
+Best expr: (input_problem::Problem, input_grammar::AbstractGrammar)->begin
+        generic_run(SequenceCombinatorIterator([ParallelCombinatorIterator(ParallelThreads, [VanillaIterator(VLSNSearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, neighbourhood_size = 1), ((time, iteration, cost)->begin
+                                        time > 3 || iteration > 2000
+                                    end), input_problem); [SequenceCombinatorIterator([VanillaIterator(DFSIterator(input_grammar, :X, max_depth = 4), ((time, iteration, cost)->begin
+                                                    time > 3 || iteration > 5000
+                                                end), input_problem); [ParallelCombinatorIterator(ParallelThreads, [VanillaIterator(SASearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, initial_temperature = 5, temperature_decreasing_factor = 0.96, max_depth = 10), ((time, iteration, cost)->begin
+                                                                time > 3 || iteration > 1000
+                                                            end), input_problem); VanillaIterator(MHSearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, max_depth = 10), ((time, iteration, cost)->begin
+                                                                time > 3 || iteration > 2000
+                                                            end), input_problem)]); ParallelCombinatorIterator(ParallelThreads, [VanillaIterator(BFSIterator(input_grammar, :X, max_depth = 4), ((time, iteration, cost)->begin
+                                                                time > 4 || iteration > 3000
+                                                            end), input_problem); [VanillaIterator(BFSIterator(input_grammar, :X, max_depth = 4), ((time, iteration, cost)->begin
+                                                                    time > 5 || iteration > 2000
+                                                                end), input_problem); VanillaIterator(MHSearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, max_depth = 10), ((time, iteration, cost)->begin
+                                                                    time > 3 || iteration > 5000
+                                                                end), input_problem)]])]]); [SequenceCombinatorIterator([VanillaIterator(SASearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, initial_temperature = 3, temperature_decreasing_factor = 0.92, max_depth = 10), ((time, iteration, cost)->begin
+                                                        time > 6 || iteration > 4000
+                                                    end), input_problem); ParallelCombinatorIterator(ParallelThreads, [VanillaIterator(VLSNSearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, neighbourhood_size = 2), ((time, iteration, cost)->begin
+                                                                time > 4 || iteration > 3000
+                                                            end), input_problem); [VanillaIterator(DFSIterator(input_grammar, :X, max_depth = 4), ((time, iteration, cost)->begin
+                                                                    time > 4 || iteration > 3000
+                                                                end), input_problem); VanillaIterator(DFSIterator(input_grammar, :X, max_depth = 4), ((time, iteration, cost)->begin
+                                                                    time > 5 || iteration > 5000
+                                                                end), input_problem)]])]); SequenceCombinatorIterator([VanillaIterator(SASearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, initial_temperature = 4, temperature_decreasing_factor = 0.92, max_depth = 10), ((time, iteration, cost)->begin
+                                                        time > 6 || iteration > 3000
+                                                    end), input_problem); VanillaIterator(BFSIterator(input_grammar, :X, max_depth = 4), ((time, iteration, cost)->begin
+                                                        time > 3 || iteration > 4000
+                                                    end), input_problem)])]]]); VanillaIterator(SASearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, initial_temperature = 6, temperature_decreasing_factor = 0.97, max_depth = 10), ((time, iteration, cost)->begin
+                                time > 5 || iteration > 5000
+                            end), input_problem)]))
+    end
+____________________________________________________________________________________________________
+Meta Search status
+    - genetic iteration   : 6
+    - current fitness     : 8.83487933756913e-11
+    - Best fitness        : 8.83487933756913e-11
+    - time of iteration   : 362.7121820449829
+
+____________________________________________________________________________________________________
+Best expr: (input_problem::Problem, input_grammar::AbstractGrammar)->begin
+        generic_run(SequenceCombinatorIterator([ParallelCombinatorIterator(ParallelThreads, [VanillaIterator(VLSNSearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, neighbourhood_size = 1), ((time, iteration, cost)->begin
+                                        time > 3 || iteration > 2000
+                                    end), input_problem); [SequenceCombinatorIterator([VanillaIterator(DFSIterator(input_grammar, :X, max_depth = 4), ((time, iteration, cost)->begin
+                                                    time > 3 || iteration > 5000
+                                                end), input_problem); [ParallelCombinatorIterator(ParallelThreads, [VanillaIterator(SASearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, initial_temperature = 5, temperature_decreasing_factor = 0.96, max_depth = 10), ((time, iteration, cost)->begin
+                                                                time > 3 || iteration > 1000
+                                                            end), input_problem); VanillaIterator(MHSearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, max_depth = 10), ((time, iteration, cost)->begin
+                                                                time > 3 || iteration > 2000
+                                                            end), input_problem)]); ParallelCombinatorIterator(ParallelThreads, [VanillaIterator(BFSIterator(input_grammar, :X, max_depth = 4), ((time, iteration, cost)->begin
+                                                                time > 4 || iteration > 3000
+                                                            end), input_problem); [VanillaIterator(BFSIterator(input_grammar, :X, max_depth = 4), ((time, iteration, cost)->begin
+                                                                    time > 5 || iteration > 2000
+                                                                end), input_problem); VanillaIterator(MHSearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, max_depth = 10), ((time, iteration, cost)->begin
+                                                                    time > 3 || iteration > 5000
+                                                                end), input_problem)]])]]); [SequenceCombinatorIterator([VanillaIterator(SASearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, initial_temperature = 3, temperature_decreasing_factor = 0.92, max_depth = 10), ((time, iteration, cost)->begin
+                                                        time > 6 || iteration > 4000
+                                                    end), input_problem); ParallelCombinatorIterator(ParallelThreads, [VanillaIterator(VLSNSearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, neighbourhood_size = 2), ((time, iteration, cost)->begin
+                                                                time > 4 || iteration > 3000
+                                                            end), input_problem); [VanillaIterator(DFSIterator(input_grammar, :X, max_depth = 4), ((time, iteration, cost)->begin
+                                                                    time > 4 || iteration > 3000
+                                                                end), input_problem); VanillaIterator(DFSIterator(input_grammar, :X, max_depth = 4), ((time, iteration, cost)->begin
+                                                                    time > 5 || iteration > 5000
+                                                                end), input_problem)]])]); SequenceCombinatorIterator([VanillaIterator(SASearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, initial_temperature = 4, temperature_decreasing_factor = 0.92, max_depth = 10), ((time, iteration, cost)->begin
+                                                        time > 6 || iteration > 3000
+                                                    end), input_problem); VanillaIterator(BFSIterator(input_grammar, :X, max_depth = 4), ((time, iteration, cost)->begin
+                                                        time > 3 || iteration > 4000
+                                                    end), input_problem)])]]]); VanillaIterator(SASearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, initial_temperature = 6, temperature_decreasing_factor = 0.97, max_depth = 10), ((time, iteration, cost)->begin
+                                time > 5 || iteration > 5000
+                            end), input_problem)]))
+    end
+____________________________________________________________________________________________________
+Meta Search status
+    - genetic iteration   : 7
+    - current fitness     : 9.44822641461336e-11
+    - Best fitness        : 9.44822641461336e-11
+    - time of iteration   : 593.9702081680298
+
+____________________________________________________________________________________________________
+Best expr: (input_problem::Problem, input_grammar::AbstractGrammar)->begin
+        generic_run(SequenceCombinatorIterator([ParallelCombinatorIterator(ParallelThreads, [VanillaIterator(VLSNSearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, neighbourhood_size = 1), ((time, iteration, cost)->begin
+                                        time > 3 || iteration > 2000
+                                    end), input_problem); [SequenceCombinatorIterator([VanillaIterator(DFSIterator(input_grammar, :X, max_depth = 4), ((time, iteration, cost)->begin
+                                                    time > 3 || iteration > 5000
+                                                end), input_problem); [ParallelCombinatorIterator(ParallelThreads, [VanillaIterator(SASearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, initial_temperature = 5, temperature_decreasing_factor = 0.96, max_depth = 10), ((time, iteration, cost)->begin
+                                                                time > 3 || iteration > 1000
+                                                            end), input_problem); VanillaIterator(MHSearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, max_depth = 10), ((time, iteration, cost)->begin
+                                                                time > 3 || iteration > 2000
+                                                            end), input_problem)]); ParallelCombinatorIterator(ParallelThreads, [VanillaIterator(BFSIterator(input_grammar, :X, max_depth = 4), ((time, iteration, cost)->begin
+                                                                time > 4 || iteration > 3000
+                                                            end), input_problem); [VanillaIterator(BFSIterator(input_grammar, :X, max_depth = 4), ((time, iteration, cost)->begin
+                                                                    time > 5 || iteration > 2000
+                                                                end), input_problem); VanillaIterator(MHSearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, max_depth = 10), ((time, iteration, cost)->begin
+                                                                    time > 3 || iteration > 5000
+                                                                end), input_problem)]])]]); [SequenceCombinatorIterator([VanillaIterator(SASearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, initial_temperature = 3, temperature_decreasing_factor = 0.92, max_depth = 10), ((time, iteration, cost)->begin
+                                                        time > 6 || iteration > 4000
+                                                    end), input_problem); ParallelCombinatorIterator(ParallelThreads, [VanillaIterator(VLSNSearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, neighbourhood_size = 2), ((time, iteration, cost)->begin
+                                                                time > 4 || iteration > 3000
+                                                            end), input_problem); [VanillaIterator(DFSIterator(input_grammar, :X, max_depth = 4), ((time, iteration, cost)->begin
+                                                                    time > 4 || iteration > 3000
+                                                                end), input_problem); VanillaIterator(DFSIterator(input_grammar, :X, max_depth = 4), ((time, iteration, cost)->begin
+                                                                    time > 5 || iteration > 5000
+                                                                end), input_problem)]])]); SequenceCombinatorIterator([VanillaIterator(SASearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, initial_temperature = 4, temperature_decreasing_factor = 0.92, max_depth = 10), ((time, iteration, cost)->begin
+                                                        time > 6 || iteration > 3000
+                                                    end), input_problem); VanillaIterator(BFSIterator(input_grammar, :X, max_depth = 4), ((time, iteration, cost)->begin
+                                                        time > 3 || iteration > 4000
+                                                    end), input_problem)])]]]); VanillaIterator(SASearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, initial_temperature = 6, temperature_decreasing_factor = 0.97, max_depth = 10), ((time, iteration, cost)->begin
+                                time > 5 || iteration > 5000
+                            end), input_problem)]))
+    end
+____________________________________________________________________________________________________
+Meta Search status
+    - genetic iteration   : 8
+    - current fitness     : 9.44822641461336e-11
+    - Best fitness        : 9.44822641461336e-11
+    - time of iteration   : 667.6851999759674
+
+____________________________________________________________________________________________________
+Best expr: (input_problem::Problem, input_grammar::AbstractGrammar)->begin
+        generic_run(SequenceCombinatorIterator([ParallelCombinatorIterator(ParallelThreads, [VanillaIterator(VLSNSearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, neighbourhood_size = 1), ((time, iteration, cost)->begin
+                                        time > 3 || iteration > 2000
+                                    end), input_problem); [SequenceCombinatorIterator([VanillaIterator(DFSIterator(input_grammar, :X, max_depth = 4), ((time, iteration, cost)->begin
+                                                    time > 3 || iteration > 5000
+                                                end), input_problem); [ParallelCombinatorIterator(ParallelThreads, [VanillaIterator(SASearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, initial_temperature = 5, temperature_decreasing_factor = 0.96, max_depth = 10), ((time, iteration, cost)->begin
+                                                                time > 3 || iteration > 1000
+                                                            end), input_problem); VanillaIterator(MHSearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, max_depth = 10), ((time, iteration, cost)->begin
+                                                                time > 3 || iteration > 2000
+                                                            end), input_problem)]); ParallelCombinatorIterator(ParallelThreads, [VanillaIterator(BFSIterator(input_grammar, :X, max_depth = 4), ((time, iteration, cost)->begin
+                                                                time > 4 || iteration > 3000
+                                                            end), input_problem); [VanillaIterator(BFSIterator(input_grammar, :X, max_depth = 4), ((time, iteration, cost)->begin
+                                                                    time > 5 || iteration > 2000
+                                                                end), input_problem); VanillaIterator(MHSearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, max_depth = 10), ((time, iteration, cost)->begin
+                                                                    time > 3 || iteration > 5000
+                                                                end), input_problem)]])]]); [SequenceCombinatorIterator([VanillaIterator(SASearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, initial_temperature = 3, temperature_decreasing_factor = 0.92, max_depth = 10), ((time, iteration, cost)->begin
+                                                        time > 6 || iteration > 4000
+                                                    end), input_problem); ParallelCombinatorIterator(ParallelThreads, [VanillaIterator(VLSNSearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, neighbourhood_size = 2), ((time, iteration, cost)->begin
+                                                                time > 4 || iteration > 3000
+                                                            end), input_problem); [VanillaIterator(DFSIterator(input_grammar, :X, max_depth = 4), ((time, iteration, cost)->begin
+                                                                    time > 4 || iteration > 3000
+                                                                end), input_problem); VanillaIterator(DFSIterator(input_grammar, :X, max_depth = 4), ((time, iteration, cost)->begin
+                                                                    time > 5 || iteration > 5000
+                                                                end), input_problem)]])]); SequenceCombinatorIterator([VanillaIterator(SASearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, initial_temperature = 4, temperature_decreasing_factor = 0.92, max_depth = 10), ((time, iteration, cost)->begin
+                                                        time > 6 || iteration > 3000
+                                                    end), input_problem); VanillaIterator(BFSIterator(input_grammar, :X, max_depth = 4), ((time, iteration, cost)->begin
+                                                        time > 3 || iteration > 4000
+                                                    end), input_problem)])]]]); VanillaIterator(SASearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, initial_temperature = 6, temperature_decreasing_factor = 0.97, max_depth = 10), ((time, iteration, cost)->begin
+                                time > 5 || iteration > 5000
+                            end), input_problem)]))
+    end
+____________________________________________________________________________________________________
+Meta Search status
+    - genetic iteration   : 9
+    - current fitness     : 9.44822641461336e-11
+    - Best fitness        : 9.44822641461336e-11
+    - time of iteration   : 645.4442780017853
+
+____________________________________________________________________________________________________
+Best expr: (input_problem::Problem, input_grammar::AbstractGrammar)->begin
+        generic_run(SequenceCombinatorIterator([ParallelCombinatorIterator(ParallelThreads, [VanillaIterator(VLSNSearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, neighbourhood_size = 1), ((time, iteration, cost)->begin
+                                        time > 3 || iteration > 2000
+                                    end), input_problem); [SequenceCombinatorIterator([VanillaIterator(DFSIterator(input_grammar, :X, max_depth = 4), ((time, iteration, cost)->begin
+                                                    time > 3 || iteration > 5000
+                                                end), input_problem); [ParallelCombinatorIterator(ParallelThreads, [VanillaIterator(SASearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, initial_temperature = 5, temperature_decreasing_factor = 0.96, max_depth = 10), ((time, iteration, cost)->begin
+                                                                time > 3 || iteration > 1000
+                                                            end), input_problem); VanillaIterator(MHSearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, max_depth = 10), ((time, iteration, cost)->begin
+                                                                time > 3 || iteration > 2000
+                                                            end), input_problem)]); ParallelCombinatorIterator(ParallelThreads, [VanillaIterator(BFSIterator(input_grammar, :X, max_depth = 4), ((time, iteration, cost)->begin
+                                                                time > 4 || iteration > 3000
+                                                            end), input_problem); [VanillaIterator(BFSIterator(input_grammar, :X, max_depth = 4), ((time, iteration, cost)->begin
+                                                                    time > 5 || iteration > 2000
+                                                                end), input_problem); VanillaIterator(MHSearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, max_depth = 10), ((time, iteration, cost)->begin
+                                                                    time > 3 || iteration > 5000
+                                                                end), input_problem)]])]]); [SequenceCombinatorIterator([VanillaIterator(SASearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, initial_temperature = 3, temperature_decreasing_factor = 0.92, max_depth = 10), ((time, iteration, cost)->begin
+                                                        time > 6 || iteration > 4000
+                                                    end), input_problem); ParallelCombinatorIterator(ParallelThreads, [VanillaIterator(VLSNSearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, neighbourhood_size = 2), ((time, iteration, cost)->begin
+                                                                time > 4 || iteration > 3000
+                                                            end), input_problem); [VanillaIterator(DFSIterator(input_grammar, :X, max_depth = 4), ((time, iteration, cost)->begin
+                                                                    time > 4 || iteration > 3000
+                                                                end), input_problem); VanillaIterator(DFSIterator(input_grammar, :X, max_depth = 4), ((time, iteration, cost)->begin
+                                                                    time > 5 || iteration > 5000
+                                                                end), input_problem)]])]); SequenceCombinatorIterator([VanillaIterator(SASearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, initial_temperature = 4, temperature_decreasing_factor = 0.92, max_depth = 10), ((time, iteration, cost)->begin
+                                                        time > 6 || iteration > 3000
+                                                    end), input_problem); VanillaIterator(BFSIterator(input_grammar, :X, max_depth = 4), ((time, iteration, cost)->begin
+                                                        time > 3 || iteration > 4000
+                                                    end), input_problem)])]]]); VanillaIterator(SASearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, initial_temperature = 6, temperature_decreasing_factor = 0.97, max_depth = 10), ((time, iteration, cost)->begin
+                                time > 5 || iteration > 5000
+                            end), input_problem)]))
+    end
+____________________________________________________________________________________________________
+Meta Search status
+    - genetic iteration   : 10
+    - current fitness     : 9.44822641461336e-11
+    - Best fitness        : 9.44822641461336e-11
+    - time of iteration   : 788.7084228992462
+
+____________________________________________________________________________________________________
+Best expr: (input_problem::Problem, input_grammar::AbstractGrammar)->begin
+        generic_run(SequenceCombinatorIterator([ParallelCombinatorIterator(ParallelThreads, [VanillaIterator(VLSNSearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, neighbourhood_size = 1), ((time, iteration, cost)->begin
+                                        time > 3 || iteration > 2000
+                                    end), input_problem); [SequenceCombinatorIterator([VanillaIterator(DFSIterator(input_grammar, :X, max_depth = 4), ((time, iteration, cost)->begin
+                                                    time > 3 || iteration > 5000
+                                                end), input_problem); [ParallelCombinatorIterator(ParallelThreads, [VanillaIterator(SASearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, initial_temperature = 5, temperature_decreasing_factor = 0.96, max_depth = 10), ((time, iteration, cost)->begin
+                                                                time > 3 || iteration > 1000
+                                                            end), input_problem); VanillaIterator(MHSearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, max_depth = 10), ((time, iteration, cost)->begin
+                                                                time > 3 || iteration > 2000
+                                                            end), input_problem)]); ParallelCombinatorIterator(ParallelThreads, [VanillaIterator(BFSIterator(input_grammar, :X, max_depth = 4), ((time, iteration, cost)->begin
+                                                                time > 4 || iteration > 3000
+                                                            end), input_problem); [VanillaIterator(BFSIterator(input_grammar, :X, max_depth = 4), ((time, iteration, cost)->begin
+                                                                    time > 5 || iteration > 2000
+                                                                end), input_problem); VanillaIterator(MHSearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, max_depth = 10), ((time, iteration, cost)->begin
+                                                                    time > 3 || iteration > 5000
+                                                                end), input_problem)]])]]); [SequenceCombinatorIterator([VanillaIterator(SASearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, initial_temperature = 3, temperature_decreasing_factor = 0.92, max_depth = 10), ((time, iteration, cost)->begin
+                                                        time > 6 || iteration > 4000
+                                                    end), input_problem); ParallelCombinatorIterator(ParallelThreads, [VanillaIterator(VLSNSearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, neighbourhood_size = 2), ((time, iteration, cost)->begin
+                                                                time > 4 || iteration > 3000
+                                                            end), input_problem); [VanillaIterator(DFSIterator(input_grammar, :X, max_depth = 4), ((time, iteration, cost)->begin
+                                                                    time > 4 || iteration > 3000
+                                                                end), input_problem); VanillaIterator(DFSIterator(input_grammar, :X, max_depth = 4), ((time, iteration, cost)->begin
+                                                                    time > 5 || iteration > 5000
+                                                                end), input_problem)]])]); SequenceCombinatorIterator([VanillaIterator(SASearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, initial_temperature = 4, temperature_decreasing_factor = 0.92, max_depth = 10), ((time, iteration, cost)->begin
+                                                        time > 6 || iteration > 3000
+                                                    end), input_problem); VanillaIterator(BFSIterator(input_grammar, :X, max_depth = 4), ((time, iteration, cost)->begin
+                                                        time > 3 || iteration > 4000
+                                                    end), input_problem)])]]]); VanillaIterator(SASearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, initial_temperature = 6, temperature_decreasing_factor = 0.97, max_depth = 10), ((time, iteration, cost)->begin
+                                time > 5 || iteration > 5000
+                            end), input_problem)]))
+    end
+____________________________________________________________________________________________________
+Meta Search status
+    - genetic iteration   : 11
+    - current fitness     : 9.44822641461336e-11
+    - Best fitness        : 9.44822641461336e-11
+    - time of iteration   : 802.1778378486633
+
+____________________________________________________________________________________________________
+Best expr: (input_problem::Problem, input_grammar::AbstractGrammar)->begin
+        generic_run(SequenceCombinatorIterator([ParallelCombinatorIterator(ParallelThreads, [VanillaIterator(VLSNSearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, neighbourhood_size = 1), ((time, iteration, cost)->begin
+                                        time > 3 || iteration > 2000
+                                    end), input_problem); [SequenceCombinatorIterator([VanillaIterator(DFSIterator(input_grammar, :X, max_depth = 4), ((time, iteration, cost)->begin
+                                                    time > 3 || iteration > 5000
+                                                end), input_problem); [ParallelCombinatorIterator(ParallelThreads, [VanillaIterator(SASearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, initial_temperature = 5, temperature_decreasing_factor = 0.96, max_depth = 10), ((time, iteration, cost)->begin
+                                                                time > 3 || iteration > 1000
+                                                            end), input_problem); VanillaIterator(MHSearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, max_depth = 10), ((time, iteration, cost)->begin
+                                                                time > 3 || iteration > 2000
+                                                            end), input_problem)]); ParallelCombinatorIterator(ParallelThreads, [VanillaIterator(BFSIterator(input_grammar, :X, max_depth = 4), ((time, iteration, cost)->begin
+                                                                time > 4 || iteration > 3000
+                                                            end), input_problem); [VanillaIterator(BFSIterator(input_grammar, :X, max_depth = 4), ((time, iteration, cost)->begin
+                                                                    time > 5 || iteration > 2000
+                                                                end), input_problem); VanillaIterator(MHSearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, max_depth = 10), ((time, iteration, cost)->begin
+                                                                    time > 3 || iteration > 5000
+                                                                end), input_problem)]])]]); [SequenceCombinatorIterator([VanillaIterator(SASearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, initial_temperature = 3, temperature_decreasing_factor = 0.92, max_depth = 10), ((time, iteration, cost)->begin
+                                                        time > 6 || iteration > 4000
+                                                    end), input_problem); ParallelCombinatorIterator(ParallelThreads, [VanillaIterator(VLSNSearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, neighbourhood_size = 2), ((time, iteration, cost)->begin
+                                                                time > 4 || iteration > 3000
+                                                            end), input_problem); [VanillaIterator(DFSIterator(input_grammar, :X, max_depth = 4), ((time, iteration, cost)->begin
+                                                                    time > 4 || iteration > 3000
+                                                                end), input_problem); VanillaIterator(DFSIterator(input_grammar, :X, max_depth = 4), ((time, iteration, cost)->begin
+                                                                    time > 5 || iteration > 5000
+                                                                end), input_problem)]])]); SequenceCombinatorIterator([VanillaIterator(SASearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, initial_temperature = 4, temperature_decreasing_factor = 0.92, max_depth = 10), ((time, iteration, cost)->begin
+                                                        time > 6 || iteration > 3000
+                                                    end), input_problem); VanillaIterator(BFSIterator(input_grammar, :X, max_depth = 4), ((time, iteration, cost)->begin
+                                                        time > 3 || iteration > 4000
+                                                    end), input_problem)])]]]); VanillaIterator(SASearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, initial_temperature = 6, temperature_decreasing_factor = 0.97, max_depth = 10), ((time, iteration, cost)->begin
+                                time > 5 || iteration > 5000
+                            end), input_problem)]))
+    end
+____________________________________________________________________________________________________
+Meta Search status
+    - genetic iteration   : 12
+    - current fitness     : 9.44822641461336e-11
+    - Best fitness        : 9.44822641461336e-11
+    - time of iteration   : 842.5423789024353
+
+____________________________________________________________________________________________________
+Best expr: (input_problem::Problem, input_grammar::AbstractGrammar)->begin
+        generic_run(SequenceCombinatorIterator([ParallelCombinatorIterator(ParallelThreads, [VanillaIterator(VLSNSearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, neighbourhood_size = 1), ((time, iteration, cost)->begin
+                                        time > 3 || iteration > 2000
+                                    end), input_problem); [SequenceCombinatorIterator([VanillaIterator(DFSIterator(input_grammar, :X, max_depth = 4), ((time, iteration, cost)->begin
+                                                    time > 3 || iteration > 5000
+                                                end), input_problem); [ParallelCombinatorIterator(ParallelThreads, [VanillaIterator(SASearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, initial_temperature = 5, temperature_decreasing_factor = 0.96, max_depth = 10), ((time, iteration, cost)->begin
+                                                                time > 3 || iteration > 1000
+                                                            end), input_problem); VanillaIterator(MHSearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, max_depth = 10), ((time, iteration, cost)->begin
+                                                                time > 3 || iteration > 2000
+                                                            end), input_problem)]); ParallelCombinatorIterator(ParallelThreads, [VanillaIterator(BFSIterator(input_grammar, :X, max_depth = 4), ((time, iteration, cost)->begin
+                                                                time > 4 || iteration > 3000
+                                                            end), input_problem); [VanillaIterator(BFSIterator(input_grammar, :X, max_depth = 4), ((time, iteration, cost)->begin
+                                                                    time > 5 || iteration > 2000
+                                                                end), input_problem); VanillaIterator(MHSearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, max_depth = 10), ((time, iteration, cost)->begin
+                                                                    time > 3 || iteration > 5000
+                                                                end), input_problem)]])]]); [SequenceCombinatorIterator([VanillaIterator(SASearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, initial_temperature = 3, temperature_decreasing_factor = 0.92, max_depth = 10), ((time, iteration, cost)->begin
+                                                        time > 6 || iteration > 4000
+                                                    end), input_problem); ParallelCombinatorIterator(ParallelThreads, [VanillaIterator(VLSNSearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, neighbourhood_size = 2), ((time, iteration, cost)->begin
+                                                                time > 4 || iteration > 3000
+                                                            end), input_problem); [VanillaIterator(DFSIterator(input_grammar, :X, max_depth = 4), ((time, iteration, cost)->begin
+                                                                    time > 4 || iteration > 3000
+                                                                end), input_problem); VanillaIterator(DFSIterator(input_grammar, :X, max_depth = 4), ((time, iteration, cost)->begin
+                                                                    time > 5 || iteration > 5000
+                                                                end), input_problem)]])]); SequenceCombinatorIterator([VanillaIterator(SASearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, initial_temperature = 4, temperature_decreasing_factor = 0.92, max_depth = 10), ((time, iteration, cost)->begin
+                                                        time > 6 || iteration > 3000
+                                                    end), input_problem); VanillaIterator(BFSIterator(input_grammar, :X, max_depth = 4), ((time, iteration, cost)->begin
+                                                        time > 3 || iteration > 4000
+                                                    end), input_problem)])]]]); VanillaIterator(SASearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, initial_temperature = 6, temperature_decreasing_factor = 0.97, max_depth = 10), ((time, iteration, cost)->begin
+                                time > 5 || iteration > 5000
+                            end), input_problem)]))
+    end
+____________________________________________________________________________________________________
+Meta Search status
+    - genetic iteration   : 13
+    - current fitness     : 9.44822641461336e-11
+    - Best fitness        : 9.44822641461336e-11
+    - time of iteration   : 911.3047540187836
+
+____________________________________________________________________________________________________
+Best expr: (input_problem::Problem, input_grammar::AbstractGrammar)->begin
+        generic_run(SequenceCombinatorIterator([ParallelCombinatorIterator(ParallelThreads, [VanillaIterator(VLSNSearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, neighbourhood_size = 1), ((time, iteration, cost)->begin
+                                        time > 3 || iteration > 2000
+                                    end), input_problem); [SequenceCombinatorIterator([VanillaIterator(DFSIterator(input_grammar, :X, max_depth = 4), ((time, iteration, cost)->begin
+                                                    time > 3 || iteration > 5000
+                                                end), input_problem); [ParallelCombinatorIterator(ParallelThreads, [VanillaIterator(SASearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, initial_temperature = 5, temperature_decreasing_factor = 0.96, max_depth = 10), ((time, iteration, cost)->begin
+                                                                time > 3 || iteration > 1000
+                                                            end), input_problem); VanillaIterator(MHSearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, max_depth = 10), ((time, iteration, cost)->begin
+                                                                time > 3 || iteration > 2000
+                                                            end), input_problem)]); ParallelCombinatorIterator(ParallelThreads, [VanillaIterator(BFSIterator(input_grammar, :X, max_depth = 4), ((time, iteration, cost)->begin
+                                                                time > 4 || iteration > 3000
+                                                            end), input_problem); [VanillaIterator(BFSIterator(input_grammar, :X, max_depth = 4), ((time, iteration, cost)->begin
+                                                                    time > 5 || iteration > 2000
+                                                                end), input_problem); VanillaIterator(MHSearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, max_depth = 10), ((time, iteration, cost)->begin
+                                                                    time > 3 || iteration > 5000
+                                                                end), input_problem)]])]]); [SequenceCombinatorIterator([VanillaIterator(SASearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, initial_temperature = 3, temperature_decreasing_factor = 0.92, max_depth = 10), ((time, iteration, cost)->begin
+                                                        time > 6 || iteration > 4000
+                                                    end), input_problem); ParallelCombinatorIterator(ParallelThreads, [VanillaIterator(VLSNSearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, neighbourhood_size = 2), ((time, iteration, cost)->begin
+                                                                time > 4 || iteration > 3000
+                                                            end), input_problem); [VanillaIterator(DFSIterator(input_grammar, :X, max_depth = 4), ((time, iteration, cost)->begin
+                                                                    time > 4 || iteration > 3000
+                                                                end), input_problem); VanillaIterator(DFSIterator(input_grammar, :X, max_depth = 4), ((time, iteration, cost)->begin
+                                                                    time > 5 || iteration > 5000
+                                                                end), input_problem)]])]); SequenceCombinatorIterator([VanillaIterator(SASearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, initial_temperature = 4, temperature_decreasing_factor = 0.92, max_depth = 10), ((time, iteration, cost)->begin
+                                                        time > 6 || iteration > 3000
+                                                    end), input_problem); VanillaIterator(BFSIterator(input_grammar, :X, max_depth = 4), ((time, iteration, cost)->begin
+                                                        time > 3 || iteration > 4000
+                                                    end), input_problem)])]]]); VanillaIterator(SASearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, initial_temperature = 6, temperature_decreasing_factor = 0.97, max_depth = 10), ((time, iteration, cost)->begin
+                                time > 5 || iteration > 5000
+                            end), input_problem)]))
+    end
+____________________________________________________________________________________________________
+Meta Search status
+    - genetic iteration   : 14
+    - current fitness     : 9.44822641461336e-11
+    - Best fitness        : 9.44822641461336e-11
+    - time of iteration   : 1040.9315810203552
+
+____________________________________________________________________________________________________
+Best expr: (input_problem::Problem, input_grammar::AbstractGrammar)->begin
+        generic_run(SequenceCombinatorIterator([ParallelCombinatorIterator(ParallelThreads, [VanillaIterator(VLSNSearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, neighbourhood_size = 1), ((time, iteration, cost)->begin
+                                        time > 3 || iteration > 2000
+                                    end), input_problem); [SequenceCombinatorIterator([VanillaIterator(DFSIterator(input_grammar, :X, max_depth = 4), ((time, iteration, cost)->begin
+                                                    time > 3 || iteration > 5000
+                                                end), input_problem); [ParallelCombinatorIterator(ParallelThreads, [VanillaIterator(SASearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, initial_temperature = 5, temperature_decreasing_factor = 0.96, max_depth = 10), ((time, iteration, cost)->begin
+                                                                time > 3 || iteration > 1000
+                                                            end), input_problem); VanillaIterator(MHSearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, max_depth = 10), ((time, iteration, cost)->begin
+                                                                time > 3 || iteration > 2000
+                                                            end), input_problem)]); ParallelCombinatorIterator(ParallelThreads, [VanillaIterator(BFSIterator(input_grammar, :X, max_depth = 4), ((time, iteration, cost)->begin
+                                                                time > 4 || iteration > 3000
+                                                            end), input_problem); [VanillaIterator(BFSIterator(input_grammar, :X, max_depth = 4), ((time, iteration, cost)->begin
+                                                                    time > 5 || iteration > 2000
+                                                                end), input_problem); VanillaIterator(MHSearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, max_depth = 10), ((time, iteration, cost)->begin
+                                                                    time > 3 || iteration > 5000
+                                                                end), input_problem)]])]]); [SequenceCombinatorIterator([VanillaIterator(SASearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, initial_temperature = 3, temperature_decreasing_factor = 0.92, max_depth = 10), ((time, iteration, cost)->begin
+                                                        time > 6 || iteration > 4000
+                                                    end), input_problem); ParallelCombinatorIterator(ParallelThreads, [VanillaIterator(VLSNSearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, neighbourhood_size = 2), ((time, iteration, cost)->begin
+                                                                time > 4 || iteration > 3000
+                                                            end), input_problem); [VanillaIterator(DFSIterator(input_grammar, :X, max_depth = 4), ((time, iteration, cost)->begin
+                                                                    time > 4 || iteration > 3000
+                                                                end), input_problem); VanillaIterator(DFSIterator(input_grammar, :X, max_depth = 4), ((time, iteration, cost)->begin
+                                                                    time > 5 || iteration > 5000
+                                                                end), input_problem)]])]); SequenceCombinatorIterator([VanillaIterator(SASearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, initial_temperature = 4, temperature_decreasing_factor = 0.92, max_depth = 10), ((time, iteration, cost)->begin
+                                                        time > 6 || iteration > 3000
+                                                    end), input_problem); VanillaIterator(BFSIterator(input_grammar, :X, max_depth = 4), ((time, iteration, cost)->begin
+                                                        time > 3 || iteration > 4000
+                                                    end), input_problem)])]]]); VanillaIterator(SASearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, initial_temperature = 6, temperature_decreasing_factor = 0.97, max_depth = 10), ((time, iteration, cost)->begin
+                                time > 5 || iteration > 5000
+                            end), input_problem)]))
+    end
+____________________________________________________________________________________________________
+Meta Search status
+    - genetic iteration   : 15
+    - current fitness     : 9.44822641461336e-11
+    - Best fitness        : 9.44822641461336e-11
+    - time of iteration   : 1183.3732039928436
+
+____________________________________________________________________________________________________
+Best expr: (input_problem::Problem, input_grammar::AbstractGrammar)->begin
+        generic_run(SequenceCombinatorIterator([ParallelCombinatorIterator(ParallelThreads, [VanillaIterator(VLSNSearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, neighbourhood_size = 1), ((time, iteration, cost)->begin
+                                        time > 3 || iteration > 2000
+                                    end), input_problem); [SequenceCombinatorIterator([VanillaIterator(DFSIterator(input_grammar, :X, max_depth = 4), ((time, iteration, cost)->begin
+                                                    time > 3 || iteration > 5000
+                                                end), input_problem); [ParallelCombinatorIterator(ParallelThreads, [VanillaIterator(SASearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, initial_temperature = 5, temperature_decreasing_factor = 0.96, max_depth = 10), ((time, iteration, cost)->begin
+                                                                time > 3 || iteration > 1000
+                                                            end), input_problem); VanillaIterator(MHSearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, max_depth = 10), ((time, iteration, cost)->begin
+                                                                time > 3 || iteration > 2000
+                                                            end), input_problem)]); ParallelCombinatorIterator(ParallelThreads, [VanillaIterator(BFSIterator(input_grammar, :X, max_depth = 4), ((time, iteration, cost)->begin
+                                                                time > 4 || iteration > 3000
+                                                            end), input_problem); [VanillaIterator(BFSIterator(input_grammar, :X, max_depth = 4), ((time, iteration, cost)->begin
+                                                                    time > 5 || iteration > 2000
+                                                                end), input_problem); VanillaIterator(MHSearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, max_depth = 10), ((time, iteration, cost)->begin
+                                                                    time > 3 || iteration > 5000
+                                                                end), input_problem)]])]]); [SequenceCombinatorIterator([VanillaIterator(SASearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, initial_temperature = 3, temperature_decreasing_factor = 0.92, max_depth = 10), ((time, iteration, cost)->begin
+                                                        time > 6 || iteration > 4000
+                                                    end), input_problem); ParallelCombinatorIterator(ParallelThreads, [VanillaIterator(VLSNSearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, neighbourhood_size = 2), ((time, iteration, cost)->begin
+                                                                time > 4 || iteration > 3000
+                                                            end), input_problem); [VanillaIterator(DFSIterator(input_grammar, :X, max_depth = 4), ((time, iteration, cost)->begin
+                                                                    time > 4 || iteration > 3000
+                                                                end), input_problem); VanillaIterator(DFSIterator(input_grammar, :X, max_depth = 4), ((time, iteration, cost)->begin
+                                                                    time > 5 || iteration > 5000
+                                                                end), input_problem)]])]); SequenceCombinatorIterator([VanillaIterator(SASearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, initial_temperature = 4, temperature_decreasing_factor = 0.92, max_depth = 10), ((time, iteration, cost)->begin
+                                                        time > 6 || iteration > 3000
+                                                    end), input_problem); VanillaIterator(BFSIterator(input_grammar, :X, max_depth = 4), ((time, iteration, cost)->begin
+                                                        time > 3 || iteration > 4000
+                                                    end), input_problem)])]]]); VanillaIterator(SASearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, initial_temperature = 6, temperature_decreasing_factor = 0.97, max_depth = 10), ((time, iteration, cost)->begin
+                                time > 5 || iteration > 5000
+                            end), input_problem)]))
+    end
+____________________________________________________________________________________________________
+Meta Search status
+    - genetic iteration   : 16
+    - current fitness     : 9.44822641461336e-11
+    - Best fitness        : 9.44822641461336e-11
+    - time of iteration   : 1330.764976978302
+
+____________________________________________________________________________________________________
+Best expr: (input_problem::Problem, input_grammar::AbstractGrammar)->begin
+        generic_run(SequenceCombinatorIterator([ParallelCombinatorIterator(ParallelThreads, [VanillaIterator(VLSNSearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, neighbourhood_size = 1), ((time, iteration, cost)->begin
+                                        time > 3 || iteration > 2000
+                                    end), input_problem); [SequenceCombinatorIterator([VanillaIterator(DFSIterator(input_grammar, :X, max_depth = 4), ((time, iteration, cost)->begin
+                                                    time > 3 || iteration > 5000
+                                                end), input_problem); [ParallelCombinatorIterator(ParallelThreads, [VanillaIterator(SASearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, initial_temperature = 5, temperature_decreasing_factor = 0.96, max_depth = 10), ((time, iteration, cost)->begin
+                                                                time > 3 || iteration > 1000
+                                                            end), input_problem); VanillaIterator(MHSearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, max_depth = 10), ((time, iteration, cost)->begin
+                                                                time > 3 || iteration > 2000
+                                                            end), input_problem)]); ParallelCombinatorIterator(ParallelThreads, [VanillaIterator(BFSIterator(input_grammar, :X, max_depth = 4), ((time, iteration, cost)->begin
+                                                                time > 4 || iteration > 3000
+                                                            end), input_problem); [VanillaIterator(BFSIterator(input_grammar, :X, max_depth = 4), ((time, iteration, cost)->begin
+                                                                    time > 5 || iteration > 2000
+                                                                end), input_problem); VanillaIterator(MHSearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, max_depth = 10), ((time, iteration, cost)->begin
+                                                                    time > 3 || iteration > 5000
+                                                                end), input_problem)]])]]); [SequenceCombinatorIterator([VanillaIterator(SASearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, initial_temperature = 3, temperature_decreasing_factor = 0.92, max_depth = 10), ((time, iteration, cost)->begin
+                                                        time > 6 || iteration > 4000
+                                                    end), input_problem); ParallelCombinatorIterator(ParallelThreads, [VanillaIterator(VLSNSearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, neighbourhood_size = 2), ((time, iteration, cost)->begin
+                                                                time > 4 || iteration > 3000
+                                                            end), input_problem); [VanillaIterator(DFSIterator(input_grammar, :X, max_depth = 4), ((time, iteration, cost)->begin
+                                                                    time > 4 || iteration > 3000
+                                                                end), input_problem); VanillaIterator(DFSIterator(input_grammar, :X, max_depth = 4), ((time, iteration, cost)->begin
+                                                                    time > 5 || iteration > 5000
+                                                                end), input_problem)]])]); SequenceCombinatorIterator([VanillaIterator(SASearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, initial_temperature = 4, temperature_decreasing_factor = 0.92, max_depth = 10), ((time, iteration, cost)->begin
+                                                        time > 6 || iteration > 3000
+                                                    end), input_problem); VanillaIterator(BFSIterator(input_grammar, :X, max_depth = 4), ((time, iteration, cost)->begin
+                                                        time > 3 || iteration > 4000
+                                                    end), input_problem)])]]]); VanillaIterator(SASearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, initial_temperature = 6, temperature_decreasing_factor = 0.97, max_depth = 10), ((time, iteration, cost)->begin
+                                time > 5 || iteration > 5000
+                            end), input_problem)]))
+    end
+____________________________________________________________________________________________________
+Meta Search status
+    - genetic iteration   : 17
+    - current fitness     : 9.44822641461336e-11
+    - Best fitness        : 9.44822641461336e-11
+    - time of iteration   : 1142.0915088653564
+
+____________________________________________________________________________________________________
+Best expr: (input_problem::Problem, input_grammar::AbstractGrammar)->begin
+        generic_run(SequenceCombinatorIterator([ParallelCombinatorIterator(ParallelThreads, [VanillaIterator(VLSNSearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, neighbourhood_size = 1), ((time, iteration, cost)->begin
+                                        time > 3 || iteration > 2000
+                                    end), input_problem); [SequenceCombinatorIterator([VanillaIterator(DFSIterator(input_grammar, :X, max_depth = 4), ((time, iteration, cost)->begin
+                                                    time > 3 || iteration > 5000
+                                                end), input_problem); [ParallelCombinatorIterator(ParallelThreads, [VanillaIterator(SASearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, initial_temperature = 5, temperature_decreasing_factor = 0.96, max_depth = 10), ((time, iteration, cost)->begin
+                                                                time > 3 || iteration > 1000
+                                                            end), input_problem); VanillaIterator(MHSearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, max_depth = 10), ((time, iteration, cost)->begin
+                                                                time > 3 || iteration > 2000
+                                                            end), input_problem)]); ParallelCombinatorIterator(ParallelThreads, [VanillaIterator(BFSIterator(input_grammar, :X, max_depth = 4), ((time, iteration, cost)->begin
+                                                                time > 4 || iteration > 3000
+                                                            end), input_problem); [VanillaIterator(BFSIterator(input_grammar, :X, max_depth = 4), ((time, iteration, cost)->begin
+                                                                    time > 5 || iteration > 2000
+                                                                end), input_problem); VanillaIterator(MHSearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, max_depth = 10), ((time, iteration, cost)->begin
+                                                                    time > 3 || iteration > 5000
+                                                                end), input_problem)]])]]); [SequenceCombinatorIterator([VanillaIterator(SASearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, initial_temperature = 3, temperature_decreasing_factor = 0.92, max_depth = 10), ((time, iteration, cost)->begin
+                                                        time > 6 || iteration > 4000
+                                                    end), input_problem); ParallelCombinatorIterator(ParallelThreads, [VanillaIterator(VLSNSearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, neighbourhood_size = 2), ((time, iteration, cost)->begin
+                                                                time > 4 || iteration > 3000
+                                                            end), input_problem); [VanillaIterator(DFSIterator(input_grammar, :X, max_depth = 4), ((time, iteration, cost)->begin
+                                                                    time > 4 || iteration > 3000
+                                                                end), input_problem); VanillaIterator(DFSIterator(input_grammar, :X, max_depth = 4), ((time, iteration, cost)->begin
+                                                                    time > 5 || iteration > 5000
+                                                                end), input_problem)]])]); SequenceCombinatorIterator([VanillaIterator(SASearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, initial_temperature = 4, temperature_decreasing_factor = 0.92, max_depth = 10), ((time, iteration, cost)->begin
+                                                        time > 6 || iteration > 3000
+                                                    end), input_problem); VanillaIterator(BFSIterator(input_grammar, :X, max_depth = 4), ((time, iteration, cost)->begin
+                                                        time > 3 || iteration > 4000
+                                                    end), input_problem)])]]]); VanillaIterator(SASearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, initial_temperature = 6, temperature_decreasing_factor = 0.97, max_depth = 10), ((time, iteration, cost)->begin
+                                time > 5 || iteration > 5000
+                            end), input_problem)]))
+    end
+____________________________________________________________________________________________________
+Meta Search status
+    - genetic iteration   : 18
+    - current fitness     : 9.44822641461336e-11
+    - Best fitness        : 9.44822641461336e-11
+    - time of iteration   : 1207.9140598773956
+
+____________________________________________________________________________________________________
+Best expr: (input_problem::Problem, input_grammar::AbstractGrammar)->begin
+        generic_run(SequenceCombinatorIterator([ParallelCombinatorIterator(ParallelThreads, [VanillaIterator(VLSNSearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, neighbourhood_size = 1), ((time, iteration, cost)->begin
+                                        time > 3 || iteration > 2000
+                                    end), input_problem); [SequenceCombinatorIterator([VanillaIterator(DFSIterator(input_grammar, :X, max_depth = 4), ((time, iteration, cost)->begin
+                                                    time > 3 || iteration > 5000
+                                                end), input_problem); [ParallelCombinatorIterator(ParallelThreads, [VanillaIterator(SASearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, initial_temperature = 5, temperature_decreasing_factor = 0.96, max_depth = 10), ((time, iteration, cost)->begin
+                                                                time > 3 || iteration > 1000
+                                                            end), input_problem); VanillaIterator(MHSearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, max_depth = 10), ((time, iteration, cost)->begin
+                                                                time > 3 || iteration > 2000
+                                                            end), input_problem)]); ParallelCombinatorIterator(ParallelThreads, [VanillaIterator(BFSIterator(input_grammar, :X, max_depth = 4), ((time, iteration, cost)->begin
+                                                                time > 4 || iteration > 3000
+                                                            end), input_problem); [VanillaIterator(BFSIterator(input_grammar, :X, max_depth = 4), ((time, iteration, cost)->begin
+                                                                    time > 5 || iteration > 2000
+                                                                end), input_problem); VanillaIterator(MHSearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, max_depth = 10), ((time, iteration, cost)->begin
+                                                                    time > 3 || iteration > 5000
+                                                                end), input_problem)]])]]); [SequenceCombinatorIterator([VanillaIterator(SASearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, initial_temperature = 3, temperature_decreasing_factor = 0.92, max_depth = 10), ((time, iteration, cost)->begin
+                                                        time > 6 || iteration > 4000
+                                                    end), input_problem); ParallelCombinatorIterator(ParallelThreads, [VanillaIterator(VLSNSearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, neighbourhood_size = 2), ((time, iteration, cost)->begin
+                                                                time > 4 || iteration > 3000
+                                                            end), input_problem); [VanillaIterator(DFSIterator(input_grammar, :X, max_depth = 4), ((time, iteration, cost)->begin
+                                                                    time > 4 || iteration > 3000
+                                                                end), input_problem); VanillaIterator(DFSIterator(input_grammar, :X, max_depth = 4), ((time, iteration, cost)->begin
+                                                                    time > 5 || iteration > 5000
+                                                                end), input_problem)]])]); SequenceCombinatorIterator([VanillaIterator(SASearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, initial_temperature = 4, temperature_decreasing_factor = 0.92, max_depth = 10), ((time, iteration, cost)->begin
+                                                        time > 6 || iteration > 3000
+                                                    end), input_problem); VanillaIterator(BFSIterator(input_grammar, :X, max_depth = 4), ((time, iteration, cost)->begin
+                                                        time > 3 || iteration > 4000
+                                                    end), input_problem)])]]]); VanillaIterator(SASearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, initial_temperature = 6, temperature_decreasing_factor = 0.97, max_depth = 10), ((time, iteration, cost)->begin
+                                time > 5 || iteration > 5000
+                            end), input_problem)]))
+    end
+____________________________________________________________________________________________________
+Meta Search status
+    - genetic iteration   : 19
+    - current fitness     : 9.44822641461336e-11
+    - Best fitness        : 9.44822641461336e-11
+    - time of iteration   : 1167.651494026184
+
+____________________________________________________________________________________________________
+Best expr: (input_problem::Problem, input_grammar::AbstractGrammar)->begin
+        generic_run(SequenceCombinatorIterator([ParallelCombinatorIterator(ParallelThreads, [VanillaIterator(VLSNSearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, neighbourhood_size = 1), ((time, iteration, cost)->begin
+                                        time > 3 || iteration > 2000
+                                    end), input_problem); [SequenceCombinatorIterator([VanillaIterator(DFSIterator(input_grammar, :X, max_depth = 4), ((time, iteration, cost)->begin
+                                                    time > 3 || iteration > 5000
+                                                end), input_problem); [ParallelCombinatorIterator(ParallelThreads, [VanillaIterator(SASearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, initial_temperature = 5, temperature_decreasing_factor = 0.96, max_depth = 10), ((time, iteration, cost)->begin
+                                                                time > 3 || iteration > 1000
+                                                            end), input_problem); VanillaIterator(MHSearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, max_depth = 10), ((time, iteration, cost)->begin
+                                                                time > 3 || iteration > 2000
+                                                            end), input_problem)]); ParallelCombinatorIterator(ParallelThreads, [VanillaIterator(BFSIterator(input_grammar, :X, max_depth = 4), ((time, iteration, cost)->begin
+                                                                time > 4 || iteration > 3000
+                                                            end), input_problem); [VanillaIterator(BFSIterator(input_grammar, :X, max_depth = 4), ((time, iteration, cost)->begin
+                                                                    time > 5 || iteration > 2000
+                                                                end), input_problem); VanillaIterator(MHSearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, max_depth = 10), ((time, iteration, cost)->begin
+                                                                    time > 3 || iteration > 5000
+                                                                end), input_problem)]])]]); [SequenceCombinatorIterator([VanillaIterator(SASearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, initial_temperature = 3, temperature_decreasing_factor = 0.92, max_depth = 10), ((time, iteration, cost)->begin
+                                                        time > 6 || iteration > 4000
+                                                    end), input_problem); ParallelCombinatorIterator(ParallelThreads, [VanillaIterator(VLSNSearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, neighbourhood_size = 2), ((time, iteration, cost)->begin
+                                                                time > 4 || iteration > 3000
+                                                            end), input_problem); [VanillaIterator(DFSIterator(input_grammar, :X, max_depth = 4), ((time, iteration, cost)->begin
+                                                                    time > 4 || iteration > 3000
+                                                                end), input_problem); VanillaIterator(DFSIterator(input_grammar, :X, max_depth = 4), ((time, iteration, cost)->begin
+                                                                    time > 5 || iteration > 5000
+                                                                end), input_problem)]])]); SequenceCombinatorIterator([VanillaIterator(SASearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, initial_temperature = 4, temperature_decreasing_factor = 0.92, max_depth = 10), ((time, iteration, cost)->begin
+                                                        time > 6 || iteration > 3000
+                                                    end), input_problem); VanillaIterator(BFSIterator(input_grammar, :X, max_depth = 4), ((time, iteration, cost)->begin
+                                                        time > 3 || iteration > 4000
+                                                    end), input_problem)])]]]); VanillaIterator(SASearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, initial_temperature = 6, temperature_decreasing_factor = 0.97, max_depth = 10), ((time, iteration, cost)->begin
+                                time > 5 || iteration > 5000
+                            end), input_problem)]))
+    end
+____________________________________________________________________________________________________
+Meta Search status
+    - genetic iteration   : 20
+    - current fitness     : 9.44822641461336e-11
+    - Best fitness        : 9.44822641461336e-11
+    - time of iteration   : 1196.6774849891663
+
+____________________________________________________________________________________________________
+Best expr: (input_problem::Problem, input_grammar::AbstractGrammar)->begin
+        generic_run(SequenceCombinatorIterator([ParallelCombinatorIterator(ParallelThreads, [VanillaIterator(VLSNSearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, neighbourhood_size = 1), ((time, iteration, cost)->begin
+                                        time > 3 || iteration > 2000
+                                    end), input_problem); [SequenceCombinatorIterator([VanillaIterator(DFSIterator(input_grammar, :X, max_depth = 4), ((time, iteration, cost)->begin
+                                                    time > 3 || iteration > 5000
+                                                end), input_problem); [ParallelCombinatorIterator(ParallelThreads, [VanillaIterator(SASearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, initial_temperature = 5, temperature_decreasing_factor = 0.96, max_depth = 10), ((time, iteration, cost)->begin
+                                                                time > 3 || iteration > 1000
+                                                            end), input_problem); VanillaIterator(MHSearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, max_depth = 10), ((time, iteration, cost)->begin
+                                                                time > 3 || iteration > 2000
+                                                            end), input_problem)]); ParallelCombinatorIterator(ParallelThreads, [VanillaIterator(BFSIterator(input_grammar, :X, max_depth = 4), ((time, iteration, cost)->begin
+                                                                time > 4 || iteration > 3000
+                                                            end), input_problem); [VanillaIterator(BFSIterator(input_grammar, :X, max_depth = 4), ((time, iteration, cost)->begin
+                                                                    time > 5 || iteration > 2000
+                                                                end), input_problem); VanillaIterator(MHSearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, max_depth = 10), ((time, iteration, cost)->begin
+                                                                    time > 3 || iteration > 5000
+                                                                end), input_problem)]])]]); [SequenceCombinatorIterator([VanillaIterator(SASearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, initial_temperature = 3, temperature_decreasing_factor = 0.92, max_depth = 10), ((time, iteration, cost)->begin
+                                                        time > 6 || iteration > 4000
+                                                    end), input_problem); ParallelCombinatorIterator(ParallelThreads, [VanillaIterator(VLSNSearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, neighbourhood_size = 2), ((time, iteration, cost)->begin
+                                                                time > 4 || iteration > 3000
+                                                            end), input_problem); [VanillaIterator(DFSIterator(input_grammar, :X, max_depth = 4), ((time, iteration, cost)->begin
+                                                                    time > 4 || iteration > 3000
+                                                                end), input_problem); VanillaIterator(DFSIterator(input_grammar, :X, max_depth = 4), ((time, iteration, cost)->begin
+                                                                    time > 5 || iteration > 5000
+                                                                end), input_problem)]])]); SequenceCombinatorIterator([VanillaIterator(SASearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, initial_temperature = 4, temperature_decreasing_factor = 0.92, max_depth = 10), ((time, iteration, cost)->begin
+                                                        time > 6 || iteration > 3000
+                                                    end), input_problem); VanillaIterator(BFSIterator(input_grammar, :X, max_depth = 4), ((time, iteration, cost)->begin
+                                                        time > 3 || iteration > 4000
+                                                    end), input_problem)])]]]); VanillaIterator(SASearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, initial_temperature = 6, temperature_decreasing_factor = 0.97, max_depth = 10), ((time, iteration, cost)->begin
+                                time > 5 || iteration > 5000
+                            end), input_problem)]))
+    end
+____________________________________________________________________________________________________
+Meta Search status
+    - genetic iteration   : 21
+    - current fitness     : 9.44822641461336e-11
+    - Best fitness        : 9.44822641461336e-11
+    - time of iteration   : 1181.1210279464722
+
+____________________________________________________________________________________________________
+Best expr: (input_problem::Problem, input_grammar::AbstractGrammar)->begin
+        generic_run(SequenceCombinatorIterator([ParallelCombinatorIterator(ParallelThreads, [VanillaIterator(VLSNSearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, neighbourhood_size = 1), ((time, iteration, cost)->begin
+                                        time > 3 || iteration > 2000
+                                    end), input_problem); [SequenceCombinatorIterator([VanillaIterator(DFSIterator(input_grammar, :X, max_depth = 4), ((time, iteration, cost)->begin
+                                                    time > 3 || iteration > 5000
+                                                end), input_problem); [ParallelCombinatorIterator(ParallelThreads, [VanillaIterator(SASearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, initial_temperature = 5, temperature_decreasing_factor = 0.96, max_depth = 10), ((time, iteration, cost)->begin
+                                                                time > 3 || iteration > 1000
+                                                            end), input_problem); VanillaIterator(MHSearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, max_depth = 10), ((time, iteration, cost)->begin
+                                                                time > 3 || iteration > 2000
+                                                            end), input_problem)]); ParallelCombinatorIterator(ParallelThreads, [VanillaIterator(BFSIterator(input_grammar, :X, max_depth = 4), ((time, iteration, cost)->begin
+                                                                time > 4 || iteration > 3000
+                                                            end), input_problem); [VanillaIterator(BFSIterator(input_grammar, :X, max_depth = 4), ((time, iteration, cost)->begin
+                                                                    time > 5 || iteration > 2000
+                                                                end), input_problem); VanillaIterator(MHSearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, max_depth = 10), ((time, iteration, cost)->begin
+                                                                    time > 3 || iteration > 5000
+                                                                end), input_problem)]])]]); [SequenceCombinatorIterator([VanillaIterator(SASearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, initial_temperature = 3, temperature_decreasing_factor = 0.92, max_depth = 10), ((time, iteration, cost)->begin
+                                                        time > 6 || iteration > 4000
+                                                    end), input_problem); ParallelCombinatorIterator(ParallelThreads, [VanillaIterator(VLSNSearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, neighbourhood_size = 2), ((time, iteration, cost)->begin
+                                                                time > 4 || iteration > 3000
+                                                            end), input_problem); [VanillaIterator(DFSIterator(input_grammar, :X, max_depth = 4), ((time, iteration, cost)->begin
+                                                                    time > 4 || iteration > 3000
+                                                                end), input_problem); VanillaIterator(DFSIterator(input_grammar, :X, max_depth = 4), ((time, iteration, cost)->begin
+                                                                    time > 5 || iteration > 5000
+                                                                end), input_problem)]])]); SequenceCombinatorIterator([VanillaIterator(SASearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, initial_temperature = 4, temperature_decreasing_factor = 0.92, max_depth = 10), ((time, iteration, cost)->begin
+                                                        time > 6 || iteration > 3000
+                                                    end), input_problem); VanillaIterator(BFSIterator(input_grammar, :X, max_depth = 4), ((time, iteration, cost)->begin
+                                                        time > 3 || iteration > 4000
+                                                    end), input_problem)])]]]); VanillaIterator(SASearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, initial_temperature = 6, temperature_decreasing_factor = 0.97, max_depth = 10), ((time, iteration, cost)->begin
+                                time > 5 || iteration > 5000
+                            end), input_problem)]))
+    end
+____________________________________________________________________________________________________
+Meta Search status
+    - genetic iteration   : 22
+    - current fitness     : 9.44822641461336e-11
+    - Best fitness        : 9.44822641461336e-11
+    - time of iteration   : 1439.9245920181274
+
+____________________________________________________________________________________________________
+Best expr: (input_problem::Problem, input_grammar::AbstractGrammar)->begin
+        generic_run(SequenceCombinatorIterator([ParallelCombinatorIterator(ParallelThreads, [VanillaIterator(VLSNSearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, neighbourhood_size = 1), ((time, iteration, cost)->begin
+                                        time > 3 || iteration > 2000
+                                    end), input_problem); [SequenceCombinatorIterator([VanillaIterator(DFSIterator(input_grammar, :X, max_depth = 4), ((time, iteration, cost)->begin
+                                                    time > 3 || iteration > 5000
+                                                end), input_problem); [ParallelCombinatorIterator(ParallelThreads, [VanillaIterator(SASearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, initial_temperature = 5, temperature_decreasing_factor = 0.96, max_depth = 10), ((time, iteration, cost)->begin
+                                                                time > 3 || iteration > 1000
+                                                            end), input_problem); VanillaIterator(MHSearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, max_depth = 10), ((time, iteration, cost)->begin
+                                                                time > 3 || iteration > 2000
+                                                            end), input_problem)]); ParallelCombinatorIterator(ParallelThreads, [VanillaIterator(BFSIterator(input_grammar, :X, max_depth = 4), ((time, iteration, cost)->begin
+                                                                time > 4 || iteration > 3000
+                                                            end), input_problem); [VanillaIterator(BFSIterator(input_grammar, :X, max_depth = 4), ((time, iteration, cost)->begin
+                                                                    time > 5 || iteration > 2000
+                                                                end), input_problem); VanillaIterator(MHSearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, max_depth = 10), ((time, iteration, cost)->begin
+                                                                    time > 3 || iteration > 5000
+                                                                end), input_problem)]])]]); [SequenceCombinatorIterator([VanillaIterator(SASearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, initial_temperature = 3, temperature_decreasing_factor = 0.92, max_depth = 10), ((time, iteration, cost)->begin
+                                                        time > 6 || iteration > 4000
+                                                    end), input_problem); ParallelCombinatorIterator(ParallelThreads, [VanillaIterator(VLSNSearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, neighbourhood_size = 2), ((time, iteration, cost)->begin
+                                                                time > 4 || iteration > 3000
+                                                            end), input_problem); [VanillaIterator(DFSIterator(input_grammar, :X, max_depth = 4), ((time, iteration, cost)->begin
+                                                                    time > 4 || iteration > 3000
+                                                                end), input_problem); VanillaIterator(DFSIterator(input_grammar, :X, max_depth = 4), ((time, iteration, cost)->begin
+                                                                    time > 5 || iteration > 5000
+                                                                end), input_problem)]])]); SequenceCombinatorIterator([VanillaIterator(SASearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, initial_temperature = 4, temperature_decreasing_factor = 0.92, max_depth = 10), ((time, iteration, cost)->begin
+                                                        time > 6 || iteration > 3000
+                                                    end), input_problem); VanillaIterator(BFSIterator(input_grammar, :X, max_depth = 4), ((time, iteration, cost)->begin
+                                                        time > 3 || iteration > 4000
+                                                    end), input_problem)])]]]); VanillaIterator(SASearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, initial_temperature = 6, temperature_decreasing_factor = 0.97, max_depth = 10), ((time, iteration, cost)->begin
+                                time > 5 || iteration > 5000
+                            end), input_problem)]))
+    end
+____________________________________________________________________________________________________
+Meta Search status
+    - genetic iteration   : 23
+    - current fitness     : 9.44822641461336e-11
+    - Best fitness        : 9.44822641461336e-11
+    - time of iteration   : 1469.5863780975342
+
+____________________________________________________________________________________________________
+Best expr: (input_problem::Problem, input_grammar::AbstractGrammar)->begin
+        generic_run(SequenceCombinatorIterator([ParallelCombinatorIterator(ParallelThreads, [VanillaIterator(VLSNSearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, neighbourhood_size = 1), ((time, iteration, cost)->begin
+                                        time > 3 || iteration > 2000
+                                    end), input_problem); [SequenceCombinatorIterator([VanillaIterator(DFSIterator(input_grammar, :X, max_depth = 4), ((time, iteration, cost)->begin
+                                                    time > 3 || iteration > 5000
+                                                end), input_problem); [ParallelCombinatorIterator(ParallelThreads, [VanillaIterator(SASearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, initial_temperature = 5, temperature_decreasing_factor = 0.96, max_depth = 10), ((time, iteration, cost)->begin
+                                                                time > 3 || iteration > 1000
+                                                            end), input_problem); VanillaIterator(MHSearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, max_depth = 10), ((time, iteration, cost)->begin
+                                                                time > 3 || iteration > 2000
+                                                            end), input_problem)]); ParallelCombinatorIterator(ParallelThreads, [VanillaIterator(BFSIterator(input_grammar, :X, max_depth = 4), ((time, iteration, cost)->begin
+                                                                time > 4 || iteration > 3000
+                                                            end), input_problem); [VanillaIterator(BFSIterator(input_grammar, :X, max_depth = 4), ((time, iteration, cost)->begin
+                                                                    time > 5 || iteration > 2000
+                                                                end), input_problem); VanillaIterator(MHSearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, max_depth = 10), ((time, iteration, cost)->begin
+                                                                    time > 3 || iteration > 5000
+                                                                end), input_problem)]])]]); [SequenceCombinatorIterator([VanillaIterator(SASearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, initial_temperature = 3, temperature_decreasing_factor = 0.92, max_depth = 10), ((time, iteration, cost)->begin
+                                                        time > 6 || iteration > 4000
+                                                    end), input_problem); ParallelCombinatorIterator(ParallelThreads, [VanillaIterator(VLSNSearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, neighbourhood_size = 2), ((time, iteration, cost)->begin
+                                                                time > 4 || iteration > 3000
+                                                            end), input_problem); [VanillaIterator(DFSIterator(input_grammar, :X, max_depth = 4), ((time, iteration, cost)->begin
+                                                                    time > 4 || iteration > 3000
+                                                                end), input_problem); VanillaIterator(DFSIterator(input_grammar, :X, max_depth = 4), ((time, iteration, cost)->begin
+                                                                    time > 5 || iteration > 5000
+                                                                end), input_problem)]])]); SequenceCombinatorIterator([VanillaIterator(SASearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, initial_temperature = 4, temperature_decreasing_factor = 0.92, max_depth = 10), ((time, iteration, cost)->begin
+                                                        time > 6 || iteration > 3000
+                                                    end), input_problem); VanillaIterator(BFSIterator(input_grammar, :X, max_depth = 4), ((time, iteration, cost)->begin
+                                                        time > 3 || iteration > 4000
+                                                    end), input_problem)])]]]); VanillaIterator(SASearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, initial_temperature = 6, temperature_decreasing_factor = 0.97, max_depth = 10), ((time, iteration, cost)->begin
+                                time > 5 || iteration > 5000
+                            end), input_problem)]))
+    end
+____________________________________________________________________________________________________
+Meta Search status
+    - genetic iteration   : 24
+    - current fitness     : 9.44822641461336e-11
+    - Best fitness        : 9.44822641461336e-11
+    - time of iteration   : 1461.5404760837555
+
+____________________________________________________________________________________________________
+Best expr: (input_problem::Problem, input_grammar::AbstractGrammar)->begin
+        generic_run(SequenceCombinatorIterator([ParallelCombinatorIterator(ParallelThreads, [VanillaIterator(VLSNSearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, neighbourhood_size = 1), ((time, iteration, cost)->begin
+                                        time > 3 || iteration > 2000
+                                    end), input_problem); [SequenceCombinatorIterator([VanillaIterator(DFSIterator(input_grammar, :X, max_depth = 4), ((time, iteration, cost)->begin
+                                                    time > 3 || iteration > 5000
+                                                end), input_problem); [ParallelCombinatorIterator(ParallelThreads, [VanillaIterator(SASearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, initial_temperature = 5, temperature_decreasing_factor = 0.96, max_depth = 10), ((time, iteration, cost)->begin
+                                                                time > 3 || iteration > 1000
+                                                            end), input_problem); VanillaIterator(MHSearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, max_depth = 10), ((time, iteration, cost)->begin
+                                                                time > 3 || iteration > 2000
+                                                            end), input_problem)]); ParallelCombinatorIterator(ParallelThreads, [VanillaIterator(BFSIterator(input_grammar, :X, max_depth = 4), ((time, iteration, cost)->begin
+                                                                time > 4 || iteration > 3000
+                                                            end), input_problem); [VanillaIterator(BFSIterator(input_grammar, :X, max_depth = 4), ((time, iteration, cost)->begin
+                                                                    time > 5 || iteration > 2000
+                                                                end), input_problem); VanillaIterator(MHSearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, max_depth = 10), ((time, iteration, cost)->begin
+                                                                    time > 3 || iteration > 5000
+                                                                end), input_problem)]])]]); [SequenceCombinatorIterator([VanillaIterator(SASearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, initial_temperature = 3, temperature_decreasing_factor = 0.92, max_depth = 10), ((time, iteration, cost)->begin
+                                                        time > 6 || iteration > 4000
+                                                    end), input_problem); ParallelCombinatorIterator(ParallelThreads, [VanillaIterator(VLSNSearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, neighbourhood_size = 2), ((time, iteration, cost)->begin
+                                                                time > 4 || iteration > 3000
+                                                            end), input_problem); [VanillaIterator(DFSIterator(input_grammar, :X, max_depth = 4), ((time, iteration, cost)->begin
+                                                                    time > 4 || iteration > 3000
+                                                                end), input_problem); VanillaIterator(DFSIterator(input_grammar, :X, max_depth = 4), ((time, iteration, cost)->begin
+                                                                    time > 5 || iteration > 5000
+                                                                end), input_problem)]])]); SequenceCombinatorIterator([VanillaIterator(SASearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, initial_temperature = 4, temperature_decreasing_factor = 0.92, max_depth = 10), ((time, iteration, cost)->begin
+                                                        time > 6 || iteration > 3000
+                                                    end), input_problem); VanillaIterator(BFSIterator(input_grammar, :X, max_depth = 4), ((time, iteration, cost)->begin
+                                                        time > 3 || iteration > 4000
+                                                    end), input_problem)])]]]); VanillaIterator(SASearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, initial_temperature = 6, temperature_decreasing_factor = 0.97, max_depth = 10), ((time, iteration, cost)->begin
+                                time > 5 || iteration > 5000
+                            end), input_problem)]))
+    end
+____________________________________________________________________________________________________
+Meta Search status
+    - genetic iteration   : 25
+    - current fitness     : 9.44822641461336e-11
+    - Best fitness        : 9.44822641461336e-11
+    - time of iteration   : 1606.7612600326538
+
+____________________________________________________________________________________________________
+Best expr: (input_problem::Problem, input_grammar::AbstractGrammar)->begin
+        generic_run(SequenceCombinatorIterator([ParallelCombinatorIterator(ParallelThreads, [VanillaIterator(VLSNSearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, neighbourhood_size = 1), ((time, iteration, cost)->begin
+                                        time > 3 || iteration > 2000
+                                    end), input_problem); [SequenceCombinatorIterator([VanillaIterator(DFSIterator(input_grammar, :X, max_depth = 4), ((time, iteration, cost)->begin
+                                                    time > 3 || iteration > 5000
+                                                end), input_problem); [ParallelCombinatorIterator(ParallelThreads, [VanillaIterator(SASearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, initial_temperature = 5, temperature_decreasing_factor = 0.96, max_depth = 10), ((time, iteration, cost)->begin
+                                                                time > 3 || iteration > 1000
+                                                            end), input_problem); VanillaIterator(MHSearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, max_depth = 10), ((time, iteration, cost)->begin
+                                                                time > 3 || iteration > 2000
+                                                            end), input_problem)]); ParallelCombinatorIterator(ParallelThreads, [VanillaIterator(BFSIterator(input_grammar, :X, max_depth = 4), ((time, iteration, cost)->begin
+                                                                time > 4 || iteration > 3000
+                                                            end), input_problem); [VanillaIterator(BFSIterator(input_grammar, :X, max_depth = 4), ((time, iteration, cost)->begin
+                                                                    time > 5 || iteration > 2000
+                                                                end), input_problem); VanillaIterator(MHSearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, max_depth = 10), ((time, iteration, cost)->begin
+                                                                    time > 3 || iteration > 5000
+                                                                end), input_problem)]])]]); [SequenceCombinatorIterator([VanillaIterator(SASearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, initial_temperature = 3, temperature_decreasing_factor = 0.92, max_depth = 10), ((time, iteration, cost)->begin
+                                                        time > 6 || iteration > 4000
+                                                    end), input_problem); ParallelCombinatorIterator(ParallelThreads, [VanillaIterator(VLSNSearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, neighbourhood_size = 2), ((time, iteration, cost)->begin
+                                                                time > 4 || iteration > 3000
+                                                            end), input_problem); [VanillaIterator(DFSIterator(input_grammar, :X, max_depth = 4), ((time, iteration, cost)->begin
+                                                                    time > 4 || iteration > 3000
+                                                                end), input_problem); VanillaIterator(DFSIterator(input_grammar, :X, max_depth = 4), ((time, iteration, cost)->begin
+                                                                    time > 5 || iteration > 5000
+                                                                end), input_problem)]])]); SequenceCombinatorIterator([VanillaIterator(SASearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, initial_temperature = 4, temperature_decreasing_factor = 0.92, max_depth = 10), ((time, iteration, cost)->begin
+                                                        time > 6 || iteration > 3000
+                                                    end), input_problem); VanillaIterator(BFSIterator(input_grammar, :X, max_depth = 4), ((time, iteration, cost)->begin
+                                                        time > 3 || iteration > 4000
+                                                    end), input_problem)])]]]); VanillaIterator(SASearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, initial_temperature = 6, temperature_decreasing_factor = 0.97, max_depth = 10), ((time, iteration, cost)->begin
+                                time > 5 || iteration > 5000
+                            end), input_problem)]))
+    end
+____________________________________________________________________________________________________
+Meta Search status
+    - genetic iteration   : 26
+    - current fitness     : 9.44822641461336e-11
+    - Best fitness        : 9.44822641461336e-11
+    - time of iteration   : 1645.206829071045
+
+____________________________________________________________________________________________________
+Best expr: (input_problem::Problem, input_grammar::AbstractGrammar)->begin
+        generic_run(SequenceCombinatorIterator([ParallelCombinatorIterator(ParallelThreads, [VanillaIterator(VLSNSearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, neighbourhood_size = 1), ((time, iteration, cost)->begin
+                                        time > 3 || iteration > 2000
+                                    end), input_problem); [SequenceCombinatorIterator([VanillaIterator(DFSIterator(input_grammar, :X, max_depth = 4), ((time, iteration, cost)->begin
+                                                    time > 3 || iteration > 5000
+                                                end), input_problem); [ParallelCombinatorIterator(ParallelThreads, [VanillaIterator(SASearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, initial_temperature = 5, temperature_decreasing_factor = 0.96, max_depth = 10), ((time, iteration, cost)->begin
+                                                                time > 3 || iteration > 1000
+                                                            end), input_problem); VanillaIterator(MHSearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, max_depth = 10), ((time, iteration, cost)->begin
+                                                                time > 3 || iteration > 2000
+                                                            end), input_problem)]); ParallelCombinatorIterator(ParallelThreads, [VanillaIterator(BFSIterator(input_grammar, :X, max_depth = 4), ((time, iteration, cost)->begin
+                                                                time > 4 || iteration > 3000
+                                                            end), input_problem); [VanillaIterator(BFSIterator(input_grammar, :X, max_depth = 4), ((time, iteration, cost)->begin
+                                                                    time > 5 || iteration > 2000
+                                                                end), input_problem); VanillaIterator(MHSearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, max_depth = 10), ((time, iteration, cost)->begin
+                                                                    time > 3 || iteration > 5000
+                                                                end), input_problem)]])]]); [SequenceCombinatorIterator([VanillaIterator(SASearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, initial_temperature = 3, temperature_decreasing_factor = 0.92, max_depth = 10), ((time, iteration, cost)->begin
+                                                        time > 6 || iteration > 4000
+                                                    end), input_problem); ParallelCombinatorIterator(ParallelThreads, [VanillaIterator(VLSNSearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, neighbourhood_size = 2), ((time, iteration, cost)->begin
+                                                                time > 4 || iteration > 3000
+                                                            end), input_problem); [VanillaIterator(DFSIterator(input_grammar, :X, max_depth = 4), ((time, iteration, cost)->begin
+                                                                    time > 4 || iteration > 3000
+                                                                end), input_problem); VanillaIterator(DFSIterator(input_grammar, :X, max_depth = 4), ((time, iteration, cost)->begin
+                                                                    time > 5 || iteration > 5000
+                                                                end), input_problem)]])]); SequenceCombinatorIterator([VanillaIterator(SASearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, initial_temperature = 4, temperature_decreasing_factor = 0.92, max_depth = 10), ((time, iteration, cost)->begin
+                                                        time > 6 || iteration > 3000
+                                                    end), input_problem); VanillaIterator(BFSIterator(input_grammar, :X, max_depth = 4), ((time, iteration, cost)->begin
+                                                        time > 3 || iteration > 4000
+                                                    end), input_problem)])]]]); VanillaIterator(SASearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, initial_temperature = 6, temperature_decreasing_factor = 0.97, max_depth = 10), ((time, iteration, cost)->begin
+                                time > 5 || iteration > 5000
+                            end), input_problem)]))
+    end
+____________________________________________________________________________________________________
+Meta Search status
+    - genetic iteration   : 27
+    - current fitness     : 9.44822641461336e-11
+    - Best fitness        : 9.44822641461336e-11
+    - time of iteration   : 1607.0999791622162
+
+____________________________________________________________________________________________________
+Best expr: (input_problem::Problem, input_grammar::AbstractGrammar)->begin
+        generic_run(SequenceCombinatorIterator([ParallelCombinatorIterator(ParallelThreads, [VanillaIterator(VLSNSearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, neighbourhood_size = 1), ((time, iteration, cost)->begin
+                                        time > 3 || iteration > 2000
+                                    end), input_problem); [SequenceCombinatorIterator([VanillaIterator(DFSIterator(input_grammar, :X, max_depth = 4), ((time, iteration, cost)->begin
+                                                    time > 3 || iteration > 5000
+                                                end), input_problem); [ParallelCombinatorIterator(ParallelThreads, [VanillaIterator(SASearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, initial_temperature = 5, temperature_decreasing_factor = 0.96, max_depth = 10), ((time, iteration, cost)->begin
+                                                                time > 3 || iteration > 1000
+                                                            end), input_problem); VanillaIterator(MHSearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, max_depth = 10), ((time, iteration, cost)->begin
+                                                                time > 3 || iteration > 2000
+                                                            end), input_problem)]); ParallelCombinatorIterator(ParallelThreads, [VanillaIterator(BFSIterator(input_grammar, :X, max_depth = 4), ((time, iteration, cost)->begin
+                                                                time > 4 || iteration > 3000
+                                                            end), input_problem); [VanillaIterator(BFSIterator(input_grammar, :X, max_depth = 4), ((time, iteration, cost)->begin
+                                                                    time > 5 || iteration > 2000
+                                                                end), input_problem); VanillaIterator(MHSearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, max_depth = 10), ((time, iteration, cost)->begin
+                                                                    time > 3 || iteration > 5000
+                                                                end), input_problem)]])]]); [SequenceCombinatorIterator([VanillaIterator(SASearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, initial_temperature = 3, temperature_decreasing_factor = 0.92, max_depth = 10), ((time, iteration, cost)->begin
+                                                        time > 6 || iteration > 4000
+                                                    end), input_problem); ParallelCombinatorIterator(ParallelThreads, [VanillaIterator(VLSNSearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, neighbourhood_size = 2), ((time, iteration, cost)->begin
+                                                                time > 4 || iteration > 3000
+                                                            end), input_problem); [VanillaIterator(DFSIterator(input_grammar, :X, max_depth = 4), ((time, iteration, cost)->begin
+                                                                    time > 4 || iteration > 3000
+                                                                end), input_problem); VanillaIterator(DFSIterator(input_grammar, :X, max_depth = 4), ((time, iteration, cost)->begin
+                                                                    time > 5 || iteration > 5000
+                                                                end), input_problem)]])]); SequenceCombinatorIterator([VanillaIterator(SASearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, initial_temperature = 4, temperature_decreasing_factor = 0.92, max_depth = 10), ((time, iteration, cost)->begin
+                                                        time > 6 || iteration > 3000
+                                                    end), input_problem); VanillaIterator(BFSIterator(input_grammar, :X, max_depth = 4), ((time, iteration, cost)->begin
+                                                        time > 3 || iteration > 4000
+                                                    end), input_problem)])]]]); VanillaIterator(SASearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, initial_temperature = 6, temperature_decreasing_factor = 0.97, max_depth = 10), ((time, iteration, cost)->begin
+                                time > 5 || iteration > 5000
+                            end), input_problem)]))
+    end
+____________________________________________________________________________________________________
+Meta Search status
+    - genetic iteration   : 28
+    - current fitness     : 9.44822641461336e-11
+    - Best fitness        : 9.44822641461336e-11
+    - time of iteration   : 1579.9187529087067
+
+____________________________________________________________________________________________________
+Best expr: (input_problem::Problem, input_grammar::AbstractGrammar)->begin
+        generic_run(SequenceCombinatorIterator([ParallelCombinatorIterator(ParallelThreads, [VanillaIterator(VLSNSearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, neighbourhood_size = 1), ((time, iteration, cost)->begin
+                                        time > 3 || iteration > 2000
+                                    end), input_problem); [SequenceCombinatorIterator([VanillaIterator(DFSIterator(input_grammar, :X, max_depth = 4), ((time, iteration, cost)->begin
+                                                    time > 3 || iteration > 5000
+                                                end), input_problem); [ParallelCombinatorIterator(ParallelThreads, [VanillaIterator(SASearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, initial_temperature = 5, temperature_decreasing_factor = 0.96, max_depth = 10), ((time, iteration, cost)->begin
+                                                                time > 3 || iteration > 1000
+                                                            end), input_problem); VanillaIterator(MHSearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, max_depth = 10), ((time, iteration, cost)->begin
+                                                                time > 3 || iteration > 2000
+                                                            end), input_problem)]); ParallelCombinatorIterator(ParallelThreads, [VanillaIterator(BFSIterator(input_grammar, :X, max_depth = 4), ((time, iteration, cost)->begin
+                                                                time > 4 || iteration > 3000
+                                                            end), input_problem); [VanillaIterator(BFSIterator(input_grammar, :X, max_depth = 4), ((time, iteration, cost)->begin
+                                                                    time > 5 || iteration > 2000
+                                                                end), input_problem); VanillaIterator(MHSearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, max_depth = 10), ((time, iteration, cost)->begin
+                                                                    time > 3 || iteration > 5000
+                                                                end), input_problem)]])]]); [SequenceCombinatorIterator([VanillaIterator(SASearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, initial_temperature = 3, temperature_decreasing_factor = 0.92, max_depth = 10), ((time, iteration, cost)->begin
+                                                        time > 6 || iteration > 4000
+                                                    end), input_problem); ParallelCombinatorIterator(ParallelThreads, [VanillaIterator(VLSNSearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, neighbourhood_size = 2), ((time, iteration, cost)->begin
+                                                                time > 4 || iteration > 3000
+                                                            end), input_problem); [VanillaIterator(DFSIterator(input_grammar, :X, max_depth = 4), ((time, iteration, cost)->begin
+                                                                    time > 4 || iteration > 3000
+                                                                end), input_problem); VanillaIterator(DFSIterator(input_grammar, :X, max_depth = 4), ((time, iteration, cost)->begin
+                                                                    time > 5 || iteration > 5000
+                                                                end), input_problem)]])]); SequenceCombinatorIterator([VanillaIterator(SASearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, initial_temperature = 4, temperature_decreasing_factor = 0.92, max_depth = 10), ((time, iteration, cost)->begin
+                                                        time > 6 || iteration > 3000
+                                                    end), input_problem); VanillaIterator(BFSIterator(input_grammar, :X, max_depth = 4), ((time, iteration, cost)->begin
+                                                        time > 3 || iteration > 4000
+                                                    end), input_problem)])]]]); VanillaIterator(SASearchIterator(input_grammar, :X, input_problem.spec, mean_squared_error, initial_temperature = 6, temperature_decreasing_factor = 0.97, max_depth = 10), ((time, iteration, cost)->begin
+                                time > 5 || iteration > 5000
+                            end), input_problem)]))
+    end
+____________________________________________________________________________________________________
+srun: Job step aborted: Waiting up to 122 seconds for job step to finish.
+slurmstepd: error: *** JOB 4191102 ON cmp133 CANCELLED AT 2024-07-16T20:58:09 DUE TO TIME LIMIT ***
+slurmstepd: error: *** STEP 4191102.0 ON cmp133 CANCELLED AT 2024-07-16T20:58:09 DUE TO TIME LIMIT ***

@@ -1,6 +1,6 @@
 [fitness]
-number_of_runs_to_average_over = 3
+number_of_runs_to_average_over = 5
 
 [genetic]
 initial_population_size = 10
-initial_program_max_depth = 10
+initial_program_max_depth = 20
