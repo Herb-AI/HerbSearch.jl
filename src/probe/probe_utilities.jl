@@ -26,11 +26,18 @@ function evaluate_program(program::AbstractRuleNode, grammar::AbstractGrammar, e
     eval_observation = []
     expr = rulenode2expr(program, grammar)
     for (example_index, example) ∈ enumerate(examples)
-        output = execute_on_input(symboltable, expr, example.in)
-        push!(eval_observation, output)
+        try
+            output = execute_on_input(symboltable, expr, example.in)
+            push!(eval_observation, output)
 
-        if output == example.out
-            push!(correct_examples, example_index)
+            if output == example.out
+                push!(correct_examples, example_index)
+            end
+        catch e
+            if isa(e, MethodError)
+                println("$expr\t$example\t$e")
+            end
+            continue
         end
     end
     return eval_observation, correct_examples
