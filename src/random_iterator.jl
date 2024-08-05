@@ -1,12 +1,12 @@
 function rand_with_constraints!(solver::Solver,path::Vector{Int})
     skeleton = get_node_at_location(solver,path)
     grammar = get_grammar(solver)
-    @info "The maximum depth is $(get_max_depth(solver) - length(path)). $(get_max_depth(solver))"
+    # @info "The maximum depth is $(get_max_depth(solver) - length(path)). $(get_max_depth(solver))"
     return _rand_with_constraints!(skeleton,solver, path, mindepth_map(grammar), get_max_depth(solver))
 end
 
 function _rand_with_constraints!(skeleton::RuleNode,solver::Solver,path::Vector{Int},dmap::AbstractVector{Int}, remaining_depth::Int=10) 
-    @info "The depth RuleNode left: $remaining_depth"
+    # @info "The depth RuleNode left: $remaining_depth"
 
     for (i,child) ∈ enumerate(skeleton.children)
         push!(path,i)
@@ -17,7 +17,7 @@ function _rand_with_constraints!(skeleton::RuleNode,solver::Solver,path::Vector{
 end
 
 function _rand_with_constraints!(hole::AbstractHole,solver::Solver,path::Vector{Int},dmap::AbstractVector{Int}, remaining_depth::Int=10) 
-    @info "The depth hole left: $remaining_depth"
+    # @info "The depth hole left: $remaining_depth"
 
     hole = get_hole_at_location(solver, path)
 
@@ -26,7 +26,14 @@ function _rand_with_constraints!(hole::AbstractHole,solver::Solver,path::Vector{
     state = save_state!(solver)
     @assert !isfilled(hole)
 
-    shuffle!(filtered_rules)
+    grammar = get_grammar(solver)
+    if isnothing(grammar.log_probabilities)
+        shuffle!(filtered_rules)
+    else
+        weights = map(exp, grammar.log_probabilities[filtered_rules])
+        filtered_rules = sample(filtered_rules, Weights(weights), length(filtered_rules), replace=false)
+    end
+
     found_feasable = false
     for rule_index ∈ filtered_rules
         remove_all_but!(solver,path,rule_index)
@@ -39,7 +46,8 @@ function _rand_with_constraints!(hole::AbstractHole,solver::Solver,path::Vector{
     end
 
     if !found_feasable
-        error("rand with constraints failed because there are no feasible rules to use")
+        return nothing
+        # error("rand with constraints failed because there are no feasible rules to use")
     end
 
     subtree = get_node_at_location(solver, path)
