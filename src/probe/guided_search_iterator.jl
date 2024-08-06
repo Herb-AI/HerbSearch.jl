@@ -38,8 +38,14 @@ function Base.iterate(iter::GuidedSearchIterator, state::GuidedSearchState)::Uni
     grammar = get_grammar(iter.solver)
     start_symbol = get_starting_symbol(iter.solver)
     # wrap in while true to optimize for tail call
+    max_time = 10 
+    start_time = time()
     while true
         while state.next_iter === nothing
+            if time() - start_time > max_time
+                return nothing
+            end
+
             state.level += 1
             push!(state.bank, [])
 
@@ -48,10 +54,15 @@ function Base.iterate(iter::GuidedSearchIterator, state::GuidedSearchState)::Uni
             if state.level > 0
                 @info ("Finished level $(state.level - 1) with $(length(state.bank[state.level])) programs")
                 @info ("Eval_cache size : $(length(state.eval_cache)) programs")
-            end
+           end
         end
         # go over all programs in a level
         while state.next_iter !== nothing
+            if time() - start_time > max_time
+                return nothing
+            end
+
+
             # prog = pop!(state.programs) # get next program
             prog::RuleNode, next_state = state.next_iter
             # move in advance

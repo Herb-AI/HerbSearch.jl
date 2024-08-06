@@ -30,6 +30,7 @@ function _rand_with_constraints!(hole::AbstractHole,solver::Solver,path::Vector{
     if isnothing(grammar.log_probabilities)
         shuffle!(filtered_rules)
     else
+
         weights = map(exp, grammar.log_probabilities[filtered_rules])
         filtered_rules = sample(filtered_rules, Weights(weights), length(filtered_rules), replace=false)
     end
