@@ -27,7 +27,8 @@ end
 Constructs a new UniformIterator that traverses solutions of the [`UniformSolver`](@ref) and is an inner iterator of an outer [`ProgramIterator`](@ref).
 """
 function UniformIterator(solver::UniformSolver, outeriter::Union{ProgramIterator, Nothing})
-    iter = UniformIterator(solver, outeriter, Stack{Vector{Branch}}(), Vector{StateHole}(), 0)
+    iter = UniformIterator(
+        solver, outeriter, Stack{Vector{Branch}}(), Vector{StateHole}(), 0)
     if isfeasible(solver)
         # create search-branches for the root search-node
         save_state!(solver)
@@ -36,7 +37,6 @@ function UniformIterator(solver::UniformSolver, outeriter::Union{ProgramIterator
     end
     return iter
 end
-
 
 """
     function set_stateholes!(iter::UniformIterator, node::Union{StateHole, RuleNode})::Vector{StateHole}
@@ -47,11 +47,10 @@ function set_stateholes!(iter::UniformIterator, node::Union{StateHole, RuleNode}
     if node isa StateHole && size(node.domain) > 1
         push!(iter.stateholes, node)
     end
-    for child ∈ node.children
+    for child in node.children
         set_stateholes!(iter, child)
     end
 end
-
 
 """
 Returns a vector of disjoint branches to expand the search tree at its current state.
@@ -70,20 +69,21 @@ If we split on the first hole, this function will create three branches.
 """
 function generate_branches(iter::UniformIterator)::Vector{Branch}
     #iterate over all the state holes in the tree
-    for hole ∈ iter.stateholes
+    for hole in iter.stateholes
         #pick an unfilled state hole
         if size(hole.domain) > 1
             #skip the derivation_heuristic if the parent_iterator is not set up
             if isnothing(iter.outeriter)
-                return [(hole, rule) for rule ∈ hole.domain]
+                return [(hole, rule) for rule in hole.domain]
             end
             #reversing is needed because we pop and consider the rightmost branch first
-            return reverse!([(hole, rule) for rule ∈ derivation_heuristic(iter.outeriter, findall(hole.domain))])
+            return reverse!([(hole, rule)
+                             for rule in derivation_heuristic(
+                iter.outeriter, findall(hole.domain))])
         end
     end
     return NOBRANCHES
 end
-
 
 """
     next_solution!(iter::UniformIterator)::Union{RuleNode, StateHole, Nothing}
@@ -93,7 +93,9 @@ Returns nothing if all solutions have been found already.
 """
 function next_solution!(iter::UniformIterator)::Union{RuleNode, StateHole, Nothing}
     solver = iter.solver
-    if iter.nsolutions == 1000000 @warn "UniformSolver is iterating over more than 1000000 solutions..." end
+    if iter.nsolutions == 1000000
+        @warn "UniformSolver is iterating over more than 1000000 solutions..."
+    end
     if iter.nsolutions > 0
         # backtrack from the previous solution
         restore!(solver)
@@ -130,7 +132,9 @@ function next_solution!(iter::UniformIterator)::Union{RuleNode, StateHole, Nothi
         end
     end
     if iter.nsolutions == 0 && isfeasible(solver)
-        _isfilledrecursive(node) = isfilled(node) && all(_isfilledrecursive(c) for c ∈ node.children)
+        function _isfilledrecursive(node)
+            isfilled(node) && all(_isfilledrecursive(c) for c in node.children)
+        end
         if _isfilledrecursive(solver.tree)
             # search node is the root and the only solution, return the solution.
             iter.nsolutions += 1
@@ -140,7 +144,6 @@ function next_solution!(iter::UniformIterator)::Union{RuleNode, StateHole, Nothi
     end
     return nothing
 end
-
 
 """
     Base.length(iter::UniformIterator)    
@@ -165,7 +168,7 @@ function Base.iterate(iter::UniformIterator)
     if !isnothing(solution)
         return solution, nothing
     end
-    return nothing 
+    return nothing
 end
 
 Base.iterate(iter::UniformIterator, _) = iterate(iter)

@@ -4,7 +4,10 @@ struct EvaluationError <: Exception
     error::Exception
 end
 
-Base.showerror(io::IO, e::EvaluationError) = print(io, "An exception was thrown while evaluating the expression $(e.expr) on input $(e.input): $(e.error)")
+function Base.showerror(io::IO, e::EvaluationError)
+    print(io,
+        "An exception was thrown while evaluating the expression $(e.expr) on input $(e.input): $(e.error)")
+end
 
 """
     evaluate(problem::Problem{Vector{IOExample}}, expr::Any, tab::SymbolTable; allow_evaluation_errors::Bool=false)
@@ -18,17 +21,18 @@ Optional parameters:
 
 Returns a score in the interval [0, 1]
 """
-function evaluate(problem::Problem{Vector{IOExample}}, expr::Any, symboltable::SymbolTable; shortcircuit::Bool=true, allow_evaluation_errors::Bool=false)::Number
+function evaluate(problem::Problem{Vector{IOExample}}, expr::Any, symboltable::SymbolTable;
+        shortcircuit::Bool = true, allow_evaluation_errors::Bool = false)::Number
     number_of_satisfied_examples = 0
 
     crashed = false
-    for example ∈ problem.spec
+    for example in problem.spec
         try
             output = execute_on_input(symboltable, expr, example.in)
             if (output == example.out)
                 number_of_satisfied_examples += 1
             elseif (shortcircuit)
-                break;
+                break
             end
         catch e
             # You could also decide to handle less severe errors (such as index out of range) differently,
@@ -41,6 +45,5 @@ function evaluate(problem::Problem{Vector{IOExample}}, expr::Any, symboltable::S
         end
     end
 
-    return number_of_satisfied_examples/length(problem.spec);
+    return number_of_satisfied_examples / length(problem.spec)
 end
-

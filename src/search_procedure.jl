@@ -24,28 +24,27 @@ Synthesize a program that satisfies the maximum number of examples in the proble
 Returns a tuple of the rulenode representing the solution program and a synthresult that indicates if that program is optimal. `synth` uses `evaluate` which returns a score in the interval [0, 1] and checks whether that score reaches 1. If not it will return the best program so far, with the proper flag
 """
 function synth(
-    problem::Problem,
-    iterator::ProgramIterator; 
-    shortcircuit::Bool=true, 
-    allow_evaluation_errors::Bool=false,
-    max_time = typemax(Int),
-    max_enumerations = typemax(Int),
-    mod::Module=Main
-    
-)::Union{Tuple{RuleNode, SynthResult}, Nothing}
+        problem::Problem,
+        iterator::ProgramIterator;
+        shortcircuit::Bool = true,
+        allow_evaluation_errors::Bool = false,
+        max_time = typemax(Int),
+        max_enumerations = typemax(Int),
+        mod::Module = Main)::Union{Tuple{RuleNode, SynthResult}, Nothing}
     start_time = time()
     grammar = get_grammar(iterator.solver)
-    symboltable :: SymbolTable = SymbolTable(grammar, mod)
+    symboltable::SymbolTable = SymbolTable(grammar, mod)
 
     best_score = 0
     best_program = nothing
-    
-    for (i, candidate_program) ∈ enumerate(iterator)
+
+    for (i, candidate_program) in enumerate(iterator)
         # Create expression from rulenode representation of AST
         expr = rulenode2expr(candidate_program, grammar)
 
         # Evaluate the expression
-        score = evaluate(problem, expr, symboltable, shortcircuit=shortcircuit, allow_evaluation_errors=allow_evaluation_errors)
+        score = evaluate(problem, expr, symboltable, shortcircuit = shortcircuit,
+            allow_evaluation_errors = allow_evaluation_errors)
         if score == 1
             candidate_program = freeze_state(candidate_program)
             return (candidate_program, optimal_program)
@@ -57,7 +56,7 @@ function synth(
 
         # Check stopping criteria
         if i > max_enumerations || time() - start_time > max_time
-            break;
+            break
         end
     end
 

@@ -14,7 +14,6 @@ function const_temperature(current_temperature::Real)
     return current_temperature
 end
 
-
 """
     decreasing_temperature(percentage::Real)
 

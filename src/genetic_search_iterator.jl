@@ -23,41 +23,42 @@ end
 """ GeneticSearchIterator
 @programiterator GeneticSearchIterator(
     spec::Vector{<:IOExample},
-    evaluation_function::Function=execute_on_input, 
-     
-    population_size::Int64=10, 
-    mutation_probability::Float64=0.1, 
-    maximum_initial_population_depth::Int64=3
-   )
+    evaluation_function::Function = execute_on_input, population_size::Int64 = 10,
+    mutation_probability::Float64 = 0.1,
+    maximum_initial_population_depth::Int64 = 3
+)
 
 """
     fitness(::GeneticSearchIterator, program, results)
 
 Assigns a numerical value (fitness score) to each individual based on how closely it meets the desired objective.
 """
-fitness(::GeneticSearchIterator, program::RuleNode, results::AbstractVector{<:Tuple{Any, Any}}) = default_fitness(program, results)
+fitness(::GeneticSearchIterator, program::RuleNode, results::AbstractVector{<:Tuple{Any, Any}}) = default_fitness(
+    program, results)
 
 """
     cross_over(::GeneticSearchIterator, parent_1::RuleNode, parent_2::RuleNode)
 
 Combines the program from two parent individuals to create one or more offspring individuals.
 """
-cross_over(::GeneticSearchIterator, parent_1::RuleNode, parent_2::RuleNode) = crossover_swap_children_2(parent_1, parent_2)
-
+cross_over(::GeneticSearchIterator, parent_1::RuleNode, parent_2::RuleNode) = crossover_swap_children_2(
+    parent_1, parent_2)
 
 """
     mutate!(::GeneticSearchIterator, program::RuleNode, grammar::AbstractGrammar, max_depth::Int = 2)
 
 Mutates the program of an invididual.
 """
-mutate!(::GeneticSearchIterator, program::RuleNode, grammar::AbstractGrammar, max_depth::Int = 2) = mutate_random!(program, grammar, max_depth)
+mutate!(::GeneticSearchIterator, program::RuleNode, grammar::AbstractGrammar, max_depth::Int = 2) = mutate_random!(
+    program, grammar, max_depth)
 
 """
     select_parents(::GeneticSearchIterator, population::Array{RuleNode}, fitness_array::Array{<:Real})
 
 Selects two parents for the crossover.
 """
-select_parents(::GeneticSearchIterator, population::Array{RuleNode}, fitness_array::Array{<:Real}) = select_fitness_proportional_parents(population, fitness_array)
+select_parents(::GeneticSearchIterator, population::Array{RuleNode}, fitness_array::Array{<:Real}) = select_fitness_proportional_parents(
+    population, fitness_array)
 
 struct GeneticIteratorState
     population::Array{RuleNode}
@@ -66,19 +67,17 @@ end
 Base.IteratorSize(::GeneticSearchIterator) = Base.SizeUnknown()
 Base.eltype(::GeneticSearchIterator) = RuleNode
 
-
 """
     validate_iterator(iter)
 
 Validates the parameters of the iterator
 """
 function validate_iterator(iter)
-    if iter.population_size <= 0 
+    if iter.population_size <= 0
         throw(AlgorithmStateIsInvalid("The iterator population size: '$(iter.population_size)' should be > 0"))
     end
 
-    if !hasmethod(fitness, Tuple{typeof(iter), RuleNode, AbstractVector{<:Tuple{Any,Any}}})
-
+    if !hasmethod(fitness, Tuple{typeof(iter), RuleNode, AbstractVector{<:Tuple{Any, Any}}})
         throw(AlgorithmStateIsInvalid("The iterator fitness function should have two parameters: the program and an Vector with pair of tuples [(expected, value)]"))
     end
 
@@ -110,24 +109,26 @@ end
 
 Returns the best program within the population with respect to the fitness function.
 """
-function get_best_program(population::Array{RuleNode}, iter::GeneticSearchIterator)::RuleNode
+function get_best_program(
+        population::Array{RuleNode}, iter::GeneticSearchIterator)::RuleNode
     best_program = nothing
     best_fitness = 0
     grammar = get_grammar(iter.solver)
-    for index ∈ eachindex(population)
+    for index in eachindex(population)
         chromosome = population[index]
-        zipped_outputs = zip([example.out for example in iter.spec], execute_on_input(grammar, chromosome, [example.in for example in iter.spec]))
+        zipped_outputs = zip([example.out for example in iter.spec],
+            execute_on_input(grammar, chromosome, [example.in for example in iter.spec]))
         fitness_value = fitness(iter, chromosome, collect(zipped_outputs))
-        if isnothing(best_program) 
+        if isnothing(best_program)
             best_fitness = fitness_value
             best_program = chromosome
-        else 
+        else
             if fitness_value > best_fitness
                 best_fitness = fitness_value
                 best_program = chromosome
             end
         end
-    end 
+    end
     return best_program
 end
 
@@ -139,18 +140,18 @@ Iterates the search space using a genetic algorithm. First generates a populatio
 function Base.iterate(iter::GeneticSearchIterator)
     validate_iterator(iter)
     grammar = get_grammar(iter.solver)
-    
-    population = Vector{RuleNode}(undef,iter.population_size)
+
+    population = Vector{RuleNode}(undef, iter.population_size)
 
     start_symbol = get_starting_symbol(iter.solver)
-    for i in 1:iter.population_size
+    for i in 1:(iter.population_size)
         # sample a random nodes using start symbol and grammar
-        population[i] = rand(RuleNode, grammar, start_symbol, iter.maximum_initial_population_depth)
-    end 
+        population[i] = rand(
+            RuleNode, grammar, start_symbol, iter.maximum_initial_population_depth)
+    end
     best_program = get_best_program(population, iter)
     return (best_program, GeneticIteratorState(population))
 end
-
 
 """
     Base.iterate(iter::GeneticSearchIterator, current_state::GeneticIteratorState)
@@ -158,25 +159,29 @@ end
 Iterates the search space using a genetic algorithm. Takes the iterator and the current state to mutate and crossover random inviduals. Returns the best program-so-far and the state of the iterator.
 """
 function Base.iterate(iter::GeneticSearchIterator, current_state::GeneticIteratorState)
-
     current_population = current_state.population
 
     # Calculate fitness
-    zipped_outputs(chromosome) = zip([example.out for example in iter.spec], execute_on_input(get_grammar(iter.solver), chromosome, [example.in for example in iter.spec]))
-    fitness_array = [fitness(iter, chromosome, collect(zipped_outputs(chromosome))) for chromosome in current_population]
-    
-    new_population = Vector{RuleNode}(undef,iter.population_size)
+    function zipped_outputs(chromosome)
+        zip([example.out for example in iter.spec],
+            execute_on_input(get_grammar(iter.solver), chromosome,
+                [example.in for example in iter.spec]))
+    end
+    fitness_array = [fitness(iter, chromosome, collect(zipped_outputs(chromosome)))
+                     for chromosome in current_population]
+
+    new_population = Vector{RuleNode}(undef, iter.population_size)
 
     # put the best program in the first slot of the population
     best_program = get_best_program(current_population, iter)
     new_population[begin] = best_program
-    
+
     # do crossover
     index = 2
     while index <= iter.population_size
         parent1, parent2 = select_parents(iter, current_population, fitness_array)
         children = cross_over(iter, parent1, parent2)
-        for child ∈ children
+        for child in children
             if index > iter.population_size
                 break
             end

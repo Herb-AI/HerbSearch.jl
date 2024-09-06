@@ -12,9 +12,10 @@ Returns a list with only one proposed, completely random, subprogram.
 - `dict::Dict{String, Any}`: the dictionary with additional arguments; not used.
 - `nr_random`=1 : the number of random subprograms to be generated.
 """
-function random_fill_propose(solver::Solver, path::Vector{Int}, dict::Union{Nothing,Dict{String,Any}}, nr_random=1)
+function random_fill_propose(solver::Solver, path::Vector{Int},
+        dict::Union{Nothing, Dict{String, Any}}, nr_random = 1)
     return Iterators.take(RandomSearchIterator(solver, path), nr_random)
-end 
+end
 
 """
     enumerate_neighbours_propose(enumeration_depth::Int64)
@@ -22,9 +23,7 @@ end
 The return function is a function that produces a list with all the subprograms with depth at most `enumeration_depth`.
 """
 function enumerate_neighbours_propose(enumeration_depth::Int64)
-    return (solver::Solver, path::Vector{Int}, dict::Union{Nothing,Dict{String,Any}}) -> begin
+    return (solver::Solver, path::Vector{Int}, dict::Union{Nothing, Dict{String, Any}}) -> begin
         return BFSIterator(solver)
     end
 end
-    
-
