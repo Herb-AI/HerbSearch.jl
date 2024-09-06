@@ -1,7 +1,6 @@
 using HerbCore, HerbGrammar, HerbConstraints
 
 @testset verbose=true "Forbidden" begin
-
     @testset "Number of candidate programs" begin
         #with constraints
         grammar = @csgrammar begin
@@ -11,14 +10,14 @@ using HerbCore, HerbGrammar, HerbConstraints
         end
 
         #without constraints
-        iter = BFSIterator(grammar, :Number, max_depth=3)
+        iter = BFSIterator(grammar, :Number, max_depth = 3)
         @test length(iter) == 202
-        
+
         constraint = Forbidden(RuleNode(4, [RuleNode(1), RuleNode(1)]))
         addconstraint!(grammar, constraint)
 
         #with constraints
-        iter = BFSIterator(grammar, :Number, max_depth=3)
+        iter = BFSIterator(grammar, :Number, max_depth = 3)
         @test length(iter) == 163
     end
 
@@ -33,7 +32,9 @@ using HerbCore, HerbGrammar, HerbConstraints
 
         solver = GenericSolver(grammar, :Number, max_depth = 3)
         #jump start with new_state!
-        new_state!(solver, RuleNode(3, [Hole(get_domain(grammar, :Number)), Hole(get_domain(grammar, :Number))]))
+        new_state!(solver,
+            RuleNode(3,
+                [Hole(get_domain(grammar, :Number)), Hole(get_domain(grammar, :Number))]))
         iter = BFSIterator(solver)
 
         @test length(iter) == 12
@@ -61,22 +62,25 @@ using HerbCore, HerbGrammar, HerbConstraints
         constraint = Forbidden(RuleNode(4, [VarNode(:x), VarNode(:x)]))
         addconstraint!(grammar, constraint)
 
-        partial_tree = RuleNode(4, [
-            RuleNode(4, [
-                RuleNode(3, [
-                    RuleNode(1), 
-                    RuleNode(1)
-                ]), 
-                UniformHole(BitVector((1, 1, 0, 0)), [])
-            ]), 
-            UniformHole(BitVector((0, 0, 1, 1)), [
-                RuleNode(3, [
-                    RuleNode(1), 
-                    RuleNode(1)
-                ]), 
-                RuleNode(1)
-            ]), 
-        ])
+        partial_tree = RuleNode(4,
+            [
+                RuleNode(4,
+                    [
+                        RuleNode(3, [
+                            RuleNode(1),
+                            RuleNode(1)
+                        ]),
+                        UniformHole(BitVector((1, 1, 0, 0)), [])
+                    ]),
+                UniformHole(BitVector((0, 0, 1, 1)),
+                    [
+                        RuleNode(3, [
+                            RuleNode(1),
+                            RuleNode(1)
+                        ]),
+                        RuleNode(1)
+                    ])
+            ])
 
         solver = GenericSolver(grammar, :Number)
         iter = BFSIterator(solver)
@@ -85,13 +89,13 @@ using HerbCore, HerbGrammar, HerbConstraints
     end
 
     @testset "DomainRuleNode" begin
-        function get_grammar1() 
+        function get_grammar1()
             # Use 5 constraints to forbid rules 1, 2, 3, 4 and 5
             grammar = @csgrammar begin
                 Int = |(1:5)
                 Int = x
                 Int = Int + Int
-            end  
+            end
             constraint1 = Forbidden(RuleNode(1))
             constraint2 = Forbidden(RuleNode(2))
             constraint3 = Forbidden(RuleNode(3))
@@ -105,22 +109,23 @@ using HerbCore, HerbGrammar, HerbConstraints
             return grammar
         end
 
-        function get_grammar2() 
+        function get_grammar2()
             # Use a DomainRuleNode to forbid rules 1, 2, 3, 4 and 5
             grammar = @csgrammar begin
                 Int = |(1:5)
                 Int = x
                 Int = Int + Int
             end
-            constraint_combined = Forbidden(DomainRuleNode(BitVector((1, 1, 1, 1, 1, 0, 0)), []))
+            constraint_combined = Forbidden(DomainRuleNode(
+                BitVector((1, 1, 1, 1, 1, 0, 0)), []))
             addconstraint!(grammar, constraint_combined)
             return grammar
         end
-        
-        iter1 = BFSIterator(get_grammar1(), :Int, max_depth=4, max_size=100)
+
+        iter1 = BFSIterator(get_grammar1(), :Int, max_depth = 4, max_size = 100)
         number_of_programs1 = length(iter1)
 
-        iter2 = BFSIterator(get_grammar2(), :Int, max_depth=4, max_size=100)
+        iter2 = BFSIterator(get_grammar2(), :Int, max_depth = 4, max_size = 100)
         number_of_programs2 = length(iter2)
 
         @test number_of_programs1 == 26

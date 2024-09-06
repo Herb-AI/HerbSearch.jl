@@ -8,18 +8,18 @@ using HerbCore, HerbGrammar, HerbConstraints
             Int = Int + Int
             Int = 1
         end
-        
+
         constraint = ContainsSubtree(
             RuleNode(2, [
+            RuleNode(1),
+            RuleNode(2, [
                 RuleNode(1),
-                RuleNode(2, [
-                    RuleNode(1),
-                    RuleNode(1)
-                ])
+                RuleNode(1)
             ])
+        ])
         )
-        
-        test_constraint!(grammar, constraint, max_size=6)
+
+        test_constraint!(grammar, constraint, max_size = 6)
     end
 
     @testset "1 VarNode" begin
@@ -29,15 +29,15 @@ using HerbCore, HerbGrammar, HerbConstraints
             Int = Int + Int
             Int = 1
         end
-        
+
         constraint = ContainsSubtree(
             RuleNode(2, [
-                RuleNode(1),
-                VarNode(:x)
-            ])
+            RuleNode(1),
+            VarNode(:x)
+        ])
         )
-        
-        test_constraint!(grammar, constraint, max_size=6)
+
+        test_constraint!(grammar, constraint, max_size = 6)
     end
 
     @testset "2 VarNodes" begin
@@ -47,35 +47,34 @@ using HerbCore, HerbGrammar, HerbConstraints
             Int = Int + Int
             Int = 1
         end
-        
+
         constraint = ContainsSubtree(
             RuleNode(2, [
-                VarNode(:x),
-                VarNode(:x)
-            ])
+            VarNode(:x),
+            VarNode(:x)
+        ])
         )
-        
-        test_constraint!(grammar, constraint, max_size=6)
+
+        test_constraint!(grammar, constraint, max_size = 6)
     end
 
-    
     @testset "No StateHoles" begin
         grammar = @csgrammar begin
             Int = x
             Int = Int + Int
         end
-        
+
         constraint = ContainsSubtree(
             RuleNode(2, [
+            RuleNode(1),
+            RuleNode(2, [
                 RuleNode(1),
-                RuleNode(2, [
-                    RuleNode(1),
-                    RuleNode(1)
-                ])
+                RuleNode(1)
             ])
+        ])
         )
-        
-        test_constraint!(grammar, constraint, max_size=6)
+
+        test_constraint!(grammar, constraint, max_size = 6)
     end
 
     @testset "Permutations" begin

@@ -1,7 +1,6 @@
 using HerbCore, HerbGrammar, HerbConstraints
 
 @testset verbose=true "Contains" begin
-
     @testset "Permutation grammar" begin
         # A grammar that represents all permutations of (1, 2, 3, 4, 5)
         grammar = @csgrammar begin
