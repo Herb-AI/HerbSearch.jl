@@ -29,7 +29,10 @@ function priority_function(
     isrequeued::Bool
 )
     #the default priority function is the bfs priority function
-    parent_value + 1;
+    if isrequeued
+        return parent_value;
+    end
+    return parent_value + 1;
 end
 
 """
@@ -82,47 +85,36 @@ function derivation_heuristic(::RandomIterator, indices::Vector{Int})
     return Random.shuffle!(indices);
 end
 
+"""
+    AbstractBFSIterator <: TopDownIterator
+
+This is the supertype for all breadth-first search iterators. It inherits all stop-criteria and traversal mechanisms from `TopDownIterator`.
+"""
+abstract type AbstractBFSIterator <: TopDownIterator end
+
 
 Base.@doc """
     @programiterator BFSIterator() <: TopDownIterator
 
-Returns a breadth-first iterator given a grammar and a starting symbol. Returns trees in the grammar in increasing order of size. Inherits all stop-criteria from TopDownIterator.
+Creates a breadth-first search iterator for traversing given a grammar, starting from the given symbol. The iterator returns trees in the grammar in increasing order of size.
 """ BFSIterator
-@programiterator BFSIterator() <: TopDownIterator
+@programiterator BFSIterator() <: AbstractBFSIterator
 
 """
-    priority_function(::BFSIterator, g::AbstractGrammar, tree::AbstractRuleNode, parent_value::Union{Real, Tuple{Vararg{Real}}}, isrequeued::Bool)
+    AbstractDFSIterator <: TopDownIterator
 
-Assigns priority such that the search tree is traversed like in a BFS manner
+This is the supertype for all depth-first search iterators. It inherits all stop-criteria and from `TopDownIterator`, but the traversal mechanism is 
+implemented to perform a depth-first search.
 """
-function priority_function(
-    ::BFSIterator, 
-    ::AbstractGrammar, 
-    ::AbstractRuleNode, 
-    parent_value::Union{Real, Tuple{Vararg{Real}}},
-    isrequeued::Bool
-)
-    if isrequeued
-        return parent_value;
-    end
-    return parent_value + 1;
-end
-
-
-Base.@doc """
-    @programiterator DFSIterator() <: TopDownIterator
-
-Returns a depth-first search enumerator given a grammar and a starting symbol. Returns trees in the grammar in decreasing order of size. Inherits all stop-criteria from TopDownIterator.
-""" DFSIterator
-@programiterator DFSIterator() <: TopDownIterator
+abstract type AbstractDFSIterator <: TopDownIterator end
 
 """
-    priority_function(::DFSIterator, g::AbstractGrammar, tree::AbstractRuleNode, parent_value::Union{Real, Tuple{Vararg{Real}}}, isrequeued::Bool)
+    priority_function(::AbstractDFSIterator, g::AbstractGrammar, tree::AbstractRuleNode, parent_value::Union{Real, Tuple{Vararg{Real}}}, isrequeued::Bool)
 
-Assigns priority such that the search tree is traversed like in a DFS manner
+Assigns priority such that the search tree is traversed like in a DFS manner. 
 """
 function priority_function(
-    ::DFSIterator, 
+    ::AbstractDFSIterator, 
     ::AbstractGrammar, 
     ::AbstractRuleNode, 
     parent_value::Union{Real, Tuple{Vararg{Real}}},
@@ -133,7 +125,14 @@ function priority_function(
     end
     return parent_value - 1;
 end
+# TODO: concrete type 
 
+Base.@doc """
+    @programiterator DFSIterator() <: AbstractDFSIterator
+
+Creates a depth-first search iterator for traversing a given a grammar, starting from a given symbol. The iterator returns trees in the grammar in decreasing order of size. 
+""" DFSIterator
+@programiterator DFSIterator() <: AbstractDFSIterator
 
 Base.@doc """
     @programiterator MLFSIterator() <: TopDownIterator
