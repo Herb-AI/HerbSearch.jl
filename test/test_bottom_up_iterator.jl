@@ -12,7 +12,7 @@
         
         problem = Problem([IOExample(Dict(:x => (fst, snd)), min(fst, snd)) for (fst, snd) in [(4, 5), (12, 14), (13, 10), (5, 1)]])        
 
-        iterator = DepthIterator(g, :intExpr, problem)
+        iterator = BUDepthIterator(g, :intExpr, problem)
         solution, flag = synth(problem, iterator) 
         program = rulenode2expr(solution, g)
 
@@ -28,7 +28,7 @@
         end
         
         problem = Problem([IOExample(Dict(:x => x), 2x+1) for x ∈ 1:5])       
-        iterator = DepthIterator(g, :Number, problem)
+        iterator = BUDepthIterator(g, :Number, problem)
 
         solution, flag = synth(problem, iterator) 
         program = rulenode2expr(solution, g)
@@ -46,7 +46,7 @@
         constraint = Forbidden(RuleNode(4, [RuleNode(1), RuleNode(2)]))
         addconstraint!(grammar, constraint)
 
-        programs = collect(DepthIterator(grammar, :Number, problem, max_depth=2))
+        programs = collect(BUDepthIterator(grammar, :Number, problem, max_depth=2))
         @test RuleNode(4, [RuleNode(1), RuleNode(2)]) ∉ programs
     end
 end
