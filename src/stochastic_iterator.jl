@@ -180,7 +180,7 @@ calculate_cost(iter::T, program::Union{RuleNode, StateHole}) where T <: Stochast
 
 
 """
-    AbstractMHIterator <: StochasticSearchIterator
+    AbstractMHSearchIterator <: StochasticSearchIterator
 
 This is the supertype for all Metropolis Hastings (MH) search iterators. It inherits all behaviour from [`StochasticSearchIterator`](@ref).
 """
