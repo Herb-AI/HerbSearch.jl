@@ -1,8 +1,8 @@
-"""
+Base.@doc """
     @programiterator BUDepthIterator(problem::Problem{Vector{IOExample}}) <: BottomUpIterator
 
 Implementation of the `BottomUpIterator`. Iterates through complete programs in increasing order of their depth.
-"""
+""" BUDepthIterator
 @programiterator BUDepthIterator(problem::Problem{Vector{IOExample}}) <: BottomUpIterator
 
 """

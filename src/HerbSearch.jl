@@ -1,7 +1,6 @@
 module HerbSearch
 
 using DataStructures
-using Combinatorics
 
 using HerbCore
 using HerbGrammar
