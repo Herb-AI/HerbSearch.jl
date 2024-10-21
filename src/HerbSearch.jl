@@ -17,6 +17,7 @@ include("uniform_iterator.jl")
 
 include("heuristics.jl")
 
+include("bottom_up_iterators/nested_rulenode_iterator.jl")
 include("bottom_up_iterators/bottom_up_iterator.jl")
 include("bottom_up_iterators/bottom_up_depth_iterator.jl")
 

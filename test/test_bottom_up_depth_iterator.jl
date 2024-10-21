@@ -35,6 +35,23 @@
 
         @test execute_on_input(SymbolTable(g), program, Dict(:x => 6)) == 2*6+1
     end
+    @testset "Arithmetic grammar iteration order" begin
+        g = @csgrammar begin
+            Number = |(0:1)
+            Number = x
+            Number = Number + Number
+        end
+    
+        problem = Problem([IOExample(Dict(:x => x), 2x+1) for x ∈ 1:5])       
+        iterator = BUDepthIterator(g, :Number, problem)
+
+        iterated_programs = []
+        for (index, program) ∈ Iterators.take(enumerate(iterator), 7)
+            push!(iterated_programs, rulenode2expr(program, g))
+        end
+
+        @test iterated_programs == [0, 1, :x, :(1 + 1), :(x + 1), :(x + x), :((1 + 1) + 1)]
+    end
     @testset "Arithmetic grammar with constraints" begin
         grammar = @csgrammar begin
             Number = x | 1
