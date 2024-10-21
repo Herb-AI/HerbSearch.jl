@@ -125,7 +125,6 @@ function priority_function(
     end
     return parent_value - 1;
 end
-# TODO: concrete type 
 
 Base.@doc """
     @programiterator DFSIterator() <: AbstractDFSIterator

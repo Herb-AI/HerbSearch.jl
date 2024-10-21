@@ -3,51 +3,63 @@ using Random
  """
      abstract type StochasticSearchIterator <: ProgramIterator
 
- A unified abstract type for the algorithms Metropolis Hastings, Very Large Scale Neighbourhood and Simulated Annealing. 
- Each algorithm implements `neighbourhood`, `propose`, `accept` and `temperature` functions. Below the signatures of each function is shown.
-
- ## Signatures
- ---
- Returns a node location from the program that is the neighbourhood. It can also return other information using  `dict`
-
-    neighbourhood(iter::T, current_program::RuleNode) where T <: StochasticSearchIterator -> (loc::NodeLocation, dict::Dict)
- ---
- Proposes a list of programs using the location provided by `neighbourhood` and the `dict`.
-   
-     propose(iter::T, current_program::RuleNode, neighbourhood_node_loc::NodeLoc, dmap::AbstractVector{Int}, dict::Union{Nothing,Dict{String,Any}}) where T <: StochasticSearchIterator -> Iter[RuleNode]
- ----
-
- Based on the current program and possible cost and temperature it accepts the program or not. Usually we would always want to accept
- better programs but we might get stuck if we do so. That is why some implementations of the `accept` function accept with a probability 
- costs that are worse. 
- `cost` means how different are the outcomes of the program compared to the correct outcomes.
- The lower the `cost` the better the program performs on the examples. The `cost` is provided by the `cost_function`
-
-    accept(::T, current_cost::Real, next_cost::Real, temperature::Real) where T <: StochasticSearchIterator -> Bool
- ----
- Returns the new temperature based on the previous temperature. Higher the `temperature` means that the algorithm will explore more.
-   
-    temperature(::T, current_temperature::Real) where T <: StochasticSearchIterator -> Real
- ---
- Returns the cost of the current program. It receives a list of tuples `(expected, found)` and gives back a cost.
-   
-     cost_function(outcomes::Tuple{<:Number,<:Number}[]) -> Real
-
+A unified abstract type for the stochastic search algorithms Metropolis Hastings, Very Large Scale Neighbourhood and Simulated Annealing. 
+Iterators are customisable by overloading the followign functions:
+ - `neighbourhood`
+ - `propose`
+ - `temperature`
+ - `accept`. 
  ----
  # Fields
  -   `examples::Vector{IOExample}` example used to check the program
- -   `cost_function::Function`
+ -   `cost_function::Function`. Returns the cost of the current program. It receives a list of tuples for (expected, found) and gives back a cost. 
  -   `initial_temperature::Real` = 1 
  -   `evaluation_function`::Function that evaluates the julia expressions
  An iterator over all possible expressions of a grammar up to max_depth with start symbol sym. Also inherits all stop criteria like `max_depth` from `ProgramIterator`.
  """
 abstract type StochasticSearchIterator <: ProgramIterator end
 
+"""
+    neighbourhood(iter::StochasticSearchIterator, current_program::RuleNode) 
+
+Returns a node location from the neighbourhood of the current program. 
+"""
+neighbourhood(iter::StochasticSearchIterator, current_program::RuleNode) = constructNeighbourhood(current_program, get_grammar(iter.solver))
+
+
+"""
+    propose(iter::StochasticSearchIterator, path::Vector{Int}, dict::Union{Nothing,Dict{String,Any}})
+
+Proposes a list of programs to fill in the location provided by `path` and the `dict`.
+"""
+propose(iter::StochasticSearchIterator, path::Vector{Int}, dict::Union{Nothing,Dict{String,Any}}) = random_fill_propose(iter.solver, path, dict)
+
+"""
+    temperature(::StochasticSearchIterator, current_temperature::Real)
+
+Returns the new temperature based on the current temperature. A higher temperature means that the algorithm will explore more.
+"""
+temperature(::StochasticSearchIterator, current_temperature::Real) = const_temperature(current_temperature)
+
+"""
+    accept(::StochasticSearchIterator, current_cost::Real, next_cost::Real, temperature::Real)
+
+Based on the current program and possible cost and temperature a program is accepted or not. Usually we would always want to accept
+better programs but we might get stuck if we do so. That is why some implementations of the `accept` function accept with a probability 
+costs that are worse. 
+`cost` means how different are the outcomes of the program compared to the correct outcomes.
+The lower the `cost` the better the program performs on the examples. The `cost` is provided by the `cost_function`
+"""
+accept(::StochasticSearchIterator, current_cost::Real, next_cost::Real, temperature::Real) = probabilistic_accept(current_cost, next_cost, temperature)
+
 struct IteratorState
     current_program::RuleNode
     current_temperature::Real
     dmap::AbstractVector{Int} # depth map of each rule
 end
+
+
+
 
 Base.IteratorSize(::StochasticSearchIterator) = Base.SizeUnknown()
 Base.eltype(::StochasticSearchIterator) = RuleNode
@@ -163,10 +175,17 @@ end
     calculate_cost(iter::T, program::Union{RuleNode, StateHole}) where T <: StochasticSearchIterator
 
 Wrapper around [`_calculate_cost`](@ref).
+TODO: move somewhere else in code? Refactor?. 
 """
 calculate_cost(iter::T, program::Union{RuleNode, StateHole}) where T <: StochasticSearchIterator = _calculate_cost(program, iter.cost_function, iter.spec, get_grammar(iter.solver), iter.evaluation_function)
 
-neighbourhood(iter::T, current_program::RuleNode) where T <: StochasticSearchIterator = constructNeighbourhood(current_program, get_grammar(iter.solver))
+
+"""
+    AbstractMHIterator <: StochasticSearchIterator
+
+This is the supertype for all MH search iterators. It inherits all stop-criteria and from [`StochasticSearchIterator`](@ref).
+"""
+abstract type AbstractMHSearchIterator <: StochasticSearchIterator end
 
 Base.@doc """
     MHSearchIterator(examples::AbstractArray{<:IOExample}, cost_function::Function, evaluation_function::Function=HerbInterpret.execute_on_input)
@@ -184,20 +203,27 @@ The temperature value of the algorithm remains constant over time.
     cost_function::Function,
     initial_temperature::Real = 1,
     evaluation_function::Function = execute_on_input, 
-) <: StochasticSearchIterator
+) <: AbstractMHSearchIterator
 
-propose(iter::MHSearchIterator, path::Vector{Int}, dict::Union{Nothing,Dict{String,Any}}) = random_fill_propose(iter.solver, path, dict)
+"""
+    AbstractVLSNSearchIterator <: StochasticSearchIterator
 
-temperature(::MHSearchIterator, current_temperature::Real) = const_temperature(current_temperature)
+This is the supertype for all VLSN search iterators. 
+TODO: more
+"""
+abstract type AbstractVLSNSearchIterator <: StochasticSearchIterator end
 
-accept(::MHSearchIterator, current_cost::Real, next_cost::Real, temperature::Real) = probabilistic_accept(current_cost, next_cost, temperature)
+# TODO: add docstrings 
+propose(iter::AbstractVLSNSearchIterator, path::Vector{Int}, dict::Union{Nothing,Dict{String,Any}}) = enumerate_neighbours_propose(iter.vlsn_neighbourhood_depth)(iter.solver, path, dict)
+temperature(::AbstractVLSNSearchIterator, current_temperature::Real) = const_temperature(current_temperature)
+accept(::AbstractVLSNSearchIterator, current_cost::Real, next_cost::Real, temperature::Real) = best_accept(current_cost, next_cost, temperature)
 
 Base.@doc """
     VLSNSearchIterator(spec, cost_function, enumeration_depth = 2, evaluation_function::Function=HerbInterpret.execute_on_input) = StochasticSearchIterator(
 
 Returns an iterator that runs according to the Very Large Scale Neighbourhood Search algorithm.
 - `spec` : array of examples
-- `cost_function` : cost function to evaluate the programs proposed
+- `cost_function` : cost function to evaluate the proposed programs
 - `vlsn_neighbourhood_depth` : the enumeration depth to search for a best program at a time
 - `evaluation_function` : evaluation function that evaluates the program generated and produces an output
 The propose function consists of all possible programs of the given `enumeration_depth`. The accept function accepts the program
@@ -210,14 +236,22 @@ The temperature value of the algorithm remains constant over time.
     vlsn_neighbourhood_depth::Int = 2,
     initial_temperature::Real = 1,
     evaluation_function::Function = execute_on_input
-) <: StochasticSearchIterator
+) <: AbstractVLSNSearchIterator
 
-propose(iter::VLSNSearchIterator, path::Vector{Int}, dict::Union{Nothing,Dict{String,Any}}) = enumerate_neighbours_propose(iter.vlsn_neighbourhood_depth)(iter.solver, path, dict)
+"""
+    AbstractSASearchIterator <: StochasticSearchIterator
 
-temperature(::VLSNSearchIterator, current_temperature::Real) = const_temperature(current_temperature)
+This is the supertype for all SA search iterators. 
+TODO: more
+"""
+abstract type AbstractSASearchIterator <: StochasticSearchIterator end
 
-accept(::VLSNSearchIterator, current_cost::Real, next_cost::Real, temperature::Real) = best_accept(current_cost, next_cost, temperature)
+# TODO: add docstrings
+propose(iter::AbstractSASearchIterator, path::Vector{Int}, dict::Union{Nothing,Dict{String,Any}}) = random_fill_propose(iter.solver, path, dict)
 
+temperature(iter::AbstractSASearchIterator, current_temperature::Real) = decreasing_temperature(iter.temperature_decreasing_factor)(current_temperature)
+
+accept(::AbstractSASearchIterator, current_cost::Real, next_cost::Real, temperature::Real) = probabilistic_accept_with_temperature(current_cost, next_cost, temperature)
 
 Base.@doc """
     SASearchIterator(spec, cost_function, initial_temperature=1, temperature_decreasing_factor = 0.99, evaluation_function::Function=HerbInterpret.execute_on_input)
@@ -237,12 +271,8 @@ but takes into account the tempeerature too.
     initial_temperature::Real = 1,
     temperature_decreasing_factor::Real = 0.99,
     evaluation_function::Function = execute_on_input
-) <: StochasticSearchIterator
+) <: AbstractSASearchIterator
 
-propose(iter::SASearchIterator, path::Vector{Int}, dict::Union{Nothing,Dict{String,Any}}) = random_fill_propose(iter.solver, path, dict)
 
-temperature(iter::SASearchIterator, current_temperature::Real) = decreasing_temperature(iter.temperature_decreasing_factor)(current_temperature)
-
-accept(::SASearchIterator, current_cost::Real, next_cost::Real, temperature::Real) = probabilistic_accept_with_temperature(current_cost, next_cost, temperature)
 
 
