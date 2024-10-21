@@ -175,7 +175,6 @@ end
     calculate_cost(iter::T, program::Union{RuleNode, StateHole}) where T <: StochasticSearchIterator
 
 Wrapper around [`_calculate_cost`](@ref).
-TODO: move somewhere else in code? Refactor?. 
 """
 calculate_cost(iter::T, program::Union{RuleNode, StateHole}) where T <: StochasticSearchIterator = _calculate_cost(program, iter.cost_function, iter.spec, get_grammar(iter.solver), iter.evaluation_function)
 
@@ -183,19 +182,26 @@ calculate_cost(iter::T, program::Union{RuleNode, StateHole}) where T <: Stochast
 """
     AbstractMHIterator <: StochasticSearchIterator
 
-This is the supertype for all MH search iterators. It inherits all stop-criteria and from [`StochasticSearchIterator`](@ref).
+This is the supertype for all Metropolis Hastings (MH) search iterators. It inherits all behaviour from [`StochasticSearchIterator`](@ref).
 """
 abstract type AbstractMHSearchIterator <: StochasticSearchIterator end
 
 Base.@doc """
     MHSearchIterator(examples::AbstractArray{<:IOExample}, cost_function::Function, evaluation_function::Function=HerbInterpret.execute_on_input)
 
-Returns an enumerator that runs according to the Metropolis Hastings algorithm.
-- `spec` : array of examples
-- `cost_function` : cost function to evaluate the programs proposed
-- `evaluation_function` : evaluation function that evaluates the program generated and produces an output
-The propose function is random_fill_propose and the accept function is probabilistic.
-The temperature value of the algorithm remains constant over time.
+The `MHSearchIterator` generates programs using the Metropolis-Hastings algorithm. 
+The search behaviour has the following characteristics:
+- It uses `random_fill_propose` for the `propose` function.
+- The `accept function is `probabilistic`. 
+- The `temperature` of the algorithm remains constant over time, ensuring a stable acceptance probability.
+
+# Arguments
+- `examples::AbstractArray{<:IOExample}`: An array of input-output examples used to guide the search.
+- `cost_function::Function`: A function to evaluate the cost of the proposed programs.
+- `evaluation_function::Function=HerbInterpret.execute_on_input`: A function that evaluates the generated program generated and produces an output. Defaults to `HerbInterpret.execute_on_input`.
+
+# Returns 
+An iterator to generate programs according to the Metropolis Hastings algorithm.
 """ MHSearchIterator
 
 @programiterator MHSearchIterator(
@@ -209,11 +215,9 @@ The temperature value of the algorithm remains constant over time.
     AbstractVLSNSearchIterator <: StochasticSearchIterator
 
 This is the supertype for all VLSN search iterators. 
-TODO: more
 """
 abstract type AbstractVLSNSearchIterator <: StochasticSearchIterator end
 
-# TODO: add docstrings 
 propose(iter::AbstractVLSNSearchIterator, path::Vector{Int}, dict::Union{Nothing,Dict{String,Any}}) = enumerate_neighbours_propose(iter.vlsn_neighbourhood_depth)(iter.solver, path, dict)
 temperature(::AbstractVLSNSearchIterator, current_temperature::Real) = const_temperature(current_temperature)
 accept(::AbstractVLSNSearchIterator, current_cost::Real, next_cost::Real, temperature::Real) = best_accept(current_cost, next_cost, temperature)
@@ -242,11 +246,9 @@ The temperature value of the algorithm remains constant over time.
     AbstractSASearchIterator <: StochasticSearchIterator
 
 This is the supertype for all SA search iterators. 
-TODO: more
 """
 abstract type AbstractSASearchIterator <: StochasticSearchIterator end
 
-# TODO: add docstrings
 propose(iter::AbstractSASearchIterator, path::Vector{Int}, dict::Union{Nothing,Dict{String,Any}}) = random_fill_propose(iter.solver, path, dict)
 
 temperature(iter::AbstractSASearchIterator, current_temperature::Real) = decreasing_temperature(iter.temperature_decreasing_factor)(current_temperature)

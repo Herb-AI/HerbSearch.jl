@@ -88,7 +88,7 @@ end
 """
     AbstractBFSIterator <: TopDownIterator
 
-This is the supertype for all breadth-first search iterators. It inherits all stop-criteria and traversal mechanisms from `TopDownIterator`.
+This is the supertype for all breadth-first search iterators. It inherits all stop-criteria and traversal mechanisms from [`TopDownIterator`](@ref).
 """
 abstract type AbstractBFSIterator <: TopDownIterator end
 
@@ -103,7 +103,7 @@ Creates a breadth-first search iterator for traversing given a grammar, starting
 """
     AbstractDFSIterator <: TopDownIterator
 
-This is the supertype for all depth-first search iterators. It inherits all stop-criteria and from `TopDownIterator`, but the traversal mechanism is 
+This is the supertype for all depth-first search iterators. It inherits all stop-criteria and from [`TopDownIterator`](@ref), but the traversal mechanism is 
 implemented to perform a depth-first search.
 """
 abstract type AbstractDFSIterator <: TopDownIterator end
