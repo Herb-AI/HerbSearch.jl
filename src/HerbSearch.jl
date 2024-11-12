@@ -38,6 +38,10 @@ include("genetic_search_iterator.jl")
 
 include("random_iterator.jl")
 
+include("divide_and_conquer/divide.jl")
+include("divide_and_conquer/decide.jl")
+include("divide_and_conquer/conquer.jl")
+
 export 
   ProgramIterator,
   @programiterator,

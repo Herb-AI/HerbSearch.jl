@@ -1,4 +1,4 @@
-@testset verbose=true "Search procedure" begin
+@testset verbose=true "Search procedure synth" begin
     g₁ = @csgrammar begin
         Number = |(1:2)
         Number = x
@@ -77,4 +77,22 @@
         @test solution == RuleNode(3, [RuleNode(2), RuleNode(1)])
         @test flag == suboptimal_program
     end
+end
+
+@testset verbose=true "Search procedure divide and conquer" begin
+    @test 1 == 2 # failing test is just a reminder to add actually useful tests.
+
+    @testset verbose == true "divide" begin
+
+    end
+
+    @testset verbose == true "decide" begin
+
+    end
+
+    @testset verbose == true "conquer" begin
+
+    end
+
+    # TODO: Test for divide and conquer search procedure
 end
