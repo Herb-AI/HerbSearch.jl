@@ -78,7 +78,9 @@ Breaks down the problem into smaller subproblems and synthesizes solutions for e
 - `problem::Problem` : Specification of the program synthesis problem.
 - `iterator::ProgramIterator` : Iterator over candidate programs that is used to search for solutions of the sub-programs.
 - `divide::Function` : Function for dividing problems into sub-problems. It is assumed the function takes a `Problem` as input and returns an `AbstractVector<Problem>`.
-- TODO: more arguments for evaluation, iterator etc. ?
+- `max_time::Int` : Maximum time that the iterator will run 
+- `max_enumerations::Int` : Maximum number of iterations that the iterator will run 
+- `mod::Module`                    : A module containing definitions for the functions in the grammar. Defaults to `Main`.
 
 Returns a tuple of the `RuleNode` representing the solution program and a variant of `SynthResult` indicating if the solution program is optimal. 
 """
@@ -88,7 +90,8 @@ function divide_and_conquer(problem:Problem,
     decide::Function=decide_take_first, 
     conquer::Function=conquer_combine,
     max_time = typemax(Int),
-    max_enumerations = typemax(Int)
+    max_enumerations = typemax(Int),
+    mod::Module=Main
 )  
     start_time = time()
     # Divide problem into sub-problems
