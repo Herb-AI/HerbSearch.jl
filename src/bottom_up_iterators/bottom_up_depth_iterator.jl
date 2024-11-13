@@ -1,9 +1,12 @@
 Base.@doc """
-    @programiterator BUDepthIterator(problem::Problem{Vector{IOExample}}) <: BottomUpIterator
+    @programiterator BUDepthIterator(problem::Union{Nothing, Problem{Vector{IOExample}}}=nothing, obs_equivalence::Bool=false) <: BottomUpIterator
 
 Implementation of the `BottomUpIterator`. Iterates through complete programs in increasing order of their depth.
 """ BUDepthIterator
-@programiterator BUDepthIterator(problem::Problem{Vector{IOExample}}) <: BottomUpIterator
+@programiterator BUDepthIterator(
+    problem::Union{Nothing, Problem{Vector{IOExample}}}=nothing,
+    obs_equivalence::Bool=false
+) <: BottomUpIterator
 
 """
     struct BUDepthBank <: BottomUpBank
@@ -129,7 +132,7 @@ function create_program!(
 end
 
 """
-    create_program!(::BUDepthIterator, ::BUDepthBank, data::BUDepthData, program::RuleNode)::Nothing
+update_state!(::BUDepthIterator, ::BUDepthBank, data::BUDepthData, program::RuleNode)::Nothing
 
 Appends the `program` to `data.new_programs`.
 """

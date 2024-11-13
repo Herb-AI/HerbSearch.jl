@@ -1,5 +1,5 @@
-@testset verbose=true "Bottom-up iterator" begin
-    @testset "smallest element in a tuple" begin
+@testset verbose=true "BUDepthIterator" begin
+    @testset "Smallest element in a tuple" begin
         g = @csgrammar begin
             intExpr = first(x)
             intExpr = last(x)
@@ -12,7 +12,7 @@
         
         problem = Problem([IOExample(Dict(:x => (fst, snd)), min(fst, snd)) for (fst, snd) in [(4, 5), (12, 14), (13, 10), (5, 1)]])        
 
-        iterator = BUDepthIterator(g, :intExpr, problem)
+        iterator = BUDepthIterator(g, :intExpr, problem=problem, obs_equivalence=true)
         solution, flag = synth(problem, iterator) 
         program = rulenode2expr(solution, g)
 
@@ -28,7 +28,7 @@
         end
         
         problem = Problem([IOExample(Dict(:x => x), 2x+1) for x ∈ 1:5])       
-        iterator = BUDepthIterator(g, :Number, problem)
+        iterator = BUDepthIterator(g, :Number, problem=problem, obs_equivalence=true)
 
         solution, flag = synth(problem, iterator) 
         program = rulenode2expr(solution, g)
@@ -43,7 +43,7 @@
         end
     
         problem = Problem([IOExample(Dict(:x => x), 2x+1) for x ∈ 1:5])       
-        iterator = BUDepthIterator(g, :Number, problem)
+        iterator = BUDepthIterator(g, :Number, problem=problem, obs_equivalence=true)
 
         iterated_programs = []
         for (index, program) ∈ Iterators.take(enumerate(iterator), 7)
@@ -51,6 +51,20 @@
         end
 
         @test iterated_programs == [0, 1, :x, :(1 + 1), :(x + 1), :(x + x), :((1 + 1) + 1)]
+    end
+    @testset "Arithmetic grammar observational equivalence" begin
+        g = @csgrammar begin
+            Number = |(0:1)
+            Number = x
+            Number = Number + Number
+        end
+
+        problem = Problem([IOExample(Dict(:x => x), 2x+1) for x ∈ 1:5])       
+        programs = collect(BUDepthIterator(g, :Number, max_depth=2, problem=problem, obs_equivalence=false))
+        @test RuleNode(4, [RuleNode(1), RuleNode(1)]) ∈ programs
+
+        programs = collect(BUDepthIterator(g, :Number, max_depth=2, problem=problem, obs_equivalence=true))
+        @test RuleNode(4, [RuleNode(1), RuleNode(1)]) ∉ programs
     end
     @testset "Arithmetic grammar with constraints" begin
         grammar = @csgrammar begin
@@ -63,7 +77,7 @@
         constraint = Forbidden(RuleNode(4, [RuleNode(1), RuleNode(2)]))
         addconstraint!(grammar, constraint)
 
-        programs = collect(BUDepthIterator(grammar, :Number, problem, max_depth=2))
+        programs = collect(BUDepthIterator(grammar, :Number, max_depth=2, problem=problem, obs_equivalence=true))
         @test RuleNode(4, [RuleNode(1), RuleNode(2)]) ∉ programs
     end
 end
