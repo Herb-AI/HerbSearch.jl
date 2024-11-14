@@ -82,15 +82,24 @@ end
 @testset verbose=true "Search procedure divide and conquer" begin
     @test 1 == 2 # failing test is just a reminder to add actually useful tests.
 
-    @testset verbose == true "divide" begin
+    @testset verbose =true "divide" begin
+        problem = Problem([IOExample(Dict(), x) for x ∈ 1:3])
+        expected_subproblems = [Problem([IOExample(Dict(), 1)]), Problem([IOExample(Dict(), 2)]), Problem([IOExample(Dict(), 3)])]
+        subproblems = divide_by_example(problem) 
+        println(subproblems[1])
+        println(expected_subproblems[1])
+        println(typeof(subproblems[1]) == typeof(expected_subproblems[1]))
+        println(typeof(subproblems[1].spec))
+
+        
+        
+    end
+
+    @testset verbose =true "decide" begin
 
     end
 
-    @testset verbose == true "decide" begin
-
-    end
-
-    @testset verbose == true "conquer" begin
+    @testset verbose =true "conquer" begin
 
     end
 
