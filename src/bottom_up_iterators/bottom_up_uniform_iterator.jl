@@ -4,7 +4,7 @@ Base.@doc """
 Implementation of the `BottomUpIterator`. Iterates through complete programs in increasing order of their depth.
 More memory efficient than the plain BUDepthIterator since it stores `UniformTrees` in the bank instead of `RuleNodes`.
 """ BUUniformIterator
-@programiterator BUUniformIterator(problem::Problem{Vector{IOExample}}) <: BottomUpIterator
+@programiterator BUUniformIterator() <: BottomUpIterator
 
 """
     struct BUUniformBank <: BottomUpBank
@@ -140,8 +140,22 @@ function _partition_rules(
     rules::BitVector
 )::Queue{UniformHole}
     grammar::ContextSensitiveGrammar = get_grammar(iter.solver)
-    hole_domains::Vector{BitVector} = partition(Hole(rules), grammar)
+    
+    dict::Dict{Symbol, BitVector} = Dict{Symbol, BitVector}()
+    for lhs ∈ unique(grammar.types)
+        dict[lhs] = BitVector(fill(false, length(rules)))
+    end
+    
+    for rule ∈ findall(rules)
+        lhs = grammar.types[rule]
+        dict[lhs][rule] = true
+    end
 
+    hole_domains::Vector{BitVector} = Vector{BitVector}()
+    for (_, lhs_rules) ∈ dict
+        append!(hole_domains, partition(Hole(lhs_rules), grammar))
+    end
+    
     uniform_roots::Queue{UniformHole} = Queue{UniformHole}()
     for domain ∈ hole_domains
         enqueue!(uniform_roots, UniformHole(domain, Vector{UniformHole}()))
