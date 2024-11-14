@@ -1,5 +1,3 @@
-using HerbCore, HerbSpecification, HerbInterpret, HerbGrammar, DataStructures
-
 function enumerate_subtrees(tree::RuleNode, g::AbstractGrammar)
     """
     Enumerates all subtrees of a given tree.

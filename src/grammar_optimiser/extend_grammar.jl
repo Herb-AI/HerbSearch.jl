@@ -74,7 +74,7 @@ function generate_trees_from_compressions(global_dict, stats, grammar)
     return tree_stats_dict
 end
 
-function extendGrammar(tree, grammar)
+function extend_grammar(tree, grammar)
     """
     Extends a given grammar with a Herb tree.
     # Arguments

@@ -17,6 +17,6 @@ dummy_grammar = @csgrammar begin
 end
 
 # Call the grammar_optimiser function
-optimised_grammar = grammar_optimiser(dummy_asts, dummy_grammar, 1, 0.5)
+optimised_grammar = grammar_optimiser(dummy_asts, dummy_grammar, 1, 0.5, 2)
 
 println("Optimised Grammar: ", optimised_grammar)

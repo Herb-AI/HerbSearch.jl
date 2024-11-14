@@ -158,7 +158,7 @@ end
 # println("total dict: ", total_dict)
 
 
-function select_compressions(case, c, f_best)
+function select_compressions(case, c, f_best, verbosity=0)
     """
     Selects the best compressions according to some heuristic.
     # Arguments
@@ -174,7 +174,7 @@ function select_compressions(case, c, f_best)
     # sorting the dictionary
     # case 1: occurences
     if case == 1
-        println("sorting by #occurences...")
+        verbosity > 0 && println("sorting by #occurences...")
         c = sort(collect(c), by=x->x[2].occurences, rev=true) # decreasing order of value
 
         # for (k,v) in c
@@ -183,7 +183,7 @@ function select_compressions(case, c, f_best)
         # end
     # case 2: occurences * size
     elseif  case ==2
-        println("sorting by #occurences * tree_size...")
+        verbosity > 0 && println("sorting by #occurences * tree_size...")
         c = sort(collect(c), by=x->(x[2].occurences * x[2].size), rev=true) # decreasing order of value
 
         # for (k,v) in c

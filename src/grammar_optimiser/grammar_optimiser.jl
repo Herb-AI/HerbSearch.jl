@@ -6,7 +6,7 @@ include("parse_output.jl")
 include("analyze_compressions.jl")
 include("extend_grammar.jl")
 
-function grammar_optimiser(trees::Vector{RuleNode}, grammar::AbstractGrammar, subtree_selection_strategy::Int, f_best::Float64)
+function grammar_optimiser(trees::Vector{RuleNode}, grammar::AbstractGrammar, subtree_selection_strategy::Int, f_best::Float64, verbosity=0:Int)
     """
     Optimises a grammar based on a set of trees.
     # Arguments
@@ -20,7 +20,7 @@ function grammar_optimiser(trees::Vector{RuleNode}, grammar::AbstractGrammar, su
 
     # 1. Select subtrees 
     start_time = time()
-    print("Stage 1: Select subtrees\n")     
+    verbosity > 0 && print("Stage 1: Select subtrees\n")     
     subtree_set = Vector{Any}()
     for tree in trees
         (subtrees_root, other_subtrees) = enumerate_subtrees(tree, grammar)
@@ -28,11 +28,11 @@ function grammar_optimiser(trees::Vector{RuleNode}, grammar::AbstractGrammar, su
         subtrees = filter(subtree -> selection_criteria(tree, subtree), subtrees) #remove subtrees size 1 and treesize
         subtree_set = vcat(subtree_set, subtrees)
     end
-    print("Time for stage 1: " * string(time() - start_time) * "\n"); start_time = time()
+    verbosity > 1 && print("Time for stage 1: " * string(time() - start_time) * "\n"); start_time = time()
     subtree_set = unique(subtree_set)
     
     # 2. Parse subtrees to json
-    print("Stage 2: parse subtrees to json\n")     
+    verbosity > 0 && print("Stage 2: parse subtrees to json\n")     
     data = []
     for (id, tree) in enumerate(trees)
         push!(data, parse_subtrees_to_json(subtree_set, tree, id))
@@ -43,37 +43,30 @@ function grammar_optimiser(trees::Vector{RuleNode}, grammar::AbstractGrammar, su
         data[i] = model
         push!(global_dicts, global_dict)
     end
-    print("Time for stage 2 : " * string(time() - start_time) * "\n"); start_time = time()
+    verbosity > 1 && print("Time for stage 2 : " * string(time() - start_time) * "\n"); start_time = time()
     
     # 3. Call clingo 
-    print("Stage 3: call clingo\n")
+    verbosity > 0 && print("Stage 3: call clingo\n")
     dir_path = dirname(@__FILE__)     
     model_location = joinpath(dir_path, "model.lp")
     for i in 1:length(trees)
         command = `$(clingo()) $(model_location) - --outf=2`
         output = IOBuffer()
-        try 
-            # Error code 30 means optimum 
-            # https://docs.julialang.org/en/v1/base/base/#Base.ignorestatus
-            run(pipeline(command, stdin=IOBuffer(data[i]), stdout=output))
-        catch e 
-            # print("Error: " * string(e) * "\n")
-        end
-        
+        run(pipeline(ignorestatus(command), stdin=IOBuffer(data[i]), stdout=output))
         data[i] = String(take!(output))
     end
-    print("Time for stage 3 : " * string(time() - start_time) * "\n"); start_time = time()
+    verbosity > 1 && print("Time for stage 3 : " * string(time() - start_time) * "\n"); start_time = time()
     
     # 4. Parse clingo output to json
-    print("Stage 4: Parse clingo output to json\n")     
+    verbosity > 0 && print("Stage 4: Parse clingo output to json\n")     
     best_values = []
     for i in 1:length(trees)
         push!(best_values, read_json(data[i]))
     end
-    print("Time for stage 4 : " * string(time() - start_time) * "\n"); start_time = time()
+    verbosity > 1 && print("Time for stage 4 : " * string(time() - start_time) * "\n"); start_time = time()
 
     # 5. Analyse clingo output
-    print("Stage 5: Analyze subtrees\n") # 5. Analyse clingo output
+    verbosity > 0 && print("Stage 5: Analyze subtrees\n") # 5. Analyse clingo output
     all_stats = Vector{Dict{RuleNode, NamedTuple{(:size,:occurences), <:Tuple{Int64,Int64}}}}()
     for i in 1:length(trees)
         node_assignments = best_values[i]
@@ -86,13 +79,13 @@ function grammar_optimiser(trees::Vector{RuleNode}, grammar::AbstractGrammar, su
     end
 
     combined_stats = zip_stats(all_stats)
-    best_compressions = select_compressions(subtree_selection_strategy, combined_stats, f_best)
+    best_compressions = select_compressions(subtree_selection_strategy, combined_stats, f_best, verbosity)
     new_grammar = grammar
 
     for b in best_compressions
-        new_grammar = extendGrammar(b, new_grammar)
+        new_grammar = extend_grammar(b, new_grammar)
     end
-    print("Time for stage 5 : " * string(time() - start_time) * "\n"); start_time = time()
+    verbosity > 1 && print("Time for stage 5 : " * string(time() - start_time) * "\n"); start_time = time()
     return new_grammar
 
 end
