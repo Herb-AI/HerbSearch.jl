@@ -1,4 +1,4 @@
-using HerbSearch, HerbCore, HerbSpecification, HerbInterpret, HerbGrammar, JSON
+using HerbCore, HerbSpecification, HerbInterpret, HerbGrammar, JSON
 using Base
 
 function parse_subtrees_to_json(subtrees::Vector{Any}, tree::RuleNode, id::Int)

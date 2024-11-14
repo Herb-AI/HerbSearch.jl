@@ -1,4 +1,4 @@
-using HerbGrammar, HerbSpecification, HerbSearch, HerbInterpret
+using HerbGrammar, HerbSpecification, HerbInterpret
 
 function generate_tree_from_compression(parent, d, compression_id, grammar)
     """

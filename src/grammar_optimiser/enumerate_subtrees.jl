@@ -1,4 +1,4 @@
-using HerbSearch, HerbCore, HerbSpecification, HerbInterpret, HerbGrammar, DataStructures
+using HerbCore, HerbSpecification, HerbInterpret, HerbGrammar, DataStructures
 
 function enumerate_subtrees(tree::RuleNode, g::AbstractGrammar)
     """
