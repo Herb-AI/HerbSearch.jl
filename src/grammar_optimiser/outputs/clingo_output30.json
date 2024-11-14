@@ -1,0 +1,118 @@
+{
+  "Solver": "clingo version 5.7.1",
+  "Input": [
+    "c:\\Users\\PujaS\\Documents\\TU_Delft\\IDMP\\learning_clingo\\grammar_optimiser\\model.lp","c:\\Users\\PujaS\\Documents\\TU_Delft\\IDMP\\learning_clingo\\grammar_optimiser\\clingo_inputs\\model_input30.lp"
+  ],
+  "Call": [
+    {
+      "Witnesses": [
+        {
+          "Value": [
+            
+          ],
+          "Costs": [
+            0
+          ]
+        },
+        {
+          "Value": [
+            "assign(10,0)"
+          ],
+          "Costs": [
+            -1
+          ]
+        },
+        {
+          "Value": [
+            "assign(10,0)", "assign(494,4)"
+          ],
+          "Costs": [
+            -2
+          ]
+        },
+        {
+          "Value": [
+            "assign(551,6)", "assign(549,4)", "assign(10,0)"
+          ],
+          "Costs": [
+            -3
+          ]
+        },
+        {
+          "Value": [
+            "assign(1024,5)", "assign(1023,4)", "assign(1025,6)", "assign(10,0)"
+          ],
+          "Costs": [
+            -4
+          ]
+        },
+        {
+          "Value": [
+            "assign(2891,9)", "assign(2889,7)", "assign(1021,5)", "assign(1020,4)", "assign(10,0)"
+          ],
+          "Costs": [
+            -5
+          ]
+        },
+        {
+          "Value": [
+            "assign(2893,8)", "assign(2892,7)", "assign(2894,9)", "assign(1021,5)", "assign(1020,4)", "assign(10,0)"
+          ],
+          "Costs": [
+            -6
+          ]
+        },
+        {
+          "Value": [
+            "assign(2893,8)", "assign(2892,7)", "assign(2894,9)", "assign(1024,5)", "assign(1023,4)", "assign(1025,6)", "assign(10,0)"
+          ],
+          "Costs": [
+            -7
+          ]
+        },
+        {
+          "Value": [
+            "assign(2891,9)", "assign(2889,7)", "assign(1021,5)", "assign(1020,4)", "assign(1018,2)", "assign(1017,1)", "assign(1019,3)", "assign(10,0)"
+          ],
+          "Costs": [
+            -8
+          ]
+        },
+        {
+          "Value": [
+            "assign(2893,8)", "assign(2892,7)", "assign(2894,9)", "assign(1021,5)", "assign(1020,4)", "assign(1018,2)", "assign(1017,1)", "assign(1019,3)", "assign(10,0)"
+          ],
+          "Costs": [
+            -9
+          ]
+        },
+        {
+          "Value": [
+            "assign(2893,8)", "assign(2892,7)", "assign(2894,9)", "assign(959,1)", "assign(958,0)", "assign(962,4)", "assign(963,5)", "assign(964,6)", "assign(960,2)", "assign(961,3)"
+          ],
+          "Costs": [
+            -10
+          ]
+        }
+      ]
+    }
+  ],
+  "Result": "OPTIMUM FOUND",
+  "Models": {
+    "Number": 11,
+    "More": "no",
+    "Optimum": "yes",
+    "Optimal": 1,
+    "Costs": [
+      -10
+    ]
+  },
+  "Calls": 1,
+  "Time": {
+    "Total": 2.058,
+    "Solve": 0.000,
+    "Model": 0.000,
+    "Unsat": 0.000,
+    "CPU": 0.813
+  }
+}

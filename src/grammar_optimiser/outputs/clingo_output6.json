@@ -1,0 +1,70 @@
+{
+  "Solver": "clingo version 5.7.1",
+  "Input": [
+    "c:\\Users\\PujaS\\Documents\\TU_Delft\\IDMP\\learning_clingo\\grammar_optimiser\\model.lp","c:\\Users\\PujaS\\Documents\\TU_Delft\\IDMP\\learning_clingo\\grammar_optimiser\\clingo_inputs\\model_input6.lp"
+  ],
+  "Call": [
+    {
+      "Witnesses": [
+        {
+          "Value": [
+            
+          ],
+          "Costs": [
+            0
+          ]
+        },
+        {
+          "Value": [
+            "assign(479,0)"
+          ],
+          "Costs": [
+            -1
+          ]
+        },
+        {
+          "Value": [
+            "assign(1557,4)", "assign(1555,0)", "assign(1558,5)", "assign(1559,6)"
+          ],
+          "Costs": [
+            -4
+          ]
+        },
+        {
+          "Value": [
+            "assign(498,2)", "assign(497,1)", "assign(1557,4)", "assign(1555,0)", "assign(1558,5)", "assign(1559,6)"
+          ],
+          "Costs": [
+            -6
+          ]
+        },
+        {
+          "Value": [
+            "assign(501,2)", "assign(500,1)", "assign(502,3)", "assign(1557,4)", "assign(1555,0)", "assign(1558,5)", "assign(1559,6)"
+          ],
+          "Costs": [
+            -7
+          ]
+        }
+      ]
+    }
+  ],
+  "Result": "OPTIMUM FOUND",
+  "Models": {
+    "Number": 5,
+    "More": "no",
+    "Optimum": "yes",
+    "Optimal": 1,
+    "Costs": [
+      -7
+    ]
+  },
+  "Calls": 1,
+  "Time": {
+    "Total": 2.039,
+    "Solve": 0.000,
+    "Model": 0.000,
+    "Unsat": 0.000,
+    "CPU": 0.641
+  }
+}
