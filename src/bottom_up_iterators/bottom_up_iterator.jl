@@ -104,13 +104,13 @@ function _get_next_program(
     program::Union{Nothing, RuleNode} = create_program!(iter, state.bank, state.data)
 
     while program !== nothing
-        if depth(program) <= get_max_depth(iter.solver)
+        if depth(program) <= get_max_depth(iter.solver) && length(program) <= iter.solver.max_size
             # Check if an observationally equivalent program was found.
             if !state.enable_observational_equivalence || !_contains_equivalent!(iter, state, program)
                 update_state!(iter, state.bank, state.data, program)
     
                 new_state!(iter.solver, program)
-                if isfeasible(iter.solver) && length(program) <= iter.solver.max_size
+                if isfeasible(iter.solver)
                     return program, state
                 end
             end

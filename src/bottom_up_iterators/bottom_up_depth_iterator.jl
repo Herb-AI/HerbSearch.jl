@@ -111,6 +111,7 @@ function create_program!(
     bank::BUDepthBank,
     data::BUDepthData
 )::Union{Nothing, RuleNode}
+println("create_program.bank: $(bank)")
     program::Union{RuleNode, Nothing} = get_next_rulenode!(data.nested_rulenode_iterator)
 
     while program === nothing
