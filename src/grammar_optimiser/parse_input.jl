@@ -92,7 +92,7 @@ function parse_tree(input, global_dict=nothing, start_index=0)
     return index + 1, output
 end
 
-function parse_json(json_path, output_path)
+function parse_json(json_content)
     """
     Parses a JSON file.
     # Arguments
@@ -101,9 +101,11 @@ function parse_json(json_path, output_path)
     # Result
     - `global_dict::Dict`: the global dictionary
     """
+    # Schema:
+    # Node(id, grammar_rule) e.g. Node(1, 1)
+    # Edge(parent, child, child_nr) e.g. Edge(1, 2, 5)
     global_dict = Dict{Int64, NamedTuple{(:comp_id,:parent_id, :child_nr, :type, :children), <:Tuple{Int64,Int64,Int64,Int64,Vector}}}()
     # Read in the JSON file
-    json_content = read(json_path, String)
     json_parsed = JSON.parse(json_content)
     ast = json_parsed["ast"]
     subtrees = json_parsed["subtrees"]
@@ -113,16 +115,7 @@ function parse_json(json_path, output_path)
         index, temp_output = parse_tree(subtree, global_dict, index)
         output = output * ("\n\n%Subtree $i\n") * temp_output
     end
-    # Write the output to a file
-    open(output_path, "w") do f
-        write(f, output)
-    end
-    return global_dict
+    return (output, global_dict)
 end
 
 
-"""
-Schema:
-Node(id, grammar_rule) e.g. Node(1, 1)
-Edge(parent, child, child_nr) e.g. Edge(1, 2, 5)
-"""

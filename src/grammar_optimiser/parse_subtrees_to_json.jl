@@ -15,9 +15,10 @@ function parse_subtrees_to_json(subtrees::Vector{Any}, tree::RuleNode, id::Int)
 
     json_string = JSON.json(result)
     dir_path = dirname(@__FILE__)    
-    path = joinpath(dir_path, "inputs", "parser_input$(id).json")
+    # path = joinpath(dir_path, "inputs", "parser_input$(id).json")
 
-    open(path, "w") do file
-        write(file, json_string)
-    end
+    # open(path, "w") do file
+    #     write(file, json_string)
+    # end
+    return json_string
 end

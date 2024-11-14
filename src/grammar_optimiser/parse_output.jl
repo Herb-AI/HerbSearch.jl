@@ -1,6 +1,6 @@
 using JSON
 
-function read_json(json_file)
+function read_json(json_content)
     """
     Reads a JSON file and returns the parsed content.
     # Arguments
@@ -8,9 +8,7 @@ function read_json(json_file)
     # Result
     - `json_parsed::Dict`: the parsed JSON content
     """
-    json_content = read(json_file, String)
     json_parsed = JSON.parse(json_content)
-
     witnesses = json_parsed["Call"][1]["Witnesses"]
     last_witness = witnesses[end]
     last_value = last_witness["Value"] #The best solution found
