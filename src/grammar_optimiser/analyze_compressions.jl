@@ -1,13 +1,14 @@
-function generate_stats(d, compressed_AST)
-    """
-    Compression Analysis. Analyzes 1 AST to see how many times each compression was used.
-    # Arguments
-    - `d::Dict`: the global dictionary (key: node_id, value: namedTuple(compressiond_id, parent_id, child_nr, type, [children]))
-    - `compressed_AST::Vector{String}`: a list of assign-statements ["assign(A, X)", assign(B, Y), ...]
-    # Result 
-    - `c_info::Dict{Int64, NamedTuple{(:size, :occurences), <:Tuple{Int64,Int64}}}`: an dict(key: compression_id, value: Tuple(size, # occurences))) 
-    """
+"""
+    generate_stats(d, compressed_AST)
 
+Compression Analysis. Analyzes 1 AST to see how many times each compression was used.
+# Arguments
+- `d::Dict`: the global dictionary (key: node_id, value: namedTuple(compressiond_id, parent_id, child_nr, type, [children]))
+- `compressed_AST::Vector{String}`: a list of assign-statements ["assign(A, X)", assign(B, Y), ...]
+# Result 
+- `c_info::Dict{Int64, NamedTuple{(:size, :occurences), <:Tuple{Int64,Int64}}}`: an dict(key: compression_id, value: Tuple(size, # occurences))) 
+"""
+function generate_stats(d, compressed_AST)
     # (key: subtree ID, value: NamedTuple([subtree node IDs], # occurences))
     # c_info = Dict{Int64, NamedTuple{:size, :occurences}{Int64, Int64}}()
     c_info = Dict{Int64, NamedTuple{(:size, :occurences), <:Tuple{Int64,Int64}}}()
@@ -46,16 +47,17 @@ function generate_stats(d, compressed_AST)
     return c_info
 end
 
-function compare(rn₁, rn₂)::Bool
-    """
-    Compares two RuleNodes. Returns true if they are equal, false otherwise.
-    # Arguments
-    - `rn₁::RuleNode`: a RuleNode
-    - `rn₂::RuleNode`: a RuleNode
-    # Result
-    - `Bool`: true if the RuleNodes are equal, false otherwise
-    """
-    
+"""
+    compare(rn₁, rn₂)
+
+Compares two RuleNodes. Returns true if they are equal, false otherwise.
+# Arguments
+- `rn₁::RuleNode`: a RuleNode
+- `rn₂::RuleNode`: a RuleNode
+# Result
+- `Bool`: true if the RuleNodes are equal, false otherwise
+"""
+function compare(rn₁, rn₂)::Bool  
     if typeof(rn₁) != typeof(rn₂) return false end
     if (rn₁ isa Hole) && (rn₂ isa Hole) return true end
     if !(rn₁ isa RuleNode) || !(rn₂ isa RuleNode) return false end
@@ -71,13 +73,15 @@ function compare(rn₁, rn₂)::Bool
     return false
 end
 
+"""
+    getCompressionSize(d, C)
+
+Returns the size of a compression C.
+# Arguments
+- `d::Dict`: the global dictionary (key: node_id, value: namedTuple(compressiond_id, parent_id, child_nr, type, [children]))
+- `C::Int64`: the compression ID
+"""
 function getCompressionSize(d, C)
-    """
-    Returns the size of a compression C.
-    # Arguments
-    - `d::Dict`: the global dictionary (key: node_id, value: namedTuple(compressiond_id, parent_id, child_nr, type, [children]))
-    - `C::Int64`: the compression ID
-    """
     s = Set()
     for (k,v) in d
         if v.comp_id == C

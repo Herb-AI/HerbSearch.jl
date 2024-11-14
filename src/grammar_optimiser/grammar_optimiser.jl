@@ -6,18 +6,20 @@ include("parse_output.jl")
 include("analyze_compressions.jl")
 include("extend_grammar.jl")
 
-function grammar_optimiser(trees::Vector{RuleNode}, grammar::AbstractGrammar, subtree_selection_strategy::Int, f_best::Float64, verbosity=0:Int)
-    """
-    Optimises a grammar based on a set of trees.
-    # Arguments
-    - `trees::Vector{RuleNode}`: the trees to optimise the grammar for
-    - `grammar::AbstractGrammar`: the grammar to optimise
-    - `subtree_selection_strategy::Int`: the strategy to select subtrees
-    - `f_best::Float64`: the number of best compressions to select
-    # Result
-    - `new_grammar::AbstractGrammar`: the optimised grammar
-    """
+"""
+    grammar_optimiser(trees::Vector{RuleNode}, grammar::AbstractGrammar, subtree_selection_strategy::Int, f_best::Float64, verbosity=0:Int)
 
+Optimises a grammar based on a set of trees.
+# Arguments
+- `trees::Vector{RuleNode}`: the trees to optimise the grammar for
+- `grammar::AbstractGrammar`: the grammar to optimise
+- `subtree_selection_strategy::Int`: the strategy to select subtrees
+- `f_best::Float64`: the number of best compressions to select
+- `verbosity::Int`: the verbosity level
+# Result
+- `new_grammar::AbstractGrammar`: the optimised grammar
+"""
+function grammar_optimiser(trees::Vector{RuleNode}, grammar::AbstractGrammar, subtree_selection_strategy::Int, f_best::Float64, verbosity=0:Int)
     # 1. Select subtrees 
     start_time = time()
     verbosity > 0 && print("Stage 1: Select subtrees\n")     
@@ -35,7 +37,7 @@ function grammar_optimiser(trees::Vector{RuleNode}, grammar::AbstractGrammar, su
     verbosity > 0 && print("Stage 2: parse subtrees to json\n")     
     data = []
     for (id, tree) in enumerate(trees)
-        push!(data, parse_subtrees_to_json(subtree_set, tree, id))
+        push!(data, parse_subtrees_to_json(subtree_set, tree))
     end
     global_dicts = []
     for i in 1:length(trees)

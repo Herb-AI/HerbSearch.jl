@@ -1,12 +1,14 @@
+"""
+    enumerate_subtrees(tree::RuleNode, g::AbstractGrammar)
+
+Enumerates all subtrees of a given tree.
+# Arguments
+- `tree::RuleNode`: the tree to enumerate the subtrees of
+- `g::AbstractGrammar`: the grammar to use
+# Result
+- `subtrees::Vector{RuleNode}`: a list of all subtrees of the tree
+"""
 function enumerate_subtrees(tree::RuleNode, g::AbstractGrammar)
-    """
-    Enumerates all subtrees of a given tree.
-    # Arguments
-    - `tree::RuleNode`: the tree to enumerate the subtrees of
-    - `g::AbstractGrammar`: the grammar to use
-    # Result
-    - `subtrees::Vector{RuleNode}`: a list of all subtrees of the tree
-    """
     if length(tree.children) == 0
         return ([tree], [])
     end   
@@ -47,14 +49,17 @@ function enumerate_subtrees(tree::RuleNode, g::AbstractGrammar)
     return (subtrees_tree_root, other_subtrees)
 end
 
+
+"""
+    combinations(n::Int)
+
+Generates all combinations of n elements.
+# Arguments
+- `n::Int`: the number of elements
+# Result
+- `combinations::Vector{Vector{Bool}}`: a list of all combinations
+"""
 function combinations(n::Int)
-    """
-    Generates all combinations of n elements.
-    # Arguments
-    - `n::Int`: the number of elements
-    # Result
-    - `combinations::Vector{Vector{Bool}}`: a list of all combinations
-    """
     if n == 0
         return [[]]
     end
@@ -63,15 +68,17 @@ function combinations(n::Int)
         [vcat(false, perm) for perm in smaller_combinations])
 end
 
+"""
+    selection_criteria(tree::RuleNode, subtree::AbstractRuleNode)
+
+Determines whether a subtree should be selected.
+# Arguments
+- `tree::RuleNode`: the tree
+- `subtree::AbstractRuleNode`: the subtree
+# Result
+- `Bool`: true if the subtree should be selected, false otherwise
+"""
 function selection_criteria(tree::RuleNode, subtree::AbstractRuleNode)
-    """
-    Determines whether a subtree should be selected.
-    # Arguments
-    - `tree::RuleNode`: the tree
-    - `subtree::AbstractRuleNode`: the subtree
-    # Result
-    - `Bool`: true if the subtree should be selected, false otherwise
-    """
     size = length(subtree)
     return size > 1 && size < length(tree)
 end
