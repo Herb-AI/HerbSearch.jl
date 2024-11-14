@@ -1,6 +1,4 @@
-using HerbCore
-using HerbGrammar
-using HerbSearch
+using HerbCore, HerbGrammar, HerbSearch
 
 include("grammar_optimiser.jl")
 

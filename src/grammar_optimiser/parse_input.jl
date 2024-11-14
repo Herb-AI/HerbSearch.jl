@@ -1,15 +1,17 @@
-using JSON; using DataStructures;
+using DataStructures;
 
+"""
+    parse_number(start_index::Int64, input::String)
+
+A helper method that parses a number from a string.
+# Arguments
+- `start_index::Int64`: the index to start parsing from
+- `input::String`: the input string
+# Result
+- `number::String`: the parsed number
+- `i::Int64`: the index of the last character parsed
+"""
 function parse_number(start_index, input)
-    """
-    Parses a number from a string.
-    # Arguments
-    - `start_index::Int64`: the index to start parsing from
-    - `input::String`: the input string
-    # Result
-    - `number::String`: the parsed number
-    - `i::Int64`: the index of the last character parsed
-    """
     number = ""
     i = start_index
     while i <= length(input)
@@ -24,17 +26,19 @@ function parse_number(start_index, input)
     return number, i - 1
 end
 
+"""
+    parse_tree(input::String, global_dict::Dict, start_index::Int64)
+
+Parses a tree from a string.
+# Arguments
+- `input::String`: the input string
+- `global_dict::Dict`: the global dictionary
+- `start_index::Int64`: the index to start parsing from
+# Result
+- `index::Int64`: the index of the last node parsed
+- `output::String`: the parsed tree
+""" 
 function parse_tree(input, global_dict=nothing, start_index=0)
-    """
-    Parses a tree from a string.
-    # Arguments
-    - `input::String`: the input string
-    - `global_dict::Dict`: the global dictionary
-    - `start_index::Int64`: the index to start parsing from
-    # Result
-    - `index::Int64`: the index of the last node parsed
-    - `output::String`: the parsed tree
-    """ 
     nodes, edges, output = "","",""
     parent, index = start_index, start_index
     # parent_stack keeps track of the parent node
@@ -92,15 +96,17 @@ function parse_tree(input, global_dict=nothing, start_index=0)
     return index + 1, output
 end
 
+"""
+    parse_json(json_content::String)
+
+Parses a JSON file.
+# Arguments
+- `json_path::String`: the path to the JSON file
+- `output_path::String`: the path to the output file
+# Result
+- `global_dict::Dict`: the global dictionary
+"""
 function parse_json(json_content)
-    """
-    Parses a JSON file.
-    # Arguments
-    - `json_path::String`: the path to the JSON file
-    - `output_path::String`: the path to the output file
-    # Result
-    - `global_dict::Dict`: the global dictionary
-    """
     # Schema:
     # Node(id, grammar_rule) e.g. Node(1, 1)
     # Edge(parent, child, child_nr) e.g. Edge(1, 2, 5)
