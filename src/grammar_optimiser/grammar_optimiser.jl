@@ -1,19 +1,10 @@
-using HerbCore; using Base; using CSV;
+using HerbCore; using Base; using CSV; using Clingo_jll;
 include("enumerate_subtrees.jl")
 include("parse_subtrees_to_json.jl")
 include("parse_input.jl")
 include("parse_output.jl")
 include("analyze_compressions.jl")
 include("extend_grammar.jl")
-
-function run_command(command)
-    """
-    Run a command in the shell.
-    # Arguments
-    - `command::Cmd`: the command to run
-    """
-    run(`$command`)
-end
 
 function grammar_optimiser(trees::Vector{RuleNode}, grammar::AbstractGrammar, subtree_selection_strategy::Int, f_best::Float64)
     """
@@ -61,7 +52,7 @@ function grammar_optimiser(trees::Vector{RuleNode}, grammar::AbstractGrammar, su
     for i in 1:length(trees)
         input_location = joinpath(dir_path, "clingo_inputs", "model_input$(i).lp")
         output_location = joinpath(dir_path, "outputs", "clingo_output$(i).json")
-        command = `clingo $(model_location) $(input_location) --outf=2`
+        command = `$(clingo()) $(model_location) $(input_location) --outf=2`
         # print("Running command: " * string(command) * "\n")
         println(i, ", ")
         try 
