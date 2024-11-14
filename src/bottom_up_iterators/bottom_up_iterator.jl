@@ -110,7 +110,7 @@ function _get_next_program(
                 update_state!(iter, state.bank, state.data, program)
     
                 new_state!(iter.solver, program)
-                if isfeasible(iter.solver)
+                if isfeasible(iter.solver) && length(program) <= iter.solver.max_size
                     return program, state
                 end
             end
