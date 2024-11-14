@@ -9,18 +9,21 @@ include("extend_grammar.jl")
 """
     grammar_optimiser(trees::Vector{RuleNode}, grammar::AbstractGrammar, subtree_selection_strategy::Int, f_best::Float64, verbosity=0:Int)
 
-Optimises a grammar based on a set of trees.
+Optimises a grammar based on a set of trees. The algorithm works in three stages: 
+1. The subtrees are enumerated, parsed to JSON and passed to clingo.
+2. Clingo is called to find the best compressions. 
+3. The compressions are parsed and analysed, some of these compressions are chosen to extend the grammar. This extended grammar is returned.
 # Arguments
 - `trees::Vector{RuleNode}`: the trees to optimise the grammar for
 - `grammar::AbstractGrammar`: the grammar to optimise
-- `subtree_selection_strategy::Int`: the strategy to select subtrees
+- `subtree_selection_strategy::Int`: the strategy to select subtrees, strategy 1 is based on occurences and strategy 2 is based on size * occurences
 - `f_best::Float64`: the number of best compressions to select
 - `verbosity::Int`: the verbosity level
 # Result
 - `new_grammar::AbstractGrammar`: the optimised grammar
 """
 function grammar_optimiser(trees::Vector{RuleNode}, grammar::AbstractGrammar, subtree_selection_strategy::Int, f_best::Float64, verbosity=0:Int)
-    # 1. Select subtrees 
+    # 1. Enumerate subtrees 
     start_time = time()
     verbosity > 0 && print("Stage 1: Select subtrees\n")     
     subtree_set = Vector{Any}()
@@ -36,7 +39,7 @@ function grammar_optimiser(trees::Vector{RuleNode}, grammar::AbstractGrammar, su
     # 2. Parse subtrees to json
     verbosity > 0 && print("Stage 2: parse subtrees to json\n")     
     data = []
-    for (id, tree) in enumerate(trees)
+    for tree in trees
         push!(data, parse_subtrees_to_json(subtree_set, tree))
     end
     global_dicts = []

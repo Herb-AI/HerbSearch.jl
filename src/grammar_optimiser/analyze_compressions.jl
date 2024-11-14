@@ -172,28 +172,14 @@ function select_compressions(case, c, f_best, verbosity=0)
     # Result
     - `c::Vector{RuleNode}`: a sorted and filtered list of compression IDs
     """
-    # change here for the heuristics
-    # case = 2
-
-    # sorting the dictionary
     # case 1: occurences
     if case == 1
         verbosity > 0 && println("sorting by #occurences...")
         c = sort(collect(c), by=x->x[2].occurences, rev=true) # decreasing order of value
-
-        # for (k,v) in c
-        #     print("score ", v.occurences)
-        #     println(": ", k, " ", v)
-        # end
     # case 2: occurences * size
     elseif  case ==2
         verbosity > 0 && println("sorting by #occurences * tree_size...")
         c = sort(collect(c), by=x->(x[2].occurences * x[2].size), rev=true) # decreasing order of value
-
-        # for (k,v) in c
-        #     print("score ", v.occurences * v.size)
-        #     println(": ", k, " ", v,)
-        # end
     end
 
     # filter out compressions of size 1
