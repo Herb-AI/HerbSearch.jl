@@ -27,7 +27,6 @@ test_ast = RuleNode(4, [RuleNode(1), hole])
 
 @testset verbose=true "Generate Tree From Compression" begin
     tree = generate_tree_from_compression(17, Subtree_dict, 17, g)
-    a = 5
     @test string(tree) == string(RuleNode(5, [RuleNode(2),hole])) #5{2,hole[Bool[1, 1, 1, 1, 1]]}
 end
 
