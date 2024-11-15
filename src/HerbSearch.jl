@@ -37,6 +37,7 @@ include("genetic_functions/select_parents.jl")
 include("genetic_search_iterator.jl")
 
 include("random_iterator.jl")
+include("probe/probe_iterator.jl")
 
 export 
   ProgramIterator,
@@ -69,6 +70,10 @@ export
   MHSearchIterator,
   VLSNSearchIterator,
   SASearchIterator,
+
+  ProbeSearchIterator,
+  GuidedSearchIterator,
+  probe,
 
   mean_squared_error,
   misclassification,
