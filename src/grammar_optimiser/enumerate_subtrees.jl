@@ -16,7 +16,7 @@ function enumerate_subtrees(tree::RuleNode, g::AbstractGrammar)
     subtrees_tree_root = []# subtrees with papa node
     other_subtrees = [] # subtrees without papa node
 
-    for (i, child) in pairs(tree.children)
+    for child in tree.children
         (subtrees_child, other_subtrees_child) = enumerate_subtrees(child, g)
         push!(child_subtrees, subtrees_child)
         other_subtrees = vcat(other_subtrees, subtrees_child, other_subtrees_child)
