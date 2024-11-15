@@ -16,8 +16,8 @@ ast_3 = RuleNode(3, [RuleNode(2, [RuleNode(1), RuleNode(1)]), RuleNode(2, [RuleN
 ast_3_duplicate = RuleNode(3, [RuleNode(2, [RuleNode(1), RuleNode(1)]), RuleNode(2, [RuleNode(1), RuleNode(1)])])
 
 @testset verbose=false "compare c₁, c₂" begin
-    @test ast_1 == ast_1_duplicate
-    @test ast_2 == ast_2_duplicate
-    @test ast_3 == ast_3_duplicate
-    @test ast_1 == ast_1
+    @test compare(ast_1, ast_1_duplicate)
+    @test compare(ast_2, ast_2_duplicate)
+    @test compare(ast_3, ast_3_duplicate)
+    @test compare(ast_1, ast_1)
 end
