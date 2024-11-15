@@ -28,8 +28,7 @@ function grammar_optimiser(trees::Vector{RuleNode}, grammar::AbstractGrammar, su
     verbosity > 0 && print("Stage 1: Select subtrees\n")     
     subtree_set = Vector{Any}()
     for tree in trees
-        (subtrees_root, other_subtrees) = enumerate_subtrees(tree, grammar)
-        subtrees = vcat(subtrees_root, other_subtrees)
+        subtrees = enumerate_subtrees(tree, grammar)
         subtrees = filter(subtree -> selection_criteria(tree, subtree), subtrees) #remove subtrees size 1 and treesize
         subtree_set = vcat(subtree_set, subtrees)
     end

@@ -1,3 +1,5 @@
+using DataStructures
+
 """
     enumerate_subtrees(tree::RuleNode, g::AbstractGrammar)
 
@@ -9,6 +11,22 @@ Enumerates all subtrees of a given tree.
 - `subtrees::Vector{RuleNode}`: a list of all subtrees of the tree
 """
 function enumerate_subtrees(tree::RuleNode, g::AbstractGrammar)
+    (subtrees, other_subtrees) = enumerate_subtrees_rec(tree, g)
+    return vcat(subtrees, other_subtrees)
+end
+
+
+"""
+    enumerate_subtrees_rec(tree::RuleNode, g::AbstractGrammar)
+
+Enumerates all subtrees of a given tree.
+# Arguments
+- `tree::RuleNode`: the tree to enumerate the subtrees of
+- `g::AbstractGrammar`: the grammar to use
+# Result
+- `subtrees::(Vector{RuleNode},Vector{RuleNode})`: a tuple of a list of all subtrees of the tree and a list of all other subtrees
+"""
+function enumerate_subtrees_rec(tree::RuleNode, g::AbstractGrammar)
     if length(tree.children) == 0
         return ([tree], [])
     end   
@@ -17,7 +35,7 @@ function enumerate_subtrees(tree::RuleNode, g::AbstractGrammar)
     other_subtrees = [] # subtrees without papa node
 
     for child in tree.children
-        (subtrees_child, other_subtrees_child) = enumerate_subtrees(child, g)
+        (subtrees_child, other_subtrees_child) = enumerate_subtrees_rec(child, g)
         push!(child_subtrees, subtrees_child)
         other_subtrees = vcat(other_subtrees, subtrees_child, other_subtrees_child)
     end
