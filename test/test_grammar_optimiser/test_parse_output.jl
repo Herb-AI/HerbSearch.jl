@@ -153,9 +153,6 @@ test_input2 = """
 }
 """
 
-"""
-These tests check whether the function `read_json` correctly returns the best solution found by Clingo when it outputs in JSON format. 
-"""
 @testset verbose=true "Parse Clingo Output" begin
     @testset "Parse Clingo Output Small" begin
         expected_output = Any["assign(56,1)","assign(55,0)","assign(57,2)"]
