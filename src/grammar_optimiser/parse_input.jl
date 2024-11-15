@@ -104,7 +104,7 @@ Parses a JSON file.
 - `json_path::String`: the path to the JSON file
 - `output_path::String`: the path to the output file
 # Result
-- `global_dict::Dict`: the global dictionary
+- `(output, global_dict)::(String: the parsed string, Dict`: the global dictionary)
 """
 function parse_json(json_content)
     # Schema:
