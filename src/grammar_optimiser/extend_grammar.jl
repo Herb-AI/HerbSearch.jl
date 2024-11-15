@@ -103,6 +103,10 @@ end
 # c_ast = ["assign(2, x)", "assign(3, x)", "assign(5, x)", "assign(8, x)", "assign(9, x)", "assign(7, x)", "assign(8, x)", "assign(9, x)", "assign(7, x)"]
 
 # tree = generate_tree_from_compression(2, Subtree_dict, 2)
+
+
+# 
+
 # println(tree)
 
 # g = @cfgrammar begin
