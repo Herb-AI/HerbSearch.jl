@@ -26,8 +26,14 @@ hole = Hole(get_domain(g, g.bytype[:Number]))
 test_ast = RuleNode(4, [RuleNode(1), hole])
 
 @testset verbose=true "Generate Tree From Compression" begin
+    tree = generate_tree_from_compression(20, Subtree_dict, 20, g)
+    @test string(tree) == string(RuleNode(5, [RuleNode(2),RuleNode(1)])) 
+
     tree = generate_tree_from_compression(17, Subtree_dict, 17, g)
-    @test string(tree) == string(RuleNode(5, [RuleNode(2),hole])) #5{2,hole[Bool[1, 1, 1, 1, 1]]}
+    @test string(tree) == string(RuleNode(5, [RuleNode(2),hole]))
+
+    tree = generate_tree_from_compression(11, Subtree_dict, 11, g)
+    @test string(tree) == string(RuleNode(5, [hole,hole])) 
 end
 
 @testset verbose=true "Extend Grammar" begin 
