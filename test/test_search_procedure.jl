@@ -82,26 +82,45 @@ end
 @testset verbose=true "Search procedure divide and conquer" begin
     @test 1 == 2 # failing test is just a reminder to add actually useful tests.
 
-    @testset verbose =true "divide" begin
+    @testset verbose =true "divide, stopping criteria" begin
         problem = Problem([IOExample(Dict(), x) for x ∈ 1:3])
         expected_subproblems = [Problem([IOExample(Dict(), 1)]), Problem([IOExample(Dict(), 2)]), Problem([IOExample(Dict(), 3)])]
         subproblems = divide_by_example(problem) 
-        println(subproblems[1])
-        println(expected_subproblems[1])
-        println(typeof(subproblems[1]) == typeof(expected_subproblems[1]))
-        println(typeof(subproblems[1].spec))
+        # TODO: test equality
 
-        
-        
+        # Stopping criteria: stop search once we have a solution to each subproblem
+        problems_to_solutions::Dict{Problem, Vector{RuleNode}} = Dict(p => [] for p in subproblems)
+
+        push!(problems_to_solutions[subproblems[1]], RuleNode(3))
+        @test all(!isempty, values(problems_to_solutions)) == false
+
+        push!(problems_to_solutions[subproblems[1]], RuleNode(4))
+        push!(problems_to_solutions[subproblems[2]], RuleNode(3))
+        @test all(!isempty, values(problems_to_solutions)) == false
+
+        push!(problems_to_solutions[subproblems[3]], RuleNode(3))
+        @test all(!isempty, values(problems_to_solutions)) == true
     end
 
     @testset verbose =true "decide" begin
-
+        grammar = @csgrammar begin
+            Number = |(1:2)
+            Number = x
+            Number = Number + Number
+            Number = Number * Number
+        end
+        symboltable = SymbolTable(grammar)
+        problem1 = Problem([IOExample(Dict(:x => 1), 3)])
+        problem2 = Problem([IOExample(Dict(:x => 1), 4)])
+        program = RuleNode(4, [RuleNode(3), RuleNode(2)])
+        expr = rulenode2expr(program, grammar)
+        @test decide_if_solution(problem1, program, expr, symboltable) == true
+        @test decide_if_solution(problem2, program, expr, symboltable) == false 
     end
 
     @testset verbose =true "conquer" begin
 
     end
 
-    # TODO: Test for divide and conquer search procedure
+    # TODO: Integration test for divide and conquer search procedure
 end

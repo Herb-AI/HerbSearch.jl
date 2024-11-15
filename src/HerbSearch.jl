@@ -85,5 +85,6 @@ export
   sample,
   rand, 
 
-  divide_by_example
+  divide_by_example,
+  decide_if_solution
 end # module HerbSearch

@@ -80,49 +80,44 @@ Breaks down the problem into smaller subproblems and synthesizes solutions for e
 - `divide::Function` : Function for dividing problems into sub-problems. It is assumed the function takes a `Problem` as input and returns an `AbstractVector<Problem>`.
 - `max_time::Int` : Maximum time that the iterator will run 
 - `max_enumerations::Int` : Maximum number of iterations that the iterator will run 
-- `mod::Module`                    : A module containing definitions for the functions in the grammar. Defaults to `Main`.
+- `mod::Module` : A module containing definitions for the functions in the grammar. Defaults to `Main`.
 
 Returns a tuple of the `RuleNode` representing the solution program and a variant of `SynthResult` indicating if the solution program is optimal. 
 """
-# function divide_and_conquer(problem:Problem, 
-#     iterator::ProgramIterator, 
-#     divide::Function=divide_by_example, 
-#     decide::Function=decide_take_first, 
-#     conquer::Function=conquer_combine,
-#     max_time = typemax(Int),
-#     max_enumerations = typemax(Int),
-#     mod::Module=Main
-# )  
-#     start_time = time()
-#     # Divide problem into sub-problems
-#     sub_problems = divide(problem) # TODO: implementation for divide_by_example
+function divide_and_conquer(problem::Problem, 
+    iterator::ProgramIterator, 
+    divide::Function=divide_by_example, 
+    decide::Function=decide_if_solution, 
+    conquer::Function=conquer_combine,
+    max_time = typemax(Int),
+    max_enumerations = typemax(Int),
+    mod::Module=Main
+)  
+    start_time = time()
+    grammar = get_grammar(iterator.solver)
+    symboltable :: SymbolTable = SymbolTable(grammar, mod)
 
-#     # Initialise a Dict that maps each subproblem to one or more solution programs
-#     # TODO: initialise Dict with subproblems (Vector of Problem(IOExample)).
-#     problems_to_solutions: Dict{Problem, Vector{RuleNode}} = {} # Maps a problem to possible solution programs
-    
+     # Divide problem into sub-problems 
+     subproblems = divide(problem) 
 
-#     # TODO: symbol table for evaluating candidate programs
-#     # grammar = get_grammar(iterator.solver)
-#     # symboltable :: SymbolTable = SymbolTable(grammar, mod)
+     # Initialise a Dict that maps each subproblem to one or more solution programs
+     problems_to_solutions::Dict{Problem, Vector{RuleNode}} = Dict(p => [] for p in subproblems)
 
-#     for (i, candidate_program) ∈ enumerate(iterator)
-#         for prob in sub_problems
-#             keep_program = decide(prob, candidate_program, problems_to_solutions, symboltable)
-#             if keep_program:
-#                 # TODO: add program to rulenode vector for prob in problems_to_solutions
-#             end
-#         end
-#         # TODO: check if there are still subproblems without solution
+    for (i, candidate_program) ∈ enumerate(iterator)
+        expr = rulenode2expr(candidateprogram, grammar)
+        for prob in sub_problems
+            keep_program = decide(prob, candidate_program, expr, symboltable)
+            if keep_program:
+                      push!(problems_to_solutions[prob], candidate_program)
+            end
+        end
+        # Stop if we have a solution to each subproblem, or reached max_enumerations/max_time
+        if all(!isempty, values(problems_to_solutions)) || i > max_enumerations || time() - start_time > max_time
+            break;
+        end
+    end
 
-#         # Check stopping criteria
-#         if i > max_enumerations || time() - start_time > max_time
-#             break;
-#         end
-#     end
-
-#     return conquer(problems_to_solutions) # TODO: implement conquer
-
-# end
+    return conquer(problems_to_solutions) # TODO: implement conquer
+end
 
 

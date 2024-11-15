@@ -1,12 +1,12 @@
 """
-    decide_take_first(problem::Problem, program::RuleNode, solutions::Dict{Problem, Vector{RuleNode}}, symbol_table::SymbolTable)
+    $(TYPEDSIGNATURES)
 
 Indicates whether to keep a program as a solution to the provided (sub)problem.
-Returns `True` if the program solves the given problem and there is no solution to the problem yet.
+Returns `True` if the program solves the given problem.
 """
-function decide_take_first(problem::Problem, program::RuleNode, solutions::Dict{Problem, Vector{RuleNode}}, symboltable::SymbolTable)
-    # TODO: Evaluate if program solves given problem. Return true if so, false otherwise. 
-    # score = evaluate(problem, expr, symboltable, shortcircuit=shortcircuit, allow_evaluation_errors=allow_evaluation_errors)
-    # return score == 1
+function decide_if_solution(problem::Problem, program::RuleNode, expr::Any, symboltable::SymbolTable)
+    # TODO: Is `Any` the correct type?
+    score = evaluate(problem, expr, symboltable, allow_evaluation_errors=false)
+    return score == 1
 end
 
