@@ -1,3 +1,4 @@
+
 @testset verbose=true "Search procedure synth" begin
     g₁ = @csgrammar begin
         Number = |(1:2)
@@ -119,7 +120,45 @@ end
     end
 
     @testset verbose =true "conquer" begin
+        grammar = @csgrammar begin
+            Start = Integer
+            Integer = Condition ? Integer : Integer
+            Integer = 0
+            Integer = 1
+            Input = _arg_1 
+            Input = _arg_2
+            Integer = Input
+            Integer = Integer + Integer
+            Condition = Integer <= Integer
+            Condition = Condition && Condition  
+            Condition = !Condition
+        end
 
+        subproblems = [Problem([IOExample(Dict(), 1)]), Problem([IOExample(Dict(), 2)]), Problem([IOExample(Dict(), 3)])]
+        problems_to_solutions::Dict{Problem, Vector{RuleNode}} = Dict(p => [] for p in subproblems)
+        push!(problems_to_solutions[subproblems[1]], RuleNode(3, [RuleNode(2), RuleNode(1)]))
+        push!(problems_to_solutions[subproblems[1]], RuleNode(4))
+        push!(problems_to_solutions[subproblems[2]], RuleNode(13))
+        push!(problems_to_solutions[subproblems[3]], RuleNode(23))
+
+        @testset verbose=true "labels" begin
+            
+            expected_labels = ["RuleNode(3)", "RuleNode(13)", "RuleNode(23)"]
+            labels = HerbSearch.get_labels(problems_to_solutions)
+            @test length(labels) == 3
+            @test labels == expected_labels
+        end
+        @testset verbose=true "predicates and features" begin
+            # predicates
+            n_predicates = 100
+            sym_bool = :Condition
+            predicates = HerbSearch.get_predicates(grammar, sym_bool, n_predicates)
+            @test length(predicates) == n_predicates
+
+            vec_problems_solutions = [(prob, sol[1]) for (prob, sol) in problems_to_solutions ]
+
+            # features
+        end
     end
 
     # TODO: Integration test for divide and conquer search procedure

@@ -84,40 +84,40 @@ Breaks down the problem into smaller subproblems and synthesizes solutions for e
 
 Returns a tuple of the `RuleNode` representing the solution program and a variant of `SynthResult` indicating if the solution program is optimal. 
 """
-function divide_and_conquer(problem::Problem, 
-    iterator::ProgramIterator, 
-    divide::Function=divide_by_example, 
-    decide::Function=decide_if_solution, 
-    conquer::Function=conquer_combine,
-    max_time = typemax(Int),
-    max_enumerations = typemax(Int),
-    mod::Module=Main
-)  
-    start_time = time()
-    grammar = get_grammar(iterator.solver)
-    symboltable :: SymbolTable = SymbolTable(grammar, mod)
+# function divide_and_conquer(problem::Problem, 
+#     iterator::ProgramIterator, 
+#     divide::Function=divide_by_example, 
+#     decide::Function=decide_if_solution, 
+#     conquer::Function=conquer_combine,
+#     max_time = typemax(Int),
+#     max_enumerations = typemax(Int),
+#     mod::Module=Main
+# )  
+#     start_time = time()
+#     grammar = get_grammar(iterator.solver)
+#     symboltable :: SymbolTable = SymbolTable(grammar, mod)
 
-     # Divide problem into sub-problems 
-     subproblems = divide(problem) 
+#      # Divide problem into sub-problems 
+#      subproblems = divide(problem) 
 
-     # Initialise a Dict that maps each subproblem to one or more solution programs
-     problems_to_solutions::Dict{Problem, Vector{RuleNode}} = Dict(p => [] for p in subproblems)
+#      # Initialise a Dict that maps each subproblem to one or more solution programs
+#      problems_to_solutions::Dict{Problem, Vector{RuleNode}} = Dict(p => [] for p in subproblems)
 
-    for (i, candidate_program) ∈ enumerate(iterator)
-        expr = rulenode2expr(candidateprogram, grammar)
-        for prob in sub_problems
-            keep_program = decide(prob, candidate_program, expr, symboltable)
-            if keep_program:
-                      push!(problems_to_solutions[prob], candidate_program)
-            end
-        end
-        # Stop if we have a solution to each subproblem, or reached max_enumerations/max_time
-        if all(!isempty, values(problems_to_solutions)) || i > max_enumerations || time() - start_time > max_time
-            break;
-        end
-    end
+#     for (i, candidate_program) ∈ enumerate(iterator)
+#         expr = rulenode2expr(candidateprogram, grammar)
+#         for prob in sub_problems
+#             keep_program = decide(prob, candidate_program, expr, symboltable)
+#             if keep_program:
+#                       push!(problems_to_solutions[prob], candidate_program)
+#             end
+#         end
+#         # Stop if we have a solution to each subproblem, or reached max_enumerations/max_time
+#         if all(!isempty, values(problems_to_solutions)) || i > max_enumerations || time() - start_time > max_time
+#             break;
+#         end
+#     end
 
-    return conquer(problems_to_solutions) # TODO: implement conquer
-end
+#     return conquer(problems_to_solutions) # TODO: implement conquer
+# end
 
 

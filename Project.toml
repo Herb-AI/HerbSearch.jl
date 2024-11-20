@@ -5,6 +5,7 @@ version = "0.3.1"
 
 [deps]
 DataStructures = "864edb3b-99cc-5e75-8d2d-829cb0a9cfe8"
+DecisionTree = "7806a523-6efd-50cb-b5f6-3fa6f1930dbb"
 DocStringExtensions = "ffbed154-4ef7-542d-bbb7-c09d3a79fcae"
 HerbConstraints = "1fa96474-3206-4513-b4fa-23913f296dfc"
 HerbCore = "2b23ba43-8213-43cb-b5ea-38c12b45bd45"
