@@ -104,7 +104,7 @@ function _get_next_program(
     program::Union{Nothing, RuleNode} = create_program!(iter, state.bank, state.data)
 
     while program !== nothing
-        if depth(program) <= get_max_depth(iter.solver) && length(program) <= iter.solver.max_size
+        if depth(program) <= get_max_depth(iter.solver)
             # Check if an observationally equivalent program was found.
             if !state.enable_observational_equivalence || !_contains_equivalent!(iter, state, program)
                 update_state!(iter, state.bank, state.data, program)
@@ -134,13 +134,18 @@ function _contains_equivalent!(
     grammar::ContextSensitiveGrammar = get_grammar(iter.solver)
     problem = iter.problem
 
-    output = map(example -> execute_on_input(SymbolTable(grammar), rulenode2expr(program, grammar), example.in), problem.spec)
-    hashed_output = hash(output)
+    try
+        output = map(example -> execute_on_input(grammar, program, example.in), problem.spec)
+        hashed_output = hash(output)
 
-	if hashed_output ∈ state.observational_equivalence_hashes
-		return true
-	end
+        if hashed_output ∈ state.observational_equivalence_hashes
+            return true
+        end
 
-    push!(state.observational_equivalence_hashes, hashed_output)
-	return false
+        push!(state.observational_equivalence_hashes, hashed_output)
+        return false
+    catch
+        # If any exception results from running the program, we ignore it.
+        return true
+    end
 end
