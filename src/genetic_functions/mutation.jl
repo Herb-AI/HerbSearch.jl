@@ -8,7 +8,6 @@ function mutate_random!(program::RuleNode, grammar::AbstractGrammar, max_depth::
     subprogram = get(program, node_location)
     symbol = return_type(grammar, subprogram)
 
-    random_program = rand(RuleNode, grammar, symbol,  max_depth)
+    random_program = rand(RuleNode, grammar, symbol, max_depth)
     insert!(program, node_location, random_program)
 end
-

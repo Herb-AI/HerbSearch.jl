@@ -22,14 +22,14 @@ Assigns a priority value to a `tree` that needs to be considered later in the se
 - `isrequeued`: The same tree shape will be requeued. The next time this tree shape is considered, the `UniformSolver` will produce the next complete program deriving from this shape.
 """
 function priority_function(
-    ::TopDownIterator, 
-    g::AbstractGrammar, 
-    tree::AbstractRuleNode, 
-    parent_value::Union{Real, Tuple{Vararg{Real}}},
-    isrequeued::Bool
+        ::TopDownIterator,
+        g::AbstractGrammar,
+        tree::AbstractRuleNode,
+        parent_value::Union{Real, Tuple{Vararg{Real}}},
+        isrequeued::Bool
 )
     #the default priority function is the bfs priority function
-    parent_value + 1;
+    parent_value + 1
 end
 
 """
@@ -39,7 +39,7 @@ Returns a sorted sublist of the `indices`, based on which rules are most promisi
 By default, this is the identity function.
 """
 function derivation_heuristic(::TopDownIterator, indices::Vector{Int})
-    return indices;
+    return indices
 end
 
 """
@@ -47,8 +47,9 @@ end
 
 Defines a heuristic over variable shaped holes. Returns a [`HoleReference`](@ref) once a hole is found.
 """
-function hole_heuristic(::TopDownIterator, node::AbstractRuleNode, max_depth::Int)::Union{ExpandFailureReason, HoleReference}
-    return heuristic_leftmost(node, max_depth);
+function hole_heuristic(::TopDownIterator, node::AbstractRuleNode,
+        max_depth::Int)::Union{ExpandFailureReason, HoleReference}
+    return heuristic_leftmost(node, max_depth)
 end
 
 Base.@doc """
@@ -64,13 +65,13 @@ Iterates trees in the grammar in a random order.
 Assigns a random priority to each state.
 """
 function priority_function(
-    ::RandomIterator, 
-    ::AbstractGrammar, 
-    ::AbstractRuleNode, 
-    ::Union{Real, Tuple{Vararg{Real}}},
-    ::Bool
+        ::RandomIterator,
+        ::AbstractGrammar,
+        ::AbstractRuleNode,
+        ::Union{Real, Tuple{Vararg{Real}}},
+        ::Bool
 )
-    Random.rand();
+    Random.rand()
 end
 
 """
@@ -79,9 +80,8 @@ end
 Randomly shuffles the rules.
 """
 function derivation_heuristic(::RandomIterator, indices::Vector{Int})
-    return Random.shuffle!(indices);
+    return Random.shuffle!(indices)
 end
-
 
 Base.@doc """
     @programiterator BFSIterator() <: TopDownIterator
@@ -96,18 +96,17 @@ Returns a breadth-first iterator given a grammar and a starting symbol. Returns 
 Assigns priority such that the search tree is traversed like in a BFS manner
 """
 function priority_function(
-    ::BFSIterator, 
-    ::AbstractGrammar, 
-    ::AbstractRuleNode, 
-    parent_value::Union{Real, Tuple{Vararg{Real}}},
-    isrequeued::Bool
+        ::BFSIterator,
+        ::AbstractGrammar,
+        ::AbstractRuleNode,
+        parent_value::Union{Real, Tuple{Vararg{Real}}},
+        isrequeued::Bool
 )
     if isrequeued
-        return parent_value;
+        return parent_value
     end
-    return parent_value + 1;
+    return parent_value + 1
 end
-
 
 Base.@doc """
     @programiterator DFSIterator() <: TopDownIterator
@@ -122,18 +121,17 @@ Returns a depth-first search enumerator given a grammar and a starting symbol. R
 Assigns priority such that the search tree is traversed like in a DFS manner
 """
 function priority_function(
-    ::DFSIterator, 
-    ::AbstractGrammar, 
-    ::AbstractRuleNode, 
-    parent_value::Union{Real, Tuple{Vararg{Real}}},
-    isrequeued::Bool
+        ::DFSIterator,
+        ::AbstractGrammar,
+        ::AbstractRuleNode,
+        parent_value::Union{Real, Tuple{Vararg{Real}}},
+        isrequeued::Bool
 )
     if isrequeued
-        return parent_value;
+        return parent_value
     end
-    return parent_value - 1;
+    return parent_value - 1
 end
-
 
 Base.@doc """
     @programiterator MLFSIterator() <: TopDownIterator
@@ -148,11 +146,11 @@ Iterator that enumerates expressions in the grammar in decreasing order of proba
 Calculates logit for all possible derivations for a node in a tree and returns them.
 """
 function priority_function(
-    ::MLFSIterator,
-    g::AbstractGrammar, 
-    tree::AbstractRuleNode, 
-    ::Union{Real, Tuple{Vararg{Real}}},
-    isrequeued::Bool
+        ::MLFSIterator,
+        g::AbstractGrammar,
+        tree::AbstractRuleNode,
+        ::Union{Real, Tuple{Vararg{Real}}},
+        isrequeued::Bool
 )
     -rulenode_log_probability(tree, g)
 end
@@ -170,7 +168,6 @@ Currently, there are two possible causes of the expansion failing:
 """
 @enum ExpandFailureReason limit_reached=1 already_complete=2
 
-
 """
     function Base.collect(iter::TopDownIterator)
 
@@ -182,7 +179,7 @@ Return an array of all programs in the TopDownIterator.
 function Base.collect(iter::TopDownIterator)
     @warn "Collecting all programs of a TopDownIterator requires freeze_state"
     programs = Vector{RuleNode}()
-    for program ∈ iter
+    for program in iter
         push!(programs, freeze_state(program))
     end
     return programs
@@ -195,12 +192,13 @@ Describes the iteration for a given [`TopDownIterator`](@ref) over the grammar. 
 """
 function Base.iterate(iter::TopDownIterator)
     # Priority queue with `SolverState`s (for variable shaped trees) and `UniformIterator`s (for fixed shaped trees)
-    pq :: PriorityQueue{Union{SolverState, UniformIterator}, Union{Real, Tuple{Vararg{Real}}}} = PriorityQueue()
+    pq::PriorityQueue{Union{SolverState, UniformIterator}, Union{Real, Tuple{Vararg{Real}}}} = PriorityQueue()
 
     solver = iter.solver
 
     if isfeasible(solver)
-        enqueue!(pq, get_state(solver), priority_function(iter, get_grammar(solver), get_tree(solver), 0, false))
+        enqueue!(pq, get_state(solver),
+            priority_function(iter, get_grammar(solver), get_tree(solver), 0, false))
     end
     return _find_next_complete_tree(iter.solver, pq, iter)
 end
@@ -210,7 +208,8 @@ end
 
 Describes the iteration for a given [`TopDownIterator`](@ref) and a [`PriorityQueue`](@ref) over the grammar without enqueueing new items to the priority queue. Recursively returns the result for the priority queue.
 """
-function Base.iterate(iter::TopDownIterator, tup::Tuple{Vector{<:AbstractRuleNode}, DataStructures.PriorityQueue})
+function Base.iterate(iter::TopDownIterator,
+        tup::Tuple{Vector{<:AbstractRuleNode}, DataStructures.PriorityQueue})
     track!(iter.solver, "#CompleteTrees (by FixedShapedIterator)")
     # iterating over fixed shaped trees using the FixedShapedIterator
     if !isempty(tup[1])
@@ -219,7 +218,6 @@ function Base.iterate(iter::TopDownIterator, tup::Tuple{Vector{<:AbstractRuleNod
 
     return _find_next_complete_tree(iter.solver, tup[2], iter)
 end
-
 
 function Base.iterate(iter::TopDownIterator, pq::DataStructures.PriorityQueue)
     track!(iter.solver, "#CompleteTrees (by UniformSolver)")
@@ -233,9 +231,9 @@ Takes a priority queue and returns the smallest AST from the grammar it can obta
 Returns `nothing` if there are no trees left within the depth limit.
 """
 function _find_next_complete_tree(
-    solver::Solver,
-    pq::PriorityQueue,
-    iter::TopDownIterator
+        solver::Solver,
+        pq::PriorityQueue,
+        iter::TopDownIterator
 )
     while length(pq) ≠ 0
         (item, priority_value) = dequeue_pair!(pq)
@@ -244,7 +242,10 @@ function _find_next_complete_tree(
             uniform_iterator = item
             solution = next_solution!(uniform_iterator)
             if !isnothing(solution)
-                enqueue!(pq, uniform_iterator, priority_function(iter, get_grammar(solver), solution, priority_value, true))
+                enqueue!(pq,
+                    uniform_iterator,
+                    priority_function(
+                        iter, get_grammar(solver), solution, priority_value, true))
                 return (solution, pq)
             end
         elseif item isa SolverState
@@ -256,15 +257,20 @@ function _find_next_complete_tree(
             if hole_res ≡ already_complete
                 track!(solver, "#FixedShapedTrees")
                 if solver.use_uniformsolver
-                    uniform_solver = UniformSolver(get_grammar(solver), get_tree(solver), with_statistics=solver.statistics)
+                    uniform_solver = UniformSolver(get_grammar(solver), get_tree(solver),
+                        with_statistics = solver.statistics)
                     uniform_iterator = UniformIterator(uniform_solver, iter)
                     solution = next_solution!(uniform_iterator)
                     if !isnothing(solution)
-                        enqueue!(pq, uniform_iterator, priority_function(iter, get_grammar(solver), solution, priority_value, true))
+                        enqueue!(pq,
+                            uniform_iterator,
+                            priority_function(
+                                iter, get_grammar(solver), solution, priority_value, true))
                         return (solution, pq)
                     end
                 else
-                    fixed_shaped_iter = FixedShapedIterator(get_grammar(solver), :StartingSymbolIsIgnored, solver=solver)
+                    fixed_shaped_iter = FixedShapedIterator(
+                        get_grammar(solver), :StartingSymbolIsIgnored, solver = solver)
                     complete_trees = collect(fixed_shaped_iter)
                     if !isempty(complete_trees)
                         return (pop!(complete_trees), (complete_trees, pq))
@@ -276,17 +282,20 @@ function _find_next_complete_tree(
             elseif hole_res isa HoleReference
                 # Variable Shaped Hole was found
                 (; hole, path) = hole_res
-        
+
                 partitioned_domains = partition(hole, get_grammar(solver))
                 number_of_domains = length(partitioned_domains)
-                for (i, domain) ∈ enumerate(partitioned_domains)
+                for (i, domain) in enumerate(partitioned_domains)
                     if i < number_of_domains
                         state = save_state!(solver)
                     end
                     @assert isfeasible(solver) "Attempting to expand an infeasible tree: $(get_tree(solver))"
                     remove_all_but!(solver, path, domain)
                     if isfeasible(solver)
-                        enqueue!(pq, get_state(solver), priority_function(iter, get_grammar(solver), get_tree(solver), priority_value, false))
+                        enqueue!(pq,
+                            get_state(solver),
+                            priority_function(iter, get_grammar(solver),
+                                get_tree(solver), priority_value, false))
                     end
                     if i < number_of_domains
                         load_state!(solver, state)

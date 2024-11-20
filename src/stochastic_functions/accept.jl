@@ -26,7 +26,8 @@ Returns `True` if the new program is accepted, `False` otherwise.
 - `next_cost::Real`: the cost of the proposed program.
 - `temperature::Real`: the current temperature 
 """
-function probabilistic_accept_with_temperature_fraction(current_cost::Real, program_to_consider_cost::Real, temperature::Real)
+function probabilistic_accept_with_temperature_fraction(
+        current_cost::Real, program_to_consider_cost::Real, temperature::Real)
     ratio = current_cost / (program_to_consider_cost + current_cost)
     if ratio >= 1
         return true
@@ -62,7 +63,8 @@ In any other case, returns false.
 - `next_cost::Real`: the cost of the proposed program.
 - `temperature::Real`: the temperature of the search.
 """
-function probabilistic_accept_with_temperature(current_cost::Real, next_cost::Real, temperature::Real)
+function probabilistic_accept_with_temperature(
+        current_cost::Real, next_cost::Real, temperature::Real)
     delta = next_cost - current_cost
     if delta < 0
         return true

@@ -14,22 +14,22 @@ The [Solver](@ref) is required to be in a state without any [Hole](@ref)s.
 Assigns a priority value to a `tree` that needs to be considered later in the search. Trees with the lowest priority value are considered first.
 """
 function priority_function(
-    ::FixedShapedIterator, 
-    g::AbstractGrammar, 
-    tree::AbstractRuleNode, 
-    parent_value::Union{Real, Tuple{Vararg{Real}}}
+        ::FixedShapedIterator,
+        g::AbstractGrammar,
+        tree::AbstractRuleNode,
+        parent_value::Union{Real, Tuple{Vararg{Real}}}
 )
-    parent_value + 1;
+    parent_value + 1
 end
-
 
 """
     hole_heuristic(::FixedShapedIterator, node::AbstractRuleNode, max_depth::Int)::Union{ExpandFailureReason, HoleReference}
 
 Defines a heuristic over fixed shaped holes. Returns a [`HoleReference`](@ref) once a hole is found.
 """
-function hole_heuristic(::FixedShapedIterator, node::AbstractRuleNode, max_depth::Int)::Union{ExpandFailureReason, HoleReference}
-    return heuristic_leftmost_fixed_shaped_hole(node, max_depth);
+function hole_heuristic(::FixedShapedIterator, node::AbstractRuleNode,
+        max_depth::Int)::Union{ExpandFailureReason, HoleReference}
+    return heuristic_leftmost_fixed_shaped_hole(node, max_depth)
 end
 
 """
@@ -39,17 +39,17 @@ Describes the iteration for a given [`TopDownIterator`](@ref) over the grammar. 
 """
 function Base.iterate(iter::FixedShapedIterator)
     # Priority queue with number of nodes in the program
-    pq :: PriorityQueue{SolverState, Union{Real, Tuple{Vararg{Real}}}} = PriorityQueue()
+    pq::PriorityQueue{SolverState, Union{Real, Tuple{Vararg{Real}}}} = PriorityQueue()
 
     solver = iter.solver
     @assert !contains_nonuniform_hole(get_tree(iter.solver)) "A FixedShapedIterator cannot iterate partial programs with Holes"
 
     if isfeasible(solver)
-        enqueue!(pq, get_state(solver), priority_function(iter, get_grammar(solver), get_tree(solver), 0))
+        enqueue!(pq, get_state(solver),
+            priority_function(iter, get_grammar(solver), get_tree(solver), 0))
     end
     return _find_next_complete_tree(solver, pq, iter)
 end
-
 
 """
     Base.iterate(iter::FixedShapedIterator, pq::DataStructures.PriorityQueue)
@@ -67,9 +67,9 @@ Takes a priority queue and returns the smallest AST from the grammar it can obta
 Returns `nothing` if there are no trees left within the depth limit.
 """
 function _find_next_complete_tree(
-    solver::Solver, 
-    pq::PriorityQueue,
-    iter::FixedShapedIterator
+        solver::Solver,
+        pq::PriorityQueue,
+        iter::FixedShapedIterator
 )::Union{Tuple{RuleNode, PriorityQueue}, Nothing}
     while length(pq) ≠ 0
         (state, priority_value) = dequeue_pair!(pq)
@@ -85,17 +85,20 @@ function _find_next_complete_tree(
         elseif hole_res isa HoleReference
             # UniformHole was found
             (; hole, path) = hole_res
-    
+
             rules = findall(hole.domain)
             number_of_rules = length(rules)
-            for (i, rule_index) ∈ enumerate(findall(hole.domain))
+            for (i, rule_index) in enumerate(findall(hole.domain))
                 if i < number_of_rules
                     state = save_state!(solver)
                 end
                 @assert isfeasible(solver) "Attempting to expand an infeasible tree: $(get_tree(solver))"
                 remove_all_but!(solver, path, rule_index)
                 if isfeasible(solver)
-                    enqueue!(pq, get_state(solver), priority_function(iter, get_grammar(solver), get_tree(solver), priority_value))
+                    enqueue!(pq,
+                        get_state(solver),
+                        priority_function(
+                            iter, get_grammar(solver), get_tree(solver), priority_value))
                 end
                 if i < number_of_rules
                     load_state!(solver, state)
