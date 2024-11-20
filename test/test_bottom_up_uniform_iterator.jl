@@ -1,4 +1,4 @@
-@testset verbose=true "Bottom-up iterator" begin
+@testset verbose=true "BUUniformIterator" begin
     @testset "smallest element in a tuple" begin
         g = @csgrammar begin
             intExpr = first(x)
