@@ -35,9 +35,3 @@ test_ast = RuleNode(4, [RuleNode(1), hole])
     tree = generate_tree_from_compression(11, Subtree_dict, 11, g)
     @test string(tree) == string(RuleNode(5, [hole,hole])) 
 end
-
-@testset verbose=true "Extend Grammar" begin 
-    result = extend_grammar(test_ast, g).rules[6]
-    @test result == :(1 + Number)
-end
-

@@ -87,7 +87,7 @@ function grammar_optimiser(trees::Vector{RuleNode}, grammar::AbstractGrammar, su
     new_grammar = grammar
 
     for b in best_compressions
-        new_grammar = extend_grammar(b, new_grammar)
+        add_rule!(new_grammar, b)
     end
     verbosity > 1 && print("Time for stage 5 : " * string(time() - start_time) * "\n"); start_time = time()
     return new_grammar
