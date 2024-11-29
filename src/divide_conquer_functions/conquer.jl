@@ -64,34 +64,32 @@ end
 
 """
 	Returns a matrix containing the feature vectors for all problem/predicate combinations. 
-	A feature vector is obtained by evaluating a problem from the `problems_to_solutions` map on a
+	A feature vector is obtained by evaluating each `IOExample` in `ioexamples_solutions` on a
 	predicate.
 """
 function get_features(
-	vec_problems_solutions::Vector{Tuple{Problem{Vector{IOExample}}, Vector{RuleNode}}},
+	ioexamples_solutions::Vector{Tuple{IOExample, Vector{RuleNode}}},
 	predicates::Vector{RuleNode},
 	grammar::AbstractGrammar,
 	symboltable::SymbolTable,
-	allow_evaluation_errors::Bool = true)
-	# TODO: get_features is probably wrong. 
-	features = trues(length(vec_problems_solutions),
+	allow_evaluation_errors::Bool = true,
+)::Matrix{Bool}
+	# features matrix with dimension n_ioexamples x n_predicates
+	features = trues(length(ioexamples_solutions),
 		length(predicates))
-
-	for (i, (prob, _)) in enumerate(vec_problems_solutions) # TODO: make this work on vec
+	for (i, (ioexample, _)) in enumerate(ioexamples_solutions) # TODO: make this work on vec
 		output = Vector()
 		for pred in predicates
 			expr = rulenode2expr(pred, grammar)
 			try
-				o = execute_on_input(symboltable, expr, prob.in) # will return Bool since we execute on predicates
+				o = execute_on_input(symboltable, expr, ioexample.in) # will return Bool since we execute on predicates
 				push!(output, o)
 			catch err
-				# TODO: do we understand this part? Do we expect evaluation errors?
-				# Throw the error if evaluation errors aren't allowed
-				# eval_error = EvaluationError(expr, e.in, err)
-				# allow_evaluation_errors || throw(eval_error)
-				println("Error: ", err)
+				# TODO: When do we expect an EvaluatinError?
+				# Throw the error if `allow_evaluation_errors` is false
+				eval_error = EvaluationError(expr, ioexample.in, err)
+				allow_evaluation_errors || throw(eval_error)
 				push!(output, false)
-				# break
 			end
 		end
 		features[i, :] = output
@@ -99,14 +97,15 @@ function get_features(
 	return features
 end
 
+"""
+	Returns a vector containing the labels for each `IOExample` in the `ioexamples_solutions` map.
+	The label is the first program in the solutions vector.
+"""
 function get_labels(
-	vec_problems_solutions::Vector{Tuple{Problem{Vector{IOExample}}, Vector{RuleNode}}},
+	ioexamples_solutions::Vector{Tuple{IOExample, Vector{RuleNode}}},
 )::Vector{String}
-	# TODO: Input should probably be Vector{IOExample}
 	# TODO: Does Vector{String} make sense as return type? 
-	# Use first solution as label for a problem
-	labels = [string(solutions[1]) for (_, solutions) in vec_problems_solutions]
+	# Use first solution probram as label for a problem
+	labels = [string(solutions[1]) for (_, solutions) in ioexamples_solutions]
 	return labels
-
-
 end

@@ -58,6 +58,7 @@
 
 		symboltable = SymbolTable(grammar)
 
+		# TODO: add subproblem with two IOExamples
 		subproblems = [
 			Problem([IOExample(Dict(:_arg_1 => 1, :_arg_2 => 2), 2)]),
 			Problem([IOExample(Dict(:_arg_1 => 3, :_arg_2 => 0), 3)]),
@@ -81,7 +82,31 @@
 		# RuleNode(2, [RuleNode(9, [RuleNode(3), RuleNode(5)]), RuleNode(5), RuleNode(3)])
 
 		# convert dict to vector for getting labels and features
-		vec_problems_solutions = [(prob, sol) for (prob, sol) in problems_to_solutions]
+		# ioexamples_solutions = [
+		# 	(ioexample, sol)
+		# 	for (prob, sol) in problems_to_solutions
+		# 	for ioexample in prob.spec
+		# ]
+		ioexamples_solutions = [
+			(IOExample(Dict(:_arg_1 => 1, :_arg_2 => 2), 2), [RuleNode(6)]),
+			(IOExample(Dict(:_arg_1 => 3, :_arg_2 => 0), 3), [RuleNode(3)]),
+			(
+				IOExample(Dict(:_arg_1 => -3, :_arg_2 => 0), 0),
+				[
+					RuleNode(
+						2,
+						[RuleNode(9, [RuleNode(3), RuleNode(5)]), RuleNode(5), RuleNode(3)],
+					),
+					RuleNode(5),
+					RuleNode(3),
+				],
+			),
+			(
+				IOExample(Dict(:_arg_1 => 1, :_arg_2 => 1), 1),
+				[RuleNode(8, [RuleNode(5), RuleNode(6)]), RuleNode(4)],
+			),
+		]
+
 		# convert expected labels to set => no guarantee of order in vec_problems_solutions
 		@testset verbose = true "labels" begin
 			expected_labels = Set([
@@ -90,7 +115,7 @@
 				"2{9{3,5}5,3}",
 				"8{5,6}",
 			])
-			labels = HerbSearch.get_labels(vec_problems_solutions)
+			labels = HerbSearch.get_labels(ioexamples_solutions)
 			@test length(labels) == 4
 			@test Set(labels) == expected_labels
 		end
@@ -118,43 +143,21 @@
 				[:(_arg_1 <= _arg_2), :(_arg_2 <= _arg_1), :(_arg_1 <= _arg_2 && 1 <= _arg_2)]
 			@test expressions == expected_expressions
 
-			# TODO: 
 			expected_features =
 				BitArray([true false true; false true false; true false false; true true true])
-			# features = HerbSearch.get_features(
-			# 	vec_problems_solutions,
-			# 	predicates, grammar, symboltable,
+			features = HerbSearch.get_features(
+				ioexamples_solutions,
+				predicates, grammar, symboltable,
+			)
+			@test features == expected_features
+			# # TODO: When do I get EvaluatinError?
+			# @test_throws ErrorException HerbSearch.get_features(
+			# 	ioexamples_solutions,
+			# 	[RuleNode(1)],
+			# 	grammar,
+			# 	symboltable,
+			# 	false,
 			# )
-			# -----------| debug | ------------
-			features = trues(length(vec_problems_solutions),
-				length(predicates))
-			println("Dimension features: ", size(features))
-			for (i, (prob, _)) in enumerate(vec_problems_solutions) # TODO: make this work on vec
-				output = Vector()
-				for pred in predicates
-					expr = rulenode2expr(pred, grammar)
-					println("Expression: ", expr)
-					println("Problem: ", prob.spec)
-					try
-						println("Problem: ", prob.in)
-						# o = execute_on_input(symboltable, expr, prob.in) # will return Bool since we execute on predicates
-						# 			push!(output, o)
-					catch err
-						# 			# TODO: do we understand this part? Do we expect evaluation errors?
-						# 			# Throw the error if evaluation errors aren't allowed
-						# 			# eval_error = EvaluationError(expr, e.in, err)
-						# 			# allow_evaluation_errors || throw(eval_error)
-						# 			println("Error: ", err)
-						# 			push!(output, false)
-						# 			# break
-					end
-				end
-				# 	features[i, :] = output
-			end
-			# ---------------------------------
-			# TODO: test   
-
-			# TODO: test with evaluaiton error
 		end
 	end
 
