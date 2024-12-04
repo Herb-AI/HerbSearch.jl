@@ -17,7 +17,8 @@ macro testmh(expression::String, max_depth=6)
     return :(
         @testset "mh $($expression)" begin
         e = Meta.parse("x -> $($expression)")
-        problem, examples = create_problem(eval(e))
+        f = eval(e)
+        problem, examples = create_problem(f)
         iterator = MHSearchIterator(grammar, :X, examples, mean_squared_error, max_depth=$max_depth)
         solution, flag = synth(problem, iterator, max_time=MAX_RUNNING_TIME)
         @test flag == optimal_program
@@ -30,7 +31,8 @@ macro testsa(expression::String,max_depth=6,init_temp = 2)
     return :(
         @testset "sa $($expression)" begin
         e = Meta.parse("x -> $($expression)")
-        problem, examples = create_problem(eval(e))
+        f = eval(e)
+        problem, examples = create_problem(f)
         iterator = SASearchIterator(grammar, :X, examples, mean_squared_error, initial_temperature=$init_temp, max_depth=$max_depth)
 
         solution, flag = synth(problem, iterator, max_time=MAX_RUNNING_TIME)
@@ -43,7 +45,8 @@ macro testvlsn(expression::String, max_depth = 6, neighbourhood_depth = 2)
     return :(
         @testset "vl $($expression)" begin
         e = Meta.parse("x -> $($expression)")
-        problem, examples = create_problem(eval(e))
+        f = eval(e)
+        problem, examples = create_problem(f)
         iterator = VLSNSearchIterator(grammar, :X, examples, mean_squared_error, vlsn_neighbourhood_depth=$neighbourhood_depth, max_depth=$max_depth)
 
         #@TODO overwrite evaluate function within synth to showcase how you may use that
@@ -68,7 +71,7 @@ end
 
         end
     end
-    
+
     @testset verbose = true "Very Large Scale Neighbourhood" begin
         @testvlsn "x"  1
         @testvlsn "2"  1
@@ -76,7 +79,7 @@ end
         @testvlsn "10" 2
 
     end
-    
+
     @testset verbose = true "Simulated Annealing" begin
         @testsa "x * x + 4" 3
         @testsa "x * (x + 5)" 3 2
