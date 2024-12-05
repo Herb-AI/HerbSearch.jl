@@ -37,8 +37,8 @@
 		problem2 = Problem([IOExample(Dict(:x => 1), 4)])
 		program = RuleNode(4, [RuleNode(3), RuleNode(2)])
 		expr = rulenode2expr(program, grammar)
-		@test decide_if_solution(problem1, program, expr, symboltable) == true
-		@test decide_if_solution(problem2, program, expr, symboltable) == false
+		@test decide_if_solution(problem1, expr, symboltable) == true
+		@test decide_if_solution(problem2, expr, symboltable) == false
 	end
 
 	@testset verbose = true "conquer" begin
@@ -81,12 +81,6 @@
 		#    0
 		# RuleNode(2, [RuleNode(9, [RuleNode(3), RuleNode(5)]), RuleNode(5), RuleNode(3)])
 
-		# convert dict to vector for getting labels and features
-		# ioexamples_solutions = [
-		# 	(ioexample, sol)
-		# 	for (prob, sol) in problems_to_solutions
-		# 	for ioexample in prob.spec
-		# ]
 		ioexamples_solutions = [
 			(IOExample(Dict(:_arg_1 => 1, :_arg_2 => 2), 2), [RuleNode(6)]),
 			(IOExample(Dict(:_arg_1 => 3, :_arg_2 => 0), 3), [RuleNode(3)]),
@@ -119,12 +113,19 @@
 			@test length(labels) == 4
 			@test Set(labels) == expected_labels
 		end
+
 		@testset verbose = true "predicates" begin
 			n_predicates = 100
 			sym_bool = :Condition
-			predicates = HerbSearch.get_predicates(grammar, sym_bool, n_predicates)
+			sym_constraint = :Input
+			predicates = HerbSearch.get_predicates(grammar, sym_bool, sym_constraint, n_predicates)
+			idx_rule = grammar.bytype[sym_constraint][1]
 			@test length(predicates) == n_predicates
+			# pick a few random predicates and check if they contain rule we expect
+			@test !isempty(rulesoftype(predicates[23], Set([idx_rule])))
+			@test !isempty(rulesoftype(predicates[99], Set([idx_rule])))
 		end
+
 		@testset verbose = true "features" begin
 			predicates = [
 				RuleNode(9, [RuleNode(5), RuleNode(6)]),
@@ -150,7 +151,7 @@
 				predicates, grammar, symboltable,
 			)
 			@test features == expected_features
-			# # TODO: When do I get EvaluatinError?
+			# # TODO: When do I get EvaluationError?
 			# @test_throws ErrorException HerbSearch.get_features(
 			# 	ioexamples_solutions,
 			# 	[RuleNode(1)],
@@ -158,6 +159,17 @@
 			# 	symboltable,
 			# 	false,
 			# )
+			# ioexamples = [(key.spec, sol) for (key, sol) in problems_to_solutions]
+			# ioexamples = Vector{Tuple{IOExample, Vector{RuleNode}}}()
+			# for (key, sol) in problems_to_solutions
+			# 	for example in key.spec
+			# 		push!(ioexamples, (example, sol))
+			# 	end
+			# end
+			ioexamples =
+				[(example, sol) for (key, sol) in problems_to_solutions for example in key.spec]
+
+
 		end
 	end
 

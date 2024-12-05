@@ -6,7 +6,6 @@ Returns `True` if the program solves the given problem.
 """
 function decide_if_solution(
 	problem::Problem,
-	program::RuleNode,
 	expr::Any,
 	symboltable::SymbolTable,
 )
