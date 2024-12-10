@@ -22,7 +22,6 @@ include("bottom_up_iterators/bottom_up_iterator.jl")
 include("bottom_up_iterators/bottom_up_depth_iterator.jl")
 include("bottom_up_iterators/bottom_up_uniform_iterator.jl")
 
-include("fixed_shaped_iterator.jl")
 include("top_down_iterator.jl")
 
 include("evaluate.jl")
@@ -48,8 +47,6 @@ export
   ProgramIterator,
   @programiterator,
   
-  ContextSensitivePriorityEnumerator,
-  
   heuristic_leftmost,
   heuristic_rightmost,
   heuristic_random,
@@ -62,7 +59,6 @@ export
   optimal_program,
   suboptimal_program,
 
-  FixedShapedIterator,
   UniformIterator,
   next_solution!,
 
