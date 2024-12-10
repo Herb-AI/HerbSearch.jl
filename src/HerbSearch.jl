@@ -16,7 +16,12 @@ include("uniform_iterator.jl")
 
 include("heuristics.jl")
 
-include("fixed_shaped_iterator.jl")
+include("bottom_up_iterators/nested_rulenode_iterator.jl")
+include("bottom_up_iterators/nested_uniform_iterator.jl")
+include("bottom_up_iterators/bottom_up_iterator.jl")
+include("bottom_up_iterators/bottom_up_depth_iterator.jl")
+include("bottom_up_iterators/bottom_up_uniform_iterator.jl")
+
 include("top_down_iterator.jl")
 
 include("evaluate.jl")
@@ -42,8 +47,6 @@ export
   ProgramIterator,
   @programiterator,
   
-  ContextSensitivePriorityEnumerator,
-  
   heuristic_leftmost,
   heuristic_rightmost,
   heuristic_random,
@@ -56,7 +59,6 @@ export
   optimal_program,
   suboptimal_program,
 
-  FixedShapedIterator,
   UniformIterator,
   next_solution!,
 
@@ -65,6 +67,10 @@ export
   BFSIterator,
   DFSIterator,
   MLFSIterator,
+
+  BottomUpIterator,
+  BUDepthIterator,
+  BUUniformIterator,
 
   MHSearchIterator,
   VLSNSearchIterator,
