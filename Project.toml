@@ -15,26 +15,13 @@ Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 StatsBase = "2913bbd2-ae8a-5f71-8c99-4fb6c76f3a91"
 
 [compat]
-Aqua = "0.8.9"
 DataStructures = "0.17,0.18"
 HerbConstraints = "^0.2.0"
 HerbCore = "^0.3.0"
 HerbGrammar = "^0.4.0"
 HerbInterpret = "^0.1.3"
 HerbSpecification = "^0.1.0"
-LegibleLambdas = "0.3.0"
-Logging = "1.8.0,1.9.0,1.10.0,1.11.0"
 MLStyle = "^0.4.17"
 Random = "1.8.0,1.9.0,1.10.0,1.11.0"
 StatsBase = "^0.34"
-Test = "1.8.0,1.9.0,1.10.0,1.11.0"
 julia = "^1.8"
-
-[extras]
-Aqua = "4c88cf16-eb10-579e-8560-4a9242c79595"
-LegibleLambdas = "f1f30506-32fe-5131-bd72-7c197988f9e5"
-Logging = "56ddb016-857b-54e1-b83d-db4d58db5568"
-Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
-
-[targets]
-test = ["Test", "LegibleLambdas", "Aqua", "Logging"]
