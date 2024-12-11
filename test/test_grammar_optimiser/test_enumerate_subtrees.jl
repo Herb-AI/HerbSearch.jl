@@ -1,8 +1,4 @@
-using Test, HerbCore, HerbGrammar, HerbConstraints
-#Cannot use "using HerbSearch" because HerbSearch does not expose this functionality. 
-include("../../src/grammar_optimiser/enumerate_subtrees.jl") 
-
-# Test Values
+# Init test environment
 test_grammar = @csgrammar begin
     Int = 1
     Int = Int + Int
@@ -11,7 +7,6 @@ end
 test_ast1 = RuleNode(1)
 test_ast2 = RuleNode(2, [RuleNode(1), RuleNode(1)])
 test_ast3 = RuleNode(3, [RuleNode(2, [RuleNode(1), RuleNode(1)]), RuleNode(2, [RuleNode(1), RuleNode(1)])])
-
 
 
 @testset verbose=true "Enumerate Subtrees" begin

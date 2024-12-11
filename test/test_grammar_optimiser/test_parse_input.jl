@@ -1,8 +1,3 @@
-using Test, JSON, HerbCore, HerbGrammar, HerbConstraints
-include("../../src/grammar_optimiser/parse_input.jl") 
-include("../../src/grammar_optimiser/enumerate_subtrees.jl")
-include("../../src/grammar_optimiser/parse_subtrees_to_json.jl")
-# Test Values
 g = @csgrammar begin
     Int = 1
     Int = Int + Int
@@ -76,36 +71,36 @@ comp_node(15, 1).
 @testset verbose=true "Parse Input Class" begin
     # 𝟏 parse_number
     @testset verbose=true "Parse Number" begin
-        @test parse_number(5, "test1234test") == ("1234", 8)
-        @test parse_number(5, "test1234") == ("1234", 8)
-        @test parse_number(1, "1234test") == ("1234", 4)
-        @test parse_number(1, "1") == ("1", 1)
+        @test HerbSearch.parse_number(5, "test1234test") == ("1234", 8)
+        @test HerbSearch.parse_number(5, "test1234") == ("1234", 8)
+        @test HerbSearch.parse_number(1, "1234test") == ("1234", 4)
+        @test HerbSearch.parse_number(1, "1") == ("1", 1)
     end
     
     # 𝟐 parse_tree
     @testset verbose=true "Parse Tree" begin
-        index, string = parse_tree("2{1,1}")
+        index, string = HerbSearch.parse_tree("2{1,1}")
         @test index == 3
         @test string == "%Maint AST\n%Nodes\nnode(0, 2).\nnode(1, 1).\nnode(2, 1).\n%Edges:\nedge(0, 1, 0).\nedge(0, 2, 1)."
-        index, string = parse_tree("2{2{1,1},3{1,1}}")
+        index, string = HerbSearch.parse_tree("2{2{1,1},3{1,1}}")
         @test index == 7
         @test string == "%Maint AST\n%Nodes\nnode(0, 2).\nnode(1, 2).\nnode(2, 1).\nnode(3, 1).\nnode(4, 3).\nnode(5, 1).\nnode(6, 1).\n%Edges:\nedge(0, 1, 0).\nedge(1, 2, 0).\nedge(1, 3, 1).\nedge(0, 4, 1).\nedge(4, 5, 0).\nedge(4, 6, 1)."
     end
     # 𝟑 parse_json
     @testset verbose=true "Parse JSON" begin
-        subtrees = enumerate_subtrees(test_ast1, g)
+        subtrees = HerbSearch.enumerate_subtrees(test_ast1, g)
         subtree_set = Vector{Any}()
         subtree_set = vcat(subtree_set, subtrees)
         subtree_set = unique(subtree_set)
-        output1, _ = (parse_json(parse_subtrees_to_json(subtree_set, test_ast1)))
+        output1, _ = (HerbSearch.parse_json(HerbSearch.parse_subtrees_to_json(subtree_set, test_ast1)))
         @test output1 == expected_output1
 
-        subtrees = enumerate_subtrees(test_ast2, g)
+        subtrees = HerbSearch.enumerate_subtrees(test_ast2, g)
         subtree_set = Vector{Any}()
         subtree_set = vcat(subtree_set, subtrees)
         subtree_set = unique(subtree_set)
         print(subtree_set)
-        output2, _ = (parse_json(parse_subtrees_to_json(subtree_set, test_ast2)))
+        output2, _ = (HerbSearch.parse_json(HerbSearch.parse_subtrees_to_json(subtree_set, test_ast2)))
         @test output2 == expected_output2
     end
 end

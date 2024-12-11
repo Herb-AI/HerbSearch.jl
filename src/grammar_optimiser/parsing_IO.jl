@@ -1,17 +1,19 @@
-using DataStructures;
+using DataStructures
+using JSON
 
 """
-    parse_number(start_index::Int64, input::String)
+    parse_number(start_index::Int, input::AbstractString)
 
-A helper method that parses a number from a string.
+A helper method that parses a number from the string `input` starting at `start_index`.
 # Arguments
-- `start_index::Int64`: the index to start parsing from
-- `input::String`: the input string
-# Result
-- `number::String`: the parsed number
+- `start_index::Int`: the index to start parsing from
+- `input::AbstractString`: the input string
+
+Return a tuple (number, i) consisting of
+- `number::AbstractString`: the parsed number
 - `i::Int64`: the index of the last character parsed
 """
-function parse_number(start_index, input)
+function parse_number(start_index::Int, input::AbstractString)::Tuple{AbstractString, Int}
     number = ""
     i = start_index
     while i <= length(input)
@@ -27,18 +29,20 @@ function parse_number(start_index, input)
 end
 
 """
-    parse_tree(input::String, global_dict::Dict, start_index::Int64)
+    parse_tree(input::AbstractString, global_dict::Dict=nothing, start_index::Int=0)
 
 Parses a tree from a string.
 # Arguments
-- `input::String`: the input string
+- `input::AbstractString`: the input string
 - `global_dict::Dict`: the global dictionary
-- `start_index::Int64`: the index to start parsing from
+- `start_index::Int`: the index to start parsing from
 # Result
-- `index::Int64`: the index of the last node parsed
+- `index::Int`: the index of the last node parsed
 - `output::String`: the parsed tree
 """ 
-function parse_tree(input, global_dict=nothing, start_index=0)
+function parse_tree(input::AbstractString, global_dict::Union{Nothing, Dict}=nothing, start_index::Int=0)::Tuple{Int, AbstractString}
+    # @assert !(start_index > 0 && !isnothing(global_dict))
+
     nodes, edges, output = "","",""
     parent, index = start_index, start_index
     # parent_stack keeps track of the parent node
@@ -53,6 +57,7 @@ function parse_tree(input, global_dict=nothing, start_index=0)
     else  
         nodes = nodes * "node($(start_index), $(num))."
     end
+
     # Iterate over the input string
     i = i + 1
     while i <= length(input) - 1
@@ -97,20 +102,21 @@ function parse_tree(input, global_dict=nothing, start_index=0)
 end
 
 """
-    parse_json(json_content::String)
+    parse_json(json_content::AbstractString)
 
-Parses a JSON file.
+Parses a JSON file and returns 
 # Arguments
-- `json_path::String`: the path to the JSON file
-- `output_path::String`: the path to the output file
+- `json_path::AbstractString`: the path to the JSON file
 # Result
 - `(output, global_dict)::(String: the parsed string, Dict`: the global dictionary)
+
+The schema used follows this scheme. Entries can either be nodes with a certain id and grammar rule, or edges between nodes.
+`Node(id, grammar_rule)` e.g. `Node(1, 1)`
+`Edge(parent, child, child_nr)` e.g. `Edge(1, 2, 5)`
+    
 """
-function parse_json(json_content)
-    # Schema:
-    # Node(id, grammar_rule) e.g. Node(1, 1)
-    # Edge(parent, child, child_nr) e.g. Edge(1, 2, 5)
-    global_dict = Dict{Int64, NamedTuple{(:comp_id,:parent_id, :child_nr, :type, :children), <:Tuple{Int64,Int64,Int64,Int64,Vector}}}()
+function parse_json(json_content::AbstractString)
+   global_dict = Dict{Int64, NamedTuple{(:comp_id,:parent_id, :child_nr, :type, :children), <:Tuple{Int,Int,Int,Int,Vector}}}()
     # Read in the JSON file
     json_parsed = JSON.parse(json_content)
     ast = json_parsed["ast"]
@@ -124,4 +130,46 @@ function parse_json(json_content)
     return (output, global_dict)
 end
 
+"""
+    parse_subtrees_to_json(subtrees::Vector{Any}, tree::RuleNode)
 
+Parses a list of subtrees to JSON. Returns the JSON string.
+# Arguments
+- `subtrees::Vector{Any}`: the list of subtrees
+- `tree::RuleNode`: the root tree the subtrees were extracted from
+# Result
+- `json_string::String`: the JSON string
+"""
+function parse_subtrees_to_json(subtrees::Vector{Any}, tree::RuleNode)
+    modified_subtrees = []
+    for i in 1:length(subtrees)
+        str = string(subtrees[i])
+        modified_string = replace(str, r"hole\[Bool\[[^\]]*\]\]" => "_")
+        push!(modified_subtrees, modified_string)
+    end
+
+    result = Dict(
+        "ast" => length(string(tree)) > 2 ? string(tree) : string(tree)[1],
+        "subtrees" => modified_subtrees
+    )
+    json_string = JSON.json(result)
+    
+    return json_string
+end
+
+"""
+    read_json(json_content::String)
+
+Reads a JSON file and returns the parsed content.
+# Arguments
+- `json_file::String`: the path to the JSON file
+# Result
+- `json_parsed::Dict`: the parsed JSON content
+"""
+function read_json(json_content)
+    json_parsed = JSON.parse(json_content)
+    witnesses = json_parsed["Call"][1]["Witnesses"]
+    last_witness = witnesses[end]
+    last_value = last_witness["Value"] #The best solution found
+    return last_value
+end

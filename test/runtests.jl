@@ -27,13 +27,7 @@ Random.seed!(1234)
 
     include("test_constraints.jl")
 
-    include("test_grammar_optimiser/test_analyze_compressions.jl")
-    include("test_grammar_optimiser/test_enumerate_subtrees.jl")
-    include("test_grammar_optimiser/test_extend_grammar.jl")
     include("test_grammar_optimiser/test_grammar_optimiser.jl")
-    include("test_grammar_optimiser/test_parse_input.jl")
-    include("test_grammar_optimiser/test_parse_output.jl")
-    include("test_grammar_optimiser/test_parse_subtrees_to_json.jl")
 
     # Excluded because it contains long tests
     # include("test_realistic_searches.jl")

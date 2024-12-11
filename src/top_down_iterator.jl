@@ -277,7 +277,7 @@ function _find_next_complete_tree(
                 # Variable Shaped Hole was found
                 (; hole, path) = hole_res
         
-                partitioned_domains = partition(hole, get_grammar(solver))
+                partitioned_domains = HerbConstraints.partition(hole, get_grammar(solver))
                 number_of_domains = length(partitioned_domains)
                 for (i, domain) ∈ enumerate(partitioned_domains)
                     if i < number_of_domains

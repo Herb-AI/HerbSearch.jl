@@ -58,13 +58,13 @@ end
 Generates Herb trees from a given dictionary of compressions.
 # Arguments
 - `global_dict::Dict`: the global dictionary (key: node_id, value: namedTuple(compressiond_id, parent_id, child_nr, type, [children]))
-- `stats::Dict`: the statistics of the compressions (key: compression_id, value: namedTuple(size, occurences))
+- `stats::Dict`: the statistics of the compressions (key: compression_id, value: namedTuple(size, occurrences))
 - `grammar::AbstractGrammar`: the grammar to use
 # Result
-- `tree_stats_dict::Dict`: a dictionary of Herb trees (key: RuleNode, value: namedTuple(size, occurences))
+- `tree_stats_dict::Dict`: a dictionary of Herb trees (key: RuleNode, value: namedTuple(size, occurrences))
 """
 function generate_trees_from_compressions(global_dict, stats, grammar)
-    tree_stats_dict = Dict{RuleNode, NamedTuple{(:size,:occurences), <:Tuple{Int64,Int64}}}()
+    tree_stats_dict = Dict{RuleNode, NamedTuple{(:size,:occurrences), <:Tuple{Int64,Int64}}}()
 
     for (comp_id, values) in stats
         t = generate_tree_from_compression(comp_id, global_dict, comp_id, grammar)

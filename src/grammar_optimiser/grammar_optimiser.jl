@@ -1,8 +1,6 @@
-using Clingo_jll;
+using Clingo_jll
 include("enumerate_subtrees.jl")
-include("parse_subtrees_to_json.jl")
-include("parse_input.jl")
-include("parse_output.jl")
+include("parsing_IO.jl")
 include("analyze_compressions.jl")
 include("extend_grammar.jl")
 
@@ -16,7 +14,7 @@ Optimises a grammar based on a set of trees. The algorithm works in three stages
 # Arguments
 - `trees::Vector{RuleNode}`: the trees to optimise the grammar for
 - `grammar::AbstractGrammar`: the grammar to optimise
-- `subtree_selection_strategy::Int`: the strategy to select subtrees, strategy 1 is based on occurences and strategy 2 is based on size * occurences
+- `subtree_selection_strategy::Int`: the strategy to select subtrees, strategy 1 is based on occurrences and strategy 2 is based on size * occurrences
 - `f_best::Float64`: the number of best compressions to select
 - `verbosity::Int`: the verbosity level
 # Result
@@ -71,9 +69,9 @@ function grammar_optimiser(trees::Vector{RuleNode}, grammar::AbstractGrammar, su
 
     # 5. Analyse clingo output
     verbosity > 0 && print("Stage 5: Analyze subtrees\n") # 5. Analyse clingo output
-    all_stats = Vector{Dict{RuleNode, NamedTuple{(:size,:occurences), <:Tuple{Int64,Int64}}}}()
+    all_stats = Vector{Dict{RuleNode, NamedTuple{(:size,:occurrences), <:Tuple{Int64,Int64}}}}()
     for i in 1:length(trees)
-        node_assignments = best_values[i]
+        node_assignments::Vector{String} = best_values[i]
 
         stats = generate_stats(global_dicts[i], node_assignments)
 
@@ -83,7 +81,7 @@ function grammar_optimiser(trees::Vector{RuleNode}, grammar::AbstractGrammar, su
     end
 
     combined_stats = zip_stats(all_stats)
-    best_compressions = select_compressions(subtree_selection_strategy, combined_stats, f_best, verbosity)
+    best_compressions = select_compressions(subtree_selection_strategy, combined_stats, f_best; verbosity)
     new_grammar = grammar
 
     for b in best_compressions

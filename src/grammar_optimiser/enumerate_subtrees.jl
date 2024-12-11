@@ -1,23 +1,21 @@
 using DataStructures
 
 """
-    enumerate_subtrees(tree::RuleNode, g::AbstractGrammar)
+    enumerate_subtrees(tree::RuleNode, grammar::AbstractGrammar)
 
-Enumerates all subtrees of a given tree.
+Enumerates all subtrees of a given tree. Returns a vector listing all subtrees of the tree.
 # Arguments
 - `tree::RuleNode`: the tree to enumerate the subtrees of
-- `g::AbstractGrammar`: the grammar to use
-# Result
-- `subtrees::Vector{RuleNode}`: a list of all subtrees of the tree
+- `grammar::AbstractGrammar`: the grammar to use
 """
-function enumerate_subtrees(tree::RuleNode, g::AbstractGrammar)
-    (subtrees, other_subtrees) = enumerate_subtrees_rec(tree, g)
+function enumerate_subtrees(tree::RuleNode, grammar::AbstractGrammar)::Vector{RuleNode}
+    (subtrees, other_subtrees) = _enumerate_subtrees_rec(tree, grammar)
     return vcat(subtrees, other_subtrees)
 end
 
 
 """
-    enumerate_subtrees_rec(tree::RuleNode, g::AbstractGrammar)
+    _enumerate_subtrees_rec(tree::RuleNode, g::AbstractGrammar)
 
 Enumerates all subtrees of a given tree.
 # Arguments
@@ -26,7 +24,7 @@ Enumerates all subtrees of a given tree.
 # Result
 - `subtrees::(Vector{RuleNode},Vector{RuleNode})`: a tuple of a list of all subtrees of the tree and a list of all other subtrees
 """
-function enumerate_subtrees_rec(tree::RuleNode, g::AbstractGrammar)
+function _enumerate_subtrees_rec(tree::RuleNode, grammar::AbstractGrammar)
     if length(tree.children) == 0
         return ([tree], [])
     end   
@@ -35,7 +33,7 @@ function enumerate_subtrees_rec(tree::RuleNode, g::AbstractGrammar)
     other_subtrees = [] # subtrees without papa node
 
     for child in tree.children
-        (subtrees_child, other_subtrees_child) = enumerate_subtrees_rec(child, g)
+        (subtrees_child, other_subtrees_child) = _enumerate_subtrees_rec(child, grammar)
         push!(child_subtrees, subtrees_child)
         other_subtrees = vcat(other_subtrees, subtrees_child, other_subtrees_child)
     end
@@ -56,7 +54,7 @@ function enumerate_subtrees_rec(tree::RuleNode, g::AbstractGrammar)
                         end
                     end
                 else
-                    hole = Hole(get_domain(g, g.bytype[child_types(g, candidate)[i]]))
+                    hole = Hole(get_domain(grammar, grammar.bytype[child_types(grammar, candidate)[i]]))
                     candidate.children[i] = hole
                 end
             end

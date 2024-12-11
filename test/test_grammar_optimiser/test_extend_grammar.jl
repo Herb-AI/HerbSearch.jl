@@ -1,8 +1,4 @@
-using Test, HerbCore, HerbGrammar, HerbConstraints
-#Cannot use "using HerbSearch" because HerbSearch does not expose this functionality. 
-include("../../src/grammar_optimiser/extend_grammar.jl")
-
-Subtree_dict = Dict{Int64, NamedTuple{(:comp_id, :parent_id, :child_nr, :type, :children), <:Tuple{Int64,Int64,Int64,Int64,Vector{Int64}}}}(
+subtree_dict = Dict{Int64, NamedTuple{(:comp_id, :parent_id, :child_nr, :type, :children), <:Tuple{Int64,Int64,Int64,Int64,Vector{Int64}}}}(
     5 => (comp_id = 5, parent_id = -1, child_nr = -1, type = 5, children = Int64[]),
     16 => (comp_id = 14, parent_id = 14, child_nr = 1, type = 1, children = Int64[]),
     20 => (comp_id = 20, parent_id = -1, child_nr = -1, type = 5, children = [21, 22]),
@@ -26,12 +22,12 @@ hole = Hole(get_domain(g, g.bytype[:Number]))
 test_ast = RuleNode(4, [RuleNode(1), hole])
 
 @testset verbose=true "Generate Tree From Compression" begin
-    tree = generate_tree_from_compression(20, Subtree_dict, 20, g)
+    tree = HerbSearch.generate_tree_from_compression(20, subtree_dict, 20, g)
     @test string(tree) == string(RuleNode(5, [RuleNode(2),RuleNode(1)])) 
 
-    tree = generate_tree_from_compression(17, Subtree_dict, 17, g)
+    tree = HerbSearch.generate_tree_from_compression(17, subtree_dict, 17, g)
     @test string(tree) == string(RuleNode(5, [RuleNode(2),hole]))
 
-    tree = generate_tree_from_compression(11, Subtree_dict, 11, g)
+    tree = HerbSearch.generate_tree_from_compression(11, subtree_dict, 11, g)
     @test string(tree) == string(RuleNode(5, [hole,hole])) 
 end
