@@ -16,7 +16,6 @@ include("uniform_iterator.jl")
 
 include("heuristics.jl")
 
-include("fixed_shaped_iterator.jl")
 include("top_down_iterator.jl")
 
 include("evaluate.jl")
@@ -42,8 +41,6 @@ export
   ProgramIterator,
   @programiterator,
   
-  ContextSensitivePriorityEnumerator,
-  
   heuristic_leftmost,
   heuristic_rightmost,
   heuristic_random,
@@ -56,7 +53,6 @@ export
   optimal_program,
   suboptimal_program,
 
-  FixedShapedIterator,
   UniformIterator,
   next_solution!,
 
