@@ -2,7 +2,7 @@ test_input1 = """
 {
   "Solver": "clingo version 5.7.1",
   "Input": [
-    "/home/username/Study/Herb/HerbSearch.jl/src/grammar_optimiser/model.lp","-"
+    "/home/username/Study/Herb/HerbSearch.jl/src/grammar_refactor/model.lp","-"
   ],
   "Call": [
     {
@@ -66,7 +66,7 @@ test_input2 = """
 {
   "Solver": "clingo version 5.7.1",
   "Input": [
-    "/home/username/Study/Herb/HerbSearch.jl/src/grammar_optimiser/model.lp","-"
+    "/home/username/Study/Herb/HerbSearch.jl/src/grammar_refactor/model.lp","-"
   ],
   "Call": [
     {

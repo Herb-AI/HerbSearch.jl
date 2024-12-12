@@ -38,7 +38,7 @@ include("genetic_search_iterator.jl")
 
 include("random_iterator.jl")
 
-include("grammar_optimiser/grammar_optimiser.jl")
+include("grammar_refactor/grammar_refactor.jl")
 
 export 
   ProgramIterator,
@@ -81,5 +81,5 @@ export
   sample,
   rand,
 
-  grammar_optimiser
+  refactor_grammar
 end # module HerbSearch

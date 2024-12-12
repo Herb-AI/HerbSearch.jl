@@ -27,7 +27,7 @@ Random.seed!(1234)
 
     include("test_constraints.jl")
 
-    include("test_grammar_optimiser/test_grammar_optimiser.jl")
+    include("test_grammar_refactor/test_grammar_refactoring.jl")
 
     # Excluded because it contains long tests
     # include("test_realistic_searches.jl")
