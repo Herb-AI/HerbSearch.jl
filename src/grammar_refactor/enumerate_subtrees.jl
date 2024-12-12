@@ -29,8 +29,8 @@ function _enumerate_subtrees_rec(tree::RuleNode, grammar::AbstractGrammar)
         return ([tree], [])
     end   
     child_subtrees = []
-    subtrees_tree_root = []# subtrees with papa node
-    other_subtrees = [] # subtrees without papa node
+    subtrees_tree_root = []# subtrees with parent node
+    other_subtrees = [] # subtrees without parent node
 
     for child in tree.children
         (subtrees_child, other_subtrees_child) = _enumerate_subtrees_rec(child, grammar)
@@ -40,7 +40,6 @@ function _enumerate_subtrees_rec(tree::RuleNode, grammar::AbstractGrammar)
 
     # for every combination
     for perm in combinations(length(tree.children))
-        
         subtree_candidates = cons(deepcopy(tree), nil()) # copy the tree
         # for every child
         for (i, include) in pairs(perm)
@@ -75,14 +74,7 @@ Generates all combinations of n elements.
 # Result
 - `combinations::Vector{Vector{Bool}}`: a list of all combinations
 """
-function combinations(n::Int)
-    if n == 0
-        return [[]]
-    end
-    smaller_combinations = combinations(n - 1)
-    return vcat([vcat(true, perm) for perm in smaller_combinations], 
-        [vcat(false, perm) for perm in smaller_combinations])
-end
+combinations(n::Int) = Iterators.product([[true,false] for _ in 1:n]...)
 
 """
     selection_criteria(tree::RuleNode, subtree::AbstractRuleNode)

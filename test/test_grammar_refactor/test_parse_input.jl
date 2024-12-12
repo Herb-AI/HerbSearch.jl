@@ -40,17 +40,17 @@ comp_node(3, 2).
 %Compression tree nodes
 comp_root(6).
 comp_node(6, 2).
-comp_node(8, 1).
+comp_node(7, 1).
 %Compression tree edges:
-edge(6, 8, 1).
+edge(6, 7, 0).
 
 %Subtree 3
 %Compression tree nodes
 comp_root(9).
 comp_node(9, 2).
-comp_node(10, 1).
+comp_node(11, 1).
 %Compression tree edges:
-edge(9, 10, 0).
+edge(9, 11, 1).
 
 %Subtree 4
 %Compression tree nodes
