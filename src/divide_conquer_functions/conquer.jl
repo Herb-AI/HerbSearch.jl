@@ -16,15 +16,14 @@ by combining them into a decision tree.
 - `sym_constraint::Symbol`: The symbol used to constrain grammar when generating predicates.
 - `symboltable::SymbolTable`: The symbol table used for evaluating expressions.
 
-# Descritpion
-Combines the progams that solve the sub-problems into a decision tree. To learn the decision tree, predicates are generated
-that are then used to create feature vectors. TODO: continue...
+# Description
+Combines the progams that solve the sub-problems into a decision tree. To learn the decision tree, labels and features are required.
+The solutions to the problems are used as labels. Predicates from the grammar serve as coniditional statements to combine the programs 
+in the decision tree. For this, features are obtained by evaluating the inputs of the examples on the predicates. 
 
 # Returns
 
-
-TODO!!!!
-
+The final program constructed from the solutions to the subproblems.
 """
 function conquer_combine(
 	problems_to_solutions::Dict{Problem, Vector{RuleNode}},
@@ -48,7 +47,7 @@ function conquer_combine(
 	ioexamples_solutions =
 		[(example, sol) for (key, sol) in problems_to_solutions for example in key.spec]
 	labels = get_labels(ioexamples_solutions)
-	predicates = get_predicates(grammar, sym_bool, n_predicates)
+	predicates = get_predicates(grammar, sym_bool, sym_constraint, n_predicates)
 	# Matrix of feature vectors. Feature vectors are created by evaluating an input from the IO examples on predicatess.
 	features = get_features(
 		ioexamples_solutions,
@@ -62,8 +61,7 @@ function conquer_combine(
 	# See decision tree example: https://github.com/Herb-AI/HerbSearch.jl/blob/subset-search/src/subset_iterator.jl
 	model = DecisionTree.DecisionTreeClassifier()
 	DecisionTree.fit!(model, features, labels)
-	# TODO: What to do now?
-	# TODO: better docs
+	# TODO: What do we return?
 end
 
 """

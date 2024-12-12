@@ -44,47 +44,28 @@ include("divide_conquer_functions/divide.jl")
 include("divide_conquer_functions/decide.jl")
 include("divide_conquer_functions/conquer.jl")
 
-export 
-  ProgramIterator,
-  @programiterator,
-  
-  ContextSensitivePriorityEnumerator,
-  
-  heuristic_leftmost,
-  heuristic_rightmost,
-  heuristic_random,
-  heuristic_smallest_domain,
-
-  derivation_heuristic,
-
-  synth,
-  SynthResult,
-  optimal_program,
-  suboptimal_program,
-
-  FixedShapedIterator,
-  UniformIterator,
-  next_solution!,
-
-  TopDownIterator,
-  RandomIterator,
-  BFSIterator,
-  DFSIterator,
-  MLFSIterator,
-
-  MHSearchIterator,
-  VLSNSearchIterator,
-  SASearchIterator,
-
-  mean_squared_error,
-  misclassification,
-
-  GeneticSearchIterator,
-  misclassification,
-  validate_iterator,
-  sample,
-  rand, 
-
-  divide_by_example,
-  decide_if_solution
+export
+	ProgramIterator,
+	@programiterator, ContextSensitivePriorityEnumerator, heuristic_leftmost,
+	heuristic_rightmost,
+	heuristic_random,
+	heuristic_smallest_domain, derivation_heuristic, synth,
+	SynthResult,
+	optimal_program,
+	suboptimal_program, FixedShapedIterator,
+	UniformIterator,
+	next_solution!, TopDownIterator,
+	RandomIterator,
+	BFSIterator,
+	DFSIterator,
+	MLFSIterator, MHSearchIterator,
+	VLSNSearchIterator,
+	SASearchIterator, mean_squared_error,
+	misclassification, GeneticSearchIterator,
+	misclassification,
+	validate_iterator,
+	sample,
+	rand, divide_by_example,
+	decide_if_solution,
+	divide_and_conquer
 end # module HerbSearch

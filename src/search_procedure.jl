@@ -32,7 +32,7 @@ function synth(
 	allow_evaluation_errors::Bool = false,
 	max_time = typemax(Int),
 	max_enumerations = typemax(Int),
-	mod::Module = Main,)::Union{Tuple{RuleNode, SynthResult}, Nothing}
+	mod::Module = Main)::Union{Tuple{RuleNode, SynthResult}, Nothing}
 	start_time = time()
 	grammar = get_grammar(iterator.solver)
 	symboltable::SymbolTable = SymbolTable(grammar, mod)
@@ -86,42 +86,54 @@ Breaks down the problem into smaller subproblems and synthesizes solutions for e
 - `max_enumerations::Int` : Maximum number of iterations that the iterator will run 
 - `mod::Module` : A module containing definitions for the functions in the grammar. Defaults to `Main`.
 
-Returns a tuple of the `RuleNode` representing the solution program and a variant of `SynthResult` indicating if the solution program is optimal. 
+Returns the `RuleNode` representing the final program constructed from the solutions to the subproblems.
 """
-# function divide_and_conquer(problem::Problem, 
-#     iterator::ProgramIterator, 
-#     divide::Function=divide_by_example, 
-#     decide::Function=decide_if_solution, 
-#     conquer::Function=conquer_combine,
-#     max_time = typemax(Int),
-#     max_enumerations = typemax(Int),
-#     mod::Module=Main
-# )  
-#     start_time = time()
-#     grammar = get_grammar(iterator.solver)
-#     symboltable :: SymbolTable = SymbolTable(grammar, mod)
+function divide_and_conquer(problem::Problem,
+	iterator::ProgramIterator,
+	divide::Function = divide_by_example,
+	decide::Function = decide_if_solution,
+	# conquer::Function = conquer_combine,
+	max_time::Int = typemax(Int),
+	max_enumerations::Int = typemax(Int),
+	mod::Module = Main,
+)
+	start_time = time()
+	grammar = get_grammar(iterator.solver)
+	symboltable::SymbolTable = SymbolTable(grammar, mod)
 
-#      # Divide problem into sub-problems 
-#      subproblems = divide(problem) 
+	# Divide problem into sub-problems 
+	subproblems = divide(problem)
 
-#      # Initialise a Dict that maps each subproblem to one or more solution programs
-#      problems_to_solutions::Dict{Problem, Vector{RuleNode}} = Dict(p => [] for p in subproblems)
+	# Initialise a Dict that maps each subproblem to one or more solution programs
+	problems_to_solutions::Dict{Problem, Vector{RuleNode}} = Dict(p => [] for p in subproblems)
+	for (i, candidate_program) ∈ enumerate(iterator)
+		expr = rulenode2expr(candidate_program, grammar)
+		for prob in subproblems
+			println(typeof(candidate_program))
+			keep_program = decide(prob, expr, symboltable)
+			# 	if keep_program
+			# 		push!(problems_to_solutions[prob], candidate_program)
+			# 	end
+		end
+		# # Stop if we have a solution to each subproblem, or reached max_enumerations/max_time
+		if all(!isempty, values(problems_to_solutions)) || i > max_enumerations ||
+		   time() - start_time > max_time
+			break
+		end
+	end
+	# final_program = conquer_combine(
+	#     problems_to_solutions,
+	#     grammar,
+	#     n_predicates::Int,
+	#     sym_bool::Symbol,
+	#     sym_start::Symbol,
+	#     sym_constraint::Symbol,
+	#     symboltable::SymbolTable,
+	# )
 
-#     for (i, candidate_program) ∈ enumerate(iterator)
-#         expr = rulenode2expr(candidateprogram, grammar)
-#         for prob in sub_problems
-#             keep_program = decide(prob, expr, symboltable)
-#             if keep_program:
-#                       push!(problems_to_solutions[prob], candidate_program)
-#             end
-#         end
-#         # Stop if we have a solution to each subproblem, or reached max_enumerations/max_time
-#         if all(!isempty, values(problems_to_solutions)) || i > max_enumerations || time() - start_time > max_time
-#             break;
-#         end
-#     end
-
-#     return conquer(problems_to_solutions) # TODO: implement conquer
-# end
+	# return conquer(problems_to_solutions) # TODO: implement conquer
+	return (problems_to_solutions, subproblems)
+	# TODO: How reusable is our API for decide, divide, conquer
+end
 
 
