@@ -121,7 +121,7 @@ function priority_function(
     isrequeued::Bool
 )
     if isrequeued
-        return parent_value;
+        return parent_value - 1;
     end
     return parent_value - 1;
 end
@@ -208,17 +208,6 @@ end
 
 Describes the iteration for a given [`TopDownIterator`](@ref) and a [`PriorityQueue`](@ref) over the grammar without enqueueing new items to the priority queue. Recursively returns the result for the priority queue.
 """
-function Base.iterate(iter::TopDownIterator, tup::Tuple{Vector{<:AbstractRuleNode}, DataStructures.PriorityQueue})
-    track!(iter.solver, "#CompleteTrees (by FixedShapedIterator)")
-    # iterating over fixed shaped trees using the FixedShapedIterator
-    if !isempty(tup[1])
-        return (pop!(tup[1]), tup)
-    end
-
-    return _find_next_complete_tree(iter.solver, tup[2], iter)
-end
-
-
 function Base.iterate(iter::TopDownIterator, pq::DataStructures.PriorityQueue)
     track!(iter.solver, "#CompleteTrees (by UniformSolver)")
     return _find_next_complete_tree(iter.solver, pq, iter)
