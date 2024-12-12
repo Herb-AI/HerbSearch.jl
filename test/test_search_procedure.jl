@@ -32,7 +32,7 @@
             Index = List[Number]
         end
         
-        problem = Problem([IOExample(Dict(), x) for x ∈ 1:5])
+        problem = Problem([IOExample(Dict{Symbol,Any}(), x) for x ∈ 1:5])
         iterator = BFSIterator(g₂, :Index, max_depth=2)
         solution, flag = synth(problem, iterator, allow_evaluation_errors=true)
 
@@ -70,7 +70,7 @@
             Index = List[Number]
         end
         
-        problem = Problem([IOExample(Dict(), x) for x ∈ 1:5])
+        problem = Problem([IOExample(Dict{Symbol,Any}(), x) for x ∈ 1:5])
         iterator = BFSIterator(g₃, :Index, max_depth=2)
         solution, flag = synth(problem, iterator, allow_evaluation_errors=true) 
 
