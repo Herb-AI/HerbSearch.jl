@@ -35,7 +35,7 @@ function synth(
 )::Union{Tuple{RuleNode, SynthResult}, Nothing}
     start_time = time()
     grammar = get_grammar(iterator.solver)
-    symboltable :: SymbolTable = SymbolTable(grammar, mod)
+    symboltable :: SymbolTable = grammar2symboltable(grammar, mod)
 
     best_score = 0
     best_program = nothing

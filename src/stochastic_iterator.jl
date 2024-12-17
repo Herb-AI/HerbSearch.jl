@@ -161,7 +161,7 @@ function _calculate_cost(program::Union{RuleNode, StateHole}, cost_function::Fun
     results = Tuple{<:Number,<:Number}[]
 
     expression = rulenode2expr(program, grammar)
-    symbol_table = SymbolTable(grammar)
+    symbol_table = grammar2symboltable(grammar)
 
     for example ∈ filter(e -> e isa IOExample, spec)
         outcome = evaluation_function(symbol_table, expression, example.in)
