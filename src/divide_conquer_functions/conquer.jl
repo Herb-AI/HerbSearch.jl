@@ -1,5 +1,12 @@
 
 using DecisionTree
+struct ConditionalIfElseError <: Exception
+	msg::String
+end
+
+function Base.showerror(io::IO, e::ConditionalIfElseError)
+	print(io, e.msg)
+end
 
 """
 	$(TYPEDSIGNATURES)
@@ -26,7 +33,7 @@ in the decision tree. For this, features are obtained by evaluating the inputs o
 The final program constructed from the solutions to the subproblems.
 """
 function conquer_combine(
-	problems_to_solutions::Dict{Problem, Vector{RuleNode}},
+	problems_to_solutions::Dict{Problem, Vector{StateHole}},
 	grammar::AbstractGrammar,
 	n_predicates::Int,
 	sym_bool::Symbol,
@@ -35,33 +42,36 @@ function conquer_combine(
 	symboltable::SymbolTable,
 )
 	# make sure grammar has if-else rulenode
-	return_type = grammar.rules[grammar.bytype[sym_start][1]] # return type of the starting symbol in the grammar
-	idx_ifelse = findfirst(r -> r == :($sym_bool ? $return_type : $return_type), grammar.rules)
+	idx_ifelse = findfirst(r -> r == :($sym_bool ? $sym_start : $sym_start), grammar.rules)
 	if isnothing(idx_ifelse)
 		throw(
-			DecisionTreeError("No conditional if-else statement found in grammar. Please add one."),
+			ConditionalIfElseError(
+				"No conditional if-else statement found in grammar. Please add one.",
+			),
 		)
 	end
+
 
 	# Turn dic into vector since we cannot guarantee order when iterating over dict.
 	ioexamples_solutions =
 		[(example, sol) for (key, sol) in problems_to_solutions for example in key.spec]
-	labels = get_labels(ioexamples_solutions)
-	predicates = get_predicates(grammar, sym_bool, sym_constraint, n_predicates)
-	# Matrix of feature vectors. Feature vectors are created by evaluating an input from the IO examples on predicatess.
-	features = get_features(
-		ioexamples_solutions,
-		predicates,
-		grammar,
-		symboltable,
-		false,
-	)
-	features = float.(features)
-	# Take labels and features to make DecisionTree
-	# See decision tree example: https://github.com/Herb-AI/HerbSearch.jl/blob/subset-search/src/subset_iterator.jl
-	model = DecisionTree.DecisionTreeClassifier()
-	DecisionTree.fit!(model, features, labels)
-	# TODO: What do we return?
+	labels, labels_to_programs = get_labels(ioexamples_solutions)
+	# predicates = get_predicates(grammar, sym_bool, sym_constraint, n_predicates)
+	# # Matrix of feature vectors. Feature vectors are created by evaluating an input from the IO examples on predicatess.
+	# features = get_features(
+	# 	ioexamples_solutions,
+	# 	predicates,
+	# 	grammar,
+	# 	symboltable,
+	# 	false,
+	# )
+	# features = float.(features)
+	# # Take labels and features to make DecisionTree
+	# # See decision tree example: https://github.com/Herb-AI/HerbSearch.jl/blob/subset-search/src/subset_iterator.jl
+	# # TODO: Can we use programs `RuleNode` as labels instead of string?
+	# model = DecisionTree.DecisionTreeClassifier()
+	# DecisionTree.fit!(model, features, labels)
+	return labels
 end
 
 """
@@ -99,7 +109,7 @@ end
 	predicate.
 """
 function get_features(
-	ioexamples_solutions::Vector{Tuple{IOExample, Vector{RuleNode}}},
+	ioexamples_solutions::Vector{Tuple{IOExample, Vector{StateHole}}},
 	predicates::Vector{RuleNode},
 	grammar::AbstractGrammar,
 	symboltable::SymbolTable,
@@ -108,23 +118,23 @@ function get_features(
 	# features matrix with dimension n_ioexamples x n_predicates
 	features = trues(length(ioexamples_solutions),
 		length(predicates))
-	for (i, (ioexample, _)) in enumerate(ioexamples_solutions)
-		output = Vector()
-		for pred in predicates
-			expr = rulenode2expr(pred, grammar)
-			try
-				o = execute_on_input(symboltable, expr, ioexample.in) # will return Bool since we execute on predicates
-				push!(output, o)
-			catch err
-				# TODO: When do we expect an EvaluatinError?
-				# Throw the error if `allow_evaluation_errors` is false
-				eval_error = EvaluationError(expr, ioexample.in, err)
-				allow_evaluation_errors || throw(eval_error)
-				push!(output, false)
-			end
-		end
-		features[i, :] = output
-	end
+	# for (i, (ioexample, _)) in enumerate(ioexamples_solutions)
+	# 	output = Vector()
+	# 	for pred in predicates
+	# 		expr = rulenode2expr(pred, grammar)
+	# 		try
+	# 			o = execute_on_input(symboltable, expr, ioexample.in) # will return Bool since we execute on predicates
+	# 			push!(output, o)
+	# 		catch err
+	# 			# TODO: When do we expect an EvaluatinError?
+	# 			# Throw the error if `allow_evaluation_errors` is false
+	# 			eval_error = EvaluationError(expr, ioexample.in, err)
+	# 			allow_evaluation_errors || throw(eval_error)
+	# 			push!(output, false)
+	# 		end
+	# 	end
+	# 	features[i, :] = output
+	# end
 	return features
 end
 
@@ -133,10 +143,18 @@ end
 	The label is the first program in the solutions vector.
 """
 function get_labels(
-	ioexamples_solutions::Vector{Tuple{IOExample, Vector{RuleNode}}},
-)::Vector{String}
-	# TODO: Does Vector{String} make sense as return type? Try RuleNode as labels
+	ioexamples_solutions::Vector{Tuple{IOExample, Vector{StateHole}}},
+)
+	# TODO: update docstring 
 	# Use first solution probram as label for a problem
-	labels = [string(solutions[1]) for (_, solutions) in ioexamples_solutions]
-	return labels
+	labels_to_programs = Dict{String, StateHole}()
+	labels = []
+	for (_, solutions) in ioexamples_solutions
+		program = solutions[1]
+		label = string(program)
+		push!(labels, label)
+		get!(labels_to_programs, label, program)
+	end
+	# labels = [string(solutions[1]) for (_, solutions) in ioexamples_solutions]
+	return labels, labels_to_programs
 end

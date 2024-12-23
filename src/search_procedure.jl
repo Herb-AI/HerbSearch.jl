@@ -105,34 +105,40 @@ function divide_and_conquer(problem::Problem,
 	subproblems = divide(problem)
 
 	# Initialise a Dict that maps each subproblem to one or more solution programs
-	problems_to_solutions::Dict{Problem, Vector{RuleNode}} = Dict(p => [] for p in subproblems)
+	problems_to_solutions::Dict{Problem, Vector{StateHole}} = Dict(p => [] for p in subproblems)
 	for (i, candidate_program) ∈ enumerate(iterator)
 		expr = rulenode2expr(candidate_program, grammar)
 		for prob in subproblems
-			println(typeof(candidate_program))
 			keep_program = decide(prob, expr, symboltable)
-			# 	if keep_program
-			# 		push!(problems_to_solutions[prob], candidate_program)
-			# 	end
+			# TODO: We want to make all of this work also with StateHoles. Use `get_rulenode` for stateholes. Make deepcopy of program.
+			if keep_program
+				push!(problems_to_solutions[prob], deepcopy(candidate_program))
+			end
 		end
-		# # Stop if we have a solution to each subproblem, or reached max_enumerations/max_time
+		# Stop if we have a solution to each subproblem, or reached max_enumerations/max_time
 		if all(!isempty, values(problems_to_solutions)) || i > max_enumerations ||
 		   time() - start_time > max_time
 			break
 		end
+
+
 	end
+
+	# n_predicates = 5
+	# TODO: add if-else rule to grammar
 	# final_program = conquer_combine(
-	#     problems_to_solutions,
-	#     grammar,
-	#     n_predicates::Int,
-	#     sym_bool::Symbol,
-	#     sym_start::Symbol,
-	#     sym_constraint::Symbol,
-	#     symboltable::SymbolTable,
+	# 	problems_to_solutions,
+	# 	grammar,
+	# 	n_predicates,
+	# 	sym_bool::Symbol,
+	# 	:Start,
+	# 	:Start,
+	# 	symboltable,
 	# )
 
 	# return conquer(problems_to_solutions) # TODO: implement conquer
-	return (problems_to_solutions, subproblems)
+	# return (problems_to_solutions, subproblems)
+	return problems_to_solutions
 	# TODO: How reusable is our API for decide, divide, conquer
 end
 
