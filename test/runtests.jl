@@ -12,7 +12,7 @@ Random.seed!(1234)
 
 @testset "HerbSearch.jl" verbose = true begin
 	# include("test_search_procedure.jl")        
-	# include("test_divide_conquer.jl")
+	include("test_divide_conquer.jl")
 	include("test_divide_conquer_example.jl")
 	# include("test_context_free_iterators.jl")
 	# include("test_sampling.jl")

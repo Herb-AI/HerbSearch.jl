@@ -105,7 +105,7 @@ function divide_and_conquer(problem::Problem,
 	subproblems = divide(problem)
 
 	# Initialise a Dict that maps each subproblem to one or more solution programs
-	problems_to_solutions::Dict{Problem, Vector{StateHole}} = Dict(p => [] for p in subproblems)
+	problems_to_solutions = Dict(p => Vector{Union{RuleNode, StateHole}}() for p in subproblems)
 	for (i, candidate_program) ∈ enumerate(iterator)
 		expr = rulenode2expr(candidate_program, grammar)
 		for prob in subproblems
@@ -120,12 +120,9 @@ function divide_and_conquer(problem::Problem,
 		   time() - start_time > max_time
 			break
 		end
-
-
 	end
 
 	# n_predicates = 5
-	# TODO: add if-else rule to grammar
 	# final_program = conquer_combine(
 	# 	problems_to_solutions,
 	# 	grammar,

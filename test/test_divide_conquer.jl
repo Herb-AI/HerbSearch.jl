@@ -109,7 +109,7 @@
 				"2{9{3,5}5,3}",
 				"8{5,6}",
 			])
-			labels = HerbSearch.get_labels(ioexamples_solutions)
+			labels, labels_to_programs = HerbSearch.get_labels(ioexamples_solutions)
 			@test length(labels) == 4
 			@test Set(labels) == expected_labels
 		end
@@ -151,25 +151,37 @@
 				predicates, grammar, symboltable,
 			)
 			@test features == expected_features
-			# # TODO: When do I get EvaluationError?
-			# @test_throws ErrorException HerbSearch.get_features(
-			# 	ioexamples_solutions,
-			# 	[RuleNode(1)],
-			# 	grammar,
-			# 	symboltable,
-			# 	false,
-			# )
-			# ioexamples = [(key.spec, sol) for (key, sol) in problems_to_solutions]
-			# ioexamples = Vector{Tuple{IOExample, Vector{RuleNode}}}()
-			# for (key, sol) in problems_to_solutions
-			# 	for example in key.spec
-			# 		push!(ioexamples, (example, sol))
-			# 	end
-			# end
+			# TODO: When do I get EvaluationError?
+			@test_throws HerbSearch.EvaluationError HerbSearch.get_features(
+				ioexamples_solutions,
+				[RuleNode(11, [RuleNode(4)])], # ehad_cvc(_arg_1)
+				grammar,
+				symboltable,
+				false,
+			)
+			ioexamples = [(key.spec, sol) for (key, sol) in problems_to_solutions]
+			ioexamples = Vector{Tuple{IOExample, Vector{RuleNode}}}()
+			for (key, sol) in problems_to_solutions
+				for example in key.spec
+					push!(ioexamples, (example, sol))
+				end
+			end
 			ioexamples =
 				[(example, sol) for (key, sol) in problems_to_solutions for example in key.spec]
 
 
+		end
+		@testset verbose = true "Construct final program" begin
+			# TODO: define a very simple grammar
+			# TODO: define a decision tree
+			# TODO: call function with root of decision tree as first node
+
+			# function construct_final_program(
+			# 	node::Union{DecisionTree.Node, DecisionTree.Leaf},
+			# 	idx_ifelse::Int64,
+			# 	labels_to_programs::Dict{String, Union{StateHole, RuleNode}},
+			# 	predicates::Vector{RuleNode},
+			# )::RuleNode
 		end
 	end
 
