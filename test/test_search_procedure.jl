@@ -13,7 +13,7 @@
         solution, flag = synth(problem, iterator)
         program = rulenode2expr(solution, g₁)
 
-        @test execute_on_input(SymbolTable(g₁), program, Dict(:x => 6)) == 2*6+1
+        @test execute_on_input(grammar2symboltable(g₁), program, Dict(:x => 6)) == 2*6+1
     end
 
     @testset "Search max_enumerations stopping condition" begin
@@ -47,7 +47,7 @@
         program = rulenode2expr(solution, g₁)
 
         @test flag == suboptimal_program
-        @test execute_on_input(SymbolTable(g₁), program, Dict(:x => 6)) == 2*6+1
+        @test execute_on_input(grammar2symboltable(g₁), program, Dict(:x => 6)) == 2*6+1
 
     end
 
