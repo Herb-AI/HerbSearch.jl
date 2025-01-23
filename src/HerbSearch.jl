@@ -67,5 +67,7 @@ export
 	sample,
 	rand, divide_by_example,
 	decide_if_solution,
-	divide_and_conquer
+	conquer_combine,
+	divide_and_conquer,
+	construct_final_program
 end # module HerbSearch

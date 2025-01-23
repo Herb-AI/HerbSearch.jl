@@ -15,13 +15,14 @@ Takes in the problems with the found solutions and combines them into a global s
 by combining them into a decision tree.
 
  # Arguments
-- `problems_to_solutions::Dict{Problem, Vector{RuleNode}}`: A dictionary mapping problems to their corresponding solution programs.
-- `grammar::AbstractGrammar`: The grammar used to generate and evaluate programs.
-- `n_predicates::Int`: The number of predicates generated to learn the decision tree.
-- `sym_bool::Symbol`: The symbol representing boolean conditions in the grammar.
-- `sym_start::Symbol`: The starting symbol of the grammar.
-- `sym_constraint::Symbol`: The symbol used to constrain grammar when generating predicates.
-- `symboltable::SymbolTable`: The symbol table used for evaluating expressions.
+- `problems_to_solutions`: A dictionary mapping problems to the index of their corresponding solution program in `solutions`.
+- `solutions`: A vector containing the solutions to the problems
+- `grammar`: The grammar used to generate and evaluate programs.
+- `n_predicates`: The number of predicates generated to learn the decision tree.
+- `sym_bool`: The symbol representing boolean conditions in the grammar.
+- `sym_start`: The starting symbol of the grammar.
+- `sym_constraint`: The symbol used to constrain grammar when generating predicates.
+- `symboltable`: The symbol table used for evaluating expressions.
 
 # Description
 Combines the progams that solve the sub-problems into a decision tree. To learn the decision tree, labels and features are required.
@@ -33,7 +34,9 @@ in the decision tree. For this, features are obtained by evaluating the inputs o
 The final program constructed from the solutions to the subproblems.
 """
 function conquer_combine(
-	problems_to_solutions::Dict{Problem{Vector{IOExample}}, Vector{Union{StateHole, RuleNode}}},
+	problems_to_solutions::Dict{Problem{Vector{IOExample}}, Vector{Int}},
+	# solutions::Vector{Union{RuleNode, StateHole}},
+	solutions::Vector{RuleNode},
 	grammar::AbstractGrammar,
 	n_predicates::Int,
 	sym_bool::Symbol,
@@ -42,20 +45,24 @@ function conquer_combine(
 	symboltable::SymbolTable,
 )
 	# make sure grammar has if-else rulenode (TODO: do we need this? )
-	# idx_ifelse = findfirst(r -> r == :($sym_bool ? $sym_start : $sym_start), grammar.rules)
-	# if isnothing(idx_ifelse)
-	# 	throw(
-	# 		ConditionalIfElseError(
-	# 			"No conditional if-else statement found in grammar. Please add one.",
-	# 		),
-	# 	)
-	# end
+	idx_ifelse = findfirst(r -> r == :($sym_bool ? $sym_start : $sym_start), grammar.rules)
+	if isnothing(idx_ifelse)
+		throw(
+			ConditionalIfElseError(
+				"No conditional if-else statement found in grammar. Please add one.",
+			),
+		)
+	end
 
 
 	# Turn dic into vector since we cannot guarantee order when iterating over dict.
 	ioexamples_solutions =
-		[(example, sol) for (key, sol) in problems_to_solutions for example in key.spec]
-	labels, labels_to_programs = get_labels(ioexamples_solutions)
+		[
+			(example, [idx for idx in vec]) for (prob, vec) in problems_to_solutions for
+			example in prob.spec
+		]
+
+	labels = get_labels(ioexamples_solutions)
 	predicates = get_predicates(grammar, sym_bool, sym_constraint, n_predicates)
 	# Matrix of feature vectors. Feature vectors are created by evaluating an input from the IO examples on predicatess.
 	features = get_features(
@@ -68,11 +75,10 @@ function conquer_combine(
 	features = float.(features)
 	# Take labels and features to make DecisionTree
 	# See decision tree example: https://github.com/Herb-AI/HerbSearch.jl/blob/subset-search/src/subset_iterator.jl
-	# # TODO: Can we use programs `RuleNode` as labels instead of string? 
 	model = DecisionTree.DecisionTreeClassifier()
 	DecisionTree.fit!(model, features, labels)
-	# TODO: construct final program from decision tree
-	return labels, labels_to_programs, model
+	final_program = construct_final_program(model.root.node, idx_ifelse, solutions, predicates)
+	return final_program
 end
 
 """
@@ -104,18 +110,19 @@ function get_predicates(grammar::AbstractGrammar,
 	return predicates
 end
 
+# TODO: doc strings
 """
 	Returns a matrix containing the feature vectors for all problem/predicate combinations. 
 	A feature vector is obtained by evaluating a `IOExample` in `ioexamples_solutions` on each
 	predicate.
 """
 function get_features(
-	ioexamples_solutions::Vector{Tuple{IOExample, Vector{T}}},
+	ioexamples_solutions::Vector{Tuple{IOExample, Vector{Int}}},
 	predicates::Vector{RuleNode},
 	grammar::AbstractGrammar,
 	symboltable::SymbolTable,
 	allow_evaluation_errors::Bool = true,
-)::Matrix{Bool} where T <: Union{RuleNode, StateHole}
+)::Matrix{Bool}
 	# features matrix with dimension n_ioexamples x n_predicates
 	features = trues(length(ioexamples_solutions),
 		length(predicates))
@@ -140,23 +147,15 @@ end
 
 """
 	Returns a vector containing the labels for each `IOExample` in `ioexamples_solutions`.
-	The label is the first program in the solutions vector.
+	The label is the (TODO: index of the) first program in the vector of solutions for a `IOExample`.
 """
 function get_labels(
-	ioexamples_solutions::Vector{Tuple{IOExample, Vector{T}}},
-) where T <: Union{RuleNode, StateHole}
+	ioexamples_solutions::Vector{Tuple{IOExample, Vector{Int}}},
+)
 	# TODO: update docstring 
-	# Use first solution probram as label for a problem
-	labels_to_programs = Dict{String, Union{RuleNode, StateHole}}()
-	labels = []
-	for (_, solutions) in ioexamples_solutions
-		program = solutions[1]
-		label = string(program)
-		push!(labels, label)
-		get!(labels_to_programs, label, program)
-	end
-	# labels = [string(solutions[1]) for (_, solutions) in ioexamples_solutions]
-	return labels, labels_to_programs
+	# Use index of first program in vector of solutions as label for a problem
+	labels = [sol[1] for (_, sol) in ioexamples_solutions]
+	return labels
 end
 
 """
@@ -165,11 +164,11 @@ end
 Construct the final program by converting a decision tree into a RuleNode.
 
 # Arguments
-- `node::Union{DecisionTree.Node, DecisionTree.Leaf}`: The current node in the decision tree. Can be either
+- `node}`: The current node in the decision tree. Can be either
   an internal node or a leaf node.
-- `idx_ifelse::Int64`: Index of the if-else rule in the grammar.
-- `labels_to_programs::Dict{String, Union{StateHole, RuleNode}}`: Dictionary that maps a label to the corresponding subprogram.
-- `predicates::Vector{RuleNode}`: Vector of predicates used for feature tests in the decision tree.
+- `idx_ifelse`: Index of the if-else rule in the grammar.
+- `labels_to_programs`: Dictionary that maps a label to the corresponding subprogram.
+- `predicates`: Vector of predicates used for feature tests in the decision tree.
 
 # Description
 Recursively traverses a decision tree and constructs an equivalent `RuleNode`.
@@ -180,40 +179,34 @@ leaf node's label from `labels_to_programs`.
 # Returns
 - `RuleNode`: The final program derived from the decision tree. It combines solutions to sub-problems using conditional statements
 and features derived from the `predicates`.
-
-# Example
-```julia
-# Assuming a decision tree with structure:
-#              Feature 1 < 0.5
-#              /            \\
-#       "1-x"              Feature 2 < 0.3
-#                          /            \\
-#                     "2-x"            "3-x"
-#
-# The function will return a `RuleNode` structure equivalent to:
-# if (Feature 1 < 0.5)
-#     1-x
-# else
-#     if (Feature 2 < 0.3)
-#         2-x
-#     else
-#         3-x
 ```
 """
+# function construct_final_program(
+# 	node::Union{DecisionTree.Node, DecisionTree.Leaf},
+# 	idx_ifelse::Int64,
+# 	solutions::Vector{T},
+# 	predicates::Vector{RuleNode},
+# )::RuleNode where T <: Union{RuleNode, StateHole}
 function construct_final_program(
 	node::Union{DecisionTree.Node, DecisionTree.Leaf},
 	idx_ifelse::Int64,
-	labels_to_programs::Dict{String, Union{StateHole, RuleNode}},
+	solutions::Vector{RuleNode},
 	predicates::Vector{RuleNode},
 )::RuleNode
 	if DecisionTree.is_leaf(node)
-		return labels_to_programs[node.majority]
+		# TODO: convert StateHole to RuleNode
+		return solutions[node.majority]
 	end
 
-	l = construct_final_program(node.left, idx_ifelse, labels_to_programs, predicates)
-	r = construct_final_program(node.right, idx_ifelse, labels_to_programs, predicates)
+	l = construct_final_program(node.left, idx_ifelse, solutions, predicates)
+	r = construct_final_program(node.right, idx_ifelse, solutions, predicates)
 
-	# has to be order r,l because DT compares features like this (Feature 5 < 0.5), essentially checks if the expr evaluates to false
+	# Note: Order has to be r, l. DecisionTree.jl splits data by comparing a feature against a threshold. Since we use
+	# predicates to get features, the feature values will be true/false (1.0/0.0) and the threshold 0.5.
+	# Hence, the left edge of a node is for feature == false, right edge for feature == true.
+	# See also test for an example.
 	condition = RuleNode(idx_ifelse, Vector{RuleNode}([predicates[node.featid], r, l]))
 	return condition
 end
+
+# TODO: use `get_rulenode` to convert StateHole to RuleNode

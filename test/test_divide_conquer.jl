@@ -1,6 +1,6 @@
-@testset verbose = true "Search procedure divide and conquer" begin
-	@test 1 == 2 # TODO: failing test is just a reminder to add actually useful tests.
+using DecisionTree
 
+@testset verbose = true "Search procedure divide and conquer" begin
 	@testset verbose = true "divide, stopping criteria" begin
 		problem = Problem([IOExample(Dict(), x) for x ∈ 1:3])
 		expected_subproblems = [
@@ -9,19 +9,20 @@
 			Problem([IOExample(Dict(), 3)]),
 		]
 		subproblems = divide_by_example(problem)
-		# TODO: test equality
+		# TODO: test equality (of subproblems)
 
 		# Stopping criteria: stop search once we have a solution to each subproblem
-		problems_to_solutions::Dict{Problem, Vector{RuleNode}} = Dict(p => [] for p in subproblems)
+		solutions = [RuleNode(3), RuleNode(4)]
+		problems_to_solutions::Dict{Problem, Vector{Int}} = Dict(p => [] for p in subproblems)
 
-		push!(problems_to_solutions[subproblems[1]], RuleNode(3))
+		push!(problems_to_solutions[subproblems[1]], 1)
 		@test all(!isempty, values(problems_to_solutions)) == false
 
-		push!(problems_to_solutions[subproblems[1]], RuleNode(4))
-		push!(problems_to_solutions[subproblems[2]], RuleNode(3))
+		push!(problems_to_solutions[subproblems[1]], 2)
+		push!(problems_to_solutions[subproblems[2]], 1)
 		@test all(!isempty, values(problems_to_solutions)) == false
 
-		push!(problems_to_solutions[subproblems[3]], RuleNode(3))
+		push!(problems_to_solutions[subproblems[3]], 1)
 		@test all(!isempty, values(problems_to_solutions)) == true
 	end
 
@@ -65,15 +66,21 @@
 			Problem([IOExample(Dict(:_arg_1 => -3, :_arg_2 => 0), 0)]),
 			Problem([IOExample(Dict(:_arg_1 => 1, :_arg_2 => 1), 1)]),
 		]
-		problems_to_solutions::Dict{Problem, Vector{RuleNode}} = Dict(p => [] for p in subproblems)
-		push!(problems_to_solutions[subproblems[1]], RuleNode(6))
-		push!(problems_to_solutions[subproblems[2]], RuleNode(3))
+		solutions = [
+			RuleNode(6),
+			RuleNode(3),
+			RuleNode(2, [RuleNode(9, [RuleNode(3), RuleNode(5)]), RuleNode(5), RuleNode(3)]),
+			RuleNode(8, [RuleNode(5), RuleNode(6)]),
+			RuleNode(4),
+		]
+		problems_to_solutions::Dict{Problem, Vector{Int}} = Dict(p => [] for p in subproblems)
+		push!(problems_to_solutions[subproblems[1]], 1)
+		push!(problems_to_solutions[subproblems[2]], 2)
 		push!(
 			problems_to_solutions[subproblems[3]],
-			RuleNode(2, [RuleNode(9, [RuleNode(3), RuleNode(5)]), RuleNode(5), RuleNode(3)]),
-		)
-		push!(problems_to_solutions[subproblems[4]], RuleNode(8, [RuleNode(5), RuleNode(6)]))
-		push!(problems_to_solutions[subproblems[4]], RuleNode(4))
+			3)
+		push!(problems_to_solutions[subproblems[4]], 4)
+		push!(problems_to_solutions[subproblems[4]], 5)
 		# solution program for subproblems[3]
 		# if 0 <= _arg_1
 		#    _arg_1
@@ -82,34 +89,16 @@
 		# RuleNode(2, [RuleNode(9, [RuleNode(3), RuleNode(5)]), RuleNode(5), RuleNode(3)])
 
 		ioexamples_solutions = [
-			(IOExample(Dict(:_arg_1 => 1, :_arg_2 => 2), 2), [RuleNode(6)]),
-			(IOExample(Dict(:_arg_1 => 3, :_arg_2 => 0), 3), [RuleNode(3)]),
-			(
-				IOExample(Dict(:_arg_1 => -3, :_arg_2 => 0), 0),
-				[
-					RuleNode(
-						2,
-						[RuleNode(9, [RuleNode(3), RuleNode(5)]), RuleNode(5), RuleNode(3)],
-					),
-					RuleNode(5),
-					RuleNode(3),
-				],
-			),
-			(
-				IOExample(Dict(:_arg_1 => 1, :_arg_2 => 1), 1),
-				[RuleNode(8, [RuleNode(5), RuleNode(6)]), RuleNode(4)],
-			),
+			(IOExample(Dict(:_arg_1 => 1, :_arg_2 => 2), 2), [1]),
+			(IOExample(Dict(:_arg_1 => 3, :_arg_2 => 0), 3), [2]),
+			(IOExample(Dict(:_arg_1 => -3, :_arg_2 => 0), 0), [3]),
+			(IOExample(Dict(:_arg_1 => 1, :_arg_2 => 1), 1), [4, 5]),
 		]
 
 		# convert expected labels to set => no guarantee of order in vec_problems_solutions
 		@testset verbose = true "labels" begin
-			expected_labels = Set([
-				"6,",
-				"3,",
-				"2{9{3,5}5,3}",
-				"8{5,6}",
-			])
-			labels, labels_to_programs = HerbSearch.get_labels(ioexamples_solutions)
+			expected_labels = Set([1, 2, 3, 4])
+			labels = HerbSearch.get_labels(ioexamples_solutions)
 			@test length(labels) == 4
 			@test Set(labels) == expected_labels
 		end
@@ -151,7 +140,6 @@
 				predicates, grammar, symboltable,
 			)
 			@test features == expected_features
-			# TODO: When do I get EvaluationError?
 			@test_throws HerbSearch.EvaluationError HerbSearch.get_features(
 				ioexamples_solutions,
 				[RuleNode(11, [RuleNode(4)])], # ehad_cvc(_arg_1)
@@ -159,31 +147,74 @@
 				symboltable,
 				false,
 			)
-			ioexamples = [(key.spec, sol) for (key, sol) in problems_to_solutions]
-			ioexamples = Vector{Tuple{IOExample, Vector{RuleNode}}}()
-			for (key, sol) in problems_to_solutions
-				for example in key.spec
-					push!(ioexamples, (example, sol))
-				end
-			end
-			ioexamples =
-				[(example, sol) for (key, sol) in problems_to_solutions for example in key.spec]
-
-
 		end
-		@testset verbose = true "Construct final program" begin
-			# TODO: define a very simple grammar
-			# TODO: define a decision tree
-			# TODO: call function with root of decision tree as first node
 
-			# function construct_final_program(
-			# 	node::Union{DecisionTree.Node, DecisionTree.Leaf},
-			# 	idx_ifelse::Int64,
-			# 	labels_to_programs::Dict{String, Union{StateHole, RuleNode}},
-			# 	predicates::Vector{RuleNode},
-			# )::RuleNode
+		@testset verbose = true "Construct final program" begin
+			# 
+			# Left: Feature == false, right: Feature == true
+			#             Feature 1 < 0.5 
+			#              /      \\
+			#   Feature 2 < 0.5      "1 - x"
+			#     /        \\
+			#   3-x"       "2-x"
+			#
+			# Notes: DecisionTree.jl compares feature against a threshold (0.5 for Boolean features). Hence left edge
+			# corresponds to feature == false.
+			# Feature 1: x < 2
+			# Feature 2: x < 4
+
+			grammar = HerbGrammar.@csgrammar begin
+				Number = |(0:8)
+				Number = x
+				Number = Number - Number
+				Bool = Number < Number
+				Condition = Bool ? Number : Number
+			end
+
+			# predicates vector => index corresponds to feature id
+			predicates = [
+				RuleNode(12, [RuleNode(10), RuleNode(3)]), # x < 2
+				RuleNode(12, [RuleNode(10), RuleNode(5)]), # x < 4
+			]
+
+			program_1 = RuleNode(11, [RuleNode(2), RuleNode(10)]) # 1 - x
+			program_2 = RuleNode(11, [RuleNode(3), RuleNode(10)]) # 2 - x
+			program_3 = RuleNode(11, [RuleNode(4), RuleNode(10)]) # 3 - x
+			solutions = [program_1, program_2, program_3]
+
+			expected_program = RuleNode(
+				13,
+				[predicates[1], program_1, RuleNode(13, [predicates[2], program_2, program_3])],
+			)
+
+			# create simple tree for testing
+			right_1 = Leaf(
+				1,  # majority (label)
+				[], # samples
+			)
+			right_2 = Leaf(
+				2,
+				[],
+			)
+			left_2 = Leaf(
+				3,
+				[],
+			)
+
+			left_1 = Node(2, 0.5, left_2, right_2) # Node(featid, featval, left::Union{Leaf, Node}, right::Union{Leaf, Node})
+
+			root_node = Node(1, 0.5, left_1, right_1)
+
+
+			# construct final program from decision tree
+			idx_ifelse = 13
+			final_program = construct_final_program(
+				root_node,
+				idx_ifelse,
+				solutions,
+				predicates,
+			)
+			@test final_program == expected_program
 		end
 	end
-
-	# TODO: Integration test for divide and conquer search procedure
 end

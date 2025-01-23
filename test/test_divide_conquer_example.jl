@@ -31,50 +31,37 @@ bveq1_cvc(n::UInt) = n == UInt(1) ? UInt(1) : UInt(0)
 problem = PBE_BV_Track_2018.problem_PRE_100_10
 
 @testset verbose = true "Benchmark BV example for divide and conquer" begin
-	# parameters
-	max_enumerations = 10
+	# input arguments
 	n_predicates = 50
 	sym_bool = :Bool
 	sym_start = :Start
 	sym_constraint = :Input
+	max_enumerations = 10
 
 	iterator = BFSIterator(grammar, :Start)
-	problems_to_solutions = divide_and_conquer( # TODO: remove eventually
+
+	@test_throws HerbSearch.ConditionalIfElseError divide_and_conquer(
 		problem,
 		iterator,
-		divide_by_example,
-		decide_if_solution,
-		max_enumerations,
-	)
-
-	# Combine solutions to one final program
-	symboltable::SymbolTable = SymbolTable(grammar)
-	# ---------------------------------------
-	# # test error is thrown when no if-else rule in grammar
-	# @test_throws HerbSearch.ConditionalIfElseError HerbSearch.conquer_combine(
-	# 	problems_to_solutions,
-	# 	grammar,
-	# 	n_predicates,
-	# 	sym_bool,
-	# 	sym_start,
-	# 	sym_constraint,
-	# 	symboltable,
-	# )
-
-	# # add if-else rule to grammar
-	# add_rule!(grammar, :($sym_start = $sym_bool ? $sym_start : $sym_start))
-	# symboltable = SymbolTable(grammar)
-	# ---------------------------------------
-	labels, labels_to_programs, model = HerbSearch.conquer_combine(
-		problems_to_solutions,
-		grammar,
-		n_predicates,
 		sym_bool,
 		sym_start,
 		sym_constraint,
-		symboltable,
+		n_predicates,
+		max_enumerations,
 	)
-	# TODO: test for construct_final_program
 
+	# add if-else rule to grammar
+	add_rule!(grammar, :($sym_start = $sym_bool ? $sym_start : $sym_start))
+	iterator = BFSIterator(grammar, :Start)
+
+	final_program = divide_and_conquer(
+		problem,
+		iterator,
+		sym_bool,
+		sym_start,
+		sym_constraint,
+		n_predicates,
+		max_enumerations,
+	)
 end
 
