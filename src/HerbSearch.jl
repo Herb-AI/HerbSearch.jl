@@ -18,7 +18,6 @@ include("uniform_iterator.jl")
 
 include("heuristics.jl")
 
-include("fixed_shaped_iterator.jl")
 include("top_down_iterator.jl")
 
 include("evaluate.jl")
@@ -46,14 +45,13 @@ include("divide_conquer_functions/conquer.jl")
 
 export
 	ProgramIterator,
-	@programiterator, ContextSensitivePriorityEnumerator, heuristic_leftmost,
+	@programiterator, heuristic_leftmost,
 	heuristic_rightmost,
 	heuristic_random,
 	heuristic_smallest_domain, derivation_heuristic, synth,
 	SynthResult,
 	optimal_program,
-	suboptimal_program, FixedShapedIterator,
-	UniformIterator,
+	suboptimal_program, UniformIterator,
 	next_solution!, TopDownIterator,
 	RandomIterator,
 	BFSIterator,
@@ -65,9 +63,5 @@ export
 	misclassification,
 	validate_iterator,
 	sample,
-	rand, divide_by_example,
-	decide_if_solution,
-	conquer_combine,
-	divide_and_conquer,
-	construct_final_program
+	rand
 end # module HerbSearch

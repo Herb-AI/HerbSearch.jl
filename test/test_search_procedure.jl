@@ -14,7 +14,7 @@
         solution, flag = synth(problem, iterator)
         program = rulenode2expr(solution, g₁)
 
-        @test execute_on_input(SymbolTable(g₁), program, Dict(:x => 6)) == 2*6+1
+        @test execute_on_input(grammar2symboltable(g₁), program, Dict(:x => 6)) == 2*6+1
     end
 
     @testset "Search max_enumerations stopping condition" begin
@@ -33,7 +33,7 @@
             Index = List[Number]
         end
         
-        problem = Problem([IOExample(Dict(), x) for x ∈ 1:5])
+        problem = Problem([IOExample(Dict{Symbol,Any}(), x) for x ∈ 1:5])
         iterator = BFSIterator(g₂, :Index, max_depth=2)
         solution, flag = synth(problem, iterator, allow_evaluation_errors=true)
 
@@ -48,7 +48,7 @@
         program = rulenode2expr(solution, g₁)
 
         @test flag == suboptimal_program
-        @test execute_on_input(SymbolTable(g₁), program, Dict(:x => 6)) == 2*6+1
+        @test execute_on_input(grammar2symboltable(g₁), program, Dict(:x => 6)) == 2*6+1
 
     end
 
@@ -71,7 +71,7 @@
             Index = List[Number]
         end
         
-        problem = Problem([IOExample(Dict(), x) for x ∈ 1:5])
+        problem = Problem([IOExample(Dict{Symbol,Any}(), x) for x ∈ 1:5])
         iterator = BFSIterator(g₃, :Index, max_depth=2)
         solution, flag = synth(problem, iterator, allow_evaluation_errors=true) 
 
