@@ -30,7 +30,7 @@ function synth(
 	allow_evaluation_errors::Bool = false,
 	max_time = typemax(Int),
 	max_enumerations = typemax(Int),
-	mod::Module = Main,)::Union{Tuple{RuleNode, SynthResult}, Nothing}
+	mod::Module = Main)::Union{Tuple{RuleNode, SynthResult}, Nothing}
 	start_time = time()
 	grammar = get_grammar(iterator.solver)
 	symboltable::SymbolTable = grammar2symboltable(grammar, mod)
@@ -102,7 +102,7 @@ function divide_and_conquer(problem::Problem,
 )
 	start_time = time()
 	grammar = get_grammar(iterator.solver)
-	symboltable::SymbolTable = SymbolTable(grammar, mod)
+	symboltable::SymbolTable = SymbolTable(grammar, mod) # TODO: change
 
 	# Divide problem into sub-problems 
 	subproblems = divide_by_example(problem)

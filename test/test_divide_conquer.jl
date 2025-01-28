@@ -2,14 +2,14 @@ using DecisionTree
 
 @testset verbose = true "Search procedure divide and conquer" begin
 	@testset verbose = true "divide, stopping criteria" begin
-		problem = Problem([IOExample(Dict(), x) for x ∈ 1:3])
-		expected_subproblems = [
-			Problem([IOExample(Dict(), 1)]),
-			Problem([IOExample(Dict(), 2)]),
-			Problem([IOExample(Dict(), 3)]),
+		spec::Vector{IOExample} = [
+			IOExample(Dict(:var1 => 1), 1),
+			IOExample(Dict(:var1 => 2), 2),
+			IOExample(Dict(:var1 => 3), 3),
 		]
+		problem = Problem(spec)
 		subproblems = divide_by_example(problem)
-		# TODO: test equality (of subproblems)
+		@test length(subproblems) == 3
 
 		# Stopping criteria: stop search once we have a solution to each subproblem
 		solutions = [RuleNode(3), RuleNode(4)]
@@ -24,6 +24,7 @@ using DecisionTree
 
 		push!(problems_to_solutions[subproblems[3]], 1)
 		@test all(!isempty, values(problems_to_solutions)) == true
+
 	end
 
 	@testset verbose = true "decide" begin
@@ -33,7 +34,7 @@ using DecisionTree
 			Number = Number + Number
 			Number = Number * Number
 		end
-		symboltable = SymbolTable(grammar)
+		symboltable = grammar2symboltable(grammar)
 		problem1 = Problem([IOExample(Dict(:x => 1), 3)])
 		problem2 = Problem([IOExample(Dict(:x => 1), 4)])
 		program = RuleNode(4, [RuleNode(3), RuleNode(2)])
@@ -57,7 +58,7 @@ using DecisionTree
 			Condition = !Condition
 		end
 
-		symboltable = SymbolTable(grammar)
+		symboltable::SymbolTable = grammar2symboltable(grammar)
 
 		# TODO: add subproblem with two IOExamples
 		subproblems = [
@@ -135,6 +136,11 @@ using DecisionTree
 
 			expected_features =
 				BitArray([true false true; false true false; true false false; true true true])
+
+			println("Type examples vector: ", typeof(ioexamples_solutions))
+			println("Type grammar: ", typeof(grammar))
+			println("Type of predicates: ", typeof(predicates))
+			println("Type symbol table: ", typeof(symboltable))
 			features = HerbSearch.get_features(
 				ioexamples_solutions,
 				predicates, grammar, symboltable,

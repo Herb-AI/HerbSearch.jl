@@ -1,5 +1,4 @@
 using HerbBenchmarks.PBE_BV_Track_2018
-using DecisionTree
 
 # Modified grammar (for original grammar, see PBE_BV_Track_2018.grammar_PRE_100_10)
 grammar = @cfgrammar begin
@@ -39,7 +38,7 @@ problem = PBE_BV_Track_2018.problem_PRE_100_10
 	max_enumerations = 10
 
 	iterator = BFSIterator(grammar, :Start)
-
+	idx_ifelse = findfirst(r -> r == :($sym_bool ? $sym_start : $sym_start), grammar.rules)
 	@test_throws HerbSearch.ConditionalIfElseError divide_and_conquer(
 		problem,
 		iterator,

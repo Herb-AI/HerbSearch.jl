@@ -34,7 +34,7 @@ in the decision tree. For this, features are obtained by evaluating the inputs o
 The final program constructed from the solutions to the subproblems.
 """
 function conquer_combine(
-	problems_to_solutions::Dict{Problem{Vector{IOExample}}, Vector{Int}},
+	problems_to_solutions::Dict{Problem{Vector{IOExample{T, U}}}, Vector{Int}},
 	# solutions::Vector{Union{RuleNode, StateHole}},
 	solutions::Vector{RuleNode},
 	grammar::AbstractGrammar,
@@ -43,7 +43,7 @@ function conquer_combine(
 	sym_start::Symbol,
 	sym_constraint::Symbol,
 	symboltable::SymbolTable,
-)
+) where {T, U}
 	# make sure grammar has if-else rulenode (TODO: do we need this? )
 	idx_ifelse = findfirst(r -> r == :($sym_bool ? $sym_start : $sym_start), grammar.rules)
 	if isnothing(idx_ifelse)
@@ -53,7 +53,6 @@ function conquer_combine(
 			),
 		)
 	end
-
 
 	# Turn dic into vector since we cannot guarantee order when iterating over dict.
 	ioexamples_solutions =
@@ -117,12 +116,12 @@ end
 	predicate.
 """
 function get_features(
-	ioexamples_solutions::Vector{Tuple{IOExample, Vector{Int}}},
+	ioexamples_solutions::Vector{Tuple{IOExample{T, U}, Vector{Int}}},
 	predicates::Vector{RuleNode},
 	grammar::AbstractGrammar,
-	symboltable::SymbolTable,
+	symboltable::SymbolTable,  # or symboltable::AbstractSymbolTable if that exists
 	allow_evaluation_errors::Bool = true,
-)::Matrix{Bool}
+) where {T, U}
 	# features matrix with dimension n_ioexamples x n_predicates
 	features = trues(length(ioexamples_solutions),
 		length(predicates))
@@ -147,11 +146,9 @@ end
 
 """
 	Returns a vector containing the labels for each `IOExample` in `ioexamples_solutions`.
-	The label is the (TODO: index of the) first program in the vector of solutions for a `IOExample`.
+	The label is the index of the first program in the vector of solutions for a `IOExample`.
 """
-function get_labels(
-	ioexamples_solutions::Vector{Tuple{IOExample, Vector{Int}}},
-)
+function get_labels(ioexamples_solutions::Vector{Tuple{IOExample{T, U}, Vector{Int}}}) where {T, U}
 	# TODO: update docstring 
 	# Use index of first program in vector of solutions as label for a problem
 	labels = [sol[1] for (_, sol) in ioexamples_solutions]

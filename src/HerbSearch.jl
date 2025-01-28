@@ -63,5 +63,9 @@ export
 	misclassification,
 	validate_iterator,
 	sample,
-	rand
+	rand,
+	divide_and_conquer,
+	divide_by_example,
+	decide_if_solution,
+	construct_final_program
 end # module HerbSearch
