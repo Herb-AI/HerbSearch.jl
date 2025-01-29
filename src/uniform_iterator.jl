@@ -78,7 +78,14 @@ function generate_branches(iter::UniformIterator)::Vector{Branch}
                 return [(hole, rule) for rule ∈ hole.domain]
             end
             #reversing is needed because we pop and consider the rightmost branch first
-            return reverse!([(hole, rule) for rule ∈ derivation_heuristic(iter.outeriter, findall(hole.domain))])
+            
+            
+            result = reverse!([(hole, rule) for rule ∈ derivation_heuristic(iter.outeriter, findall(hole.domain))])
+
+            # println("result: $result")
+
+            return result
+            
         end
     end
     return NOBRANCHES
@@ -104,6 +111,8 @@ function next_solution!(iter::UniformIterator)::Union{RuleNode, StateHole, Nothi
             # current depth has unvisted branches, pick a branch to explore
             (hole, rule) = pop!(branches)
             save_state!(solver)
+            # println("\tnext_solution.iter.stateholes: $(iter.stateholes)")
+            # println("\titer.unvisited_branches: $(iter.unvisited_branches)")
             remove_all_but!(solver, solver.node_to_path[hole], rule)
             if isfeasible(solver)
                 # generate new branches for the new search node

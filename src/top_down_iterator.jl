@@ -178,7 +178,7 @@ Return an array of all programs in the TopDownIterator.
     If it is not needed to save all programs, iterate over the iterator manually.
 """
 function Base.collect(iter::TopDownIterator)
-    @warn "Collecting all programs of a TopDownIterator requires freeze_state"
+    @warn "Collecting all programs of a TopDownIterator requires to deep copy all states. This make take significantly longer."
     programs = Vector{RuleNode}()
     for program ∈ iter
         push!(programs, freeze_state(program))
@@ -192,7 +192,7 @@ end
 Describes the iteration for a given [`TopDownIterator`](@ref) over the grammar. The iteration constructs a [`PriorityQueue`](@ref) first and then prunes it propagating the active constraints. Recursively returns the result for the priority queue.
 """
 function Base.iterate(iter::TopDownIterator)
-    # Priority queue with `SolverState`s (for variable shaped trees) and `UniformIterator`s (for fixed shaped trees)
+    # Priority queue with `SolverState`s (for variable shaped trees) and `UniformIterator`s (for uniform trees)
     pq :: PriorityQueue{Union{SolverState, UniformIterator}, Union{Real, Tuple{Vararg{Real}}}} = PriorityQueue()
 
     solver = iter.solver
