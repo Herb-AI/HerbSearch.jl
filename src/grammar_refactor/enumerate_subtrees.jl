@@ -3,7 +3,7 @@ using DataStructures
 """
     enumerate_subtrees(tree::RuleNode, grammar::AbstractGrammar)
 
-Enumerates all subtrees of a given tree. Returns a vector listing all subtrees of the tree.
+Enumerates all subtrees of a given tree ([`RuleNode`](@ref)). Returns a vector listing all subtrees of the tree.
 
 # Arguments
 - `tree::RuleNode`: the tree to enumerate the subtrees of
@@ -18,7 +18,7 @@ end
 """
     _enumerate_subtrees_rec(tree::RuleNode, g::AbstractGrammar)
 
-Enumerates all subtrees of a given tree.
+Enumerates all subtrees of a given tree ([`RuleNode`](@ref)).
 
 # Arguments
 - `tree::RuleNode`: the tree to enumerate the subtrees of

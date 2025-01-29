@@ -7,7 +7,7 @@ include("extend_grammar.jl")
 """
     refactor_grammar(trees::Vector{RuleNode}, grammar::AbstractGrammar, subtree_selection_strategy::Int, f_best::Float64)
 
-Optimises a grammar based on a set of trees.
+Optimises a grammar based on a set of trees ([`RuleNode`](@ref)s).
 
 The algorithm works in five stages: 
 1. For each tree and all sub-trees are enumerated and a selection of subtrees is made.

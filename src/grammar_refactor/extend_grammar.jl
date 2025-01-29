@@ -1,7 +1,7 @@
 """
     generate_tree_from_compression(parent, d, compression_id, grammar)
 
-Generates a `RuleNode` from a given compression.
+Generates a tree ([`RuleNode`](@ref)) from a given compression.
 
 # Arguments
 - `parent::Int64`: the ID of the parent node
@@ -10,7 +10,7 @@ Generates a `RuleNode` from a given compression.
 - `grammar::AbstractGrammar`: the grammar to use
 
 # Returns
-- `tree::RuleNode`: the Herb tree
+- `tree::RuleNode`: the resulting [`RuleNode`](@ref)
 """
 function generate_tree_from_compression(parent, d, compression_id, grammar)
     parent_type = d[parent].type
