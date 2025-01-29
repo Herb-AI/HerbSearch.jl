@@ -4,6 +4,7 @@ using DataStructures
     enumerate_subtrees(tree::RuleNode, grammar::AbstractGrammar)
 
 Enumerates all subtrees of a given tree. Returns a vector listing all subtrees of the tree.
+
 # Arguments
 - `tree::RuleNode`: the tree to enumerate the subtrees of
 - `grammar::AbstractGrammar`: the grammar to use
@@ -18,9 +19,11 @@ end
     _enumerate_subtrees_rec(tree::RuleNode, g::AbstractGrammar)
 
 Enumerates all subtrees of a given tree.
+
 # Arguments
 - `tree::RuleNode`: the tree to enumerate the subtrees of
 - `g::AbstractGrammar`: the grammar to use
+
 # Result
 - `subtrees::(Vector{RuleNode},Vector{RuleNode})`: a tuple of a list of all subtrees of the tree and a list of all other subtrees
 """
@@ -69,9 +72,11 @@ end
     combinations(n::Int)
 
 Generates all combinations of n elements.
+
 # Arguments
 - `n::Int`: the number of elements
-# Result
+
+# Returns
 - `combinations::Vector{Vector{Bool}}`: a list of all combinations
 """
 combinations(n::Int) = Iterators.product([[true,false] for _ in 1:n]...)
@@ -80,10 +85,12 @@ combinations(n::Int) = Iterators.product([[true,false] for _ in 1:n]...)
     selection_criteria(tree::RuleNode, subtree::AbstractRuleNode)
 
 Determines whether a subtree should be selected.
+
 # Arguments
 - `tree::RuleNode`: the tree
 - `subtree::AbstractRuleNode`: the subtree
-# Result
+
+# Returns
 - `Bool`: true if the subtree should be selected, false otherwise
 """
 function selection_criteria(tree::RuleNode, subtree::AbstractRuleNode)

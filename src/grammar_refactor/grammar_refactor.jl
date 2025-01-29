@@ -5,37 +5,40 @@ include("analyze_compressions.jl")
 include("extend_grammar.jl")
 
 """
-    refactor_grammar(trees::Vector{RuleNode}, grammar::AbstractGrammar, subtree_selection_strategy::Int, f_best::Float64, verbosity=0:Int)
+    refactor_grammar(trees::Vector{RuleNode}, grammar::AbstractGrammar, subtree_selection_strategy::Int, f_best::Float64)
 
-Optimises a grammar based on a set of trees. The algorithm works in three stages: 
+Optimises a grammar based on a set of trees.
+
+The algorithm works in five stages: 
 1. For each tree and all sub-trees are enumerated and a selection of subtrees is made.
 2. The selected subtrees are parsed to JSON and passed to clingo.
 3. Clingo is called to find the best compressions. 
-4. The compressions are parsed and analysed, some of these compressions are chosen to extend the grammar. This extended grammar is returned.
+4. Read Clingo output is read to JSON
+5. The compressions are parsed and analysed, some of these compressions are chosen to extend the grammar. This extended grammar is returned.
+
 # Arguments
-- `trees::Vector{RuleNode}`: the trees to optimise the grammar for
+- `trees::AbstractVector{RuleNode}`: the trees to optimise the grammar for
 - `grammar::AbstractGrammar`: the grammar to optimise
-- `subtree_selection_strategy::Int`: the strategy to select subtrees, strategy 1 is based on occurrences and strategy 2 is based on size * occurrences
+- `subtree_selection_strategy::SelectionStrategy`: the strategy to select subtrees, strategy 1 is based on occurrences and strategy 2 is based on size * occurrences
 - `f_best::Float64`: the number of best compressions to select
-- `verbosity::Int`: the verbosity level
-# Result
+
+# Returns
 - `new_grammar::AbstractGrammar`: the optimised grammar
 """
-function refactor_grammar(trees::Vector{RuleNode}, grammar::AbstractGrammar, subtree_selection_strategy::Int, f_best::Float64, verbosity=0:Int)
-    # 1. Enumerate subtrees and discard useless subtrees
+function refactor_grammar(trees::AbstractVector{RuleNode}, grammar::AbstractGrammar, subtree_selection_strategy::SelectionStrategy, f_best::Float64)
     start_time = time()
-    verbosity > 0 && print("Stage 1: Select subtrees\n")     
+    @debug "Stage 1: Enumerate subtrees and discard useless subtrees"
     subtree_set = Vector{Any}()
     for tree in trees
         subtrees = enumerate_subtrees(tree, grammar)
         subtrees = filter(subtree -> selection_criteria(tree, subtree), subtrees) #remove subtrees size 1 and treesize
         subtree_set = vcat(subtree_set, subtrees)
     end
-    verbosity > 1 && print("Time for stage 1: $(time() - start_time)"); start_time = time()
+    @debug "Time for stage 1: $(time() - start_time)"
+    start_time = time()
     subtree_set = unique(subtree_set)
     
-    # 2. Parse subtrees to json
-    verbosity > 0 && print("Stage 2: parse subtrees to json\n")     
+    @debug "Stage 2: parse subtrees to json"
     data = []
     for tree in trees
         push!(data, parse_subtrees_to_json(subtree_set, tree))
@@ -46,10 +49,10 @@ function refactor_grammar(trees::Vector{RuleNode}, grammar::AbstractGrammar, sub
         data[i] = model
         push!(global_dicts, global_dict)
     end
-    verbosity > 1 && print("Time for stage 2 : $(time() - start_time)"); start_time = time()
+    @debug "Time for stage 2 : $(time() - start_time)"
+    start_time = time()
     
-    # 3. Call clingo 
-    verbosity > 0 && print("Stage 3: call clingo\n")
+    @debug "Stage 3: call clingo"
     dir_path = dirname(@__FILE__)     
     model_location = joinpath(dir_path, "model.lp")
     for i in 1:length(trees)
@@ -58,18 +61,18 @@ function refactor_grammar(trees::Vector{RuleNode}, grammar::AbstractGrammar, sub
         run(pipeline(ignorestatus(command), stdin=IOBuffer(data[i]), stdout=output))
         data[i] = String(take!(output))
     end
-    verbosity > 1 && print("Time for stage 3 : " * string(time() - start_time) * "\n"); start_time = time()
+    @debug "Time for stage 3 : " * string(time() - start_time)
+    start_time = time()
     
-    # 4. Parse clingo output to json
-    verbosity > 0 && print("Stage 4: Parse clingo output to json\n")     
+    @debug "Stage 4: Read clingo output to json"     
     best_values = []
     for i in 1:length(trees)
         push!(best_values, read_json(data[i]))
     end
-    verbosity > 1 && print("Time for stage 4 : " * string(time() - start_time) * "\n"); start_time = time()
+    @debug "Time for stage 4 : " * string(time() - start_time)
+    start_time = time()
 
-    # 5. Analyse clingo output
-    verbosity > 0 && print("Stage 5: Analyze subtrees\n") # 5. Analyse clingo output
+    @debug "Stage 5: Analyze clingo output"
     all_stats = Vector{Dict{RuleNode, NamedTuple{(:size,:occurrences), <:Tuple{Int64,Int64}}}}()
     for i in 1:length(trees)
         node_assignments::Vector{String} = best_values[i]
@@ -82,13 +85,14 @@ function refactor_grammar(trees::Vector{RuleNode}, grammar::AbstractGrammar, sub
     end
 
     combined_stats = zip_stats(all_stats)
-    best_compressions = select_compressions(subtree_selection_strategy, combined_stats, f_best; verbosity)
+    best_compressions = select_compressions(subtree_selection_strategy, combined_stats, f_best)
     new_grammar = deepcopy(grammar)
 
     for b in best_compressions
         add_rule!(new_grammar, b)
     end
-    verbosity > 1 && print("Time for stage 5 : " * string(time() - start_time) * "\n"); start_time = time()
+    @debug "Time for stage 5 : " * string(time() - start_time)
+    start_time = time()
     return new_grammar
 end
 

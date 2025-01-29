@@ -1,3 +1,5 @@
+using HerbSearch: occurrences
+
 ast1 = RuleNode(2, [RuleNode(1), RuleNode(1)])
 ast2 = RuleNode(3, [RuleNode(2, [RuleNode(1), RuleNode(1)]), RuleNode(2, [RuleNode(1), RuleNode(1)])])
 asts = [ast1, ast2]
@@ -9,7 +11,7 @@ asts = [ast1, ast2]
         Int = Int + Int
         Int = Int * Int
     end
-    optimised_grammar = refactor_grammar(asts, g, 1, 0.5, 0)
+    optimised_grammar = refactor_grammar(asts, g, occurrences, 0.5)
 
     # Test whether the optimised grammar has the correct number of rules (4) 
     @test length(optimised_grammar.rules) == 4
@@ -28,7 +30,7 @@ end
         Int = Int * Int
     end
     @test length(g.rules) == 3
-    optimised_grammar = refactor_grammar([RuleNode(1)], g, 1, 0.5, 0)
+    optimised_grammar = refactor_grammar([RuleNode(1)], g, occurrences, 0.5)
 
     # Test whether the optimised grammar has the correct number of rules (3) 
     @test length(optimised_grammar.rules) == 3

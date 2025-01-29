@@ -5,10 +5,12 @@ using JSON
     parse_number(start_index::Int, input::AbstractString)
 
 A helper method that parses a number from the string `input` starting at `start_index`.
+
 # Arguments
 - `start_index::Int`: the index to start parsing from
 - `input::AbstractString`: the input string
 
+# Returns
 Return a tuple (number, i) consisting of
 - `number::AbstractString`: the parsed number
 - `i::Int64`: the index of the last character parsed
@@ -32,17 +34,17 @@ end
     parse_tree(input::AbstractString, global_dict::Dict=nothing, start_index::Int=0)
 
 Parses a tree from a string.
+
 # Arguments
 - `input::AbstractString`: the input string
 - `global_dict::Dict`: the global dictionary
 - `start_index::Int`: the index to start parsing from
-# Result
+
+# Returns
 - `index::Int`: the index of the last node parsed
 - `output::String`: the parsed tree
 """ 
 function parse_tree(input::AbstractString, global_dict::Union{Nothing, Dict}=nothing, start_index::Int=0)::Tuple{Int, AbstractString}
-    # @assert !(start_index > 0 && !isnothing(global_dict))
-
     nodes, edges, output = "","",""
     parent, index = start_index, start_index
     # parent_stack keeps track of the parent node
@@ -105,15 +107,16 @@ end
     parse_json(json_content::AbstractString)
 
 Parses a JSON file and returns 
-# Arguments
-- `json_path::AbstractString`: the path to the JSON file
-# Result
-- `(output, global_dict)::(String: the parsed string, Dict`: the global dictionary)
 
 The schema used follows this scheme. Entries can either be nodes with a certain id and grammar rule, or edges between nodes.
 `Node(id, grammar_rule)` e.g. `Node(1, 1)`
 `Edge(parent, child, child_nr)` e.g. `Edge(1, 2, 5)`
-    
+
+# Arguments
+- `json_path::AbstractString`: the path to the JSON file
+
+# Result
+- `(output, global_dict)::(String: the parsed string, Dict`: the global dictionary)
 """
 function parse_json(json_content::AbstractString)
    global_dict = Dict{Int64, NamedTuple{(:comp_id,:parent_id, :child_nr, :type, :children), <:Tuple{Int,Int,Int,Int,Vector}}}()
@@ -134,11 +137,10 @@ end
     parse_subtrees_to_json(subtrees::Vector{Any}, tree::RuleNode)
 
 Parses a list of subtrees to JSON. Returns the JSON string.
+
 # Arguments
 - `subtrees::Vector{Any}`: the list of subtrees
 - `tree::RuleNode`: the root tree the subtrees were extracted from
-# Result
-- `json_string::String`: the JSON string
 """
 function parse_subtrees_to_json(subtrees::Vector{Any}, tree::RuleNode)
     modified_subtrees = []
@@ -161,9 +163,11 @@ end
     read_json(json_content::String)
 
 Reads a JSON file and returns the parsed content.
+
 # Arguments
 - `json_file::String`: the path to the JSON file
-# Result
+
+# Returns
 - `json_parsed::Dict`: the parsed JSON content
 """
 function read_json(json_content)

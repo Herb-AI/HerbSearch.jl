@@ -155,7 +155,6 @@ test_input2 = """
     @testset "Parse Clingo Output Small" begin
         expected_output = Any["assign(56,1)","assign(55,0)","assign(57,2)"]
         output = HerbSearch.read_json(test_input1)
-        print(output == expected_output)
         @test output == expected_output
     end
 

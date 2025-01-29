@@ -1,18 +1,17 @@
 """
     generate_stats(global_dict::Dict, compressed_rulenode::Vector{String})
 
-Compression Analysis. Analyzes 1 AST to see how many times each compression was used.
+Analyzes 1 AST to see how many times each compression was used.
+
 # Arguments
 - `d::Dict`: the global dictionary (key: node_id, value: namedTuple(compressiond_id, parent_id, child_nr, type, [children]))
 - `compressed_rulenode::Vector{String}`: a list of assign-statements ["assign(A, X)", assign(B, Y), ...]
-# Result 
+
+# Returns 
 - `c_info::Dict{Int64, NamedTuple{(:size, :occurrences), <:Tuple{Int64,Int64}}}`: a dict matching an ASTs `compression_id` to the number of occurrences 
 """
 function generate_stats(global_dict::Dict, compressed_rulenode::Vector{String})
-    # (key: subtree ID, value: NamedTuple([subtree node IDs], # occurrences))
-    # c_info = Dict{Int64, NamedTuple{:size, :occurrences}{Int64, Int64}}()
     c_info = Dict{Int64, NamedTuple{(:size, :occurrences), <:Tuple{Int64,Int64}}}()
-
 
     for assignment in compressed_rulenode
 
@@ -50,7 +49,7 @@ end
 """
     get_compression_size(global_dict::Dict, compression_id::Int)
 
-Returns the size of a compression compression_id.
+Returns the size of a compression with the id `compression_id`.
 # Arguments
 - `global_dict::Dict`: the global dictionary (key: node_id, value: namedTuple(compressiond_id, parent_id, child_nr, type, [children]))
 - `compression_id::Int`: the compression ID used
@@ -66,14 +65,13 @@ function get_compression_size(global_dict::Dict, compression_id::Int)
 end
 
 ###################### COMBINE COMPRESSION STATISTICS #############################
-
-function zip_stats(stats::Vector{Dict{RuleNode, NamedTuple{(:size,:occurrences), <:Tuple{Int64,Int64}}}})::Dict{RuleNode, NamedTuple{(:size,:occurrences)}}
-    """
+"""
     Combines the statistics of multiple rulenodes and returns the a dictionary with summarized results.
-    # Arguments
-    - `stats::Vector{Dict{RuleNode, NamedTuple{(:size,:occurrences), <:Tuple{Int64,Int64}}}}`: a list of dictionaries (key: RuleNode, value: NamedTuple(size, occurrences))
-    # Result
-    """
+
+# Arguments
+- `stats::Vector{Dict{RuleNode, NamedTuple{(:size,:occurrences), <:Tuple{Int64,Int64}}}}`: a list of dictionaries (key: RuleNode, value: NamedTuple(size, occurrences))
+"""
+function zip_stats(stats::Vector{Dict{RuleNode, NamedTuple{(:size,:occurrences), <:Tuple{Int64,Int64}}}})::Dict{RuleNode, NamedTuple{(:size,:occurrences)}}
     return_dict = Dict{RuleNode, NamedTuple{(:size,:occurrences), <:Tuple{Int64,Int64}}}()
     for stat in stats
         for (key, value) in stat
@@ -88,22 +86,38 @@ function zip_stats(stats::Vector{Dict{RuleNode, NamedTuple{(:size,:occurrences),
 end
 
 """
-    select_compressions(case::Int, compression_dict::Dict, f_best::Real, verbosity::Int=0)::Vector{RuleNode}
 
-Selects the best compressions according to the selected heuristic. Compression type may be chosen via assigning the case to  Returns a sorted and filtered list of compression IDs
+Selection strategy for compression.
+
+Select either:
+- based on the # of occurrences alone, or
+- based on the # of occurrences * their size
+"""
+@enum SelectionStrategy begin
+    occurrences
+    occurrences_and_size
+end
+
+"""
+    select_compressions(selection_strategy::SelectionStrategy, compression_dict::Dict, f_best::Real)::Vector{RuleNode}
+
+Selects the best compressions according to the selected heuristic.
+
+Compression type may be chosen by assigning `selection_strategy`. Returns a sorted and filtered list of compression IDs.
+
 # Arguments
-- `case::Int`: the heuristic to use (1: occurrences, 2: occurrences * size)
+- `compression_type::CompressionType`: the heuristic to use (1: occurrences, 2: occurrences * size)
 - `compression_dict::Dict{RuleNode, NamedTuple{(:size,:occurrences), <:Tuple{Int64,Int64}}}`: a dictionary (key: compression (RuleNode), value: tuple(size, # occurrences))
 - `f_best::Real`: a float in range [0,1], that specifies what proportion of the compressions will get selected
 """
-function select_compressions(case::Int, compression_dict::Dict, f_best::Real; verbosity::Int=0)::Vector{RuleNode}
-    # case 1: occurrences 
-    if case == 1
-        verbosity > 0 && println("Sorting by #occurrences...")
+function select_compressions(selection_strategy::SelectionStrategy, compression_dict::Dict, f_best::Real)::Vector{RuleNode}
+    # type 1: occurrences 
+    if selection_strategy == occurrences
+        @debug "Sorting by #occurrences..."
         compression_dict = compress_by_occurrences(compression_dict)
-    # case 2: occurrences * size
-    elseif case ==2
-        verbosity > 0 && println("sorting by #occurrences * tree_size...")
+    # type 2: occurrences * size
+    elseif selection_strategy == occurrences_and_size
+        @debug "sorting by #occurrences * tree_size..."
         compression_dict = compress_by_occurrences_and_size(compression_dict)
     end
 
@@ -115,7 +129,6 @@ function select_compressions(case::Int, compression_dict::Dict, f_best::Real; ve
     # taking the best n percentage
     index = ceil.(Int, length(compression_dict) * f_best)
     compression_dict = compression_dict[begin:index]
-
 
    return map(first, compression_dict)
 end
