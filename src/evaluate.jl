@@ -18,7 +18,13 @@ Optional parameters:
 
 Returns a score in the interval [0, 1]
 """
-function evaluate(problem::Problem{Vector{IOExample}}, expr::Any, symboltable::SymbolTable; shortcircuit::Bool=true, allow_evaluation_errors::Bool=false)::Number
+function evaluate(
+    problem::Problem{<:AbstractVector{<:IOExample}},
+    expr::Any,
+    symboltable::SymbolTable;
+    shortcircuit::Bool=true,
+    allow_evaluation_errors::Bool=false
+)::Number
     number_of_satisfied_examples = 0
 
     crashed = false
