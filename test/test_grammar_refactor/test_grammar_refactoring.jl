@@ -4,5 +4,5 @@
     include("test_grammar_refactor_integration.jl")
     include("test_parse_input.jl")
     include("test_parse_output.jl")
-    include("test_parse_subtrees_to_json.jl")
+    include("test_convert_subtrees_to_json.jl")
 end

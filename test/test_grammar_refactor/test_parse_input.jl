@@ -92,14 +92,14 @@ comp_node(15, 1).
         subtree_set = Vector{Any}()
         subtree_set = vcat(subtree_set, subtrees)
         subtree_set = unique(subtree_set)
-        output1, _ = (HerbSearch.parse_json(HerbSearch.parse_subtrees_to_json(subtree_set, test_ast1)))
+        output1, _ = (HerbSearch.parse_json(HerbSearch.convert_subtrees_to_json(subtree_set, test_ast1)))
         @test output1 == expected_output1
 
         subtrees = HerbSearch.enumerate_subtrees(test_ast2, g)
         subtree_set = Vector{Any}()
         subtree_set = vcat(subtree_set, subtrees)
         subtree_set = unique(subtree_set)
-        output2, _ = (HerbSearch.parse_json(HerbSearch.parse_subtrees_to_json(subtree_set, test_ast2)))
+        output2, _ = (HerbSearch.parse_json(HerbSearch.convert_subtrees_to_json(subtree_set, test_ast2)))
         @test output2 == expected_output2
     end
 end

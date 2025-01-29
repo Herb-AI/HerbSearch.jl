@@ -134,15 +134,15 @@ function parse_json(json_content::AbstractString)
 end
 
 """
-    parse_subtrees_to_json(subtrees::Vector{Any}, tree::RuleNode)
+    convert_subtrees_to_json(subtrees::Vector{Any}, tree::RuleNode)
 
-Parses a list of subtrees to JSON. Returns the JSON string.
+Convert a list of subtrees to JSON. Returns the JSON string.
 
 # Arguments
 - `subtrees::Vector{Any}`: the list of subtrees
 - `tree::RuleNode`: the root tree the subtrees were extracted from
 """
-function parse_subtrees_to_json(subtrees::Vector{Any}, tree::RuleNode)
+function convert_subtrees_to_json(subtrees::Vector{Any}, tree::RuleNode)
     modified_subtrees = []
     for i in 1:length(subtrees)
         str = string(subtrees[i])
@@ -160,7 +160,7 @@ function parse_subtrees_to_json(subtrees::Vector{Any}, tree::RuleNode)
 end
 
 """
-    read_json(json_content::String)
+    read_last_witness_from_json(json_content::String)
 
 Reads a JSON file and returns the parsed content.
 
@@ -170,7 +170,7 @@ Reads a JSON file and returns the parsed content.
 # Returns
 - `json_parsed::Dict`: the parsed JSON content
 """
-function read_json(json_content)
+function read_last_witness_from_json(json_content)
     json_parsed = JSON.parse(json_content)
     witnesses = json_parsed["Call"][1]["Witnesses"]
     last_witness = witnesses[end]

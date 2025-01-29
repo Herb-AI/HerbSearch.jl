@@ -41,7 +41,7 @@ function refactor_grammar(trees::AbstractVector{RuleNode}, grammar::AbstractGram
     @debug "Stage 2: parse subtrees to json"
     data = []
     for tree in trees
-        push!(data, parse_subtrees_to_json(subtree_set, tree))
+        push!(data, convert_subtrees_to_json(subtree_set, tree))
     end
     global_dicts = []
     for i in 1:length(trees)
@@ -67,7 +67,7 @@ function refactor_grammar(trees::AbstractVector{RuleNode}, grammar::AbstractGram
     @debug "Stage 4: Read clingo output to json"     
     best_values = []
     for i in 1:length(trees)
-        push!(best_values, read_json(data[i]))
+        push!(best_values, read_last_witness_from_json(data[i]))
     end
     @debug "Time for stage 4 : " * string(time() - start_time)
     start_time = time()
