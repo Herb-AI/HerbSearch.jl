@@ -70,7 +70,7 @@ function parse_tree(input::AbstractString, global_dict::Union{Nothing, Dict}=not
             parent = index
         elseif char == '}'
             pop!(parent_stack)
-            parent = top(parent_stack)
+            parent = first(parent_stack)
             pop!(child_stack)
         elseif char == '_'
             child_nr = pop!(child_stack)
