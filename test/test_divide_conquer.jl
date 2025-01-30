@@ -1,4 +1,4 @@
-using DecisionTree
+using DecisionTree: Leaf, Node
 
 @testset verbose = true "Search procedure divide and conquer" begin
 	@testset verbose = true "divide, stopping criteria" begin
@@ -137,10 +137,6 @@ using DecisionTree
 			expected_features =
 				BitArray([true false true; false true false; true false false; true true true])
 
-			println("Type examples vector: ", typeof(ioexamples_solutions))
-			println("Type grammar: ", typeof(grammar))
-			println("Type of predicates: ", typeof(predicates))
-			println("Type symbol table: ", typeof(symboltable))
 			features = HerbSearch.get_features(
 				ioexamples_solutions,
 				predicates, grammar, symboltable,

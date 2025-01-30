@@ -1,5 +1,5 @@
 
-using DecisionTree
+using DecisionTree: DecisionTreeClassifier, fit!, Leaf, Node, is_leaf
 struct ConditionalIfElseError <: Exception
 	msg::String
 end
@@ -34,7 +34,7 @@ in the decision tree. For this, features are obtained by evaluating the inputs o
 The final program constructed from the solutions to the subproblems.
 """
 function conquer_combine(
-	problems_to_solutions::Dict{Problem{Vector{IOExample{T, U}}}, Vector{Int}},
+	problems_to_solutions::Dict{Problem{Vector{T}}, Vector{Int}},
 	# solutions::Vector{Union{RuleNode, StateHole}},
 	solutions::Vector{RuleNode},
 	grammar::AbstractGrammar,
@@ -43,7 +43,7 @@ function conquer_combine(
 	sym_start::Symbol,
 	sym_constraint::Symbol,
 	symboltable::SymbolTable,
-) where {T, U}
+) where T <: IOExample
 	# make sure grammar has if-else rulenode (TODO: do we need this? )
 	idx_ifelse = findfirst(r -> r == :($sym_bool ? $sym_start : $sym_start), grammar.rules)
 	if isnothing(idx_ifelse)
@@ -74,8 +74,8 @@ function conquer_combine(
 	features = float.(features)
 	# Take labels and features to make DecisionTree
 	# See decision tree example: https://github.com/Herb-AI/HerbSearch.jl/blob/subset-search/src/subset_iterator.jl
-	model = DecisionTree.DecisionTreeClassifier()
-	DecisionTree.fit!(model, features, labels)
+	model = DecisionTreeClassifier()
+	fit!(model, features, labels)
 	final_program = construct_final_program(model.root.node, idx_ifelse, solutions, predicates)
 	return final_program
 end
@@ -116,12 +116,12 @@ end
 	predicate.
 """
 function get_features(
-	ioexamples_solutions::Vector{Tuple{IOExample{T, U}, Vector{Int}}},
+	ioexamples_solutions::Vector{Tuple{T, Vector{Int}}},
 	predicates::Vector{RuleNode},
 	grammar::AbstractGrammar,
 	symboltable::SymbolTable,  # or symboltable::AbstractSymbolTable if that exists
 	allow_evaluation_errors::Bool = true,
-) where {T, U}
+) where T <: IOExample
 	# features matrix with dimension n_ioexamples x n_predicates
 	features = trues(length(ioexamples_solutions),
 		length(predicates))
@@ -148,7 +148,7 @@ end
 	Returns a vector containing the labels for each `IOExample` in `ioexamples_solutions`.
 	The label is the index of the first program in the vector of solutions for a `IOExample`.
 """
-function get_labels(ioexamples_solutions::Vector{Tuple{IOExample{T, U}, Vector{Int}}}) where {T, U}
+function get_labels(ioexamples_solutions::Vector{Tuple{T, Vector{Int}}}) where T <: IOExample
 	# TODO: update docstring 
 	# Use index of first program in vector of solutions as label for a problem
 	labels = [sol[1] for (_, sol) in ioexamples_solutions]
@@ -185,12 +185,12 @@ and features derived from the `predicates`.
 # 	predicates::Vector{RuleNode},
 # )::RuleNode where T <: Union{RuleNode, StateHole}
 function construct_final_program(
-	node::Union{DecisionTree.Node, DecisionTree.Leaf},
+	node::Union{Node, Leaf},
 	idx_ifelse::Int64,
 	solutions::Vector{RuleNode},
 	predicates::Vector{RuleNode},
 )::RuleNode
-	if DecisionTree.is_leaf(node)
+	if is_leaf(node)
 		# TODO: convert StateHole to RuleNode
 		return solutions[node.majority]
 	end

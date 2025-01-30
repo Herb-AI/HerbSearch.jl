@@ -33,7 +33,7 @@ function synth(
 	mod::Module = Main)::Union{Tuple{RuleNode, SynthResult}, Nothing}
 	start_time = time()
 	grammar = get_grammar(iterator.solver)
-	symboltable::SymbolTable = grammar2symboltable(grammar, mod)
+	symboltable = grammar2symboltable(grammar, mod)
 
 	best_score = 0
 	best_program = nothing
@@ -102,7 +102,7 @@ function divide_and_conquer(problem::Problem,
 )
 	start_time = time()
 	grammar = get_grammar(iterator.solver)
-	symboltable::SymbolTable = SymbolTable(grammar, mod) # TODO: change
+	symboltable = grammar2symboltable(grammar, mod) # TODO: change
 
 	# Divide problem into sub-problems 
 	subproblems = divide_by_example(problem)

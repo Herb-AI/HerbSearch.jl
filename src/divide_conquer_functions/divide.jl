@@ -4,7 +4,7 @@
 Breaks the problem specification into individual problems with each of them being a single input-output example.
 Returns a vector containing all individual subproblems. 
 """
-function divide_by_example(problem::Problem{Vector{IOExample{T, U}}}) where {T, U}
+function divide_by_example(problem::Problem{Vector{T}}) where T <: IOExample
 	subproblems = Vector()
 	for p in problem.spec
 		push!(subproblems, Problem([p]))
