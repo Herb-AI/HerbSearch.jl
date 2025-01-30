@@ -102,10 +102,10 @@ function divide_and_conquer(problem::Problem,
 )
 	start_time = time()
 	grammar = get_grammar(iterator.solver)
-	symboltable = grammar2symboltable(grammar, mod) # TODO: change
+	symboltable = grammar2symboltable(grammar, mod)
 
 	# Divide problem into sub-problems 
-	subproblems = divide_by_example(problem)
+	subproblems = divide(problem)
 
 	# Initialise a Dict that maps each subproblem to the one or more solution programs
 	problems_to_solutions = Dict(p => Vector{Int}() for p in subproblems)
@@ -115,7 +115,7 @@ function divide_and_conquer(problem::Problem,
 		expr = rulenode2expr(candidate_program, grammar)
 		is_added = false
 		for prob in subproblems
-			keep_program = decide_if_solution(prob, expr, symboltable)
+			keep_program = decide(prob, expr, symboltable)
 			if keep_program
 				if !is_added
 					if typeof(candidate_program) == StateHole
@@ -137,7 +137,7 @@ function divide_and_conquer(problem::Problem,
 		end
 	end
 
-	final_program = conquer_combine(
+	final_program = conquer(
 		problems_to_solutions,
 		solutions,
 		grammar,
@@ -149,7 +149,6 @@ function divide_and_conquer(problem::Problem,
 	)
 
 	return final_program
-	# TODO: Rename functions to decide, divide, conquer
 end
 
 

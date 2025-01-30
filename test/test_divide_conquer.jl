@@ -8,7 +8,7 @@ using DecisionTree: Leaf, Node
 			IOExample(Dict(:var1 => 3), 3),
 		]
 		problem = Problem(spec)
-		subproblems = divide_by_example(problem)
+		subproblems = divide(problem)
 		@test length(subproblems) == 3
 
 		# Stopping criteria: stop search once we have a solution to each subproblem
@@ -39,8 +39,8 @@ using DecisionTree: Leaf, Node
 		problem2 = Problem([IOExample(Dict(:x => 1), 4)])
 		program = RuleNode(4, [RuleNode(3), RuleNode(2)])
 		expr = rulenode2expr(program, grammar)
-		@test decide_if_solution(problem1, expr, symboltable) == true
-		@test decide_if_solution(problem2, expr, symboltable) == false
+		@test decide(problem1, expr, symboltable) == true
+		@test decide(problem2, expr, symboltable) == false
 	end
 
 	@testset verbose = true "conquer" begin
@@ -60,7 +60,6 @@ using DecisionTree: Leaf, Node
 
 		symboltable::SymbolTable = grammar2symboltable(grammar)
 
-		# TODO: add subproblem with two IOExamples
 		subproblems = [
 			Problem([IOExample(Dict(:_arg_1 => 1, :_arg_2 => 2), 2)]),
 			Problem([IOExample(Dict(:_arg_1 => 3, :_arg_2 => 0), 3)]),
@@ -210,7 +209,7 @@ using DecisionTree: Leaf, Node
 
 			# construct final program from decision tree
 			idx_ifelse = 13
-			final_program = construct_final_program(
+			final_program = HerbSearch.construct_final_program(
 				root_node,
 				idx_ifelse,
 				solutions,

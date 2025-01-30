@@ -64,8 +64,7 @@ export
 	validate_iterator,
 	sample,
 	rand,
-	divide_and_conquer,
-	divide_by_example,
-	decide_if_solution,
-	construct_final_program
+	divide,
+	decide,
+	conquer
 end # module HerbSearch

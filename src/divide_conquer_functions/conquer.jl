@@ -31,11 +31,10 @@ in the decision tree. For this, features are obtained by evaluating the inputs o
 
 # Returns
 
-The final program constructed from the solutions to the subproblems.
+A `RuleNode` representing the final program constructed from the solutions to the subproblems.
 """
-function conquer_combine(
+function conquer(
 	problems_to_solutions::Dict{Problem{Vector{T}}, Vector{Int}},
-	# solutions::Vector{Union{RuleNode, StateHole}},
 	solutions::Vector{RuleNode},
 	grammar::AbstractGrammar,
 	n_predicates::Int,
@@ -43,8 +42,8 @@ function conquer_combine(
 	sym_start::Symbol,
 	sym_constraint::Symbol,
 	symboltable::SymbolTable,
-) where T <: IOExample
-	# make sure grammar has if-else rulenode (TODO: do we need this? )
+)::RuleNode where T <: IOExample
+	# make sure grammar has if-else rulenode
 	idx_ifelse = findfirst(r -> r == :($sym_bool ? $sym_start : $sym_start), grammar.rules)
 	if isnothing(idx_ifelse)
 		throw(
@@ -109,7 +108,6 @@ function get_predicates(grammar::AbstractGrammar,
 	return predicates
 end
 
-# TODO: doc strings
 """
 	Returns a matrix containing the feature vectors for all problem/predicate combinations. 
 	A feature vector is obtained by evaluating a `IOExample` in `ioexamples_solutions` on each
@@ -149,8 +147,6 @@ end
 	The label is the index of the first program in the vector of solutions for a `IOExample`.
 """
 function get_labels(ioexamples_solutions::Vector{Tuple{T, Vector{Int}}}) where T <: IOExample
-	# TODO: update docstring 
-	# Use index of first program in vector of solutions as label for a problem
 	labels = [sol[1] for (_, sol) in ioexamples_solutions]
 	return labels
 end
@@ -178,12 +174,6 @@ leaf node's label from `labels_to_programs`.
 and features derived from the `predicates`.
 ```
 """
-# function construct_final_program(
-# 	node::Union{DecisionTree.Node, DecisionTree.Leaf},
-# 	idx_ifelse::Int64,
-# 	solutions::Vector{T},
-# 	predicates::Vector{RuleNode},
-# )::RuleNode where T <: Union{RuleNode, StateHole}
 function construct_final_program(
 	node::Union{Node, Leaf},
 	idx_ifelse::Int64,
@@ -191,12 +181,11 @@ function construct_final_program(
 	predicates::Vector{RuleNode},
 )::RuleNode
 	if is_leaf(node)
-		# TODO: convert StateHole to RuleNode
 		return solutions[node.majority]
 	end
 
-	l = construct_final_program(node.left, idx_ifelse, solutions, predicates)
-	r = construct_final_program(node.right, idx_ifelse, solutions, predicates)
+	l = HerbSearch.construct_final_program(node.left, idx_ifelse, solutions, predicates)
+	r = HerbSearch.construct_final_program(node.right, idx_ifelse, solutions, predicates)
 
 	# Note: Order has to be r, l. DecisionTree.jl splits data by comparing a feature against a threshold. Since we use
 	# predicates to get features, the feature values will be true/false (1.0/0.0) and the threshold 0.5.
@@ -205,5 +194,3 @@ function construct_final_program(
 	condition = RuleNode(idx_ifelse, Vector{RuleNode}([predicates[node.featid], r, l]))
 	return condition
 end
-
-# TODO: use `get_rulenode` to convert StateHole to RuleNode

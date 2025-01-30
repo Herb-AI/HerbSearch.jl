@@ -79,7 +79,7 @@ if0_cvc(x::UInt, y::UInt, z::UInt) = x == UInt(0) ? y : z
 
 	iterator = BFSIterator(grammar, :Start)
 	idx_ifelse = findfirst(r -> r == :($sym_bool ? $sym_start : $sym_start), grammar.rules)
-	@test_throws HerbSearch.ConditionalIfElseError divide_and_conquer(
+	@test_throws HerbSearch.ConditionalIfElseError HerbSearch.divide_and_conquer(
 		problem,
 		iterator,
 		sym_bool,
@@ -93,7 +93,7 @@ if0_cvc(x::UInt, y::UInt, z::UInt) = x == UInt(0) ? y : z
 	add_rule!(grammar, :($sym_start = $sym_bool ? $sym_start : $sym_start))
 	iterator = BFSIterator(grammar, :Start)
 
-	final_program = divide_and_conquer(
+	final_program = HerbSearch.divide_and_conquer(
 		problem,
 		iterator,
 		sym_bool,
