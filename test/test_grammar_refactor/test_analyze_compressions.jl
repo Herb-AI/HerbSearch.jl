@@ -1,4 +1,5 @@
-using HerbSearch: occurrences, occurrences_and_size, select_compressions, get_compression_size, generate_stats
+RefactorExt = Base.get_extension(HerbSearch, :RefactorExt)
+using .RefactorExt: occurrences, occurrences_and_size, select_compressions, get_compression_size, generate_stats, zip_stats
 
 g = @csgrammar begin
     Int = 1
@@ -50,7 +51,7 @@ end
     push!(stats, Dict(RuleNode(2) => (size = 2, occurrences = 2), RuleNode(3) => (size = 3, occurrences = 3)))
     push!(stats, Dict(RuleNode(3) => (size = 3, occurrences = 3), RuleNode(1) => (size = 1, occurrences = 1)))
     stats_zipped = Dict(RuleNode(1) => (size = 1, occurrences = 2), RuleNode(2) => (size = 2, occurrences = 4), RuleNode(3) => (size = 3, occurrences = 6))
-    @test HerbSearch.zip_stats(stats) == stats_zipped
+    @test zip_stats(stats) == stats_zipped
 end
 
 @testset verbose=true "Generate Stats" begin

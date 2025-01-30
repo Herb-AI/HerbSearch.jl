@@ -4,6 +4,7 @@ using HerbGrammar
 using HerbInterpret
 using HerbConstraints
 using HerbSpecification
+using Clingo_jll, JSON # Enable RefactorExt
 using Test
 using Aqua
 

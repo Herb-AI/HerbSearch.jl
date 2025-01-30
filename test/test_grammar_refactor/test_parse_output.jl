@@ -1,3 +1,6 @@
+RefactorExt = Base.get_extension(HerbSearch, :RefactorExt)
+using .RefactorExt: read_last_witness_from_json
+
 test_input1 = """
 {
   "Solver": "clingo version 5.7.1",
@@ -154,13 +157,13 @@ test_input2 = """
 @testset verbose=true "Parse Clingo Output" begin
     @testset "Parse Clingo Output Small" begin
         expected_output = Any["assign(56,1)","assign(55,0)","assign(57,2)"]
-        output = HerbSearch.read_last_witness_from_json(test_input1)
+        output = read_last_witness_from_json(test_input1)
         @test output == expected_output
     end
 
     @testset "Parse Clingo Output Large" begin
         expected_output = Any["assign(60,5)", "assign(59,4)", "assign(61,6)", "assign(60,2)", "assign(59,1)", "assign(61,3)", "assign(7,0)"]
-        output = HerbSearch.read_last_witness_from_json(test_input2)
+        output = read_last_witness_from_json(test_input2)
         @test output == expected_output
     end
 end

@@ -37,8 +37,6 @@ include("genetic_search_iterator.jl")
 
 include("random_iterator.jl")
 
-include("grammar_refactor/grammar_refactor.jl")
-
 export 
   ProgramIterator,
   @programiterator,
@@ -75,7 +73,15 @@ export
   misclassification,
   validate_iterator,
   sample,
-  rand,
+  rand
 
-  refactor_grammar
+  """
+    refactor_grammar
+
+  When `Clingo_jll` and `JSON` packages are loaded, this function refactors a grammar
+  """
+  function refactor_grammar end
+
+  export refactor_grammar
+
 end # module HerbSearch

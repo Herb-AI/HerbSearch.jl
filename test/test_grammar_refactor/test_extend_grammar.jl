@@ -1,3 +1,6 @@
+RefactorExt = Base.get_extension(HerbSearch, :RefactorExt)
+using .RefactorExt: generate_tree_from_compression
+
 subtree_dict = Dict{Int64, NamedTuple{(:comp_id, :parent_id, :child_nr, :type, :children), <:Tuple{Int64,Int64,Int64,Int64,Vector{Int64}}}}(
     5 => (comp_id = 5, parent_id = -1, child_nr = -1, type = 5, children = Int64[]),
     16 => (comp_id = 14, parent_id = 14, child_nr = 1, type = 1, children = Int64[]),
@@ -22,12 +25,12 @@ hole = Hole(get_domain(g, g.bytype[:Number]))
 test_ast = RuleNode(4, [RuleNode(1), hole])
 
 @testset verbose=true "Generate Tree From Compression" begin
-    tree = HerbSearch.generate_tree_from_compression(20, subtree_dict, 20, g)
+    tree = generate_tree_from_compression(20, subtree_dict, 20, g)
     @test string(tree) == string(RuleNode(5, [RuleNode(2),RuleNode(1)])) 
 
-    tree = HerbSearch.generate_tree_from_compression(17, subtree_dict, 17, g)
+    tree = generate_tree_from_compression(17, subtree_dict, 17, g)
     @test string(tree) == string(RuleNode(5, [RuleNode(2),hole]))
 
-    tree = HerbSearch.generate_tree_from_compression(11, subtree_dict, 11, g)
+    tree = generate_tree_from_compression(11, subtree_dict, 11, g)
     @test string(tree) == string(RuleNode(5, [hole,hole])) 
 end

@@ -1,4 +1,5 @@
-using HerbSearch: occurrences
+RefactorExt = Base.get_extension(HerbSearch, :RefactorExt)
+using .RefactorExt: occurrences
 
 ast1 = RuleNode(2, [RuleNode(1), RuleNode(1)])
 ast2 = RuleNode(3, [RuleNode(2, [RuleNode(1), RuleNode(1)]), RuleNode(2, [RuleNode(1), RuleNode(1)])])

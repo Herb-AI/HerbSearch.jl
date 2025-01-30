@@ -1,4 +1,6 @@
-@testset "Grammar Optimiser with ASP" verbose=true begin
+# All tests related to the RefactorExt module for grammar refactoring
+
+@testset "Grammar Optimiser with ASP (RecatorExt module tests)" verbose=true begin
     include("test_analyze_compressions.jl")
     include("test_extend_grammar.jl")
     include("test_grammar_refactor_integration.jl")

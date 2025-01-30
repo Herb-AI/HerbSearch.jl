@@ -1,4 +1,7 @@
-using Clingo_jll
+module RefactorExt
+
+using HerbCore, HerbGrammar, HerbSearch, Clingo_jll
+
 include("enumerate_subtrees.jl")
 include("parsing_IO.jl")
 include("analyze_compressions.jl")
@@ -25,7 +28,7 @@ The algorithm works in five stages:
 # Returns
 - `new_grammar::AbstractGrammar`: the optimised grammar
 """
-function refactor_grammar(trees::AbstractVector{RuleNode}, grammar::AbstractGrammar, subtree_selection_strategy::SelectionStrategy, f_best::Float64)
+function HerbSearch.refactor_grammar(trees::AbstractVector{RuleNode}, grammar::AbstractGrammar, subtree_selection_strategy::SelectionStrategy, f_best::Float64)
     start_time = time()
     @debug "Stage 1: Enumerate subtrees and discard useless subtrees"
     subtree_set = Vector{Any}()
@@ -96,5 +99,4 @@ function refactor_grammar(trees::AbstractVector{RuleNode}, grammar::AbstractGram
     return new_grammar
 end
 
-
-
+end
