@@ -66,5 +66,6 @@ export
 	rand,
 	divide,
 	decide,
-	conquer
+	conquer,
+	divide_and_conquer
 end # module HerbSearch

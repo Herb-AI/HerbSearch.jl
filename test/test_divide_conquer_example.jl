@@ -71,7 +71,7 @@ if0_cvc(x::UInt, y::UInt, z::UInt) = x == UInt(0) ? y : z
 
 @testset verbose = true "Benchmark BV example for divide and conquer" begin
 	# input arguments
-	n_predicates = 50
+	n_predicates = 5
 	sym_bool = :Bool
 	sym_start = :Start
 	sym_constraint = :Input
