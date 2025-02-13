@@ -253,20 +253,13 @@ function _find_next_complete_tree(
             hole_res = hole_heuristic(iter, get_tree(solver), get_max_depth(solver))
             if hole_res ≡ already_complete
                 track!(solver, "#FixedShapedTrees")
-                if solver.use_uniformsolver
-                    uniform_solver = UniformSolver(get_grammar(solver), get_tree(solver), with_statistics=solver.statistics)
-                    uniform_iterator = UniformIterator(uniform_solver, iter)
-                    solution = next_solution!(uniform_iterator)
-                    if !isnothing(solution)
-                        enqueue!(pq, uniform_iterator, priority_function(iter, get_grammar(solver), solution, priority_value, true))
-                        return (solution, pq)
-                    end
-                else
-                    fixed_shaped_iter = FixedShapedIterator(get_grammar(solver), :StartingSymbolIsIgnored, solver=solver)
-                    complete_trees = collect(fixed_shaped_iter)
-                    if !isempty(complete_trees)
-                        return (pop!(complete_trees), (complete_trees, pq))
-                    end
+                # Always use the Uniform Solver
+                uniform_solver = UniformSolver(get_grammar(solver), get_tree(solver), with_statistics=solver.statistics)
+                uniform_iterator = UniformIterator(uniform_solver, iter)
+                solution = next_solution!(uniform_iterator)
+                if !isnothing(solution)
+                    enqueue!(pq, uniform_iterator, priority_function(iter, get_grammar(solver), solution, priority_value, true))
+                    return (solution, pq)
                 end
             elseif hole_res ≡ limit_reached
                 # The maximum depth is reached
