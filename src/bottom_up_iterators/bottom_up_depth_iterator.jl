@@ -17,6 +17,26 @@ struct BUDepthBank <: BottomUpBank
     rulenodes_by_symbol::Dict{Symbol, Vector{RuleNode}}
 end
 
+BottomUpBank(iter::BUDepthIterator) = BUDepthBank(iter)
+
+"""
+	BUDepthBank(iter::BUDepthIterator)::BUDepthBank
+
+Constructor for `BUDepthBank`. For each symbol in the grammar (i.e. key in the dictionary), an empty `Vector{RuleNode}` (i.e. value in the dictionary) is allocated.
+"""
+function BUDepthBank(
+    iter::BUDepthIterator
+)::BUDepthBank
+    grammar::ContextSensitiveGrammar = get_grammar(iter.solver)
+    rulenodes_by_symbol::Dict{Symbol, Vector{RuleNode}} = Dict{Symbol, Vector{RuleNode}}()
+
+    for symbol ∈ grammar.types
+        rulenodes_by_symbol[symbol] = Vector{RuleNode}()
+    end
+
+    return BUDepthBank(rulenodes_by_symbol)
+end
+
 """
     struct BUDepthData <: BottomUpData
 
@@ -31,6 +51,35 @@ mutable struct BUDepthData <: BottomUpData
     new_programs::Vector{RuleNode}
     rules::Queue{Int}
     depth::Int
+end
+
+BottomUpData(iter::BUDepthIterator) = BUDepthData(iter)
+
+"""
+    BUDepthData(iter::BUDepthIterator)::BUDepthData
+
+Constructor for `BUDepthData`. The initialization consists of the following:
+* `nested_rulenode_iterator` is set to an empty `NestedRulenodeIterator`.
+* `rules` contains the indeces of terminal rules in the grammar.
+* `new_programs` is an empty `Vector{RuleNode}`.
+* `depth` is set to 1.
+"""
+function BUDepthData(
+    iter::BUDepthIterator
+)::BUDepthData
+    grammar::ContextSensitiveGrammar = get_grammar(iter.solver)
+
+    empty_nested_iterator::NestedRulenodeIterator = NestedRulenodeIterator()
+    depth::Int = 1
+
+    rules::Queue{Int} = Queue{Int}()
+    for (rule_index, is_terminal) ∈ enumerate(grammar.isterminal)
+        if is_terminal
+            enqueue!(rules, rule_index)
+        end
+    end
+
+    return BUDepthData(empty_nested_iterator, Vector{RuleNode}(), rules, depth)
 end
 
 """
@@ -51,51 +100,6 @@ function order(
     end
 
     return rules
-end
-
-"""
-	init_bank(iter::BUDepthIterator)::BUDepthBank
-
-Returns an initialized object of type `BUDepthBank`. For each symbol in the grammar (i.e. key in the dictionary), an empty `Vector{RuleNode}` (i.e. value in the dictionary) is allocated.
-"""
-function init_bank(
-    iter::BUDepthIterator
-)::BUDepthBank
-    grammar::ContextSensitiveGrammar = get_grammar(iter.solver)
-    rulenodes_by_symbol::Dict{Symbol, Vector{RuleNode}} = Dict{Symbol, Vector{RuleNode}}()
-
-    for symbol ∈ grammar.types
-        rulenodes_by_symbol[symbol] = Vector{RuleNode}()
-    end
-
-    return BUDepthBank(rulenodes_by_symbol)
-end
-
-"""
-    init_data(iter::BUDepthIterator)::BUDepthData
-
-Returns an initialized object of type `BUDepthData`. The initialization consists of the following:
-* `nested_rulenode_iterator` is set to an empty `NestedRulenodeIterator`.
-* `rules` contains the indeces of terminal rules in the grammar.
-* `new_programs` is an empty `Vector{RuleNode}`.
-* `depth` is set to 1.
-"""
-function init_data(
-    iter::BUDepthIterator
-)::BUDepthData
-    grammar::ContextSensitiveGrammar = get_grammar(iter.solver)
-
-    empty_nested_iterator::NestedRulenodeIterator = NestedRulenodeIterator()
-    depth::Int = 1
-
-    rules::Queue{Int} = Queue{Int}()
-    for (rule_index, is_terminal) ∈ enumerate(grammar.isterminal)
-        if is_terminal
-            enqueue!(rules, rule_index)
-        end
-    end
-
-    return BUDepthData(empty_nested_iterator, Vector{RuleNode}(), rules, depth)
 end
 
 """

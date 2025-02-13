@@ -15,6 +15,26 @@ struct BUUniformBank <: BottomUpBank
     tree_shapes_by_symbol::Dict{Symbol, Vector{UniformHole}}
 end
 
+BottomUpBank(iter::BUUniformIterator) = BUUniformBank(iter)
+
+"""
+	BUUniformBank(iter::BUDepthIterator)::BUDepthBank
+
+Constructor for `BUUniformBank`. For each symbol in the grammar (i.e. key in the dictionary), an empty `Vector{RuleNode}` (i.e. value in the dictionary) is allocated.
+"""
+function BUUniformBank(
+    iter::BUUniformIterator
+)::BUUniformBank
+    grammar::ContextSensitiveGrammar = get_grammar(iter.solver)
+    rulenodes_by_symbol::Dict{Symbol, Vector{UniformHole}} = Dict{Symbol, Vector{UniformHole}}()
+
+    for symbol ∈ grammar.types
+        rulenodes_by_symbol[symbol] = Vector{UniformHole}()
+    end
+
+    return BUUniformBank(rulenodes_by_symbol)
+end
+
 """
     struct BUDepthData <: BottomUpData
 
@@ -31,34 +51,18 @@ mutable struct BUUniformData <: BottomUpData
     depth::Int
 end
 
-"""
-	init_bank(iter::BUDepthIterator)::BUDepthBank
-
-Returns an initialized object of type `BUDepthBank`. For each symbol in the grammar (i.e. key in the dictionary), an empty `Vector{RuleNode}` (i.e. value in the dictionary) is allocated.
-"""
-function init_bank(
-    iter::BUUniformIterator
-)::BUUniformBank
-    grammar::ContextSensitiveGrammar = get_grammar(iter.solver)
-    rulenodes_by_symbol::Dict{Symbol, Vector{UniformHole}} = Dict{Symbol, Vector{UniformHole}}()
-
-    for symbol ∈ grammar.types
-        rulenodes_by_symbol[symbol] = Vector{UniformHole}()
-    end
-
-    return BUUniformBank(rulenodes_by_symbol)
-end
+BottomUpData(iter::BUUniformIterator) = BUUniformData(iter)
 
 """
-    init_data(iter::BUDepthIterator)::BUDepthData
+    BUUniformData(iter::BUDepthIterator)::BUDepthData
 
-Returns an initialized object of type `BUDepthData`. The initialization consists of the following:
+Constructor for `BUUniformData`. The initialization consists of the following:
 * `nested_rulenode_iterator` is set to an empty `NestedRulenodeIterator`.
 * `rules` contains the indeces of terminal rules in the grammar.
 * `new_programs` is an empty `Vector{RuleNode}`.
 * `depth` is set to 1.
 """
-function init_data(
+function BUUniformData(
     iter::BUUniformIterator
 )::BUUniformData
     depth::Int = 1

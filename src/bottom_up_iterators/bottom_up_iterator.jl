@@ -53,7 +53,7 @@ end
 Defines the first iteration of the `BottomUpIterator`. Creates the `BottomUpState` by instantiating its components. Calls `_get_next_program` for generating the next program.
 """
 function Base.iterate(iter::BottomUpIterator)::Union{Nothing,Tuple{RuleNode,BottomUpState}}
-    state::BottomUpState = BottomUpState(init_bank(iter), init_data(iter), _has_obs_equivalence(iter), Set{UInt64}())
+    state::BottomUpState = BottomUpState(BottomUpBank(iter), BottomUpData(iter), _has_obs_equivalence(iter), Set{UInt64}())
     return _get_next_program(iter, state)
 end
 
