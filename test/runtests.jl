@@ -4,6 +4,7 @@ using HerbGrammar
 using HerbInterpret
 using HerbConstraints
 using HerbSpecification
+using Clingo_jll, JSON # Enable RefactorExt
 using Test
 using Aqua
 
@@ -28,6 +29,8 @@ Random.seed!(1234)
     include("test_unique.jl")
 
     include("test_constraints.jl")
+
+    include("test_grammar_refactor/test_grammar_refactoring.jl")
 
     # Excluded because it contains long tests
     # include("test_realistic_searches.jl")
