@@ -42,7 +42,7 @@ Returns a sorted sublist of the `indices`, based on which rules are most promisi
 By default, this is the identity function.
 """
 function derivation_heuristic(::TopDownIterator, indices::Vector{Int})
-    return indices;
+    return sort(indices);
 end
 
 """
@@ -141,18 +141,33 @@ Iterator that enumerates expressions in the grammar in decreasing order of proba
 @programiterator MLFSIterator() <: TopDownIterator
 
 """
-    priority_function(::MLFSIterator, g::AbstractGrammar, tree::AbstractRuleNode, parent_value::Union{Real, Tuple{Vararg{Real}}}, isrequeued::Bool)
+    priority_function(::MLFSIterator, grammar::AbstractGrammar, current_program::AbstractRuleNode, parent_value::Union{Real, Tuple{Vararg{Real}}}, isrequeued::Bool)
 
-Calculates logit for all possible derivations for a node in a tree and returns them.
+Calculates the priority function of the `MLFSIterator`. The priority value of a tree is then the max_rulenode_log_probability within the represented uniform tree.
+The value is negated as lower priority values are popped earlier.
 """
 function priority_function(
     ::MLFSIterator,
-    g::AbstractGrammar, 
-    tree::AbstractRuleNode, 
-    ::Union{Real, Tuple{Vararg{Real}}},
+    grammar::AbstractGrammar, 
+    current_program::AbstractRuleNode, 
+    parent_value::Union{Real, Tuple{Vararg{Real}}},
     isrequeued::Bool
 )
-    -rulenode_log_probability(tree, g)
+    #@TODO Add requeueing and calculate values from parent_value
+    -max_rulenode_log_probability(current_program, grammar)
+end
+
+"""
+    derivation_heuristic(iter::MLFSIterator, domain::Vector{Int})
+
+Defines `derivation_heuristic` for the iterator type `MLFSIterator`. 
+Sorts the indices within a domain, that is grammar rules, by decreasing log_probabilities. 
+    
+This will invert the enumeration order if probabilities are equal.
+"""
+function derivation_heuristic(iter::MLFSIterator, domain::Vector{Int})
+    log_probs = get_grammar(iter.solver).log_probabilities
+    return sort(domain, by=i->log_probs[i], rev=true) # have highest log_probability first
 end
 
 """
