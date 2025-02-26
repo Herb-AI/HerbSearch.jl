@@ -81,9 +81,11 @@ end
 
 """
 	Returns predicates that can serve as conditional statements for combining programs in a decision tree.
-	The number of predicates returned is determined by `n_predicates`.
-	`sym_bool` is used to make sure that only programs evaluate to `Bool` are considered. 
-	`sym_constraint` is used to to further limit the program space to exclude trivial predicates.
+
+	# Arguments
+	- `n_predicates`: Determines the number of predicates that are returned.
+	- `sym_bool`: is used to make sure that only programs evaluate to `Bool` are considered. 
+	- `sym_constraint`: Further constrains the program space to exclude trivial predicates.
 """
 function get_predicates(grammar::AbstractGrammar,
 	sym_bool::Symbol,
@@ -92,8 +94,42 @@ function get_predicates(grammar::AbstractGrammar,
 )::Vector{RuleNode}
 	# We get the first grammar rule that has the specified `sym_constraint` and add constraint to grammar. 
 	clearconstraints!(grammar)
-	idx_rule = grammar.bytype[sym_constraint][1]
-	addconstraint!(grammar, Contains(idx_rule))
+	# Create DomainRuleNode that contains all rules of type sym_constraint and add constraint to grammar
+	rules = grammar.bytype[sym_constraint]
+	domain = DomainRuleNode(grammar, rules)
+	addconstraint!(grammar, ContainsSubtree(domain))
+
+	iterator = BFSIterator(grammar, sym_bool)
+	predicates = Vector{RuleNode}()
+
+	for (i, candidate_program) ∈ enumerate(iterator)
+		candidate_program = freeze_state(candidate_program)
+		push!(predicates, candidate_program)
+		if i >= n_predicates
+			break
+		end
+	end
+	return predicates
+end
+
+"""
+	Returns predicates that can serve as conditional statements for combining programs in a decision tree.
+
+	# Arguments
+	- `n_predicates`: Determines the number of predicates that are returned.
+	- `sym_bool`: is used to make sure that only programs evaluate to `Bool` are considered. 
+	- `rules`: List of grammer rules used to further constrain the program space to exclude trivial predicates.
+"""
+function get_predicates(grammar::AbstractGrammar,
+	sym_bool::Symbol,
+	rules::Vector{Int},
+	n_predicates::Number,
+)::Vector{RuleNode}
+	clearconstraints!(grammar)
+	# Create DomainRuleNode that contains all rules and add constraint to grammar
+	domain = DomainRuleNode(grammar, rules)
+	addconstraint!(grammar, ContainsSubtree(domain))
+
 
 	iterator = BFSIterator(grammar, sym_bool)
 	predicates = Vector{RuleNode}()

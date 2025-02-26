@@ -8,11 +8,10 @@ grammar = @cfgrammar begin
 	Start = 0x0000000000000000
 	Start = 0x0000000000000001
 	Start = Input
-	Input = _arg_1 # :Input added
+	Input = _arg_1
 	Start = Bool
-	Bool = Condition # only introduced for constraint on predicates iterator
-	Condition = bvugt_cvc(Start, Start) # n1 > n2
-	Condition = bveq1_cvc(Start) # n == 1
+	Bool = bvugt_cvc(Start, Start) # n1 > n2
+	Bool = bveq1_cvc(Start) # n == 1
 	Start = bvnot_cvc(Start)
 	Start = smol_cvc(Start)
 	Start = ehad_cvc(Start)

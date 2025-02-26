@@ -107,12 +107,18 @@ using DecisionTree: Leaf, Node
 			n_predicates = 100
 			sym_bool = :Condition
 			sym_constraint = :Input
+			# use symbol for constraint
 			predicates = HerbSearch.get_predicates(grammar, sym_bool, sym_constraint, n_predicates)
-			idx_rule = grammar.bytype[sym_constraint][1]
+			rules = grammar.bytype[sym_constraint]
 			@test length(predicates) == n_predicates
 			# pick a few random predicates and check if they contain rule we expect
-			@test !isempty(rulesoftype(predicates[23], Set([idx_rule])))
-			@test !isempty(rulesoftype(predicates[99], Set([idx_rule])))
+			@test !isempty(rulesoftype(predicates[23], Set(rules)))
+			@test !isempty(rulesoftype(predicates[99], Set(rules)))
+
+			# use rule indices for clearconstraints
+			predicates = HerbSearch.get_predicates(grammar, sym_bool, rules, n_predicates)
+			@test !isempty(rulesoftype(predicates[12], Set(rules)))
+			@test !isempty(rulesoftype(predicates[71], Set(rules)))
 		end
 
 		@testset verbose = true "features" begin
