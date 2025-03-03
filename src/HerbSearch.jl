@@ -71,9 +71,6 @@ export
   DFSIterator,
   MLFSIterator,
 
-  # ObservationalEquivalenceIterator,
-  # RuleNodeCombinations,
-  # CrossProductIterator,
   BottomUpIterator,
   BUDepthIterator,
   BUUniformIterator,

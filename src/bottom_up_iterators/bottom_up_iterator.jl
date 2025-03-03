@@ -51,9 +51,10 @@ end
 Defines the first iteration of the `BottomUpIterator`.
 """
 function Base.iterate(iter::BottomUpIterator)::Union{Nothing,Tuple{RuleNode,BottomUpState}}
-    state::BottomUpState = BottomUpState(BottomUpBank(iter), BottomUpData(iter), CrossProductIterator(RuleNodeCombinations(0, Vector{Vector{RuleNode}}())))
-    state.cross_product_iterator = CrossProductIterator(combine!(iter, state.data, state.bank))
-    println("cross prodtuct ", state.cross_product_iterator)
+    bank::BottomUpBank = BottomUpBank(iter)
+    data::BottomUpData = BottomUpData(iter)
+    cross_product_iterator::CrossProductIterator = CrossProductIterator(combine!(iter, bank, data))
+    state::BottomUpState = BottomUpState(bank, data, cross_product_iterator)
     return _get_next_program(iter, state)
 end
 
@@ -92,7 +93,7 @@ function _get_next_program(
         end
 
         if is_valid(iter, next_program, state.data)
-            add_to_bank(iter, state.bank, next_program)
+            add_to_bank!(iter, state.bank, next_program)
             return next_program, state
         end
     end
