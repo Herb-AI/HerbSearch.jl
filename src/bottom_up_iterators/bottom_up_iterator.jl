@@ -46,20 +46,14 @@ mutable struct BottomUpState
 end
 
 """
-TODO: add documentation
-"""
-struct RuleNodeCombinations
-    rule::Int
-    children_lists::Vector{Vector{RuleNode}} # TODO: make outer array of fixed size.
-end
-
-"""
     function Base.iterate(iter::BottomUpIterator)::Union{Nothing,Tuple{RuleNode,BottomUpState}}
 
 Defines the first iteration of the `BottomUpIterator`.
 """
 function Base.iterate(iter::BottomUpIterator)::Union{Nothing,Tuple{RuleNode,BottomUpState}}
-    state::BottomUpState = BottomUpState(BottomUpBank(iter), BottomUpData(iter))
+    state::BottomUpState = BottomUpState(BottomUpBank(iter), BottomUpData(iter), CrossProductIterator(RuleNodeCombinations(0, Vector{Vector{RuleNode}}())))
+    state.cross_product_iterator = CrossProductIterator(combine!(iter, state.data, state.bank))
+    println("cross prodtuct ", state.cross_product_iterator)
     return _get_next_program(iter, state)
 end
 
@@ -88,7 +82,7 @@ function _get_next_program(
         next_program = Base.iterate(state.cross_product_iterator)
 
         if isnothing(next_program)
-            rulenode_combinations = combine(iter, state.bank, state.data)
+            rulenode_combinations = combine!(iter, state.bank, state.data)
             if isnothing(rulenode_combinations)
                 return nothing
             end

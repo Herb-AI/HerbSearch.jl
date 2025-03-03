@@ -18,6 +18,9 @@ include("heuristics.jl")
 
 include("bottom_up_iterators/nested_rulenode_iterator.jl")
 include("bottom_up_iterators/nested_uniform_iterator.jl")
+include("bottom_up_iterators/observational_equivalence.jl")
+include("bottom_up_iterators/rule_node_combinations.jl")
+include("bottom_up_iterators/cross_product_iterator.jl")
 include("bottom_up_iterators/bottom_up_iterator.jl")
 include("bottom_up_iterators/bottom_up_depth_iterator.jl")
 include("bottom_up_iterators/bottom_up_uniform_iterator.jl")
@@ -68,6 +71,9 @@ export
   DFSIterator,
   MLFSIterator,
 
+  # ObservationalEquivalenceIterator,
+  # RuleNodeCombinations,
+  # CrossProductIterator,
   BottomUpIterator,
   BUDepthIterator,
   BUUniformIterator,

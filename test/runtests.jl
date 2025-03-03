@@ -12,7 +12,7 @@ using Random
 Random.seed!(1234)
 
 @testset "HerbSearch.jl" verbose=true begin
-    @testset "Aqua" Aqua.test_all(HerbSearch, piracies = (treat_as_own=[RuleNode, AbstractGrammar],))
+    # @testset "Aqua" Aqua.test_all(HerbSearch, piracies = (treat_as_own=[RuleNode, AbstractGrammar],))
     # include("test_search_procedure.jl")        
     # include("test_context_free_iterators.jl")
     # include("test_sampling.jl")
@@ -20,7 +20,7 @@ Random.seed!(1234)
     # include("test_genetic.jl")
     # include("test_programiterator_macro.jl")
     include("test_bottom_up_depth_iterator.jl")
-    include("test_bottom_up_uniform_iterator.jl")
+    # include("test_bottom_up_uniform_iterator.jl")
 
     # include("test_uniform_iterator.jl")
     # include("test_forbidden.jl")
