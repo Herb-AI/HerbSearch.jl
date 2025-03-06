@@ -38,10 +38,14 @@ end
 
 #TODO: PointerAbstract: iterators.product solves this?
 """
-bank: 1: 1,2
-      2: 1+1, 1+2, 2+2
+Int = 1
+int = 2
+Int = Int + Int
 
-(+, [1][2], [2][3]])
+1(2): 1,2
+2(6): 1+1, 1+2, 2+1, 2+2
+3(14): 1+1+1, 1+1+2, 1+2+1,1+2+2, 2+1+1, 2+1+2, 2+2+1, 2+2+2
+4
 """
 
 
@@ -69,7 +73,7 @@ function state_tracker(state::BottomUpState) end
 function new_combinations!(state::BottomUpState, new_combination::AbstractVector{AbstractAddress}) end
 function new_state_tracker!(state::BottomUpState, new_tracker) end
 
-has_remaining_iterations(state::BottomUpState) = isempty(remaining_combinations(state))
+has_remaining_iterations(state::BottomUpState) = !isempty(remaining_combinations(state))
 
 
 """
@@ -226,20 +230,40 @@ Returns the next program to explore and the updated BottomUpState:
 - if there are still remaining programs from the current BU iteration to explore (`remaining_combinations(state)`), it pops the next one
 - otherwise, it calls the the `combine(iter, state)` function again, and processes the first returned program
 """
+# function _get_next_program(iter::BottomUpIterator, state::GenericBUState)
+#     if has_remaining_iterations(state)
+#         return popfirst!(remaining_combinations(state)), state
+#     elseif state_tracker(state) !== nothing
+#         new_program_combinations, new_state = combine(iter, state_tracker(state))
+#         new_combinations!(state, new_program_combinations)
+#         new_state_tracker!(state, new_state)
+#         popfirst!(remaining_combinations(state)), state
+#         #Base.iterate(iter, )
+#     else
+#         return nothing
+#     end
+# end
+
 function _get_next_program(iter::BottomUpIterator, state::GenericBUState)
     if has_remaining_iterations(state)
         return popfirst!(remaining_combinations(state)), state
     elseif state_tracker(state) !== nothing
         new_program_combinations, new_state = combine(iter, state_tracker(state))
-        new_combinations!(state, new_program_combinations)
-        new_state_tracker!(state, new_state)
-        popfirst!(remaining_combinations(state)), state
-        #Base.iterate(iter, )
+
+        # Check if new_program_combinations is nothing
+        if new_program_combinations === nothing
+            # We've reached the end of the iteration
+            new_state_tracker!(state, nothing)
+            return nothing, nothing
+        else
+            new_combinations!(state, new_program_combinations)
+            new_state_tracker!(state, new_state)
+            return popfirst!(remaining_combinations(state)), state
+        end
     else
-        return nothing
+        return nothing, nothing
     end
 end
-
 
 """
     Base.iterate(iter::BottomUpIterator)
@@ -288,15 +312,4 @@ function Base.iterate(iter::BottomUpIterator, state::GenericBUState)
             return Base.iterate(iter, new_state)
         end
     end
-end
-
-
-
-
-
-
-mutable struct MyBU <: BottomUpIterator
-    grammar::AbstractGrammar
-    symbol::Symbol
-    bank
 end
