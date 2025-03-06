@@ -1,11 +1,16 @@
+import HerbSearch.init_combine_structure
+
 @testset "Bottom Up Search" begin
     mutable struct MyBU <: BottomUpIterator
         grammar
         starts
         bank
+        max_depth
     end
 
-
+    function HerbSearch.init_combine_structure(iter::MyBU)
+        Dict(:max => iter.max_depth)
+    end
 
     @testset "basic" begin
         g = @csgrammar begin
@@ -13,7 +18,7 @@
             Int = Int + Int
         end
 
-        iter = MyBU(g, :Int, nothing)
+        iter = MyBU(g, :Int, nothing, 5)
         expected_programs = Set([
             (@rulenode 1),
             (@rulenode 2),
@@ -33,7 +38,7 @@
             Int = 3 + Int
         end
 
-        iter = MyBU(g, :Int, nothing)
+        iter = MyBU(g, :Int, nothing, 5)
         create_bank!(iter)
         populate_bank!(iter)
 
