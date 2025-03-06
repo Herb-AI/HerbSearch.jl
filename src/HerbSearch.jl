@@ -1,5 +1,6 @@
 module HerbSearch
 
+using Base: Bottom
 using DataStructures
 
 using HerbCore
@@ -59,5 +60,23 @@ export
     misclassification,
     validate_iterator,
     sample,
-    rand
+    rand,
+    BottomUpState,
+    BottomUpIterator
+AbstractAddress,
+AccessAddress,
+CombineAddress,
+remaining_combinations,
+state_tracker,
+new_combinations!,
+new_state_tracker!,
+has_remaining_iterations,
+GenericBUState,
+create_bank!,
+populate_bank!,
+combine,
+add_to_bank!,
+new_address,
+retrieve,
+init_combine_structure
 end # module HerbSearch
