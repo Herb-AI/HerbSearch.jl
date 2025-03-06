@@ -178,7 +178,7 @@ Adds the `program` to the bank of the [`BottomUpIterator`](@ref) at the given `a
 Returns `True` if the program is added to the bank, and `False` otherwise.
 For example, the function returns false if the `program` is observationally equivalent to another program already in the bank; hence, it will not be added.
 """
-function add_to_bank(iter::BottomUpIterator, program::AbstractRuleNode, address::AccessAddress)::Bool
+function add_to_bank!(iter::BottomUpIterator, program::AbstractRuleNode, address::AccessAddress)::Bool
     push!(iter.bank[address.addr[1]], program)
 
     return true
@@ -304,7 +304,7 @@ function Base.iterate(iter::BottomUpIterator, state::GenericBUState)
         # we have to combine programs from the bank
         program = _construct_program(iter, program_combination)
 
-        keep = add_to_bank(iter, program, new_address(iter, program_combination))
+        keep = add_to_bank!(iter, program, new_address(iter, program_combination))
 
         if keep
             return program, new_state
