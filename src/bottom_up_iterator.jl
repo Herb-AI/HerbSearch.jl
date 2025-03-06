@@ -10,10 +10,6 @@ Concrete iterators may overload the following methods:
 - add_to_bank! -> rename to push!
 - retrieve -> given a bank and an address, retrieve the program at a given address
 
-
-
-bank: {1,2}
-bank: {1,2,1+1,1+2,2+2}
 """
 abstract type BottomUpIterator <: ProgramIterator end
 
@@ -35,7 +31,7 @@ indicates that several programs need to be retrieved and combined
 """
 struct CombineAddress <: AbstractAddress
     op
-    addrs::AbstractVector{AbstractAddress}
+    addrs::AbstractVector{AccessAddress}
 end
 
 
@@ -114,8 +110,11 @@ The following functions define the interface for bottom up iterators
 
 Initialises a data structure representing a bank of the iterator.
 It should modify the iterator itself.
+TODO: add bank getters to the interface
 """
-function create_bank!(iter::BottomUpIterator) end
+function create_bank!(iter::BottomUpIterator)
+    iter.bank = DefaultDict(Int,Vector{AbstractRuleNode},[])
+end
 
 """
   populate_bank!(iter::BottomUpIterator)::AbstractVector{AccessAddress}
@@ -123,7 +122,19 @@ function create_bank!(iter::BottomUpIterator) end
 Fills the bank with the initial, simplest, programs.
 It should return the addresses of hte programs just inserted in the bank
 """
-function populate_bank!(iter::BottomUpIterator)::AbstractVector{AccessAddress} end
+function populate_bank!(iter::BottomUpIterator)::AbstractVector{AccessAddress}
+    grammar = iter.grammar
+    terminal_programs = RuleNode.(findall(grammar.isterminal))
+
+    # create the bank entry
+    iter.bank[1] = Vector{AbstractRuleNode}()
+
+    addresses_to_return = Vector{AccessAddress}()
+    # iterate over terminals and add them to the bank
+    push!(iter.bank[1], terminal_programs...)
+
+    return [AccessAddress((1,x)) for x in 1:length(iter.bank[1])]
+end
 
 """
   combine(iter::BottomUpIterator, state)::Tuple{AbstractVector{AbstractAddress},Any}
@@ -131,7 +142,29 @@ function populate_bank!(iter::BottomUpIterator)::AbstractVector{AccessAddress} e
 Returns a vector of [`AbstractAddress`](@ref) each address representing a program to construct, and a `state` used to keep track of the iterations (in the style of Julia iterators).
 If the iteration should stop, the next state should be `nothing`.
 """
-function combine(iter::BottomUpIterator, state) end
+function combine(iter::BottomUpIterator, state)
+    addresses = Vector{CombineAddress}()
+    max_in_bank = max(keys(iter.bank))
+    non_terminal_rules = findall(.~iter.grammar.isterminal)
+
+    # if we have exceeded the maximum number of programs to generate
+    if max_in_bank >= state[:max]
+       return nothing, nothing
+    end
+
+    #check bound function
+    function check_bound(combination)
+        return sum([x[1] for x in combination]) > max_in_bank
+    end
+
+    for op in non_terminal_rules
+       nchildren = length(iter.grammar.childtypes)
+       all_addresses = [(k,i) for k in keys(iter.bank) for i in 1:length(iter.bank[k])]
+       addresses = reduce((acc,elem) -> check_bound(elem) ? push!(acc, CombineAddress(op, [AccessAddress(e) for e in elem])) : acc,  Iterators.product((all_addresses for _ in 1:nchildren)...); init=addresses)
+    end
+
+    return addresses, state
+end
 
 """
   add_to_bank(iter::BottomUpIterator, program::AbstractRuleNode, address::AbstractAddress)::Bool
@@ -140,28 +173,36 @@ Adds the `program` to the bank of the [`BottomUpIterator`](@ref) at the given `a
 Returns `True` if the program is added to the bank, and `False` otherwise.
 For example, the function returns false if the `program` is observationally equivalent to another program already in the bank; hence, it will not be added.
 """
-function add_to_bank(iter::BottomUpIterator, program::AbstractRuleNode, address::AbstractAddress)::Bool end
+function add_to_bank(iter::BottomUpIterator, program::AbstractRuleNode, address::AccessAddress)::Bool
+   push!(iter.bank[address.addr[1]], program)
+end
 
 """
   new_address(iter::BottomUpIterator, parent_address::AbstractAddress)::AbstractAddress
 
 Returns an [`AbstractAddress`](@ref) of the program to be added to the bank, derived from the `parent_address`
 """
-function new_address(iter::BottomUpIterator, program_combination::AbstractAddress)::AbstractAddress end
+function new_address(iter::BottomUpIterator, program_combination::AbstractAddress)::AbstractAddress
+    return AccessAddress((1 + sum([x.addr[1] in program_combination.addrs]),1))
+end
 
 """
   retrieve(iter::BottomUpIterator, address::AccessAddress)::AbstractRuleNode
 
 Retrieves a program from the bank indexed by the [`AccessAddress`](@ref)
 """
-function retrieve(iter::BottomUpIterator, address::AccessAddress)::AbstractRuleNode end
+function retrieve(iter::BottomUpIterator, address::AccessAddress)::AbstractRuleNode
+    iter.bank[address.addr[1]][address.addr[2]]
+end
 
 """
     init_combine_structure(iter::BottomUpIterator)
 
 Returns the initial state for the first `combine` call
 """
-function init_combine_structure(iter::BottomUpIterator) end
+function init_combine_structure(iter::BottomUpIterator)
+    Dict(:max -> 4)
+end
 
 
 """
@@ -170,7 +211,9 @@ function init_combine_structure(iter::BottomUpIterator) end
 Constructs a program by combining programs specified by `address`.
 Ideally this is impelmented only once.
 """
-function _construct_program(iter::BottomUpIterator, address::CombineAddress)::AbstractRuleNode end
+function _construct_program(iter::BottomUpIterator, address::CombineAddress)::AbstractRuleNode
+    return RuleNode(address.op, [retrieve(iter, x) for x in address.addrs])
+end
 
 
 """
