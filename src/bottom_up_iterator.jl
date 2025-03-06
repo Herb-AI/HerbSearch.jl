@@ -159,13 +159,14 @@ function combine(iter::BottomUpIterator, state)
 
     #check bound function
     function check_bound(combination)
-        return sum([x[1] for x in combination]) > max_in_bank
+        return 1 + sum([x[1] for x in combination]) > max_in_bank
     end
 
     for op in non_terminal_rules
         nchildren = length(iter.grammar.childtypes[op])
         all_addresses = [(k, i) for k in keys(iter.bank) for i in 1:length(iter.bank[k])]
-        addresses = reduce((acc, elem) -> check_bound(elem) ? push!(acc, CombineAddress(op, [AccessAddress(e) for e in elem])) : acc, Iterators.product((all_addresses for _ in 1:nchildren)...); init=addresses)
+        all_combinations = Iterators.product((all_addresses for _ in 1:nchildren)...)
+        addresses = reduce((acc, elem) -> check_bound(elem) ? vcat(acc, [CombineAddress(op, [AccessAddress(e) for e in elem])]) : acc, all_combinations; init=addresses)
     end
 
     return addresses, state
