@@ -1,5 +1,6 @@
 """
     mutable struct BottomUpIterator <: ProgramIterator
+using Base: AbstractCmd
 
 Enumerates programs from a context-free grammar starting at [`Symbol`](@ref) `sym` with respect to the grammar up to a given depth and a given size.
 The exploration is done by maintaining a bank of (executable) programs and ieratively exploring larger programs by combinig the ones in the bank  .
@@ -113,7 +114,7 @@ It should modify the iterator itself.
 TODO: add bank getters to the interface
 """
 function create_bank!(iter::BottomUpIterator)
-    iter.bank = DefaultDict(Int,Vector{AbstractRuleNode},[])
+    iter.bank = DefaultDict{Int,Vector{AbstractRuleNode}}(Vector{AbstractRuleNode}())
 end
 
 """
@@ -133,7 +134,7 @@ function populate_bank!(iter::BottomUpIterator)::AbstractVector{AccessAddress}
     # iterate over terminals and add them to the bank
     push!(iter.bank[1], terminal_programs...)
 
-    return [AccessAddress((1,x)) for x in 1:length(iter.bank[1])]
+    return [AccessAddress((1, x)) for x in 1:length(iter.bank[1])]
 end
 
 """
@@ -144,12 +145,12 @@ If the iteration should stop, the next state should be `nothing`.
 """
 function combine(iter::BottomUpIterator, state)
     addresses = Vector{CombineAddress}()
-    max_in_bank = max(keys(iter.bank))
+    max_in_bank = maximum(keys(iter.bank))
     non_terminal_rules = findall(.~iter.grammar.isterminal)
 
     # if we have exceeded the maximum number of programs to generate
     if max_in_bank >= state[:max]
-       return nothing, nothing
+        return nothing, nothing
     end
 
     #check bound function
@@ -158,9 +159,9 @@ function combine(iter::BottomUpIterator, state)
     end
 
     for op in non_terminal_rules
-       nchildren = length(iter.grammar.childtypes)
-       all_addresses = [(k,i) for k in keys(iter.bank) for i in 1:length(iter.bank[k])]
-       addresses = reduce((acc,elem) -> check_bound(elem) ? push!(acc, CombineAddress(op, [AccessAddress(e) for e in elem])) : acc,  Iterators.product((all_addresses for _ in 1:nchildren)...); init=addresses)
+        nchildren = length(iter.grammar.childtypes[op])
+        all_addresses = [(k, i) for k in keys(iter.bank) for i in 1:length(iter.bank[k])]
+        addresses = reduce((acc, elem) -> check_bound(elem) ? push!(acc, CombineAddress(op, [AccessAddress(e) for e in elem])) : acc, Iterators.product((all_addresses for _ in 1:nchildren)...); init=addresses)
     end
 
     return addresses, state
@@ -174,7 +175,9 @@ Returns `True` if the program is added to the bank, and `False` otherwise.
 For example, the function returns false if the `program` is observationally equivalent to another program already in the bank; hence, it will not be added.
 """
 function add_to_bank(iter::BottomUpIterator, program::AbstractRuleNode, address::AccessAddress)::Bool
-   push!(iter.bank[address.addr[1]], program)
+    push!(iter.bank[address.addr[1]], program)
+
+    return true
 end
 
 """
@@ -183,7 +186,7 @@ end
 Returns an [`AbstractAddress`](@ref) of the program to be added to the bank, derived from the `parent_address`
 """
 function new_address(iter::BottomUpIterator, program_combination::AbstractAddress)::AbstractAddress
-    return AccessAddress((1 + sum([x.addr[1] in program_combination.addrs]),1))
+    return AccessAddress((1 + sum([x.addr[1] for x in program_combination.addrs]), 1))
 end
 
 """
@@ -201,7 +204,7 @@ end
 Returns the initial state for the first `combine` call
 """
 function init_combine_structure(iter::BottomUpIterator)
-    Dict(:max -> 4)
+    Dict(:max => 4)
 end
 
 
@@ -225,8 +228,8 @@ Returns the next program to explore and the updated BottomUpState:
 """
 function _get_next_program(iter::BottomUpIterator, state::GenericBUState)
     if has_remaining_iterations(state)
-        return popfirst!(remaining_combinations(state)),  state
-    else if state_tracker(state) !== nothing
+        return popfirst!(remaining_combinations(state)), state
+    elseif state_tracker(state) !== nothing
         new_program_combinations, new_state = combine(iter, state_tracker(state))
         new_combinations!(state, new_program_combinations)
         new_state_tracker!(state, new_state)
@@ -270,7 +273,7 @@ function Base.iterate(iter::BottomUpIterator, state::GenericBUState)
     if program_combination === nothing
         #program is `nothing`, so we stop
         return nothing
-    else if typeof(program_combination) == AccessAddress
+    elseif typeof(program_combination) == AccessAddress
         # we only need to access the program, it is already in the bank
         return retrieve(iter, program_combination), new_state
     else
@@ -285,4 +288,15 @@ function Base.iterate(iter::BottomUpIterator, state::GenericBUState)
             return Base.iterate(iter, new_state)
         end
     end
+end
+
+
+
+
+
+
+mutable struct MyBU <: BottomUpIterator
+    grammar::AbstractGrammar
+    symbol::Symbol
+    bank
 end
