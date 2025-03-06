@@ -172,7 +172,7 @@ function combine(iter::BottomUpIterator, state)
 end
 
 """
-  add_to_bank(iter::BottomUpIterator, program::AbstractRuleNode, address::AbstractAddress)::Bool
+  add_to_bank!(iter::BottomUpIterator, program::AbstractRuleNode, address::AbstractAddress)::Bool
 
 Adds the `program` to the bank of the [`BottomUpIterator`](@ref) at the given `address`.
 Returns `True` if the program is added to the bank, and `False` otherwise.
@@ -253,7 +253,7 @@ function _get_next_program(iter::BottomUpIterator, state::GenericBUState)
         # Check if new_program_combinations is nothing
         if new_program_combinations === nothing
             # We've reached the end of the iteration
-            new_state_tracker!(state, nothing)
+            # new_state_tracker!(state, nothing)
             return nothing, nothing
         else
             new_combinations!(state, new_program_combinations)
@@ -287,7 +287,7 @@ The second call to iterate uses [`_get_next_program`](@ref) to retrive the next 
     - if it is indexed by [`AccessAddress`](@ref) then it has the program that is already in the bank; just return
     - if it is indexed by [`CombineAddress`](@ref) then it
         - it calls `_construct_program` to construct the program
-        - call the `add_to_bank` function to add it to the bank
+        - call the `add_to_bank!` function to add it to the bank
         - if it is added to the bank, then it return the program and the new state
         - if it is not added to the bank, e.g., because of observational equivalence, then it calls itself again with the new state
 """
