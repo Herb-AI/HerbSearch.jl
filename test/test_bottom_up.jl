@@ -56,10 +56,11 @@ import HerbSearch.init_combine_structure
             iter_bu = MyBU(g, :Int, nothing, depth)
             iter_dfs = DFSIterator(g, :Int; max_depth=depth)
 
-            bottom_up_programs = Set(collect(iter_bu))
-            dfs_programs = Set([freeze_state(p) for p in iter_dfs])
+            bottom_up_programs = collect(iter_bu)
+            dfs_programs = [freeze_state(p) for p in iter_dfs]
 
-            @test bottom_up_programs == dfs_programs
+            @test issetequal(bottom_up_programs, dfs_programs)
+            @test length(bottom_up_programs) == length(dfs_programs)
         end
     end
 end
