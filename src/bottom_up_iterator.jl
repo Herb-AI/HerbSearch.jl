@@ -32,8 +32,10 @@ indicates that several programs need to be retrieved and combined
 """
 struct CombineAddress <: AbstractAddress
     op
-    addrs::AbstractVector{AccessAddress}
+    addrs::NTuple{N, AccessAddress} where N
 end
+
+CombineAddress(op, addrs::AbstractVector{AccessAddress}) = CombineAddress(op, Tuple(addrs))
 
 
 #TODO: PointerAbstract: iterators.product solves this?
@@ -159,14 +161,19 @@ function combine(iter::BottomUpIterator, state)
 
     #check bound function
     function check_bound(combination)
-        return 1 + sum([x[1] for x in combination]) > max_in_bank
+        return 1 + sum((x[1] for x in combination)) > max_in_bank
     end
 
     for op in non_terminal_rules
         nchildren = length(iter.grammar.childtypes[op])
-        all_addresses = [(k, i) for k in keys(iter.bank) for i in 1:length(iter.bank[k])]
-        all_combinations = Iterators.product((all_addresses for _ in 1:nchildren)...)
-        addresses = reduce((acc, elem) -> check_bound(elem) ? vcat(acc, [CombineAddress(op, [AccessAddress(e) for e in elem])]) : acc, all_combinations; init=addresses)
+
+        # *Lazily* collect addresses, their combinations, and then filter them based on `check_bound`
+        all_addresses = ((key, idx) for key in keys(iter.bank) for idx in eachindex(iter.bank[key]))
+        all_combinations = Iterators.product(Iterators.repeated(all_addresses, nchildren)...)
+        filtered_combinations = Iterators.filter(check_bound, all_combinations)
+
+        # Construct the `CombineAddress`s from the filtered combinations
+        addresses = map(address_pair -> CombineAddress(op, AccessAddress.(address_pair)), filtered_combinations)
     end
 
     return addresses, state
@@ -234,20 +241,6 @@ Returns the next program to explore and the updated BottomUpState:
 - if there are still remaining programs from the current BU iteration to explore (`remaining_combinations(state)`), it pops the next one
 - otherwise, it calls the the `combine(iter, state)` function again, and processes the first returned program
 """
-# function _get_next_program(iter::BottomUpIterator, state::GenericBUState)
-#     if has_remaining_iterations(state)
-#         return popfirst!(remaining_combinations(state)), state
-#     elseif state_tracker(state) !== nothing
-#         new_program_combinations, new_state = combine(iter, state_tracker(state))
-#         new_combinations!(state, new_program_combinations)
-#         new_state_tracker!(state, new_state)
-#         popfirst!(remaining_combinations(state)), state
-#         #Base.iterate(iter, )
-#     else
-#         return nothing
-#     end
-# end
-
 function _get_next_program(iter::BottomUpIterator, state::GenericBUState)
     if has_remaining_iterations(state)
         return popfirst!(remaining_combinations(state)), state
@@ -257,7 +250,6 @@ function _get_next_program(iter::BottomUpIterator, state::GenericBUState)
         # Check if new_program_combinations is nothing
         if new_program_combinations === nothing
             # We've reached the end of the iteration
-            # new_state_tracker!(state, nothing)
             return nothing, nothing
         else
             new_combinations!(state, new_program_combinations)
