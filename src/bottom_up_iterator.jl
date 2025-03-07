@@ -125,7 +125,7 @@ It should modify the iterator itself.
 TODO: add bank getters to the interface
 """
 function create_bank!(iter::BottomUpIterator)
-    iter.bank = DefaultDict{Int,Vector{AbstractRuleNode}}(Vector{AbstractRuleNode}())
+    iter.bank = DefaultDict{Int,Vector{AbstractRuleNode}}(() -> AbstractRuleNode[])
 end
 
 """
@@ -192,12 +192,9 @@ Returns `True` if the program is added to the bank, and `False` otherwise.
 For example, the function returns false if the `program` is observationally equivalent to another program already in the bank; hence, it will not be added.
 """
 function add_to_bank!(iter::BottomUpIterator, program::AbstractRuleNode, address::AccessAddress)::Bool
-    if program in iter.bank[address.addr[1]]
-        return false
-    else
-        push!(iter.bank[address.addr[1]], program)
-        return true
-    end
+    push!(iter.bank[address.addr[1]], program)
+    
+    return true
 end
 
 """
