@@ -39,7 +39,7 @@ end
     function derivation_heuristic(::TopDownIterator, indices::Vector{Int})
 
 Returns a sorted sublist of the `indices`, based on which rules are most promising to fill a hole.
-By default, this is the identity function.
+The underlying solver can change the order within a Hole's domain. We sort the domain to make the enumeration order explicit and more predictable. 
 """
 function derivation_heuristic(::TopDownIterator, indices::Vector{Int})
     return sort(indices);
@@ -153,7 +153,6 @@ function priority_function(
     parent_value::Union{Real, Tuple{Vararg{Real}}},
     isrequeued::Bool
 )
-    #@TODO Add requeueing and calculate values from parent_value
     -max_rulenode_log_probability(current_program, grammar)
 end
 
