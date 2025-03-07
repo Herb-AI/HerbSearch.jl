@@ -128,7 +128,7 @@ Fills the bank with the initial, simplest, programs.
 It should return the addresses of the programs just inserted in the bank
 """
 function populate_bank!(iter::BottomUpIterator)::AbstractVector{AccessAddress}
-    grammar = iter.grammar
+    grammar = get_grammar(iter.solver)
     terminal_programs = RuleNode.(findall(grammar.isterminal))
 
     # create the bank entry
@@ -156,7 +156,10 @@ If the iteration should stop, the next state should be `nothing`.
 function combine(iter::BottomUpIterator, state)
     addresses = Vector{CombineAddress}()
     max_in_bank = maximum(keys(get_bank(iter)))
-    non_terminal_rules = findall(.~iter.grammar.isterminal)
+    grammar = get_grammar(iter.solver)
+    terminals = grammar.isterminal
+    non_terminal_bv = .~terminals
+    non_terminal_rules = findall(non_terminal_bv)
 
     # if we have exceeded the maximum number of programs to generate
     if max_in_bank >= state[:max]
@@ -169,7 +172,7 @@ function combine(iter::BottomUpIterator, state)
     end
 
     for op in non_terminal_rules
-        nchildren = length(iter.grammar.childtypes[op])
+        nchildren = length(grammar.childtypes[op])
 
         # *Lazily* collect addresses, their combinations, and then filter them based on `check_bound`
         all_addresses = ((key, idx) for key in keys(get_bank(iter)) for idx in eachindex(get_bank(iter)[key]))
