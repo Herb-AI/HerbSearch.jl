@@ -96,8 +96,8 @@ mutable struct GenericBUState <: BottomUpState
     combine_stage_tracker
 end
 
-remaining_combinations(iter::GenericBUState) = iter.combinations
-state_tracker(iter::GenericBUState) = iter.combine_stage_tracker
+remaining_combinations(state::GenericBUState) = state.combinations
+state_tracker(state::GenericBUState) = state.combine_stage_tracker
 function new_combinations!(state::GenericBUState, new_combs::AbstractVector)
     state.combinations = new_combs
 end
