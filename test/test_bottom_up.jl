@@ -32,7 +32,7 @@ import HerbSearch.init_combine_structure
         @test progs == expected_programs
     end
 
-    @testset "test combine" begin
+    @testset "combine" begin
         g = @csgrammar begin
             Int = 1 | 2
             Int = 3 + Int
@@ -46,13 +46,26 @@ import HerbSearch.init_combine_structure
         @test !isempty(combinations)
     end
 
+    @testset "duplicates not added" begin
+        g = @csgrammar begin
+            Int = 1 | 2
+            Int = 3 + Int
+        end
+
+        iter = MyBU(g, :Int, nothing, 5)
+
+        for p in iter
+            @test allunique(Iterators.flatten(values(iter.bank)))
+        end
+    end
+
     @testset "compare to DFS" begin
         g = @csgrammar begin
             Int = 1 | 2
             Int = 3 + Int
         end
 
-        for depth in 5:10
+        for depth in 1:10
             iter_bu = MyBU(g, :Int, nothing, depth)
             iter_dfs = DFSIterator(g, :Int; max_depth=depth)
 
