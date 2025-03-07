@@ -1,15 +1,10 @@
 import HerbSearch.init_combine_structure
 
 @testset "Bottom Up Search" begin
-    mutable struct MyBU <: BottomUpIterator
-        grammar
-        starts
-        bank
-        max_depth
-    end
+    @programiterator mutable MyBU(bank) <: BottomUpIterator
 
     function HerbSearch.init_combine_structure(iter::MyBU)
-        Dict(:max => iter.max_depth)
+        Dict(:max => iter.solver.max_depth)
     end
 
     @testset "basic" begin
@@ -18,7 +13,7 @@ import HerbSearch.init_combine_structure
             Int = Int + Int
         end
 
-        iter = MyBU(g, :Int, nothing, 5)
+        iter = MyBU(g, :Int, nothing; max_depth=5)
         expected_programs = Set([
             (@rulenode 1),
             (@rulenode 2),
@@ -38,7 +33,7 @@ import HerbSearch.init_combine_structure
             Int = 3 + Int
         end
 
-        iter = MyBU(g, :Int, nothing, 5)
+        iter = MyBU(g, :Int, nothing; max_depth=5)
         create_bank!(iter)
         populate_bank!(iter)
 
@@ -52,7 +47,7 @@ import HerbSearch.init_combine_structure
             Int = 3 + Int
         end
 
-        iter = MyBU(g, :Int, nothing, 5)
+        iter = MyBU(g, :Int, nothing; max_depth=5)
 
         for p in iter
             @test allunique(Iterators.flatten(values(iter.bank)))
@@ -66,7 +61,7 @@ import HerbSearch.init_combine_structure
         end
 
         for depth in 1:10
-            iter_bu = MyBU(g, :Int, nothing, depth)
+            iter_bu = MyBU(g, :Int, nothing; max_depth=depth)
             iter_dfs = DFSIterator(g, :Int; max_depth=depth)
 
             bottom_up_programs = collect(iter_bu)
