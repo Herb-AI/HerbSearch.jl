@@ -6,6 +6,7 @@ Enumerates programs from a context-free grammar starting at [`Symbol`](@ref) `sy
 The exploration is done by maintaining a bank of (executable) programs and ieratively exploring larger programs by combinig the ones in the bank  .
 Concrete iterators may overload the following methods:
 - create_bank
+- get_bank
 - populate_bank! -> puts the simplest program in the bank and returns the addresses of the programs put in there
 - combine
 - add_to_bank! -> rename to push!
@@ -15,6 +16,7 @@ Concrete iterators may overload the following methods:
 abstract type BottomUpIterator <: ProgramIterator end
 
 function create_bank! end
+function get_bank end
 function populate_bank! end
 function combine end
 function add_to_bank! end
@@ -82,7 +84,6 @@ function new_state_tracker! end
 
 has_remaining_iterations(state::BottomUpState) = !isempty(remaining_combinations(state))
 
-
 """
 mutable struct GenericBUState
 
@@ -105,14 +106,6 @@ function new_state_tracker!(state::GenericBUState, new_tracker)
     state.combine_stage_tracker = new_tracker
 end
 
-
-
-
-
-
-
-
-
 """
 The following functions define the interface for bottom up iterators
 """
@@ -132,21 +125,27 @@ end
   populate_bank!(iter::BottomUpIterator)::AbstractVector{AccessAddress}
 
 Fills the bank with the initial, simplest, programs.
-It should return the addresses of hte programs just inserted in the bank
+It should return the addresses of the programs just inserted in the bank
 """
 function populate_bank!(iter::BottomUpIterator)::AbstractVector{AccessAddress}
     grammar = iter.grammar
     terminal_programs = RuleNode.(findall(grammar.isterminal))
 
     # create the bank entry
-    iter.bank[1] = Vector{AbstractRuleNode}()
+    get_bank(iter)[1] = Vector{AbstractRuleNode}()
 
-    addresses_to_return = Vector{AccessAddress}()
     # iterate over terminals and add them to the bank
-    push!(iter.bank[1], terminal_programs...)
+    push!(get_bank(iter)[1], terminal_programs...)
 
-    return [AccessAddress((1, x)) for x in 1:length(iter.bank[1])]
+    return [AccessAddress((1, x)) for x in 1:length(get_bank(iter)[1])]
 end
+
+"""
+    get_bank(iter::BottomUpIterator)
+
+Get the problem bank from the `BottomUpIterator`, `iter`.
+"""
+get_bank(iter::BottomUpIterator) = iter.bank
 
 """
   combine(iter::BottomUpIterator, state)::Tuple{AbstractVector{AbstractAddress},Any}
@@ -156,7 +155,7 @@ If the iteration should stop, the next state should be `nothing`.
 """
 function combine(iter::BottomUpIterator, state)
     addresses = Vector{CombineAddress}()
-    max_in_bank = maximum(keys(iter.bank))
+    max_in_bank = maximum(keys(get_bank(iter)))
     non_terminal_rules = findall(.~iter.grammar.isterminal)
 
     # if we have exceeded the maximum number of programs to generate
@@ -173,7 +172,7 @@ function combine(iter::BottomUpIterator, state)
         nchildren = length(iter.grammar.childtypes[op])
 
         # *Lazily* collect addresses, their combinations, and then filter them based on `check_bound`
-        all_addresses = ((key, idx) for key in keys(iter.bank) for idx in eachindex(iter.bank[key]))
+        all_addresses = ((key, idx) for key in keys(get_bank(iter)) for idx in eachindex(get_bank(iter)[key]))
         all_combinations = Iterators.product(Iterators.repeated(all_addresses, nchildren)...)
         filtered_combinations = Iterators.filter(check_bound, all_combinations)
 
@@ -192,8 +191,8 @@ Returns `True` if the program is added to the bank, and `False` otherwise.
 For example, the function returns false if the `program` is observationally equivalent to another program already in the bank; hence, it will not be added.
 """
 function add_to_bank!(iter::BottomUpIterator, program::AbstractRuleNode, address::AccessAddress)::Bool
-    push!(iter.bank[address.addr[1]], program)
-    
+    push!(get_bank(iter)[address.addr[1]], program)
+
     return true
 end
 
@@ -212,7 +211,7 @@ end
 Retrieves a program from the bank indexed by the [`AccessAddress`](@ref)
 """
 function retrieve(iter::BottomUpIterator, address::AccessAddress)::AbstractRuleNode
-    iter.bank[address.addr[1]][address.addr[2]]
+    get_bank(iter)[address.addr[1]][address.addr[2]]
 end
 
 """
