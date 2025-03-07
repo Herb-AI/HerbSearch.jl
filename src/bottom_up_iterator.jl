@@ -14,6 +14,11 @@ Concrete iterators may overload the following methods:
 """
 abstract type BottomUpIterator <: ProgramIterator end
 
+function create_bank! end
+function populate_bank! end
+function combine end
+function add_to_bank! end
+function retrieve end
 
 """
 A simple type for different addresses to allow multiple dispatch
@@ -70,10 +75,10 @@ new_state_tracker!(state::BottomUpState, new_state): assign new state tracker to
 """
 abstract type BottomUpState end
 
-function remaining_combinations(state::BottomUpState)::AbstractVector{AbstractAddress} end
-function state_tracker(state::BottomUpState) end
-function new_combinations!(state::BottomUpState, new_combination::AbstractVector{AbstractAddress}) end
-function new_state_tracker!(state::BottomUpState, new_tracker) end
+function remaining_combinations end
+function state_tracker end
+function new_combinations! end
+function new_state_tracker! end
 
 has_remaining_iterations(state::BottomUpState) = !isempty(remaining_combinations(state))
 
