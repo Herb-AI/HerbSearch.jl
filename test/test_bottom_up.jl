@@ -45,4 +45,21 @@ import HerbSearch.init_combine_structure
         combinations, state = combine(iter, init_combine_structure(iter))
         @test !isempty(combinations)
     end
+
+    @testset "compare to DFS" begin
+        g = @csgrammar begin
+            Int = 1 | 2
+            Int = 3 + Int
+        end
+
+        for depth in 5:10
+            iter_bu = MyBU(g, :Int, nothing, depth)
+            iter_dfs = DFSIterator(g, :Int; max_depth=depth)
+
+            bottom_up_programs = Set(collect(iter_bu))
+            dfs_programs = Set([freeze_state(p) for p in iter_dfs])
+
+            @test bottom_up_programs == dfs_programs
+        end
+    end
 end
