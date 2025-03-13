@@ -23,7 +23,7 @@ import HerbSearch.init_combine_structure
             (@rulenode 3{2,2})
         ])
 
-        progs = Set(Iterators.take(iter, 6))
+        progs = Set([freeze_state(p) for (i, p) in enumerate(iter) if i <= 6])
         @test progs == expected_programs
     end
 
@@ -64,7 +64,7 @@ import HerbSearch.init_combine_structure
             iter_bu = MyBU(g, :Int, nothing; max_depth=depth)
             iter_dfs = DFSIterator(g, :Int; max_depth=depth)
 
-            bottom_up_programs = collect(iter_bu)
+            bottom_up_programs = [freeze_state(p) for p in iter_bu]
             dfs_programs = [freeze_state(p) for p in iter_dfs]
 
             @test issetequal(bottom_up_programs, dfs_programs)
