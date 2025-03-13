@@ -1,4 +1,8 @@
-using DecisionTree: Leaf, Node
+DivideAndConquerExt = Base.get_extension(HerbSearch, :DivideAndConquerExt)
+using .DivideAndConquerExt:
+	divide, decide, conquer, get_labels, get_predicates, get_features, construct_final_program
+
+# using DecisionTree: Leaf, Node
 
 @testset verbose = true "Search procedure divide and conquer" begin
 	@testset verbose = true "divide, stopping criteria" begin
@@ -98,7 +102,7 @@ using DecisionTree: Leaf, Node
 		# convert expected labels to set => no guarantee of order in vec_problems_solutions
 		@testset verbose = true "labels" begin
 			expected_labels = Set([1, 2, 3, 4])
-			labels = HerbSearch.get_labels(ioexamples_solutions)
+			labels = get_labels(ioexamples_solutions)
 			@test length(labels) == 4
 			@test Set(labels) == expected_labels
 		end
@@ -108,7 +112,7 @@ using DecisionTree: Leaf, Node
 			sym_bool = :Condition
 			sym_constraint = :Input
 			# use symbol for constraint
-			predicates = HerbSearch.get_predicates(grammar, sym_bool, sym_constraint, n_predicates)
+			predicates = get_predicates(grammar, sym_bool, sym_constraint, n_predicates)
 			rules = grammar.bytype[sym_constraint]
 			@test length(predicates) == n_predicates
 			# pick a few random predicates and check if they contain rule we expect
@@ -116,7 +120,7 @@ using DecisionTree: Leaf, Node
 			@test !isempty(rulesoftype(predicates[99], Set(rules)))
 
 			# use rule indices for clearconstraints
-			predicates = HerbSearch.get_predicates(grammar, sym_bool, rules, n_predicates)
+			predicates = get_predicates(grammar, sym_bool, rules, n_predicates)
 			@test !isempty(rulesoftype(predicates[12], Set(rules)))
 			@test !isempty(rulesoftype(predicates[71], Set(rules)))
 		end
@@ -142,12 +146,12 @@ using DecisionTree: Leaf, Node
 			expected_features =
 				BitArray([true false true; false true false; true false false; true true true])
 
-			features = HerbSearch.get_features(
+			features = get_features(
 				ioexamples_solutions,
 				predicates, grammar, symboltable,
 			)
 			@test features == expected_features
-			@test_throws HerbSearch.EvaluationError HerbSearch.get_features(
+			@test_throws HerbSearch.EvaluationError get_features(
 				ioexamples_solutions,
 				[RuleNode(11, [RuleNode(4)])], # ehad_cvc(_arg_1)
 				grammar,
@@ -215,7 +219,7 @@ using DecisionTree: Leaf, Node
 
 			# construct final program from decision tree
 			idx_ifelse = 13
-			final_program = HerbSearch.construct_final_program(
+			final_program = construct_final_program(
 				root_node,
 				idx_ifelse,
 				solutions,

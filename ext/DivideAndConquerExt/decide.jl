@@ -14,7 +14,7 @@ function decide(
 	expr::Any,
 	symboltable::SymbolTable,
 )::Bool
-	score = evaluate(problem, expr, symboltable, allow_evaluation_errors = false)
+	score = HerbSearch.evaluate(problem, expr, symboltable, allow_evaluation_errors = false)
 	return score == 1
 end
 

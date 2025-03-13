@@ -5,7 +5,6 @@ version = "0.4.1"
 
 [deps]
 DataStructures = "864edb3b-99cc-5e75-8d2d-829cb0a9cfe8"
-DecisionTree = "7806a523-6efd-50cb-b5f6-3fa6f1930dbb"
 DocStringExtensions = "ffbed154-4ef7-542d-bbb7-c09d3a79fcae"
 HerbConstraints = "1fa96474-3206-4513-b4fa-23913f296dfc"
 HerbCore = "2b23ba43-8213-43cb-b5ea-38c12b45bd45"
@@ -15,6 +14,12 @@ HerbSpecification = "6d54aada-062f-46d8-85cf-a1ceaf058a06"
 MLStyle = "d8e11817-5142-5d16-987a-aa16d5891078"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 StatsBase = "2913bbd2-ae8a-5f71-8c99-4fb6c76f3a91"
+
+[weakdeps]
+DecisionTree = "7806a523-6efd-50cb-b5f6-3fa6f1930dbb"
+
+[extensions]
+DivideAndConquerExt = "DecisionTree"
 
 [compat]
 DataStructures = "0.17,0.18"

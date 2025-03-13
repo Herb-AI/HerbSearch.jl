@@ -1,5 +1,5 @@
 
-using DecisionTree: DecisionTreeClassifier, fit!, Leaf, Node, is_leaf
+using .DecisionTree: DecisionTreeClassifier, fit!, Leaf, Node, is_leaf
 struct ConditionalIfElseError <: Exception
 	msg::String
 end
@@ -96,7 +96,7 @@ function get_predicates(grammar::AbstractGrammar,
 	clearconstraints!(grammar)
 	# Create DomainRuleNode that contains all rules of type sym_constraint and add constraint to grammar
 	rules = grammar.bytype[sym_constraint]
-	domain = DomainRuleNode(grammar, rules)
+	domain = HerbConstraints.DomainRuleNode(grammar, rules)
 	addconstraint!(grammar, ContainsSubtree(domain))
 
 	iterator = BFSIterator(grammar, sym_bool)
@@ -127,7 +127,7 @@ function get_predicates(grammar::AbstractGrammar,
 )::Vector{RuleNode}
 	clearconstraints!(grammar)
 	# Create DomainRuleNode that contains all rules and add constraint to grammar
-	domain = DomainRuleNode(grammar, rules)
+	domain = HerbConstraints.DomainRuleNode(grammar, rules)
 	addconstraint!(grammar, ContainsSubtree(domain))
 
 
@@ -220,8 +220,8 @@ function construct_final_program(
 		return solutions[node.majority]
 	end
 
-	l = HerbSearch.construct_final_program(node.left, idx_ifelse, solutions, predicates)
-	r = HerbSearch.construct_final_program(node.right, idx_ifelse, solutions, predicates)
+	l = construct_final_program(node.left, idx_ifelse, solutions, predicates)
+	r = construct_final_program(node.right, idx_ifelse, solutions, predicates)
 
 	# Note: Order has to be r, l. DecisionTree.jl splits data by comparing a feature against a threshold. Since we use
 	# predicates to get features, the feature values will be true/false (1.0/0.0) and the threshold 0.5.

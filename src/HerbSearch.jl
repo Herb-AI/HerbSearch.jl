@@ -39,9 +39,11 @@ include("genetic_search_iterator.jl")
 
 include("random_iterator.jl")
 
-include("divide_conquer_functions/divide.jl")
-include("divide_conquer_functions/decide.jl")
-include("divide_conquer_functions/conquer.jl")
+# include("divide_conquer_functions/divide.jl")
+# include("divide_conquer_functions/decide.jl")
+# include("divide_conquer_functions/conquer.jl")
+
+function divide_and_conquer end
 
 export
 	ProgramIterator,
@@ -64,8 +66,6 @@ export
 	validate_iterator,
 	sample,
 	rand,
-	divide,
-	decide,
-	conquer,
-	divide_and_conquer
+	divide_and_conquer,
+	EvaluationError
 end # module HerbSearch
