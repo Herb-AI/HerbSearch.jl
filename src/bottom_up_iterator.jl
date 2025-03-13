@@ -111,10 +111,6 @@ mutable struct GenericBUState <: BottomUpState
     combinations::AbstractVector{AbstractAddress}
     combine_stage_tracker
     current_uniform_iterator::Union{UniformIterator,Nothing}
-
-    # function GenericBUState(combinations, combine_stage_tracker)
-    #     return new(combinations, combine_stage_tracker, nothing)
-    # end
 end
 
 remaining_combinations(state::GenericBUState) = state.combinations
