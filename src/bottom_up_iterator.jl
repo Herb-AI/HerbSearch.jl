@@ -180,7 +180,7 @@ function combine(iter::BottomUpIterator, state)
     non_terminal_shapes = UniformHole.(partition(Hole(nonterminals), grammar), ([],))
 
     # if we have exceeded the maximum number of programs to generate
-    if max_in_bank >= state[:max]
+    if max_in_bank >= state[:max_combination_depth]
         return nothing, nothing
     end
 
@@ -241,9 +241,7 @@ end
 
 Returns the initial state for the first `combine` call
 """
-function init_combine_structure(iter::BottomUpIterator)
-    Dict(:max => 4)
-end
+function init_combine_structure end
 
 
 """
@@ -293,7 +291,7 @@ function _get_next_program(iter::BottomUpIterator, state::GenericBUState)
     end
 end
 
-function derivation_heuristic(::BottomUpIterator, indices::Vector{Int})
+function derivation_heuristic(::BottomUpIterator, indices::Vector{Integer})
     return sort(indices);
 end
 
@@ -346,6 +344,7 @@ function Base.iterate(iter::BottomUpIterator, state::GenericBUState)
         #program is `nothing`, so we stop
         return nothing
     elseif typeof(program_combination) == AccessAddress
+        @error "Should never reach this branch with uniform trees"
         # we only need to access the program, it is already in the bank
         program = retrieve(iter, program_combination)
         solver = iter.solver
@@ -353,16 +352,18 @@ function Base.iterate(iter::BottomUpIterator, state::GenericBUState)
         new_state.current_uniform_iterator = UniformIterator(uniform_solver, iter)
         next_solution = next_solution!(state.current_uniform_iterator)
 
-        return next_solution, new_state
+        if depth(next_solution) > iter.solver.max_depth
+            return nothing
+        else
+            return next_solution, new_state
+        end
     else
         # we have to combine programs from the bank
         # updates iter.solver with the combined program
         # which we might not want to do until the program is added to the bank
         program = _construct_program(iter, program_combination)
-        # @show program
 
         keep = add_to_bank!(iter, program, new_address(iter, program_combination))
-        # @show keep
 
         if keep
             solver = iter.solver
@@ -371,7 +372,11 @@ function Base.iterate(iter::BottomUpIterator, state::GenericBUState)
             next_solution = next_solution!(state.current_uniform_iterator)
             # take the program (uniform tree) convert to UniformIterator, and add to state
             # return the first concrete tree from the UniformIterator in the state (and the updated state)
-            return next_solution, new_state
+            if depth(next_solution) > iter.solver.max_depth
+                return nothing
+            else
+                return next_solution, new_state
+            end
         else
             return Base.iterate(iter, new_state)
         end
