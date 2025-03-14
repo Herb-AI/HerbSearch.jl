@@ -291,7 +291,7 @@ function _get_next_program(iter::BottomUpIterator, state::GenericBUState)
     end
 end
 
-function derivation_heuristic(::BottomUpIterator, indices::Vector{Integer})
+function derivation_heuristic(::BottomUpIterator, indices::Vector{<:Integer})
     return sort(indices);
 end
 
