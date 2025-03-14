@@ -1,11 +1,11 @@
-function rand_with_constraints!(solver::Solver,path::Vector{Int})
+function rand_with_constraints!(solver::Solver,path::Vector{<:Integer})
     skeleton = get_node_at_location(solver,path)
     grammar = get_grammar(solver)
     @info "The maximum depth is $(get_max_depth(solver) - length(path)). $(get_max_depth(solver))"
     return _rand_with_constraints!(skeleton,solver, path, mindepth_map(grammar), get_max_depth(solver))
 end
 
-function _rand_with_constraints!(skeleton::RuleNode,solver::Solver,path::Vector{Int},dmap::AbstractVector{Int}, remaining_depth::Int=10) 
+function _rand_with_constraints!(skeleton::RuleNode,solver::Solver,path::Vector{<:Integer},dmap::Vector{<:Integer}, remaining_depth::Integer=10) 
     @info "The depth RuleNode left: $remaining_depth"
 
     for (i,child) ∈ enumerate(skeleton.children)
@@ -16,7 +16,7 @@ function _rand_with_constraints!(skeleton::RuleNode,solver::Solver,path::Vector{
     return get_tree(solver)
 end
 
-function _rand_with_constraints!(hole::AbstractHole,solver::Solver,path::Vector{Int},dmap::AbstractVector{Int}, remaining_depth::Int=10) 
+function _rand_with_constraints!(hole::AbstractHole,solver::Solver,path::Vector{<:Integer},dmap::Vector{<:Integer}, remaining_depth::Integer=10) 
     @info "The depth hole left: $remaining_depth"
 
     hole = get_hole_at_location(solver, path)
@@ -53,7 +53,7 @@ end
 
 
 @programiterator RandomSearchIterator(
-    path::Vector{Int} = Vector{Int}()
+    path::Vector{Integer} = Vector{Integer}()
     # TODO: Maybe limit number of iterations
 )
 
