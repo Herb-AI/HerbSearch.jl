@@ -15,9 +15,9 @@ Consists of:
 - `examples::Vector{<:IOExample}`: a collection of examples defining the specification 
 - `evaluation_function::EvaluationFunction`: interpreter to evaluate the individual programs
 
-- `population_size::Int64`: number of inviduals in the population
+- `population_size::Integer`: number of inviduals in the population
 - `mutation_probability::Float64`: probability of mutation for each individual
-- `maximum_initial_population_depth::Int64`: maximum depth of trees when population is initialized 
+- `maximum_initial_population_depth::Integer`: maximum depth of trees when population is initialized 
 
 end
 """ GeneticSearchIterator
@@ -25,9 +25,9 @@ end
     spec::Vector{<:IOExample},
     evaluation_function::Function=execute_on_input, 
      
-    population_size::Int64=10, 
+    population_size::Integer=10, 
     mutation_probability::Float64=0.1, 
-    maximum_initial_population_depth::Int64=3
+    maximum_initial_population_depth::Integer=3
    )
 
 """
@@ -35,7 +35,7 @@ end
 
 Assigns a numerical value (fitness score) to each individual based on how closely it meets the desired objective.
 """
-fitness(::GeneticSearchIterator, program::RuleNode, results::AbstractVector{<:Tuple{Any, Any}}) = default_fitness(program, results)
+fitness(::GeneticSearchIterator, program::RuleNode, results::Vector{<:Tuple{Any, Any}}) = default_fitness(program, results)
 
 """
     cross_over(::GeneticSearchIterator, parent_1::RuleNode, parent_2::RuleNode)
@@ -46,11 +46,11 @@ cross_over(::GeneticSearchIterator, parent_1::RuleNode, parent_2::RuleNode) = cr
 
 
 """
-    mutate!(::GeneticSearchIterator, program::RuleNode, grammar::AbstractGrammar, max_depth::Int = 2)
+    mutate!(::GeneticSearchIterator, program::RuleNode, grammar::AbstractGrammar, max_depth::Integer = 2)
 
 Mutates the program of an invididual.
 """
-mutate!(::GeneticSearchIterator, program::RuleNode, grammar::AbstractGrammar, max_depth::Int = 2) = mutate_random!(program, grammar, max_depth)
+mutate!(::GeneticSearchIterator, program::RuleNode, grammar::AbstractGrammar, max_depth::Integer = 2) = mutate_random!(program, grammar, max_depth)
 
 """
     select_parents(::GeneticSearchIterator, population::Array{RuleNode}, fitness_array::Array{<:Real})
@@ -77,7 +77,7 @@ function validate_iterator(iter)
         throw(AlgorithmStateIsInvalid("The iterator population size: '$(iter.population_size)' should be > 0"))
     end
 
-    if !hasmethod(fitness, Tuple{typeof(iter), RuleNode, AbstractVector{<:Tuple{Any,Any}}})
+    if !hasmethod(fitness, Tuple{typeof(iter), RuleNode, Vector{<:Tuple{Any,Any}}})
 
         throw(AlgorithmStateIsInvalid("The iterator fitness function should have two parameters: the program and an Vector with pair of tuples [(expected, value)]"))
     end

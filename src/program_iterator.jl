@@ -6,10 +6,10 @@ All iterators are expected to have the following fields:
 
 - `grammar::ContextSensitiveGrammar`: the grammar to search over
 - `sym::Symbol`: defines the start symbol from which the search should be started 
-- `max_depth::Int`: maximum depth of program trees
-- `max_size::Int`: maximum number of [`AbstractRuleNode`](@ref)s of program trees
-- `max_time::Int`: maximum time the iterator may take
-- `max_enumerations::Int`: maximum number of enumerations
+- `max_depth::Integer`: maximum depth of program trees
+- `max_size::Integer`: maximum number of [`AbstractRuleNode`](@ref)s of program trees
+- `max_time::Integer`: maximum time the iterator may take
+- `max_enumerations::Integer`: maximum number of enumerations
 """
 abstract type ProgramIterator end
 
@@ -158,10 +158,10 @@ Extracts the name of a field declaration, otherwise throws an `ArgumentError`.
 A field declaration is either a simple field name with possible a type attached to it or a keyword argument.
 
 ## Example
-x::Int     -> x 
+x::Integer     -> x 
 hello      -> hello 
 x = 4      -> x 
-x::Int = 3 -> x
+x::Integer = 3 -> x
 """
 extract_name_from_argument(ex) = 
   @match ex begin 

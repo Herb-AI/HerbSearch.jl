@@ -1,5 +1,5 @@
-#Branching constraint, the `StateHole` hole must be filled with rule_index `Int`.
-Branch = Tuple{StateHole, Int}
+#Branching constraint, the `StateHole` hole must be filled with rule_index `Integer`.
+Branch = Tuple{StateHole, Integer}
 
 #Shared reference to an empty vector to reduce memory allocations.
 NOBRANCHES = Vector{Branch}()
@@ -18,7 +18,7 @@ mutable struct UniformIterator
     outeriter::Union{ProgramIterator, Nothing}
     unvisited_branches::Stack{Vector{Branch}}
     stateholes::Vector{StateHole}
-    nsolutions::Int
+    nsolutions::Integer
 end
 
 """
@@ -115,7 +115,7 @@ function next_solution!(iter::UniformIterator)::Union{RuleNode, StateHole, Nothi
                     return solver.tree
                 else
                     # search node is an (non-root) internal node, store the branches to visit
-                    track!(solver, "#InternalSearchNodes")
+                    track!(solver, "#IntegerernalSearchNodes")
                     push!(iter.unvisited_branches, branches)
                 end
             else

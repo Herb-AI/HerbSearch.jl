@@ -36,21 +36,21 @@ function priority_function(
 end
 
 """
-    function derivation_heuristic(::TopDownIterator, indices::Vector{Int})
+    function derivation_heuristic(::TopDownIterator, indices::Vector{<:Integer})
 
 Returns a sorted sublist of the `indices`, based on which rules are most promising to fill a hole.
 By default, this is the identity function.
 """
-function derivation_heuristic(::TopDownIterator, indices::Vector{Int})
+function derivation_heuristic(::TopDownIterator, indices::Vector{<:Integer})
     return indices;
 end
 
 """
-    hole_heuristic(::TopDownIterator, node::AbstractRuleNode, max_depth::Int)::Union{ExpandFailureReason, HoleReference}
+    hole_heuristic(::TopDownIterator, node::AbstractRuleNode, max_depth::Integer)::Union{ExpandFailureReason, HoleReference}
 
 Defines a heuristic over variable shaped holes. Returns a [`HoleReference`](@ref) once a hole is found.
 """
-function hole_heuristic(::TopDownIterator, node::AbstractRuleNode, max_depth::Int)::Union{ExpandFailureReason, HoleReference}
+function hole_heuristic(::TopDownIterator, node::AbstractRuleNode, max_depth::Integer)::Union{ExpandFailureReason, HoleReference}
     return heuristic_leftmost(node, max_depth);
 end
 
@@ -77,11 +77,11 @@ function priority_function(
 end
 
 """
-    function derivation_heuristic(::RandomIterator, indices::Vector{Int})
+    function derivation_heuristic(::RandomIterator, indices::Vector{<:Integer})
 
 Randomly shuffles the rules.
 """
-function derivation_heuristic(::RandomIterator, indices::Vector{Int})
+function derivation_heuristic(::RandomIterator, indices::Vector{<:Integer})
     return Random.shuffle!(indices);
 end
 

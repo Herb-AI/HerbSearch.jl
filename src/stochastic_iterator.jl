@@ -28,11 +28,11 @@ neighbourhood(iter::StochasticSearchIterator, current_program::RuleNode) = const
 
 
 """
-    propose(iter::StochasticSearchIterator, path::Vector{Int}, dict::Union{Nothing,Dict{String,Any}})
+    propose(iter::StochasticSearchIterator, path::Vector{<:Integer}, dict::Union{Nothing,Dict{String,Any}})
 
 Proposes a list of programs to fill in the location provided by `path` and the `dict`.
 """
-propose(iter::StochasticSearchIterator, path::Vector{Int}, dict::Union{Nothing,Dict{String,Any}}) = random_fill_propose(iter.solver, path, dict)
+propose(iter::StochasticSearchIterator, path::Vector{<:Integer}, dict::Union{Nothing,Dict{String,Any}}) = random_fill_propose(iter.solver, path, dict)
 
 """
     temperature(::StochasticSearchIterator, current_temperature::Real)
@@ -55,7 +55,7 @@ accept(::StochasticSearchIterator, current_cost::Real, next_cost::Real, temperat
 struct IteratorState
     current_program::RuleNode
     current_temperature::Real
-    dmap::AbstractVector{Int} # depth map of each rule
+    dmap::Vector{Integer} # depth map of each rule
 end
 
 
@@ -72,11 +72,11 @@ function Base.iterate(iter::StochasticSearchIterator)
     dmap = mindepth_map(grammar)
     start_symbol = get_starting_symbol(solver)
     sampled_program = rand(RuleNode, grammar, start_symbol , max_depth) #TODO: replace iter.sym with a domain of valid rules
-    substitute!(solver, Vector{Int}(), sampled_program)
+    substitute!(solver, Vector{Integer}(), sampled_program)
     while !isfeasible(solver)
         #TODO: prevent infinite loops here. Check max_time and/or max_enumerations.
         sampled_program = rand(RuleNode, grammar, start_symbol, max_depth) #TODO: replace iter.sym with a domain of valid rules
-        substitute!(solver, Vector{Int}(), sampled_program)
+        substitute!(solver, Vector{Integer}(), sampled_program)
     end
 
     return (sampled_program, IteratorState(sampled_program, iter.initial_temperature,dmap))  
@@ -153,11 +153,11 @@ function try_improve_program!(iter::StochasticSearchIterator, possible_programs,
 end
 
 """
-    _calculate_cost(program::RuleNode, cost_function::Function, spec::AbstractVector{IOExample}, grammar::AbstractGrammar, evaluation_function::Function)
+    _calculate_cost(program::RuleNode, cost_function::Function, spec::Vector{IOExample}, grammar::AbstractGrammar, evaluation_function::Function)
 
 Returns the cost of the `program` using the examples and the `cost_function`. It first convert the program to an expression and evaluates it on all the examples.
 """
-function _calculate_cost(program::Union{RuleNode, StateHole}, cost_function::Function, spec::AbstractVector{<:IOExample}, grammar::AbstractGrammar, evaluation_function::Function)
+function _calculate_cost(program::Union{RuleNode, StateHole}, cost_function::Function, spec::Vector{<:IOExample}, grammar::AbstractGrammar, evaluation_function::Function)
     results = Tuple{<:Number,<:Number}[]
 
     expression = rulenode2expr(program, grammar)
@@ -187,7 +187,7 @@ This is the supertype for all Metropolis Hastings (MH) search iterators. It inhe
 abstract type AbstractMHSearchIterator <: StochasticSearchIterator end
 
 Base.@doc """
-    MHSearchIterator(examples::AbstractArray{<:IOExample}, cost_function::Function, evaluation_function::Function=HerbInterpret.execute_on_input)
+    MHSearchIterator(examples::AbstractArray{<:IOExample}, cost_function::Function, evaluation_function::Function=HerbIntegererpret.execute_on_input)
 
 The `MHSearchIterator` generates programs using the Metropolis-Hastings algorithm. 
 The search behaviour has the following characteristics:
@@ -198,7 +198,7 @@ The search behaviour has the following characteristics:
 # Arguments
 - `examples::AbstractArray{<:IOExample}`: An array of input-output examples used to guide the search.
 - `cost_function::Function`: A function to evaluate the cost of the proposed programs.
-- `evaluation_function::Function=HerbInterpret.execute_on_input`: A function that evaluates the generated program generated and produces an output. Defaults to `HerbInterpret.execute_on_input`.
+- `evaluation_function::Function=HerbIntegererpret.execute_on_input`: A function that evaluates the generated program generated and produces an output. Defaults to `HerbIntegererpret.execute_on_input`.
 
 # Returns 
 An iterator to generate programs according to the Metropolis Hastings algorithm.
@@ -218,12 +218,12 @@ This is the supertype for all VLSN search iterators.
 """
 abstract type AbstractVLSNSearchIterator <: StochasticSearchIterator end
 
-propose(iter::AbstractVLSNSearchIterator, path::Vector{Int}, dict::Union{Nothing,Dict{String,Any}}) = enumerate_neighbours_propose(iter.vlsn_neighbourhood_depth)(iter.solver, path, dict)
+propose(iter::AbstractVLSNSearchIterator, path::Vector{<:Integer}, dict::Union{Nothing,Dict{String,Any}}) = enumerate_neighbours_propose(iter.vlsn_neighbourhood_depth)(iter.solver, path, dict)
 temperature(::AbstractVLSNSearchIterator, current_temperature::Real) = const_temperature(current_temperature)
 accept(::AbstractVLSNSearchIterator, current_cost::Real, next_cost::Real, temperature::Real) = best_accept(current_cost, next_cost, temperature)
 
 Base.@doc """
-    VLSNSearchIterator(spec, cost_function, enumeration_depth = 2, evaluation_function::Function=HerbInterpret.execute_on_input) = StochasticSearchIterator(
+    VLSNSearchIterator(spec, cost_function, enumeration_depth = 2, evaluation_function::Function=HerbIntegererpret.execute_on_input) = StochasticSearchIterator(
 
 Returns an iterator that runs according to the Very Large Scale Neighbourhood Search algorithm.
 - `spec` : array of examples
@@ -237,7 +237,7 @@ The temperature value of the algorithm remains constant over time.
 @programiterator VLSNSearchIterator(
     spec::Vector{<:IOExample},
     cost_function::Function,
-    vlsn_neighbourhood_depth::Int = 2,
+    vlsn_neighbourhood_depth::Integer = 2,
     initial_temperature::Real = 1,
     evaluation_function::Function = execute_on_input
 ) <: AbstractVLSNSearchIterator
@@ -249,14 +249,14 @@ This is the supertype for all SA search iterators.
 """
 abstract type AbstractSASearchIterator <: StochasticSearchIterator end
 
-propose(iter::AbstractSASearchIterator, path::Vector{Int}, dict::Union{Nothing,Dict{String,Any}}) = random_fill_propose(iter.solver, path, dict)
+propose(iter::AbstractSASearchIterator, path::Vector{<:Integer}, dict::Union{Nothing,Dict{String,Any}}) = random_fill_propose(iter.solver, path, dict)
 
 temperature(iter::AbstractSASearchIterator, current_temperature::Real) = decreasing_temperature(iter.temperature_decreasing_factor)(current_temperature)
 
 accept(::AbstractSASearchIterator, current_cost::Real, next_cost::Real, temperature::Real) = probabilistic_accept_with_temperature(current_cost, next_cost, temperature)
 
 Base.@doc """
-    SASearchIterator(spec, cost_function, initial_temperature=1, temperature_decreasing_factor = 0.99, evaluation_function::Function=HerbInterpret.execute_on_input)
+    SASearchIterator(spec, cost_function, initial_temperature=1, temperature_decreasing_factor = 0.99, evaluation_function::Function=HerbIntegererpret.execute_on_input)
 
 Returns an enumerator that runs according to the Simulated Annealing Search algorithm.
 - `spec` : array of examples
