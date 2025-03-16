@@ -1,5 +1,5 @@
 Base.@doc """
-    @programiterator BUDepthIterator(problem::Union{Nothing, Problem{Vector{IOExample}}}=nothing, obs_equivalence::Bool=false) <: BottomUpIterator
+    @programiterator BUDepthIterator(spec::Union{Nothing, Problem{Vector{IOExample}}}=nothing, obs_equivalence::Bool=false) <: BottomUpIterator
 
 Implementation of the `BottomUpIterator`. Iterates through complete programs in increasing order of their depth.
 """ BUDepthIterator
@@ -54,10 +54,13 @@ function BUDepthData(
 )::BUDepthData
     unused_rules = _create_unused_rules(iter, true)
     current_depth = 1
+
     obs_checker::Union{Nothing, ObservationalEquivalenceChecker} = nothing
     if iter.obs_equivalence
+        @assert !isnothing(iter.spec) "If `iter.obs_equivalence` is set to `true`, `spec` must not be `nothing`."
         obs_checker = ObservationalEquivalenceChecker()
     end
+ 
     return BUDepthData(current_depth, unused_rules, obs_checker)
 end
 
