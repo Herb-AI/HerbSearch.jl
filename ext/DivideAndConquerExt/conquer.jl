@@ -5,7 +5,10 @@ struct ConditionalIfElseError <: Exception
 end
 
 function Base.showerror(io::IO, e::ConditionalIfElseError)
-	print(io, e.msg)
+	print(
+		io, e.msg,
+		"The grammar is missing an if-else rule. Please add the rule `:(\$sym_bool ? \$sym_start : \$sym_start)` to your grammar.",
+	)
 end
 
 """
@@ -16,7 +19,7 @@ by combining them into a decision tree.
 
  # Arguments
 - `problems_to_solutions`: A dictionary mapping problems to the index of their corresponding solution program in `solutions`.
-- `solutions`: A vector containing the solutions to the problems
+- `solutions`: A vector containing the solutions (`RuleNode`) to the problems
 - `grammar`: The grammar used to generate and evaluate programs.
 - `n_predicates`: The number of predicates generated to learn the decision tree.
 - `sym_bool`: The symbol representing boolean conditions in the grammar.
@@ -34,7 +37,11 @@ in the decision tree. For this, features are obtained by evaluating the inputs o
 A `RuleNode` representing the final program constructed from the solutions to the subproblems.
 """
 function conquer(
-	problems_to_solutions::Dict{Problem{Vector{T}}, Vector{Int}},
+	# problems_to_solutions::Dict{Problem{AbstractVector{T}}, AbstractVector{Int}},
+	problems_to_solutions::AbstractDict{
+		<:Problem{<:AbstractVector{<:IOExample}},
+		<:AbstractVector{Int},
+	},
 	solutions::Vector{RuleNode},
 	grammar::AbstractGrammar,
 	n_predicates::Int,
@@ -42,7 +49,7 @@ function conquer(
 	sym_start::Symbol,
 	sym_constraint::Symbol,
 	symboltable::SymbolTable,
-)::RuleNode where T <: IOExample
+)::RuleNode
 	# make sure grammar has if-else rulenode
 	idx_ifelse = findfirst(r -> r == :($sym_bool ? $sym_start : $sym_start), grammar.rules)
 	if isnothing(idx_ifelse)
@@ -53,18 +60,16 @@ function conquer(
 		)
 	end
 
-	# Turn dic into vector since we cannot guarantee order when iterating over dict.
-	ioexamples_solutions =
-		[
-			(example, [idx for idx in vec]) for (prob, vec) in problems_to_solutions for
-			example in prob.spec
-		]
+	# Turn dict into vectors since we cannot guarantee order when iterating over dict.
+	problems = collect(keys(problems_to_solutions))
+	ioexamples = [first(prob.spec) for prob in problems]
+	solutions_idx = collect(values(problems_to_solutions))
 
-	labels = get_labels(ioexamples_solutions)
+	labels = get_labels(solutions_idx)
 	predicates = get_predicates(grammar, sym_bool, sym_constraint, n_predicates)
 	# Matrix of feature vectors. Feature vectors are created by evaluating an input from the IO examples on predicatess.
 	features = get_features(
-		ioexamples_solutions,
+		ioexamples,
 		predicates,
 		grammar,
 		symboltable,
@@ -85,7 +90,7 @@ end
 	# Arguments
 	- `n_predicates`: Determines the number of predicates that are returned.
 	- `sym_bool`: is used to make sure that only programs evaluate to `Bool` are considered. 
-	- `sym_constraint`: Further constrains the program space to exclude trivial predicates.
+	- `sym_constraint`: `Symbol` used to further constrain the program space to exclude trivial predicates.
 """
 function get_predicates(grammar::AbstractGrammar,
 	sym_bool::Symbol,
@@ -93,22 +98,14 @@ function get_predicates(grammar::AbstractGrammar,
 	n_predicates::Number,
 )::Vector{RuleNode}
 	# We get the first grammar rule that has the specified `sym_constraint` and add constraint to grammar. 
-	clearconstraints!(grammar)
+	# copy grammar before adding constraints
+	grammar_constraints = grammar
+	clearconstraints!(grammar_constraints)
 	# Create DomainRuleNode that contains all rules of type sym_constraint and add constraint to grammar
-	rules = grammar.bytype[sym_constraint]
-	domain = HerbConstraints.DomainRuleNode(grammar, rules)
-	addconstraint!(grammar, ContainsSubtree(domain))
-
-	iterator = BFSIterator(grammar, sym_bool)
-	predicates = Vector{RuleNode}()
-
-	for (i, candidate_program) ∈ enumerate(iterator)
-		candidate_program = freeze_state(candidate_program)
-		push!(predicates, candidate_program)
-		if i >= n_predicates
-			break
-		end
-	end
+	rules = grammar_constraints.bytype[sym_constraint]
+	domain = HerbConstraints.DomainRuleNode(grammar_constraints, rules)
+	addconstraint!(grammar_constraints, ContainsSubtree(domain))
+	predicates = _iterate_predicates(grammar_constraints, sym_bool, n_predicates)
 	return predicates
 end
 
@@ -125,12 +122,19 @@ function get_predicates(grammar::AbstractGrammar,
 	rules::Vector{Int},
 	n_predicates::Number,
 )::Vector{RuleNode}
-	clearconstraints!(grammar)
+	grammar_constraints = grammar
+	clearconstraints!(grammar_constraints)
 	# Create DomainRuleNode that contains all rules and add constraint to grammar
-	domain = HerbConstraints.DomainRuleNode(grammar, rules)
-	addconstraint!(grammar, ContainsSubtree(domain))
+	domain = HerbConstraints.DomainRuleNode(grammar_constraints, rules)
+	addconstraint!(grammar_constraints, ContainsSubtree(domain))
+	predicates = _iterate_predicates(grammar_constraints, sym_bool, n_predicates)
+	return predicates
+end
 
-
+"""
+	Shared functionality to iterate over predicates until stopping criteria (`n_predicates`) is reached.
+"""
+function _iterate_predicates(grammar::AbstractGrammar, sym_bool::Symbol, n_predicates::Number)
 	iterator = BFSIterator(grammar, sym_bool)
 	predicates = Vector{RuleNode}()
 
@@ -150,25 +154,25 @@ end
 	predicate.
 """
 function get_features(
-	ioexamples_solutions::Vector{Tuple{T, Vector{Int}}},
+	ioexamples::Vector{<:IOExample},
 	predicates::Vector{RuleNode},
 	grammar::AbstractGrammar,
 	symboltable::SymbolTable,  # or symboltable::AbstractSymbolTable if that exists
 	allow_evaluation_errors::Bool = true,
-) where T <: IOExample
+)
 	# features matrix with dimension n_ioexamples x n_predicates
-	features = trues(length(ioexamples_solutions),
+	features = trues(length(ioexamples),
 		length(predicates))
-	for (i, (ioexample, _)) in enumerate(ioexamples_solutions)
+	for (i, ex) in enumerate(ioexamples)
 		output = Vector()
 		for pred in predicates
 			expr = rulenode2expr(pred, grammar)
 			try
-				o = execute_on_input(symboltable, expr, ioexample.in) # will return Bool since we execute on predicates
+				o = execute_on_input(symboltable, expr, ex.in) # will return Bool since we execute on predicates
 				push!(output, o)
 			catch err
 				# Throw the error if `allow_evaluation_errors` is false
-				eval_error = EvaluationError(expr, ioexample.in, err)
+				eval_error = EvaluationError(expr, ex.in, err)
 				allow_evaluation_errors || throw(eval_error)
 				push!(output, false)
 			end
@@ -182,8 +186,9 @@ end
 	Returns a vector containing the labels for each `IOExample` in `ioexamples_solutions`.
 	The label is the index of the first program in the vector of solutions for a `IOExample`.
 """
-function get_labels(ioexamples_solutions::Vector{Tuple{T, Vector{Int}}}) where T <: IOExample
-	labels = [sol[1] for (_, sol) in ioexamples_solutions]
+function get_labels(solutions_idx::Vector{Vector{Int}})
+	# labels = [sol[1] for (_, sol) in ioexamples_solutions]
+	labels = [sol[1] for sol in solutions_idx]
 	return labels
 end
 
