@@ -46,7 +46,6 @@ using .DivideAndConquerExt:
 		@test decide(problem1, expr, symboltable) == true
 		@test decide(problem2, expr, symboltable) == false
 	end
-
 	@testset verbose = true "conquer" begin
 		grammar = @csgrammar begin
 			Start = Integer
@@ -77,7 +76,8 @@ using .DivideAndConquerExt:
 			RuleNode(8, [RuleNode(5), RuleNode(6)]),
 			RuleNode(4),
 		]
-		problems_to_solutions::Dict{Problem, Vector{Int}} = Dict(p => [] for p in subproblems)
+		problems_to_solutions = Dict(p => Vector{Int}() for p in subproblems)
+		# problems_to_solutions::Dict{Problem, Vector{Int}} = Dict(p => [] for p in subproblems)
 		push!(problems_to_solutions[subproblems[1]], 1)
 		push!(problems_to_solutions[subproblems[2]], 2)
 		push!(
@@ -92,13 +92,6 @@ using .DivideAndConquerExt:
 		#    0
 		# RuleNode(2, [RuleNode(9, [RuleNode(3), RuleNode(5)]), RuleNode(5), RuleNode(3)])
 
-		# ioexamples_solutions = [
-		# 	(IOExample(Dict(:_arg_1 => 1, :_arg_2 => 2), 2), [1]),
-		# 	(IOExample(Dict(:_arg_1 => 3, :_arg_2 => 0), 3), [2]),
-		# 	(IOExample(Dict(:_arg_1 => -3, :_arg_2 => 0), 0), [3]),
-		# 	(IOExample(Dict(:_arg_1 => 1, :_arg_2 => 1), 1), [4, 5]),
-		# ] 
-
 		# hardcoding for test purposes (we cannot predict order when converting problems_to_solutions to vec)
 		ioexamples = [
 			IOExample(Dict(:_arg_1 => 1, :_arg_2 => 2), 2),
@@ -107,70 +100,93 @@ using .DivideAndConquerExt:
 			IOExample(Dict(:_arg_1 => 1, :_arg_2 => 1), 1),
 		]
 		solutions_idx = [[1], [2], [3], [4, 5]]
-		# ioexamples = [example for (prob, _) in problems_to_solutions for example in prob.spec]
-		# solutions = [sol_vec for (_, sol_vec) in problems_to_solutions]
-		# solutions_idx = collect(values(problems_to_solutions)) # TODO: hardcode as well?
 
-		# convert expected labels to set => no guarantee of order in vec_problems_solutions
-		@testset verbose = true "labels" begin
-			expected_labels = Set([1, 2, 3, 4])
-			labels = get_labels(solutions_idx)
-			@test length(labels) == 4
-			@test Set(labels) == expected_labels
-		end
+		# parameters
+		sym_start = :Integer
+		sym_bool = :Condition
+		sym_constraint = :Input
+		n_predicates = 100
 
-		@testset verbose = true "predicates" begin
-			n_predicates = 100
-			sym_bool = :Condition
-			sym_constraint = :Input
-			# use symbol for constraint
-			predicates = get_predicates(grammar, sym_bool, sym_constraint, n_predicates)
-			rules = grammar.bytype[sym_constraint]
-			@test length(predicates) == n_predicates
-			# pick a few random predicates and check if they contain rule we expect
-			@test !isempty(rulesoftype(predicates[23], Set(rules)))
-			@test !isempty(rulesoftype(predicates[99], Set(rules)))
-
-			# use rule indices for clearconstraints
-			predicates = get_predicates(grammar, sym_bool, rules, n_predicates)
-			@test !isempty(rulesoftype(predicates[12], Set(rules)))
-			@test !isempty(rulesoftype(predicates[71], Set(rules)))
-		end
-
-		@testset verbose = true "features" begin
-			predicates = [
-				RuleNode(9, [RuleNode(5), RuleNode(6)]),
-				RuleNode(9, [RuleNode(6), RuleNode(5)]),
-				RuleNode(
-					10,
-					[
-						RuleNode(9, [RuleNode(5), RuleNode(6)]),
-						RuleNode(9, [RuleNode(4), RuleNode(6)]),
-					],
-				),
-			]
-
-			expressions = [rulenode2expr(p, grammar) for p in predicates]
-			expected_expressions =
-				[:(_arg_1 <= _arg_2), :(_arg_2 <= _arg_1), :(_arg_1 <= _arg_2 && 1 <= _arg_2)]
-			@test expressions == expected_expressions
-
-			expected_features =
-				BitArray([true false true; false true false; true false false; true true true])
-			features = get_features(
-				ioexamples,
-				predicates, grammar, symboltable,
-			)
-			@test features == expected_features
-			@test_throws HerbSearch.EvaluationError get_features(
-				ioexamples,
-				[RuleNode(11, [RuleNode(4)])], # ehad_cvc(_arg_1)
+		@testset verbose = true "conquer()" begin
+			final_program = conquer(
+				problems_to_solutions,
+				solutions,
 				grammar,
+				n_predicates,
+				sym_bool,
+				sym_start,
+				sym_constraint,
 				symboltable,
-				false,
 			)
+			@test typeof(final_program) == RuleNode
+			expr = rulenode2expr(final_program, grammar)
+			input_example = ioexamples[1].in
+			expected_output = ioexamples[1].out
+			output = execute_on_input(symboltable, expr, input_example)
+			@test typeof(output) == typeof(expected_output)
+			@test output == expected_output
 		end
 
+		@testset verbose = true "conquer related functionality" begin
+			# convert expected labels to set => no guarantee of order in vec_problems_solutions
+			@testset verbose = true "labels" begin
+				expected_labels = Set([1, 2, 3, 4])
+				labels = get_labels(solutions_idx)
+				@test length(labels) == 4
+				@test Set(labels) == expected_labels
+			end
+
+			@testset verbose = true "predicates" begin
+				# use symbol for constraint
+				predicates = get_predicates(grammar, sym_bool, sym_constraint, n_predicates)
+				rules = grammar.bytype[sym_constraint]
+				@test length(predicates) == n_predicates
+				# pick a few random predicates and check if they contain rule we expect
+				@test !isempty(rulesoftype(predicates[23], Set(rules)))
+				@test !isempty(rulesoftype(predicates[99], Set(rules)))
+
+				# use rule indices for clearconstraints
+				predicates = get_predicates(grammar, sym_bool, rules, n_predicates)
+				@test !isempty(rulesoftype(predicates[12], Set(rules)))
+				@test !isempty(rulesoftype(predicates[71], Set(rules)))
+			end
+
+			@testset verbose = true "features" begin
+				predicates = [
+					RuleNode(9, [RuleNode(5), RuleNode(6)]),
+					RuleNode(9, [RuleNode(6), RuleNode(5)]),
+					RuleNode(
+						10,
+						[
+							RuleNode(9, [RuleNode(5), RuleNode(6)]),
+							RuleNode(9, [RuleNode(4), RuleNode(6)]),
+						],
+					),
+				]
+
+				expressions = [rulenode2expr(p, grammar) for p in predicates]
+				expected_expressions =
+					[:(_arg_1 <= _arg_2), :(_arg_2 <= _arg_1), :(_arg_1 <= _arg_2 && 1 <= _arg_2)]
+				@test expressions == expected_expressions
+
+				expected_features =
+					BitArray([true false true; false true false; true false false; true true true])
+				features = get_features(
+					ioexamples,
+					predicates, grammar, symboltable,
+				)
+				@test features == expected_features
+				@test_throws HerbSearch.EvaluationError get_features(
+					ioexamples,
+					[RuleNode(11, [RuleNode(4)])], # ehad_cvc(_arg_1)
+					grammar,
+					symboltable,
+					false,
+				)
+			end
+
+
+		end
 		@testset verbose = true "Construct final program" begin
 			# Left: Feature == false, right: Feature == true
 			#             Feature 1 < 0.5 
@@ -236,5 +252,7 @@ using .DivideAndConquerExt:
 			)
 			@test final_program == expected_program
 		end
+
 	end
+
 end

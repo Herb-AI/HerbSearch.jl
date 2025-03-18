@@ -99,7 +99,7 @@ function get_predicates(grammar::AbstractGrammar,
 )::Vector{RuleNode}
 	# We get the first grammar rule that has the specified `sym_constraint` and add constraint to grammar. 
 	# copy grammar before adding constraints
-	grammar_constraints = grammar
+	grammar_constraints = deepcopy(grammar)
 	clearconstraints!(grammar_constraints)
 	# Create DomainRuleNode that contains all rules of type sym_constraint and add constraint to grammar
 	rules = grammar_constraints.bytype[sym_constraint]
@@ -122,7 +122,7 @@ function get_predicates(grammar::AbstractGrammar,
 	rules::Vector{Int},
 	n_predicates::Number,
 )::Vector{RuleNode}
-	grammar_constraints = grammar
+	grammar_constraints = deepcopy(grammar)
 	clearconstraints!(grammar_constraints)
 	# Create DomainRuleNode that contains all rules and add constraint to grammar
 	domain = HerbConstraints.DomainRuleNode(grammar_constraints, rules)
@@ -137,7 +137,6 @@ end
 function _iterate_predicates(grammar::AbstractGrammar, sym_bool::Symbol, n_predicates::Number)
 	iterator = BFSIterator(grammar, sym_bool)
 	predicates = Vector{RuleNode}()
-
 	for (i, candidate_program) ∈ enumerate(iterator)
 		candidate_program = freeze_state(candidate_program)
 		push!(predicates, candidate_program)
