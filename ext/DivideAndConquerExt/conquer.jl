@@ -153,8 +153,8 @@ end
 	predicate.
 """
 function get_features(
-	ioexamples::Vector{<:IOExample},
-	predicates::Vector{RuleNode},
+	ioexamples::AbstractVector{<:IOExample},
+	predicates::AbstractVector{RuleNode},
 	grammar::AbstractGrammar,
 	symboltable::SymbolTable,  # or symboltable::AbstractSymbolTable if that exists
 	allow_evaluation_errors::Bool = true,
