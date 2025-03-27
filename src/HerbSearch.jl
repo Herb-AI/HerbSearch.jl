@@ -9,6 +9,8 @@ using HerbInterpret
 using HerbSpecification
 using MLStyle
 
+using DocStringExtensions
+
 include("sampling_grammar.jl")
 
 include("program_iterator.jl")
@@ -37,41 +39,33 @@ include("genetic_search_iterator.jl")
 
 include("random_iterator.jl")
 
-export 
-  ProgramIterator,
-  @programiterator,
-  
-  heuristic_leftmost,
-  heuristic_rightmost,
-  heuristic_random,
-  heuristic_smallest_domain,
+# include("divide_conquer_functions/divide.jl")
+# include("divide_conquer_functions/decide.jl")
+# include("divide_conquer_functions/conquer.jl")
 
-  derivation_heuristic,
+function divide_and_conquer end
 
-  synth,
-  SynthResult,
-  optimal_program,
-  suboptimal_program,
-
-  UniformIterator,
-  next_solution!,
-
-  TopDownIterator,
-  RandomIterator,
-  BFSIterator,
-  DFSIterator,
-  MLFSIterator,
-
-  MHSearchIterator,
-  VLSNSearchIterator,
-  SASearchIterator,
-
-  mean_squared_error,
-  misclassification,
-
-  GeneticSearchIterator,
-  misclassification,
-  validate_iterator,
-  sample,
-  rand
+export
+	ProgramIterator,
+	@programiterator, heuristic_leftmost,
+	heuristic_rightmost,
+	heuristic_random,
+	heuristic_smallest_domain, derivation_heuristic, synth,
+	SynthResult,
+	optimal_program,
+	suboptimal_program, UniformIterator,
+	next_solution!, TopDownIterator,
+	RandomIterator,
+	BFSIterator,
+	DFSIterator,
+	MLFSIterator, MHSearchIterator,
+	VLSNSearchIterator,
+	SASearchIterator, mean_squared_error,
+	misclassification, GeneticSearchIterator,
+	misclassification,
+	validate_iterator,
+	sample,
+	rand,
+	divide_and_conquer,
+	EvaluationError
 end # module HerbSearch

@@ -1,4 +1,5 @@
-@testset verbose=true "Search procedure" begin
+
+@testset verbose=true "Search procedure synth" begin
     g₁ = @csgrammar begin
         Number = |(1:2)
         Number = x
@@ -78,3 +79,4 @@
         @test flag == suboptimal_program
     end
 end
+
