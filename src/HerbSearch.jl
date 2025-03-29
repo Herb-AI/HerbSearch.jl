@@ -37,6 +37,19 @@ include("genetic_search_iterator.jl")
 
 include("random_iterator.jl")
 
+include("fragments/fragment_grammar_utils.jl")
+include("fragments/mining_fragments.jl")
+
+include("angelic_conditions/generate_angelic.jl")
+include("angelic_conditions/angelic_replacement_strategies.jl")
+include("angelic_conditions/long_hash_map.jl")
+
+include("frangel/frangel.jl")
+include("frangel/frangel_utils.jl")
+include("frangel/frangel_generation.jl")
+include("frangel/frangel_random_iterator.jl")
+
+
 export 
   ProgramIterator,
   @programiterator,
@@ -65,7 +78,7 @@ export
   MHSearchIterator,
   VLSNSearchIterator,
   SASearchIterator,
-
+  
   mean_squared_error,
   misclassification,
 
@@ -73,5 +86,40 @@ export
   misclassification,
   validate_iterator,
   sample,
-  rand
+  rand,
+
+  FrAngelConfig,
+  FrAngelConfigGeneration,
+  frangel,
+
+  replace_first_angelic!,
+  replace_last_angelic!,
+
+  generate_random_program,
+  modify_and_replace_program_fragments!,
+  add_angelic_conditions!,
+  resolve_angelic!,
+
+  mine_fragments,
+  remember_programs!,
+  
+  add_fragments_prob!,
+  setup_grammar_with_fragments!,
+  add_fragment_base_rules!,
+  add_fragment_rules!,
+  updateGrammarWithFragments!,
+
+  FrAngelRandomIterator,
+  FrAngelRandomIteratorState,
+
+  simplify_quick,
+  _simplify_quick_once,
+  symbols_minsize,
+  rules_minsize,
+
+  LongHashMap,
+  init_long_hash_map,
+  lhm_put!,
+  lhm_contains
+  
 end # module HerbSearch
