@@ -74,4 +74,14 @@ export
   validate_iterator,
   sample,
   rand
+
+  """
+    refactor_grammar
+
+  When `Clingo_jll` and `JSON` packages are loaded, this function refactors a grammar
+  """
+  function refactor_grammar end
+
+  export refactor_grammar
+
 end # module HerbSearch
