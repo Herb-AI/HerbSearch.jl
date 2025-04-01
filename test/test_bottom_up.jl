@@ -9,12 +9,19 @@ import HerbSearch.init_combine_structure
         "arity = 2" => (@csgrammar begin
             Int = 1 | 2
             Int = Int + Int
+        end),
+        "multiple types" => (@csgrammar begin
+            Int = 1 | 2
+            Int = Int + Int
+            Char = 'a' | 'b'
+            String = Char * Char
+            Int = length(String)
         end)
     )
 
     function test_with_grammars(f, grammars)
         for (name, g) in grammars
-            @testset "$name" f(g)
+            @testset verbose=true "$name" f(g)
         end
     end
 
