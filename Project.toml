@@ -1,7 +1,7 @@
 name = "HerbSearch"
 uuid = "3008d8e8-f9aa-438a-92ed-26e9c7b4829f"
 authors = ["Sebastijan Dumancic <s.dumancic@tudelft.nl>", "Jaap de Jong <J.deJong-18@student.tudelft.nl>", "Nicolae Filat <N.Filat@student.tudelft.nl>", "Piotr Cichoń <gitlab@gitlab.ewi.tudelft.nl>", "Tilman Hinnerichs <t.r.hinnerichs@tudelft.nl>"]
-version = "0.4.5"
+version = "0.4.6"
 
 [deps]
 DataStructures = "864edb3b-99cc-5e75-8d2d-829cb0a9cfe8"
@@ -14,6 +14,7 @@ HerbSpecification = "6d54aada-062f-46d8-85cf-a1ceaf058a06"
 MLStyle = "d8e11817-5142-5d16-987a-aa16d5891078"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 StatsBase = "2913bbd2-ae8a-5f71-8c99-4fb6c76f3a91"
+TimerOutputs = "a759f4b9-e2f1-59dc-863e-4aeb61b1ea8f"
 
 [weakdeps]
 DecisionTree = "7806a523-6efd-50cb-b5f6-3fa6f1930dbb"
@@ -23,7 +24,9 @@ DivideAndConquerExt = "DecisionTree"
 
 [compat]
 DataStructures = "0.17,0.18"
-HerbConstraints = "0.3.0"
+DecisionTree = "0.12"
+DocStringExtensions = "0.9"
+HerbConstraints = "0.4"
 HerbCore = "0.3.0"
 HerbGrammar = "0.5"
 HerbInterpret = "0.1.3"
@@ -31,6 +34,5 @@ HerbSpecification = "0.2"
 MLStyle = "0.4.17"
 Random = "1.8.0"
 StatsBase = "0.34"
-DecisionTree = "0.12"
-DocStringExtensions = "0.9"
+TimerOutputs = "0.5.28"
 julia = "1.10"
