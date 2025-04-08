@@ -111,16 +111,16 @@ function next_solution!(iter::UniformIterator)::Union{RuleNode, StateHole, Nothi
                 if length(branches) == 0
                     # search node is a solution leaf node, return the solution
                     iter.nsolutions += 1
-                    track!(solver, "#CompleteTrees")
+                    @timeit_debug iter.solver.statistics "#CompleteTrees" begin end
                     return solver.tree
                 else
                     # search node is an (non-root) internal node, store the branches to visit
-                    track!(solver, "#InternalSearchNodes")
+                    @timeit_debug iter.solver.statistics "#InternalSearchNodes" begin end
                     push!(iter.unvisited_branches, branches)
                 end
             else
                 # search node is an infeasible leaf node, backtrack
-                track!(solver, "#InfeasibleTrees")
+                @timeit_debug iter.solver.statistics "#InfeasibleTrees" begin end
                 restore!(solver)
             end
         else
@@ -134,7 +134,7 @@ function next_solution!(iter::UniformIterator)::Union{RuleNode, StateHole, Nothi
         if _isfilledrecursive(solver.tree)
             # search node is the root and the only solution, return the solution.
             iter.nsolutions += 1
-            track!(solver, "#CompleteTrees")
+            @timeit_debug iter.solver.statistics "#CompleteTrees" begin end
             return solver.tree
         end
     end

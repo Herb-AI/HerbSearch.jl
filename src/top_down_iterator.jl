@@ -223,7 +223,7 @@ end
 Describes the iteration for a given [`TopDownIterator`](@ref) and a [`PriorityQueue`](@ref) over the grammar without enqueueing new items to the priority queue. Recursively returns the result for the priority queue.
 """
 function Base.iterate(iter::TopDownIterator, tup::Tuple{Vector{<:AbstractRuleNode}, DataStructures.PriorityQueue})
-    track!(iter.solver, "#CompleteTrees (by FixedShapedIterator)")
+    @timeit_debug iter.solver.statistics "#CompleteTrees (by FixedShapedIterator)" begin end
     # iterating over fixed shaped trees using the FixedShapedIterator
     if !isempty(tup[1])
         return (pop!(tup[1]), tup)
@@ -234,7 +234,7 @@ end
 
 
 function Base.iterate(iter::TopDownIterator, pq::DataStructures.PriorityQueue)
-    track!(iter.solver, "#CompleteTrees (by UniformSolver)")
+    @timeit_debug iter.solver.statistics "#CompleteTrees (by UniformSolver)" begin end
     return _find_next_complete_tree(iter.solver, pq, iter)
 end
 
@@ -266,7 +266,7 @@ function _find_next_complete_tree(
 
             hole_res = hole_heuristic(iter, get_tree(solver), get_max_depth(solver))
             if hole_res ≡ already_complete
-                track!(solver, "#FixedShapedTrees")
+                @timeit_debug iter.solver.statistics "#FixedShapedTrees" begin end
                 # Always use the Uniform Solver
                 uniform_solver = UniformSolver(get_grammar(solver), get_tree(solver), with_statistics=solver.statistics)
                 uniform_iterator = UniformIterator(uniform_solver, iter)

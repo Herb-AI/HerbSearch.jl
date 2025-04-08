@@ -10,6 +10,7 @@ using HerbSpecification
 using MLStyle
 
 using DocStringExtensions
+using TimerOutputs
 
 include("sampling_grammar.jl")
 
