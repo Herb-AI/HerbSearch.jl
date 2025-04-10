@@ -135,6 +135,10 @@
         
         @test length(dfs_programs) == 6
         @test all(p ∈ dfs_programs for p ∈ answer_programs)
+
+        # For max_depth = 3 and DFS over shapes the size should only increase:
+        dfs_programs = [freeze_state(p) for p ∈ DFSIterator(g1, :Real, max_depth=3)]
+        @test all(map(t -> length(t[1]) <= length(t[2]), zip(dfs_programs[begin:end-1], dfs_programs[begin+1:end])))
     end
 
     @testset verbose=true "MLFSIterator tests" begin
