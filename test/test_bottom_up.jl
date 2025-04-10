@@ -16,6 +16,7 @@ import HerbSearch.init_combine_structure
             Char = 'a' | 'b'
             String = Char * Char
             Int = length(String)
+            Int = Int * Int
         end)
     )
 
@@ -48,6 +49,27 @@ import HerbSearch.init_combine_structure
         @test length(expected_programs) == length(progs)
     end
 
+    @testset "multi-type step-by-step tests" begin
+        g = grammars_to_test["multiple types"]
+        iter = MyBU(g, :Int, nothing; max_depth=3)
+
+        @testset "populate_bank!" begin
+            
+            create_bank!(iter)
+            initial_addresses = populate_bank!(iter)
+    
+            @test length(initial_addresses) == 2 # should be 2 uniform trees: one of Ints, one of Chars
+        end
+    
+        @testset "iterate all terminals first" begin
+            expected_programs = RuleNode.(findall(g.isterminal))
+
+            progs = [freeze_state(p) for (i, p) in enumerate(iter) if i <= 4]
+            @test issetequal(progs, expected_programs)
+            @test length(expected_programs) == length(progs)
+        end
+    end
+    
     @testset "combine" begin
         test_with_grammars(grammars_to_test) do g
             iter = MyBU(g, :Int, nothing; max_depth=5)
