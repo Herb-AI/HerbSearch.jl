@@ -1,6 +1,5 @@
 """
     mutable struct BottomUpIterator <: ProgramIterator
-using Base: AbstractCmd
 
 Enumerates programs from a context-free grammar starting at [`Symbol`](@ref) `sym` with respect to the grammar up to a given depth and a given size.
 The exploration is done by maintaining a bank of (executable) programs and ieratively exploring larger programs by combinig the ones in the bank  .
@@ -11,7 +10,6 @@ Concrete iterators may overload the following methods:
 - combine
 - add_to_bank! -> rename to push!
 - retrieve -> given a bank and an address, retrieve the program at a given address
-
 """
 abstract type BottomUpIterator <: ProgramIterator end
 
@@ -111,6 +109,7 @@ mutable struct GenericBUState <: BottomUpState
     combinations::AbstractVector{AbstractAddress}
     combine_stage_tracker
     current_uniform_iterator::Union{UniformIterator,Nothing}
+    starting_node
 end
 
 remaining_combinations(state::GenericBUState) = state.combinations
@@ -134,7 +133,7 @@ It should modify the iterator itself.
 TODO: add bank getters to the interface
 """
 function create_bank!(iter::BottomUpIterator)
-    iter.bank = DefaultDict{Int,Vector{AbstractRuleNode}}(() -> AbstractRuleNode[])
+    iter.bank = DefaultDict{Int, DefaultDict}(() -> (DefaultDict{Symbol, AbstractVector{AbstractRuleNode}}(() -> AbstractRuleNode[])))
 end
 
 """
@@ -145,17 +144,17 @@ It should return the addresses of the programs just inserted in the bank
 """
 function populate_bank!(iter::BottomUpIterator)::AbstractVector{AccessAddress}
     grammar = get_grammar(iter.solver)
-    #TODO separate by type
-    terminal_programs = UniformHole(grammar.isterminal, [])
 
     # create the bank entry
-    get_bank(iter)[1] = Vector{AbstractRuleNode}()
+    for t in unique(grammar.types)
+        terminal_domain_for_type = grammar.isterminal .& grammar.domains[t]
+        if any(terminal_domain_for_type)
+            terminal_programs = UniformHole(terminal_domain_for_type, [])
+            push!(get_bank(iter)[1][t], terminal_programs)
+        end
+    end
 
-    # iterate over terminals and add them to the bank
-    push!(get_bank(iter)[1], terminal_programs)
-    new_state!(iter.solver, terminal_programs)
-
-    return [AccessAddress((1, x)) for x in 1:length(get_bank(iter)[1])]
+    return [AccessAddress((1, t, x)) for t in unique(grammar.types) for x in 1:length(get_bank(iter)[1][t])]
 end
 
 """
@@ -189,17 +188,23 @@ function combine(iter::BottomUpIterator, state)
         return 1 + sum((x[1] for x in combination)) > max_in_bank
     end
 
+    function appropriately_typed(child_types)
+        return combination -> child_types == [x[2] for x in combination]
+    end
+
     # loop over groups of rules with the same arity and child types
     for shape in non_terminal_shapes
-        nchildren = length(grammar.childtypes[findfirst(shape.domain)])
+        child_types = grammar.childtypes[findfirst(shape.domain)]
+        nchildren = length(child_types)
 
         # *Lazily* collect addresses, their combinations, and then filter them based on `check_bound`
-        all_addresses = ((key, idx) for key in keys(get_bank(iter)) for idx in eachindex(get_bank(iter)[key]))
+        all_addresses = ((key, typename, idx) for key in keys(get_bank(iter)) for typename in keys(get_bank(iter)[key]) for idx in eachindex(get_bank(iter)[key][typename]))
         all_combinations = Iterators.product(Iterators.repeated(all_addresses, nchildren)...)
         filtered_combinations = Iterators.filter(check_bound, all_combinations)
+        filtered_combinations = Iterators.filter(appropriately_typed(child_types), all_combinations)
 
         # Construct the `CombineAddress`s from the filtered combinations
-        addresses = map(address_pair -> CombineAddress(shape, AccessAddress.(address_pair)), filtered_combinations)
+        append!(addresses, map(address_pair -> CombineAddress(shape, AccessAddress.(address_pair)), filtered_combinations))
     end
 
     return addresses, state
@@ -213,7 +218,7 @@ Returns `True` if the program is added to the bank, and `False` otherwise.
 For example, the function returns false if the `program` is observationally equivalent to another program already in the bank; hence, it will not be added.
 """
 function add_to_bank!(iter::BottomUpIterator, program::AbstractRuleNode, address::AccessAddress)::Bool
-    push!(get_bank(iter)[address.addr[1]], program)
+    push!(get_bank(iter)[address.addr[1]][address.addr[2]], program)
 
     return true
 end
@@ -223,8 +228,8 @@ end
 
 Returns an [`AbstractAddress`](@ref) of the program to be added to the bank, derived from the `parent_address`
 """
-function new_address(iter::BottomUpIterator, program_combination::AbstractAddress)::AbstractAddress
-    return AccessAddress((1 + sum([x.addr[1] for x in program_combination.addrs]), 1))
+function new_address(iter::BottomUpIterator, program_combination::AbstractAddress, program_type::Symbol)::AbstractAddress
+    return AccessAddress((1 + sum([x.addr[1] for x in program_combination.addrs]), program_type, 1))
 end
 
 """
@@ -233,7 +238,7 @@ end
 Retrieves a program from the bank indexed by the [`AccessAddress`](@ref)
 """
 function retrieve(iter::BottomUpIterator, address::AccessAddress)::AbstractRuleNode
-    get_bank(iter)[address.addr[1]][address.addr[2]]
+    get_bank(iter)[address.addr[1]][address.addr[2]][address.addr[3]]
 end
 
 """
@@ -251,11 +256,7 @@ Constructs a program by combining programs specified by `address`.
 Ideally this is impelmented only once.
 """
 function _construct_program(iter::BottomUpIterator, address::CombineAddress)::AbstractRuleNode
-    new_tree = UniformHole(address.op.domain, [retrieve(iter, x) for x in address.addrs])
-    solver = iter.solver
-    new_state!(solver, new_tree) # might not work????
-
-    return get_tree(solver)
+    return UniformHole(address.op.domain, [retrieve(iter, x) for x in address.addrs])
 end
 
 
@@ -303,15 +304,16 @@ It creates the bank and populates it with initial programs.
 It returns the first program and a state-tracking [`GenericBUState`](@ref) containing the remaining initial programs and the initialstate for the `combine` function
 """
 function Base.iterate(iter::BottomUpIterator)
+    solver = iter.solver
+    starting_node = deepcopy(get_tree(solver))
     create_bank!(iter)
     addresses = populate_bank!(iter)
-    solver = iter.solver
-    uniform_solver = UniformSolver(get_grammar(solver), get_tree(solver), with_statistics=solver.statistics)
-    uniform_iterator = UniformIterator(uniform_solver, iter)
-    first_solution = next_solution!(uniform_iterator)
 
-    return first_solution, GenericBUState(addresses[begin+1:end], init_combine_structure(iter), uniform_iterator)
+    return Base.iterate(iter, GenericBUState(addresses, init_combine_structure(iter), nothing, starting_node))
 end
+
+get_type(grammar, rn::RuleNode) = grammar.types[get_rule(rn)]
+get_type(grammar, uh::UniformHole) = grammar.types[findfirst(uh.domain)]
 
 """
     Base.iterate(iter::BottomUpIterator, state::GenericBUState)::Tuple{AbstractRuleNode,GenericBUState}
@@ -331,10 +333,16 @@ function Base.iterate(iter::BottomUpIterator, state::GenericBUState)
     # otherwise remove it from the state
     if !isnothing(state.current_uniform_iterator)
         next_solution = next_solution!(state.current_uniform_iterator)
-        if !isnothing(next_solution)
-            return next_solution, state
-        else
+        if isnothing(next_solution)
             state.current_uniform_iterator = nothing
+        elseif depth(next_solution) <= iter.solver.max_depth
+            if is_subdomain(next_solution, state.starting_node) # only return if root is matching the requested starting node
+                return next_solution, state
+            else
+                return Base.iterate(iter, state)
+            end
+        else
+            return nothing
         end
     end
 
@@ -344,41 +352,33 @@ function Base.iterate(iter::BottomUpIterator, state::GenericBUState)
         #program is `nothing`, so we stop
         return nothing
     elseif typeof(program_combination) == AccessAddress
-        @error "Should never reach this branch with uniform trees"
         # we only need to access the program, it is already in the bank
         program = retrieve(iter, program_combination)
         solver = iter.solver
-        uniform_solver = UniformSolver(get_grammar(solver), get_tree(solver), with_statistics=solver.statistics)
+        uniform_solver = UniformSolver(
+            get_grammar(solver),
+            program,
+            with_statistics=solver.statistics
+        )
         new_state.current_uniform_iterator = UniformIterator(uniform_solver, iter)
-        next_solution = next_solution!(state.current_uniform_iterator)
 
-        if depth(next_solution) > iter.solver.max_depth
-            return nothing
-        else
-            return next_solution, new_state
-        end
+        return Base.iterate(iter, new_state)
     else
         # we have to combine programs from the bank
         # updates iter.solver with the combined program
         # which we might not want to do until the program is added to the bank
+        solver = iter.solver
         program = _construct_program(iter, program_combination)
-
-        keep = add_to_bank!(iter, program, new_address(iter, program_combination))
+        program_type = get_type(get_grammar(solver), program)
+        keep = add_to_bank!(iter, program, new_address(iter, program_combination, program_type))
 
         if keep
-            solver = iter.solver
-            uniform_solver = UniformSolver(get_grammar(solver), get_tree(solver), with_statistics=solver.statistics)
-            new_state.current_uniform_iterator = UniformIterator(uniform_solver, iter)
-            next_solution = next_solution!(state.current_uniform_iterator)
             # take the program (uniform tree) convert to UniformIterator, and add to state
             # return the first concrete tree from the UniformIterator in the state (and the updated state)
-            if depth(next_solution) > iter.solver.max_depth
-                return nothing
-            else
-                return next_solution, new_state
-            end
-        else
-            return Base.iterate(iter, new_state)
+            uniform_solver = UniformSolver(get_grammar(solver), program, with_statistics=solver.statistics)
+            new_state.current_uniform_iterator = UniformIterator(uniform_solver, iter)
         end
+
+        return Base.iterate(iter, new_state)
     end
 end
