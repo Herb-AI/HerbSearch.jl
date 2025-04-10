@@ -1,4 +1,5 @@
 #Branching constraint, the `StateHole` hole must be filled with rule_index `Int`.
+
 Branch = Tuple{StateHole, Int}
 
 #Shared reference to an empty vector to reduce memory allocations.
@@ -77,15 +78,9 @@ function generate_branches(iter::UniformIterator)::Vector{Branch}
             if isnothing(iter.outeriter)
                 return [(hole, rule) for rule ∈ hole.domain]
             end
+            
             #reversing is needed because we pop and consider the rightmost branch first
-            
-            
-            result = reverse!([(hole, rule) for rule ∈ derivation_heuristic(iter.outeriter, findall(hole.domain))])
-
-            # println("result: $result")
-
-            return result
-            
+            return reverse!([(hole, rule) for rule ∈ derivation_heuristic(iter.outeriter, findall(hole.domain))])
         end
     end
     return NOBRANCHES
@@ -111,8 +106,6 @@ function next_solution!(iter::UniformIterator)::Union{RuleNode, StateHole, Nothi
             # current depth has unvisted branches, pick a branch to explore
             (hole, rule) = pop!(branches)
             save_state!(solver)
-            # println("\tnext_solution.iter.stateholes: $(iter.stateholes)")
-            # println("\titer.unvisited_branches: $(iter.unvisited_branches)")
             remove_all_but!(solver, solver.node_to_path[hole], rule)
             if isfeasible(solver)
                 # generate new branches for the new search node
@@ -120,16 +113,16 @@ function next_solution!(iter::UniformIterator)::Union{RuleNode, StateHole, Nothi
                 if length(branches) == 0
                     # search node is a solution leaf node, return the solution
                     iter.nsolutions += 1
-                    track!(solver, "#CompleteTrees")
+                    @timeit_debug iter.solver.statistics "#CompleteTrees" begin end
                     return solver.tree
                 else
                     # search node is an (non-root) internal node, store the branches to visit
-                    track!(solver, "#InternalSearchNodes")
+                    @timeit_debug iter.solver.statistics "#InternalSearchNodes" begin end
                     push!(iter.unvisited_branches, branches)
                 end
             else
                 # search node is an infeasible leaf node, backtrack
-                track!(solver, "#InfeasibleTrees")
+                @timeit_debug iter.solver.statistics "#InfeasibleTrees" begin end
                 restore!(solver)
             end
         else
@@ -143,7 +136,7 @@ function next_solution!(iter::UniformIterator)::Union{RuleNode, StateHole, Nothi
         if _isfilledrecursive(solver.tree)
             # search node is the root and the only solution, return the solution.
             iter.nsolutions += 1
-            track!(solver, "#CompleteTrees")
+            @timeit_debug iter.solver.statistics "#CompleteTrees" begin end
             return solver.tree
         end
     end

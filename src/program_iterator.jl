@@ -71,7 +71,7 @@ function generate_iterator(mod::Module, ex::Expr, mut::Bool=false)
     @match ex begin
         Expr(:(<:), decl::Expr, super) => begin            
             # a check that `super` is a subtype of `ProgramIterator`
-            check = :(eval($mod.$super) <: HerbSearch.ProgramIterator || 
+            check = :($mod.$super <: HerbSearch.ProgramIterator || 
                 throw(ArgumentError("attempting to inherit a non-ProgramIterator")))
             
             # process the decl 
