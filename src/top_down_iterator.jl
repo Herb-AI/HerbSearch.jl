@@ -112,6 +112,8 @@ abstract type AbstractDFSIterator <: TopDownIterator end
     priority_function(::AbstractDFSIterator, g::AbstractGrammar, tree::AbstractRuleNode, parent_value::Union{Real, Tuple{Vararg{Real}}}, isrequeued::Bool)
 
 Assigns priority such that the search tree is traversed like in a DFS manner. 
+This will run a DFS over shapes, and exhaust each a shape before hopping to the next one.
+If you want a more "traditional" DFS behavior, set the return value to `parent_value` for requeued items, i.e. uniform iterators.
 """
 function priority_function(
     ::AbstractDFSIterator, 
