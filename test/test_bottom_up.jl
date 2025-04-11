@@ -23,6 +23,15 @@ import HerbSearch.init_combine_structure
             Int = Int + Int
             Int = Int * Int
         end),
+        # "trigger stackoverflow if recursive call to Base.iterate" => (@csgrammar begin
+        #     String = "a"
+        #     NotAnInt = |(1:3000)
+        #     Int = NotAnInt
+        #     Int = 1|2
+        #     Int = Int + Int
+        #     Int = length(String)
+        #     String = String * String
+        # end)
     )
 
     function test_with_grammars(f, grammars)
