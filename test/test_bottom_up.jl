@@ -22,21 +22,12 @@ import HerbSearch.init_combine_structure
             Int = 1
             Int = Int + Int
             Int = Int * Int
-        end),
-        # "trigger stackoverflow if recursive call to Base.iterate" => (@csgrammar begin
-        #     String = "a"
-        #     NotAnInt = |(1:3000)
-        #     Int = NotAnInt
-        #     Int = 1|2
-        #     Int = Int + Int
-        #     Int = length(String)
-        #     String = String * String
-        # end)
+        end)
     )
 
     function test_with_grammars(f, grammars)
         for (name, g) in grammars
-            @testset verbose = true "$name" f(g)
+            @testset "$name" f(g)
         end
     end
 
@@ -185,6 +176,21 @@ import HerbSearch.init_combine_structure
 
                         if d > current_depth
                             current_depth = d
+                        end
+                    end
+                end
+            end
+        end
+
+        @testset "Rooted correctly" begin
+            test_with_grammars(grammars_to_test) do g
+                for iter_depth in 1:3
+                    iter_bu = MyBU(g, :Int, nothing; max_depth=iter_depth)
+
+                    for p in iter_bu
+                        pf = freeze_state(p)
+                        @testset "$pf" begin
+                            @test g.types[get_rule(pf)] == :Int
                         end
                     end
                 end
