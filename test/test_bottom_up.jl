@@ -17,7 +17,12 @@ import HerbSearch.init_combine_structure
             String = Char * Char
             Int = length(String)
             Int = Int * Int
-        end)
+        end),
+        "binary operators simple" => (@csgrammar begin
+            Int = 1
+            Int = Int + Int
+            Int = Int * Int
+        end),
     )
 
     function test_with_grammars(f, grammars)
@@ -49,24 +54,25 @@ import HerbSearch.init_combine_structure
         @test length(expected_programs) == length(progs)
     end
 
-    @testset "multi-type step-by-step tests" begin
-        g = grammars_to_test["multiple types"]
-        iter = MyBU(g, :Int, nothing; max_depth=3)
+    @testset "step-by-step tests" begin
+        test_with_grammars(grammars_to_test) do g
+            iter = MyBU(g, :Int, nothing; max_depth=3)
 
-        @testset "populate_bank!" begin
-            
-            create_bank!(iter)
-            initial_addresses = populate_bank!(iter)
-    
-            @test length(initial_addresses) == 2 # should be 2 uniform trees: one of Ints, one of Chars
-        end
-    
-        @testset "iterate all terminals first" begin
-            expected_programs = RuleNode.(findall(g.isterminal))
+            @testset "populate_bank!" begin
+                create_bank!(iter)
+                initial_addresses = populate_bank!(iter)
+                num_uniform_trees_terminals = length(unique(g.types[g.isterminal]))
+        
+                @test length(initial_addresses) == num_uniform_trees_terminals
+            end
+        
+            @testset "iterate all terminals first" begin
+                expected_programs = RuleNode.(findall(g.isterminal .& (g.types .== (:Int))))
 
-            progs = [freeze_state(p) for (i, p) in enumerate(iter) if i <= 4]
-            @test issetequal(progs, expected_programs)
-            @test length(expected_programs) == length(progs)
+                progs = [freeze_state(p) for (i, p) in enumerate(iter) if length(p) == 1]
+                @test issetequal(progs, expected_programs)
+                @test length(expected_programs) == length(progs)
+            end
         end
     end
     
@@ -81,12 +87,52 @@ import HerbSearch.init_combine_structure
         end
     end
 
-    @testset "duplicates not added" begin
+    @testset "duplicates not added to bank" begin
         test_with_grammars(grammars_to_test) do g
             iter = MyBU(g, :Int, nothing; max_depth=3)
 
             for p in iter
                 @test allunique(Iterators.flatten(values(iter.bank)))
+            end
+        end
+    end
+
+    @testset "duplicates not enumerated" begin
+        test_with_grammars(grammars_to_test) do g
+            iter = MyBU(g, :Int, nothing; max_depth=3)
+
+            progs = []
+
+            next_iter = Base.iterate(iter) 
+            
+            while !isnothing(next_iter)
+                (p, state) = next_iter
+                pf = freeze_state(p)
+                @testset "$pf" begin
+                    push!(progs, pf)
+                    @test allunique(progs)
+                    @test allunique(remaining_combinations(state))
+                end
+                next_iter = Base.iterate(iter, state)
+            end
+        end
+    end
+
+    @testset "Strictly increasing depth" begin
+        test_with_grammars(grammars_to_test) do g
+            for iter_depth in 1:3
+                iter_bu = MyBU(g, :Int, nothing; max_depth=iter_depth)
+
+                current_depth = 0
+
+                for p in iter_bu
+                    d = depth(p)
+                    @test d >= current_depth
+
+                    if d > current_depth
+                        current_depth = d
+                    end
+                end
             end
         end
     end
