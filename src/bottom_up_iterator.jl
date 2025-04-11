@@ -200,11 +200,11 @@ function combine(iter::BottomUpIterator, state)
         # *Lazily* collect addresses, their combinations, and then filter them based on `check_bound`
         all_addresses = ((key, typename, idx) for key in keys(get_bank(iter)) for typename in keys(get_bank(iter)[key]) for idx in eachindex(get_bank(iter)[key][typename]))
         all_combinations = Iterators.product(Iterators.repeated(all_addresses, nchildren)...)
-        filtered_combinations = Iterators.filter(check_bound, all_combinations)
-        filtered_combinations = Iterators.filter(appropriately_typed(child_types), all_combinations)
+        bounded_combinations = Iterators.filter(check_bound, all_combinations)
+        bounded_and_typed_combinations = Iterators.filter(appropriately_typed(child_types), bounded_combinations)
 
         # Construct the `CombineAddress`s from the filtered combinations
-        append!(addresses, map(address_pair -> CombineAddress(shape, AccessAddress.(address_pair)), filtered_combinations))
+        append!(addresses, map(address_pair -> CombineAddress(shape, AccessAddress.(address_pair)), bounded_and_typed_combinations))
     end
 
     return addresses, state
