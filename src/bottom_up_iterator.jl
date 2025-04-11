@@ -340,41 +340,30 @@ function Base.iterate(iter::BottomUpIterator, state::GenericBUState)
         end
     end
 
+    solver = iter.solver
     program_combination, new_state = _get_next_program(iter, state)
 
-    if isnothing(program_combination)
-        #program is `nothing`, so we stop
-        return nothing
-    elseif typeof(program_combination) == AccessAddress
-        # we only need to access the program, it is already in the bank
-        program = retrieve(iter, program_combination)
-        solver = iter.solver
-        if is_subdomain(program, state.starting_node)
-            uniform_solver = UniformSolver(
-                get_grammar(solver),
-                program,
-                with_statistics=solver.statistics
-            )
-            new_state.current_uniform_iterator = UniformIterator(uniform_solver, iter)
+    while !isnothing(program_combination)
+        keep = true
+        if typeof(program_combination) == AccessAddress
+            program = retrieve(iter, program_combination)
+        else
+            program = _construct_program(iter, program_combination)
+            program_type = get_type(get_grammar(solver), program)
+            keep = add_to_bank!(iter, program, new_address(iter, program_combination, program_type))
         end
-
-        return Base.iterate(iter, new_state)
-    else
-        # we have to combine programs from the bank
-        # updates iter.solver with the combined program
-        # which we might not want to do until the program is added to the bank
-        solver = iter.solver
-        program = _construct_program(iter, program_combination)
-        program_type = get_type(get_grammar(solver), program)
-        keep = add_to_bank!(iter, program, new_address(iter, program_combination, program_type))
 
         if keep && is_subdomain(program, state.starting_node)
             # take the program (uniform tree) convert to UniformIterator, and add to state
             # return the first concrete tree from the UniformIterator in the state (and the updated state)
             uniform_solver = UniformSolver(get_grammar(solver), program, with_statistics=solver.statistics)
             new_state.current_uniform_iterator = UniformIterator(uniform_solver, iter)
+
+            return next_solution!(new_state.current_uniform_iterator), new_state
         end
 
-        return Base.iterate(iter, new_state)
+        program_combination, new_state = _get_next_program(iter, new_state)
     end
+
+    return nothing
 end
