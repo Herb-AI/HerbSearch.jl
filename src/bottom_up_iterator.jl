@@ -279,7 +279,7 @@ function _get_next_program(iter::BottomUpIterator, state::GenericBUState)
         new_program_combinations, new_state = combine(iter, state_tracker(state))
 
         # Check if new_program_combinations is nothing
-        if new_program_combinations === nothing
+        if new_program_combinations == nothing || isempty(new_program_combinations)
             # We've reached the end of the iteration
             return nothing, nothing
         else
@@ -339,6 +339,7 @@ function Base.iterate(iter::BottomUpIterator, state::GenericBUState)
             if is_subdomain(next_solution, state.starting_node) # only return if root is matching the requested starting node
                 return next_solution, state
             else
+                # needs to be iterative, never make recursive calls here
                 return Base.iterate(iter, state)
             end
         else
