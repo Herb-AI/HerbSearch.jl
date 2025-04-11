@@ -349,7 +349,7 @@ function Base.iterate(iter::BottomUpIterator, state::GenericBUState)
         # we only need to access the program, it is already in the bank
         program = retrieve(iter, program_combination)
         solver = iter.solver
-        if is_subdomain(get_tree(iter.solver), state.starting_node)
+        if is_subdomain(program, state.starting_node)
             uniform_solver = UniformSolver(
                 get_grammar(solver),
                 program,
@@ -368,7 +368,7 @@ function Base.iterate(iter::BottomUpIterator, state::GenericBUState)
         program_type = get_type(get_grammar(solver), program)
         keep = add_to_bank!(iter, program, new_address(iter, program_combination, program_type))
 
-        if keep && is_subdomain(get_tree(iter.solver), state.starting_node)
+        if keep && is_subdomain(program, state.starting_node)
             # take the program (uniform tree) convert to UniformIterator, and add to state
             # return the first concrete tree from the UniformIterator in the state (and the updated state)
             uniform_solver = UniformSolver(get_grammar(solver), program, with_statistics=solver.statistics)
