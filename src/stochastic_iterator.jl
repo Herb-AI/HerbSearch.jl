@@ -19,6 +19,17 @@ Iterators are customisable by overloading the followign functions:
  """
 abstract type StochasticSearchIterator <: ProgramIterator end
 
+
+"""
+    function derivation_heuristic(::StochasticSearchIterator, indices::Vector{Int})
+
+Returns a sorted sublist of the `indices`, based on which rules are most promising to fill a hole.
+The underlying solver can change the order within a Hole's domain. We sort the domain to make the enumeration order explicit and more predictable. 
+"""
+function derivation_heuristic(::StochasticSearchIterator, indices::Vector{Int})
+    return sort(indices);
+end
+
 """
     neighbourhood(iter::StochasticSearchIterator, current_program::RuleNode) 
 
@@ -32,7 +43,7 @@ neighbourhood(iter::StochasticSearchIterator, current_program::RuleNode) = const
 
 Proposes a list of programs to fill in the location provided by `path` and the `dict`.
 """
-propose(iter::StochasticSearchIterator, path::Vector{Int}, dict::Union{Nothing,Dict{String,Any}}) = random_fill_propose(iter.solver, path, dict)
+propose(iter::StochasticSearchIterator, path::Vector{Int}, dict::Union{Nothing,Dict{String,Any}}) = propose_shape(iter, get_grammar(iter.solver), path)
 
 """
     temperature(::StochasticSearchIterator, current_temperature::Real)
@@ -53,13 +64,10 @@ The lower the `cost` the better the program performs on the examples. The `cost`
 accept(::StochasticSearchIterator, current_cost::Real, next_cost::Real, temperature::Real) = probabilistic_accept(current_cost, next_cost, temperature)
 
 struct IteratorState
-    current_program::RuleNode
+    current_program::AbstractRuleNode
     current_temperature::Real
     dmap::AbstractVector{Int} # depth map of each rule
 end
-
-
-
 
 Base.IteratorSize(::StochasticSearchIterator) = Base.SizeUnknown()
 Base.eltype(::StochasticSearchIterator) = RuleNode
@@ -71,15 +79,15 @@ function Base.iterate(iter::StochasticSearchIterator)
     # sample a random node using start symbol and grammar
     dmap = mindepth_map(grammar)
     start_symbol = get_starting_symbol(solver)
-    sampled_program = rand(RuleNode, grammar, start_symbol , max_depth) #TODO: replace iter.sym with a domain of valid rules
-    substitute!(solver, Vector{Int}(), sampled_program)
+    sampled_tree = rand(RuleNode, grammar, start_symbol, max_depth)
+    substitute!(solver, Vector{Int}(), sampled_tree)
     while !isfeasible(solver)
         #TODO: prevent infinite loops here. Check max_time and/or max_enumerations.
-        sampled_program = rand(RuleNode, grammar, start_symbol, max_depth) #TODO: replace iter.sym with a domain of valid rules
-        substitute!(solver, Vector{Int}(), sampled_program)
+        sampled_tree = rand(RuleNode, grammar, start_symbol, max_depth) 
+        substitute!(solver, Vector{Int}(), sampled_tree)
     end
 
-    return (sampled_program, IteratorState(sampled_program, iter.initial_temperature,dmap))  
+    return (sampled_tree, IteratorState(sampled_tree, iter.initial_temperature, dmap))
 end
 
 
@@ -99,7 +107,6 @@ function Base.iterate(iter::StochasticSearchIterator, iterator_state::IteratorSt
     current_program = get_tree(solver)#iterator_state.current_program
     
     current_cost = calculate_cost(iter, current_program)
-
     new_temperature = temperature(iter, iterator_state.current_temperature)
 
     # get the neighbour node location 
@@ -108,6 +115,7 @@ function Base.iterate(iter::StochasticSearchIterator, iterator_state::IteratorSt
     # get the subprogram pointed by node-location
     subprogram = get(current_program, neighbourhood_node_location)
 
+    original_state = save_state!(solver)
 
     @info "Start: $(rulenode2expr(current_program, grammar)), subexpr: $(rulenode2expr(subprogram, grammar)), cost: $current_cost
             temp $new_temperature"
@@ -115,16 +123,14 @@ function Base.iterate(iter::StochasticSearchIterator, iterator_state::IteratorSt
     # remove the rule node by substituting it with a hole of the same symbol
     original_node = get(current_program, neighbourhood_node_location)
     path = get_path(current_program, original_node)
-    original_state = save_state!(solver)
 
     remove_node!(solver, path)
     
-    # propose new programs to consider. They are programs to put in the place of the nodelocation
-    # propose should give full programs
+    # `propose`` new concret eprograms to consider. They are programs to put in the place of the nodelocation
     possible_programs = propose(iter, path, dict)
     
     # try to improve the program using any of the possible replacements
-    improved_program = try_improve_program!(iter, possible_programs, neighbourhood_node_location, new_temperature, current_cost)
+    improved_program = try_improve_program!(iter, possible_programs, new_temperature, current_cost)
     
     if isnothing(improved_program)
         load_state!(solver, original_state)
@@ -140,7 +146,12 @@ function Base.iterate(iter::StochasticSearchIterator, iterator_state::IteratorSt
 end
 
 
-function try_improve_program!(iter::StochasticSearchIterator, possible_programs, neighbourhood_node_location::NodeLoc, new_temperature, current_cost)
+"""
+    try_improve_program!(iter::StochasticSearchIterator, possible_programs, new_temperature, current_cost)
+
+Tries to find a program in `possible_programs` that improves over the current cost using `accept`. This allows to also use worse programs to escape local minima.
+"""
+function try_improve_program!(iter::StochasticSearchIterator, possible_programs, new_temperature, current_cost)
     best_program = nothing
     for possible_program in possible_programs
         program_cost = calculate_cost(iter, possible_program)
@@ -176,7 +187,7 @@ end
 
 Wrapper around [`_calculate_cost`](@ref).
 """
-calculate_cost(iter::T, program::Union{RuleNode, StateHole}) where T <: StochasticSearchIterator = _calculate_cost(program, iter.cost_function, iter.spec, get_grammar(iter.solver), iter.evaluation_function)
+calculate_cost(iter::StochasticSearchIterator, program::Union{RuleNode, StateHole}) = _calculate_cost(program, iter.cost_function, iter.spec, get_grammar(iter.solver), iter.evaluation_function)
 
 
 """
@@ -245,7 +256,7 @@ The temperature value of the algorithm remains constant over time.
 """
     AbstractSASearchIterator <: StochasticSearchIterator
 
-This is the supertype for all SA search iterators. 
+This is the supertype for all simulated annealing (SA) search iterators. 
 """
 abstract type AbstractSASearchIterator <: StochasticSearchIterator end
 

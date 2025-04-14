@@ -1,9 +1,5 @@
-using Test
-using HerbSearch 
-using HerbGrammar
-using HerbCore
-using HerbConstraints
-using Random
+using StatsBase
+using AbstractTrees
 
 @testset "Sampling grammar" verbose=true begin 
 
@@ -23,6 +19,7 @@ using Random
             @test depth(expression_generated) <= max_depth
         end
     end
+
     @testset "rand() gives the possible expressions for a certain max_depth" begin
         grammar = @csgrammar begin 
             A = B | C | F
@@ -89,7 +86,45 @@ using Random
             answer = HerbSearch._rand_with_constraints!(skeleton, solver, path_to_skeleton, mindepth_map(grammar), remaining_depth)
             @test check_tree(constraint, answer)
             @test depth(answer) <= remaining_depth + length(path_to_skeleton)
-
         end
+    end
+
+    grammar = @csgrammar begin
+            Number = 1 | 2
+            Number = Number + Number
+            Number = Bool ? Number : Number
+            Bool = Number == Number
+        end
+
+    @testset "Test StatsBase.sample" begin
+        rn = @rulenode 3{2,4{5{2,2},3{1,2},4{5{1,2},1,3{2,2}}}}
+        # Test whether the sample_depth + the depth of the sampled tree is smaller than the maximum depth, i.e. the depth of the rulenode.
+        @test all(intree(StatsBase.sample(rn, sample_depth), rn; equiv=(==)) for sample_depth in 1:depth(rn))
+        
+
+        for type in [:Bool, :Number]
+            @test grammar.types[sample(rn, type, grammar).ind] == type
+            
+            loc = sample(NodeLoc, rn, type, grammar)
+            @test grammar.types[get(rn, loc).ind] == type
+        end
+    end
+
+    @testset "Generate random shapes" begin
+
+        max_depth = 5
+        
+        dmap = mindepth_map(grammar)
+        sampled_shapes = [sample_shape(grammar, :Number, dmap; max_depth=max_depth) for i in 1:1000]
+        depths = [depth(p) for p in sampled_shapes]
+        
+        @test all(p <= max_depth for p in depths)
+        @test sort(unique(depths)) == [1,2,3,4,5]
+
+        # Interface test
+        @test sample_shape(grammar, :Number; max_depth=max_depth) isa UniformHole
+        @test Base.rand(UniformHole, grammar, max_depth) isa UniformHole
+        @test Base.rand(UniformHole, grammar, :Number, max_depth) isa UniformHole
+        @test Base.rand(UniformHole, grammar, :Number, dmap, max_depth) isa UniformHole
     end
 end

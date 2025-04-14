@@ -5,35 +5,35 @@ using StatsBase
 
 
 """
-    rand(::Type{RuleNode}, grammar::AbstractGrammar, max_depth::Int=10)
+    rand(rn_type::Type{<:AbstractRuleNode}, grammar::AbstractGrammar, max_depth::Int=10)
 
-Generates a random [`RuleNode`](@ref) of arbitrary type and maximum depth max_depth.
+Generates a random AST. Can sample either a concrete [`RuleNode`](@ref) or a shape/uniform tree given `UniformHole`. AST has a random root rule-type and maximum depth max_depth.
 """
-function Base.rand(::Type{RuleNode}, grammar::AbstractGrammar, max_depth::Int=10)
+function Base.rand(rn_type::Type{<:AbstractRuleNode}, grammar::AbstractGrammar, max_depth::Int=10)
     random_type = StatsBase.sample(grammar.types)
     dmap = mindepth_map(grammar)
-    return rand(RuleNode, grammar, random_type, dmap, max_depth)
+    return rand(rn_type, grammar, random_type, dmap, max_depth)
 end
 
 """
-    rand(::Type{RuleNode}, grammar::AbstractGrammar, typ::Symbol, max_depth::Int=10)
+    rand(rn_type::Type{<:AbstractRuleNode}, grammar::AbstractGrammar, type::Symbol, max_depth::Int=10)
 
-Generates a random [`RuleNode`](@ref) of return type typ and maximum depth max_depth.
+Generates a random AST. Can sample either a concrete [`RuleNode`](@ref) or a shape/uniform tree given `UniformHole`. AST has a root rule-type `type` and maximum depth max_depth.
 """
-function Base.rand(::Type{RuleNode}, grammar::AbstractGrammar, typ::Symbol, max_depth::Int=10)
+function Base.rand(rn_type::Type{<:AbstractRuleNode}, grammar::AbstractGrammar, type::Symbol, max_depth::Int=10)
     dmap = mindepth_map(grammar)
-    return rand(RuleNode, grammar, typ, dmap, max_depth)
+    return rand(rn_type, grammar, type, dmap, max_depth)
 end
 
 
 """
-    rand(::Type{RuleNode}, grammar::AbstractGrammar, typ::Symbol, dmap::AbstractVector{Int}, max_depth::Int=10)
+    rand(::Type{RuleNode}, grammar::AbstractGrammar, type::Symbol, dmap::AbstractVector{Int}, max_depth::Int=10)
 
-Generates a random [`RuleNode`](@ref), i.e. an expression tree, of root type typ and maximum depth max_depth guided by a depth map dmap if possible.
+Generates a random [`RuleNode`](@ref), i.e. an expression tree, of root type `type` and maximum depth max_depth guided by a depth map dmap if possible.
 """
-function Base.rand(::Type{RuleNode}, grammar::AbstractGrammar, typ::Symbol, dmap::AbstractVector{Int}, 
+function Base.rand(::Type{RuleNode}, grammar::AbstractGrammar, type::Symbol, dmap::AbstractVector{Int}, 
     max_depth::Int=10)
-    rules = grammar[typ]
+    rules = grammar[type]
     filtered = filter(r->dmap[r] ≤ max_depth, rules)
     if isempty(filtered)
         error("The random function could not find an expression of the given $max_depth depth")
@@ -61,58 +61,57 @@ mutable struct RuleNodeAndCount
 end
 
 """
-    sample(root::RuleNode, typ::Symbol, grammar::AbstractGrammar, maxdepth::Int=typemax(Int))
+    sample(root::RuleNode, type::Symbol, grammar::AbstractGrammar, maxdepth::Int=typemax(Int))
 
 Uniformly samples a random node from the tree limited to maxdepth.
 """
-function StatsBase.sample(root::RuleNode, maxdepth::Int=typemax(Int))
+function StatsBase.sample(root::RuleNode, max_depth::Int=typemax(Int))
     x = RuleNodeAndCount(root, 1)
     for child in root.children
-        _sample(child, x, maxdepth-1)
+        _sample(child, x, max_depth-1)
     end
     x.node
 end
 
-function _sample(node::RuleNode, x::RuleNodeAndCount, maxdepth::Int)
-    maxdepth < 1 && return
+function _sample(node::RuleNode, x::RuleNodeAndCount, max_depth::Int)
+    max_depth < 1 && return
     x.cnt += 1
     if rand() <= 1/x.cnt
         x.node = node
     end
     for child in node.children
-        _sample(child, x, maxdepth-1)
+        _sample(child, x, max_depth-1)
     end
 end
 
 """
-    sample(root::RuleNode, typ::Symbol, grammar::AbstractGrammar,
-                          maxdepth::Int=typemax(Int))
+    sample(root::RuleNode, type::Symbol, grammar::AbstractGrammar, maxdepth::Int=typemax(Int))
 
-Uniformly selects a random node of the given return type typ limited by maxdepth.
+Uniformly selects a random node of the given return type `type` limited by maxdepth.
 """
-function StatsBase.sample(root::RuleNode, typ::Symbol, grammar::AbstractGrammar,
+function StatsBase.sample(root::RuleNode, type::Symbol, grammar::AbstractGrammar,
                           maxdepth::Int=typemax(Int))
     x = RuleNodeAndCount(root, 0)
-    if grammar.types[root.ind] == typ
+    if grammar.types[root.ind] == type
         x.cnt += 1
     end
     for child in root.children
-        _sample(child, typ, grammar, x, maxdepth-1)
+        _sample(child, type, grammar, x, maxdepth-1)
     end
-    grammar.types[x.node.ind] == typ || error("type $typ not found in RuleNode")
+    grammar.types[x.node.ind] == type || error("type $type not found in RuleNode")
     x.node
 end
-function _sample(node::RuleNode, typ::Symbol, grammar::AbstractGrammar, x::RuleNodeAndCount,
+function _sample(node::RuleNode, type::Symbol, grammar::AbstractGrammar, x::RuleNodeAndCount,
                  maxdepth::Int)
     maxdepth < 1 && return
-    if grammar.types[node.ind] == typ
+    if grammar.types[node.ind] == type
         x.cnt += 1
         if rand() <= 1/x.cnt
             x.node = node
         end
     end
     for child in node.children
-        _sample(child, typ, grammar, x, maxdepth-1)
+        _sample(child, type, grammar, x, maxdepth-1)
     end
 end
 
@@ -128,14 +127,14 @@ end
 Uniformly selects a random node in the tree no deeper than maxdepth using reservoir sampling.
 Returns a [`NodeLoc`](@ref) that specifies the location using its parent so that the subtree can be replaced.
 """
-function StatsBase.sample(::Type{NodeLoc}, root::RuleNode, maxdepth::Int=typemax(Int))
+function StatsBase.sample(::Type{NodeLoc}, root::Union{RuleNode, UniformHole}, maxdepth::Int=typemax(Int))
     x = NodeLocAndCount(NodeLoc(root, 0), 1)
     _sample(NodeLoc, root, x, maxdepth-1)
     x.loc
 end
 
 
-function _sample(::Type{NodeLoc}, node::RuleNode, x::NodeLocAndCount, maxdepth::Int)
+function _sample(::Type{NodeLoc}, node::Union{RuleNode, UniformHole}, x::NodeLocAndCount, maxdepth::Int)
     maxdepth < 1 && return
     for (j,child) in enumerate(node.children)
         x.cnt += 1
@@ -147,31 +146,65 @@ function _sample(::Type{NodeLoc}, node::RuleNode, x::NodeLocAndCount, maxdepth::
 end
     
 """
-    StatsBase.sample(::Type{NodeLoc}, root::RuleNode, typ::Symbol, grammar::AbstractGrammar, maxdepth::Int=typemax(Int))
+    StatsBase.sample(::Type{NodeLoc}, root::RuleNode, type::Symbol, grammar::AbstractGrammar, maxdepth::Int=typemax(Int))
     
 Uniformly selects a random node in the tree of a given type, specified using its parent such that the subtree can be replaced.
 Returns a [`NodeLoc`](@ref).
 """
-function StatsBase.sample(::Type{NodeLoc}, root::RuleNode, typ::Symbol, grammar::AbstractGrammar, maxdepth::Int=typemax(Int))
+function StatsBase.sample(::Type{NodeLoc}, root::RuleNode, type::Symbol, grammar::AbstractGrammar, maxdepth::Int=typemax(Int))
     x = NodeLocAndCount(NodeLoc(root, 0)
     , 0)
-    if grammar.types[root.ind] == typ
+    if grammar.types[root.ind] == type
         x.cnt += 1
     end
-    _sample(NodeLoc, root, typ, grammar, x, maxdepth-1)
-    grammar.types[get(root,x.loc).ind] == typ || error("type $typ not found in RuleNode")
+    _sample(NodeLoc, root, type, grammar, x, maxdepth-1)
+    grammar.types[get(root,x.loc).ind] == type || error("type $type not found in RuleNode")
     x.loc
 end
     
-function _sample(::Type{NodeLoc}, node::RuleNode, typ::Symbol, grammar::AbstractGrammar, x::NodeLocAndCount, maxdepth::Int)
+function _sample(::Type{NodeLoc}, node::RuleNode, type::Symbol, grammar::AbstractGrammar, x::NodeLocAndCount, maxdepth::Int)
     maxdepth < 1 && return
     for (j,child) in enumerate(node.children)
-        if grammar.types[child.ind] == typ
+        if grammar.types[child.ind] == type
             x.cnt += 1
             if rand() <= 1/x.cnt
                 x.loc = NodeLoc(node, j)
             end
-            _sample(NodeLoc, child, typ, grammar, x, maxdepth-1)
+        end
+        _sample(NodeLoc, child, type, grammar, x, maxdepth-1)
+    end
+end
+
+Base.rand(::Type{UniformHole}, grammar::AbstractGrammar, type::Symbol, dmap::AbstractVector{Int}, max_depth::Int=10) = sample_shape(grammar, type, dmap; max_depth=max_depth)
+    
+function sample_shape(grammar::AbstractGrammar, root_type::Symbol; max_depth=10, max_size=5)
+    dmap = mindepth_map(grammar)
+    return sample_shape(grammar, root_type, dmap; max_depth=max_depth, max_size=max_size)
+end
+
+function sample_shape(grammar::AbstractGrammar, root_type::Symbol, dmap::AbstractVector{Int}; max_depth=5, max_size=5)
+    @assert max_depth >= 0
+    
+    hole = Hole(get_domain(grammar, root_type))
+    partitioned_domains = partition(hole, grammar)
+
+    filtered = filter(part->minimum(dmap[part]) ≤ max_depth, partitioned_domains)
+    if isempty(filtered)
+        error("The random function could not find an expression of the given $max_depth depth")
+        return
+    end
+
+    domain = StatsBase.sample(filtered)
+
+    #@TODO We ignore `iseval(grammar, rule_index)` for now.
+    uniform_hole = UniformHole(domain)
+
+    rule_index = findfirst(domain)
+
+    if !grammar.isterminal[rule_index]
+        for child_type in child_types(grammar, rule_index)
+            push!(uniform_hole.children, sample_shape(grammar, child_type, dmap; max_depth=max_depth-1))
         end
     end
+    return uniform_hole
 end
