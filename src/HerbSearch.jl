@@ -70,6 +70,7 @@ export
     validate_iterator,
     sample,
     rand,
+    EvaluationError,
     BottomUpState,
     BottomUpIterator,
     AbstractAddress,
