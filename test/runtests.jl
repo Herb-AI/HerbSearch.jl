@@ -34,9 +34,8 @@ Random.seed!(1234)
 
 	# 	# Excluded because it contains long tests
 	# 	# include("test_realistic_searches.jl")
-end
-
-@testset verbose = true "Divide and conquer extension" begin
-	include("test_divide_conquer.jl")
-	include("test_divide_conquer_example.jl")
+	@testset verbose = true "Divide and conquer extension" begin
+		include("test_divide_conquer.jl")
+		include("test_divide_conquer_example.jl")
+	end
 end
