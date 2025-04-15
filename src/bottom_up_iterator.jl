@@ -265,21 +265,16 @@ end
 
 Returns the next program to explore and the updated BottomUpState:
 - if there are still remaining programs from the current BU iteration to explore (`remaining_combinations(state)`), it pops the next one
-
-#TODO remove: not doing this here anymore 
-    - if it is a uniform iterator, and it is not exhausted, return the next complete tree
-    - otherwise, pop the next combination
-
 - otherwise, it calls the the `combine(iter, state)` function again, and processes the first returned program
 """
 function _get_next_program(iter::BottomUpIterator, state::GenericBUState)
     if has_remaining_iterations(state) # && !empty(first_(state))
         return popfirst!(remaining_combinations(state)), state
-    elseif state_tracker(state) !== nothing
+    elseif !isnothing(state_tracker(state))
         new_program_combinations, new_state = combine(iter, state_tracker(state))
 
         # Check if new_program_combinations is nothing
-        if new_program_combinations == nothing || isempty(new_program_combinations)
+        if isnothing(new_program_combinations) || isempty(new_program_combinations)
             # We've reached the end of the iteration
             return nothing, nothing
         else
@@ -358,8 +353,13 @@ function Base.iterate(iter::BottomUpIterator, state::GenericBUState)
             # return the first concrete tree from the UniformIterator in the state (and the updated state)
             uniform_solver = UniformSolver(get_grammar(solver), program, with_statistics=solver.statistics)
             new_state.current_uniform_iterator = UniformIterator(uniform_solver, iter)
+            next_solution = next_solution!(state.current_uniform_iterator)
 
-            return next_solution!(new_state.current_uniform_iterator), new_state
+            if isnothing(next_solution) || depth(next_solution) > iter.solver.max_depth
+                new_state.current_uniform_iterator = nothing
+            else
+                return next_solution, new_state
+            end
         end
 
         program_combination, new_state = _get_next_program(iter, new_state)
