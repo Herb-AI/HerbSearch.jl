@@ -165,7 +165,7 @@ import HerbSearch.init_combine_structure
 
         @testset "Strictly increasing depth" begin
             test_with_grammars(grammars_to_test) do g
-                for iter_depth in 1:3
+                for iter_depth in 1:4
                     iter_bu = MyBU(g, :Int, nothing; max_depth=iter_depth)
 
                     current_depth = 0
@@ -184,7 +184,7 @@ import HerbSearch.init_combine_structure
 
         @testset "Rooted correctly" begin
             test_with_grammars(grammars_to_test) do g
-                for iter_depth in 1:3
+                for iter_depth in 1:4
                     iter_bu = MyBU(g, :Int, nothing; max_depth=iter_depth)
 
                     for p in iter_bu
@@ -199,7 +199,7 @@ import HerbSearch.init_combine_structure
 
         @testset "Compare to DFS" begin
             test_with_grammars(grammars_to_test) do g
-                for depth in 1:3
+                for depth in 1:4
                     iter_bu = MyBU(g, :Int, nothing; max_depth=depth)
                     iter_dfs = DFSIterator(g, :Int; max_depth=depth)
 
@@ -218,7 +218,7 @@ import HerbSearch.init_combine_structure
     @testset "Example with Observational Equivalence" begin
         @testset "Strictly increasing depth" begin
             test_with_grammars(grammars_to_test) do g
-                for iter_depth in 1:3
+                for iter_depth in 1:4
                     iter_bu = OEBU(g, :Int, nothing; max_depth=iter_depth)
 
                     current_depth = 0
