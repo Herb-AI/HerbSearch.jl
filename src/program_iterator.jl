@@ -69,20 +69,34 @@ function generate_iterator(mod::Module, ex::Expr, mut::Bool=false)
     Base.remove_linenums!(ex)
 
     @match ex begin
-        Expr(:(<:), decl::Expr, super) => begin            
-            # a check that `super` is a subtype of `ProgramIterator`
-            check = :(eval($mod.$super) <: HerbSearch.ProgramIterator || 
-                throw(ArgumentError("attempting to inherit a non-ProgramIterator")))
-            
+        Expr(:(<:), decl::Expr, super) => begin
             # process the decl 
-            Expr(:block, check, processdecl(mod, mut, decl, super)...)
+            check, superexpr = getsuper(mod, super)
+            Expr(:block, check, processdecl(mod, mut, decl, superexpr)...)
         end
         decl => Expr(:block, processdecl(mod, mut, decl)...)
     end
 end
 
+getsuper(mod::Module, super) = @match super begin
+    name::Symbol => begin
+        # check if the iterator extends a non-parameteric program iterator.
+        check = :($mod.$name <: HerbSearch.ProgramIterator ||
+            throw(ArgumentError("attempting to inherit a non-ProgramIterator")))
+ 
+        check, :($mod.$super)
+    end
+    Expr(:curly, name::Symbol, type::Symbol) => begin
+        # the iterator extends a parametric program iterator.
+        check = :($mod.$name <: HerbSearch.ProgramIterator || 
+            throw(ArgumentError("attempting to inherit a non-ProgramIterator")))
+        check, Expr(:curly, name, type)
+    end
+    _ => throw(ArgumentError("invalid subtyping structure for the iterator"))
+end
+
 processdecl(mod::Module, mut::Bool, decl::Expr, super=nothing) = @match decl begin
-    Expr(:call, name::Symbol, extrafields...) => begin
+    Expr(:call, decl, extrafields...) => begin
         kwargs_fields = map(esc, filter(is_kwdef, extrafields))
         notkwargs     = map(esc, filter(!is_kwdef, extrafields))
 
@@ -103,35 +117,66 @@ processdecl(mod::Module, mut::Bool, decl::Expr, super=nothing) = @match decl beg
         end
 
         field_names = map(esc, field_names)
-        escaped_name = esc(name) # this is the name of the struct
 
-        # keyword arguments come after the normal arguments (notkwargs)
-        all_constructors = Base.remove_linenums!(
-            :(
-              begin 
-                # solver main constructor
-                function $(escaped_name)( $(notkwargs...) ; solver::Solver, max_size = nothing, max_depth = nothing, $(kwargs_fields...) )
-                    if !isnothing(max_size) solver.max_size = max_size end
-                    if !isnothing(max_depth) solver.max_depth = max_depth end
-                    return $(escaped_name)(solver, $(field_names...))
-                end
-                # solver with grammar and start symbol
-                function $(escaped_name)(grammar::AbstractGrammar, start_symbol::Symbol, $(notkwargs...) ; 
-                                        max_size = typemax(Int), max_depth = typemax(Int), $(kwargs_fields...) )
-                    return $(escaped_name)(GenericSolver(grammar, start_symbol, max_size = max_size, max_depth = max_depth), $(field_names...))
-                end
+        all_constructors = @match decl begin
+            name::Symbol => begin
+                escaped_name = esc(name)
 
-                # solver with grammar and initial rulenode to start with
-                function $(escaped_name)(grammar::AbstractGrammar, initial_node::AbstractRuleNode, $(notkwargs...) ;
-                                        max_size = typemax(Int), max_depth = typemax(Int), $(kwargs_fields...) )
-                    return $(escaped_name)(GenericSolver(grammar, initial_node, max_size = max_size, max_depth = max_depth), $(field_names...))
-                end
-              end
-            )
-        )
+                Base.remove_linenums!(
+                    :(
+                    begin 
+                        # solver main constructor
+                        function $(escaped_name)( $(notkwargs...) ; solver::Solver, max_size = nothing, max_depth = nothing, $(kwargs_fields...) )
+                            if !isnothing(max_size) solver.max_size = max_size end
+                            if !isnothing(max_depth) solver.max_depth = max_depth end
+                            return $(escaped_name)(solver, $(field_names...))
+                        end
+                        # solver with grammar and start symbol
+                        function $(escaped_name)(grammar::AbstractGrammar, start_symbol::Symbol, $(notkwargs...) ; 
+                                            max_size = typemax(Int), max_depth = typemax(Int), $(kwargs_fields...) )
+                        return $(escaped_name)(GenericSolver(grammar, start_symbol, max_size = max_size, max_depth = max_depth), $(field_names...))
+                        end
+
+                        # solver with grammar and initial rulenode to start with
+                        function $(escaped_name)(grammar::AbstractGrammar, initial_node::AbstractRuleNode, $(notkwargs...) ;
+                                                max_size = typemax(Int), max_depth = typemax(Int), $(kwargs_fields...) )
+                            return $(escaped_name)(GenericSolver(grammar, initial_node, max_size = max_size, max_depth = max_depth), $(field_names...))
+                        end
+                    end
+                    )
+                )
+            end
+            Expr(:curly, name::Symbol, type::Symbol) => begin
+                escaped_name = esc(name)
+                Base.remove_linenums!(
+                    :(
+                    begin 
+                        # solver main constructor
+                        function $(escaped_name){T}( $(notkwargs...) ; solver::Solver, max_size = nothing, max_depth = nothing, $(kwargs_fields...) ) where T
+                            if !isnothing(max_size) solver.max_size = max_size end
+                            if !isnothing(max_depth) solver.max_depth = max_depth end
+                            return $(escaped_name)(solver, $(field_names...))
+                        end
+                        # solver with grammar and start symbol
+                        function $(escaped_name){T}(grammar::AbstractGrammar, start_symbol::Symbol, $(notkwargs...) ; 
+                                            max_size = typemax(Int), max_depth = typemax(Int), $(kwargs_fields...) ) where T
+                        return $(escaped_name)(GenericSolver(grammar, start_symbol, max_size = max_size, max_depth = max_depth), $(field_names...))
+                        end
+
+                        # solver with grammar and initial rulenode to start with
+                        function $(escaped_name){T}(grammar::AbstractGrammar, initial_node::AbstractRuleNode, $(notkwargs...) ;
+                                                max_size = typemax(Int), max_depth = typemax(Int), $(kwargs_fields...) ) where T
+                            return $(escaped_name)(GenericSolver(grammar, initial_node, max_size = max_size, max_depth = max_depth), $(field_names...))
+                        end
+                    end
+                    )
+                )
+            end
+            _ => throw(ArgumentError("invalid declaration of structure name"))
+        end
 
         # create the struct declaration
-        head = Expr(:(<:), name, isnothing(super) ? :(HerbSearch.ProgramIterator) : :($mod.$super))
+        head = Expr(:(<:), decl, isnothing(super) ? :(HerbSearch.ProgramIterator) : :($super))
         fields = Base.remove_linenums!(quote
             solver::Solver
         end)

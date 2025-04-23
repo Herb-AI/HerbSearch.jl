@@ -6,18 +6,18 @@ TODO
 @programiterator BUUniformIterator(
     spec::Union{Vector{<:IOExample}, Nothing} = nothing,
     obs_equivalence::Bool = false
-) <: BottomUpIterator
+) <: BottomUpIterator{UniformHole}
 
 const Depth = UInt32
 
 """
     struct BUUniformBank <: BottomUpBank
 """
-struct BUUniformBank <: BottomUpBank
+struct BUUniformBank <: BottomUpBank{UniformHole}
     depth_symbol_program_map::Dict{Depth, Dict{Symbol, Vector{UniformHole}}}
 end
 
-BottomUpBank(iter::BUUniformIterator) = BUUniformBank(iter)
+BottomUpBank{UniformHole}(iter::BUUniformIterator) = BUUniformBank(iter)
 
 """
 	BUUniformBank(iter::BUDepthIterator)::BUDepthBank
@@ -36,13 +36,13 @@ end
 """
     struct BUUniformData <: BottomUpData
 """
-mutable struct BUUniformData <: BottomUpData
+mutable struct BUUniformData <: BottomUpData{UniformHole}
     current_depth::Depth
     unused_rules::Queue{UniformHole}
     obs_checker::Union{Nothing, ObservationalEquivalenceChecker}
 end
 
-BottomUpData(iter::BUUniformIterator) = BUUniformData(iter)
+BottomUpData{UniformHole}(iter::BUUniformIterator) = BUUniformData(iter)
 
 """
     BUUniformData(iter::BUDepthIterator)::BUDepthData

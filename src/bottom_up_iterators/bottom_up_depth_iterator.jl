@@ -6,18 +6,18 @@ Implementation of the `BottomUpIterator`. Iterates through complete programs in 
 @programiterator BUDepthIterator(
     spec::Union{Vector{<:IOExample}, Nothing} = nothing,
     obs_equivalence::Bool = false
-) <: BottomUpIterator
+) <: BottomUpIterator{RuleNode}
 
 const Depth = UInt32
 
 """
     struct BUDepthBank <: BottomUpBank
 """
-struct BUDepthBank <: BottomUpBank
+struct BUDepthBank <: BottomUpBank{RuleNode}
     depth_symbol_program_map::Dict{Depth, Dict{Symbol, Vector{RuleNode}}}
 end
 
-BottomUpBank(iter::BUDepthIterator) = BUDepthBank(iter)
+BottomUpBank{RuleNode}(iter::BUDepthIterator) = BUDepthBank(iter)
 
 """
 	BUDepthBank(iter::BUDepthIterator)::BUDepthBank
@@ -38,13 +38,13 @@ end
 
 TODO: Explain each field of this class.
 """
-mutable struct BUDepthData <: BottomUpData
+mutable struct BUDepthData <: BottomUpData{RuleNode}
     current_depth::Depth
     unused_rules::Queue{RuleNode}
     obs_checker::Union{Nothing, ObservationalEquivalenceChecker}
 end
 
-BottomUpData(iter::BUDepthIterator) = BUDepthData(iter)
+BottomUpData{RuleNode}(iter::BUDepthIterator) = BUDepthData(iter)
 
 """
     BUDepthData(iter::BUDepthIterator)::BUDepthData

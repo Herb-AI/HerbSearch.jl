@@ -14,21 +14,21 @@ The following functions should be implemented:
 - `is_valid(iter::BottomUpIterator, program::RuleNode, data::BottomUpData)::Bool`: TODO
 - `add_to_bank!(iter::BottomUpIterator, bank::BottomUpBank, program::RuleNode)::Nothing`: TODO
 """
-abstract type BottomUpIterator <: ProgramIterator end
+abstract type BottomUpIterator{T <: AbstractRuleNode} <: ProgramIterator end
 
 """
     abstract type BottomUpBank
 
 Concrete iterator implementations should define a custom type extending `BottomUpBank` for storing their `bank` data structure.
 """
-abstract type BottomUpBank end
+abstract type BottomUpBank{T <: AbstractRuleNode} end
 
 """
     abstract type BottomUpData
 
 Concrete iterator implementations should define a custom type extending `BottomUpData` for storing their `data` data structure.
 """
-abstract type BottomUpData end
+abstract type BottomUpData{T <: AbstractRuleNode} end
 
 """
     mutable struct BottomUpIteratorTuple
@@ -41,11 +41,11 @@ mutable struct BottomUpIteratorTuple
 end
 
 function BottomUpIteratorTuple(
-    iter::BottomUpIterator,
+    iter::BottomUpIterator{T},
     rulenode_combinations::RuleNodeCombinations,
-    bank::BottomUpBank,
-    data::BottomUpData
-)::Union{Nothing, BottomUpIteratorTuple}
+    bank::BottomUpBank{T},
+    data::BottomUpData{T}
+)::Union{Nothing, BottomUpIteratorTuple} where T
     grammar = get_grammar(iter.solver)
     cross_product_iterator = CrossProductIterator(rulenode_combinations)
     program_collection = _get_next_program_collection!(iter, cross_product_iterator, bank, data)
@@ -58,11 +58,11 @@ function BottomUpIteratorTuple(
 end
 
 function _get_next_program_collection!(
-    iter::BottomUpIterator,
+    iter::BottomUpIterator{T},
     cross_product_iterator::CrossProductIterator,
-    bank::BottomUpBank,
-    data::BottomUpData
-)::Union{Nothing, AbstractRuleNode}
+    bank::BottomUpBank{T},
+    data::BottomUpData{T}
+)::Union{Nothing, AbstractRuleNode} where T
     program_collection = iterate(cross_product_iterator)
 
     # Skip over the program collections that won't be added to the bank.
@@ -85,10 +85,10 @@ end
 Structure defining the internal state of the iterator. Contains the user-defined `bank::BottomUpBank` and `data::BottomUpData`.
 Additionally, it contains interface-handled data structures (`cross_product_iterator::CrossProductIterator`).
 """
-mutable struct BottomUpState
+mutable struct BottomUpState{T <: AbstractRuleNode}
     # User defined.
-    bank::BottomUpBank
-    data::BottomUpData
+    bank::BottomUpBank{T}
+    data::BottomUpData{T}
 
     # Handled by the generic implementation.
     iterator_tuple::Union{Nothing, BottomUpIteratorTuple}
@@ -99,11 +99,13 @@ end
 
 Defines the first iteration of the `BottomUpIterator`.
 """
-function Base.iterate(iter::BottomUpIterator)::Union{Nothing,Tuple{RuleNode,BottomUpState}}
-    bank::BottomUpBank = BottomUpBank(iter)
-    data::BottomUpData = BottomUpData(iter)
+function Base.iterate(
+    iter::BottomUpIterator{T}
+)::Union{Nothing,Tuple{RuleNode,BottomUpState{T}}} where T
+    bank::BottomUpBank{T} = BottomUpBank{T}(iter)
+    data::BottomUpData{T} = BottomUpData{T}(iter)
 
-    state::BottomUpState = BottomUpState(bank, data, nothing)
+    state::BottomUpState{T} = BottomUpState{T}(bank, data, nothing)
     return _get_next_program(iter, state)
 end
 
@@ -113,9 +115,9 @@ end
 Defines the subsequent iterations of the `BottomUpIterator`.
 """
 function Base.iterate(
-    iter::BottomUpIterator,
-    state::BottomUpState
-)::Union{Nothing,Tuple{RuleNode,BottomUpState}}
+    iter::BottomUpIterator{T},
+    state::BottomUpState{T}
+)::Union{Nothing,Tuple{RuleNode,BottomUpState}} where T
     return _get_next_program(iter, state)
 end
 
@@ -125,9 +127,9 @@ end
 TODO: add documentation
 """
 function _get_next_program(
-    iter::BottomUpIterator,
-    state::BottomUpState
-)::Union{Nothing,Tuple{RuleNode,BottomUpState}}
+    iter::BottomUpIterator{T},
+    state::BottomUpState{T}
+)::Union{Nothing,Tuple{RuleNode,BottomUpState}} where T
     while true
         if isnothing(state.iterator_tuple)
             rulenode_combinations = combine!(iter, state.bank, state.data)
