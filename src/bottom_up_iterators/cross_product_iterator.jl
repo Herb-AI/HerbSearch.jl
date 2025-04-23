@@ -1,5 +1,5 @@
 mutable struct CrossProductIterator
-    rule::Int
+    root::AbstractRuleNode
     iterable::Any
     iteration_result::Any
 end
@@ -7,23 +7,23 @@ end
 function CrossProductIterator(
     rulenode_combinations::RuleNodeCombinations
 )::CrossProductIterator
-    rule = rulenode_combinations.rule
+    root = rulenode_combinations.root
 
-    # Initialize `iterable` for the case when `rule` is terminal.
+    # Initialize `iterable` for the case when `root` is terminal.
     iterable = [Tuple{}()]
 
-    # Initialize `iterable` correctly when `rule` is nonterminal.
+    # Initialize `iterable` correctly when `root` is nonterminal.
     if !isempty(rulenode_combinations.children_lists)
         iterable = Iterators.product(rulenode_combinations.children_lists...)
     end
 
     iteration_result = iterate(iterable)
-    return CrossProductIterator(rule, iterable, iteration_result)
+    return CrossProductIterator(root, iterable, iteration_result)
 end
 
 function Base.iterate(
     iter::CrossProductIterator
-)::Union{RuleNode, Nothing}
+)::Union{AbstractRuleNode, Nothing}
     if isnothing(iter.iteration_result)
         return nothing
     end
@@ -31,7 +31,9 @@ function Base.iterate(
     children, state = iter.iteration_result
     iter.iteration_result = iterate(iter.iterable, state)
 
-    return RuleNode(iter.rule, collect(children))
+    program::AbstractRuleNode = copy(iter.root) 
+    program.children = collect(children)
+    return program
 end
 
 Base.iterate(iter::CrossProductIterator, _) = iterate(iter) 

@@ -31,6 +31,55 @@ Concrete iterator implementations should define a custom type extending `BottomU
 abstract type BottomUpData end
 
 """
+    mutable struct BottomUpIteratorTuple
+
+TODO: add documentation
+"""
+mutable struct BottomUpIteratorTuple
+    cross_product_iterator::CrossProductIterator
+    abstract_rulenode_iterator::AbstractRuleNodeIterator
+end
+
+function BottomUpIteratorTuple(
+    iter::BottomUpIterator,
+    rulenode_combinations::RuleNodeCombinations,
+    bank::BottomUpBank,
+    data::BottomUpData
+)::Union{Nothing, BottomUpIteratorTuple}
+    grammar = get_grammar(iter.solver)
+    cross_product_iterator = CrossProductIterator(rulenode_combinations)
+    program_collection = _get_next_program_collection!(iter, cross_product_iterator, bank, data)
+    if isnothing(program_collection)
+        return nothing
+    end
+
+    abstract_rulenode_iterator = create_abstract_rulenode_iterator(program_collection, grammar)
+    return BottomUpIteratorTuple(cross_product_iterator, abstract_rulenode_iterator)
+end
+
+function _get_next_program_collection!(
+    iter::BottomUpIterator,
+    cross_product_iterator::CrossProductIterator,
+    bank::BottomUpBank,
+    data::BottomUpData
+)::Union{Nothing, AbstractRuleNode}
+    program_collection = iterate(cross_product_iterator)
+
+    # Skip over the program collections that won't be added to the bank.
+    # (i.e. invalid program collections)
+    while !isnothing(program_collection)
+        if is_valid(iter, program_collection, data)
+            add_to_bank!(iter, bank, program_collection)
+            return program_collection
+        else
+            program_collection = iterate(cross_product_iterator)
+        end
+    end
+
+    return nothing
+end
+
+"""
     mutable struct BottomUpState
 
 Structure defining the internal state of the iterator. Contains the user-defined `bank::BottomUpBank` and `data::BottomUpData`.
@@ -42,7 +91,7 @@ mutable struct BottomUpState
     data::BottomUpData
 
     # Handled by the generic implementation.
-    cross_product_iterator::CrossProductIterator
+    iterator_tuple::Union{Nothing, BottomUpIteratorTuple}
 end
 
 """
@@ -53,8 +102,8 @@ Defines the first iteration of the `BottomUpIterator`.
 function Base.iterate(iter::BottomUpIterator)::Union{Nothing,Tuple{RuleNode,BottomUpState}}
     bank::BottomUpBank = BottomUpBank(iter)
     data::BottomUpData = BottomUpData(iter)
-    cross_product_iterator::CrossProductIterator = CrossProductIterator(combine!(iter, bank, data))
-    state::BottomUpState = BottomUpState(bank, data, cross_product_iterator)
+
+    state::BottomUpState = BottomUpState(bank, data, nothing)
     return _get_next_program(iter, state)
 end
 
@@ -80,21 +129,25 @@ function _get_next_program(
     state::BottomUpState
 )::Union{Nothing,Tuple{RuleNode,BottomUpState}}
     while true
-        next_program = Base.iterate(state.cross_product_iterator)
-
-        if isnothing(next_program)
+        if isnothing(state.iterator_tuple)
             rulenode_combinations = combine!(iter, state.bank, state.data)
             if isnothing(rulenode_combinations)
                 return nothing
             end
-
-            state.cross_product_iterator = CrossProductIterator(rulenode_combinations)
-            continue
-        end
-
-        if is_valid(iter, next_program, state.data)
-            add_to_bank!(iter, state.bank, next_program)
-            return next_program, state
+            state.iterator_tuple = BottomUpIteratorTuple(iter, rulenode_combinations, state.bank, state.data)
+        else 
+            next_program = iterate(state.iterator_tuple.abstract_rulenode_iterator)
+            if isnothing(next_program)
+                program_collection = _get_next_program_collection!(iter, state.iterator_tuple.cross_product_iterator, state.bank, state.data)
+                if isnothing(program_collection)
+                    state.iterator_tuple = nothing
+                else
+                    grammar = get_grammar(iter.solver)
+                    state.iterator_tuple.abstract_rulenode_iterator = create_abstract_rulenode_iterator(program_collection, grammar)
+                end
+            else
+                return next_program, state
+            end
         end
     end
 end

@@ -66,18 +66,4 @@
         programs = collect(BUDepthIterator(g, :Number, max_depth=2, spec=spec, obs_equivalence=true))
         @test RuleNode(4, [RuleNode(1), RuleNode(1)]) ∉ programs
     end
-    # @testset "Arithmetic grammar with constraints" begin
-    #     grammar = @csgrammar begin
-    #         Number = x | 1
-    #         Number = Number + Number
-    #         Number = Number - Number
-    #     end
-    #     spec = [IOExample(Dict(:x => x), 2x+1) for x ∈ 1:5]
-        
-    #     constraint = Forbidden(RuleNode(4, [RuleNode(1), RuleNode(2)]))
-    #     addconstraint!(grammar, constraint)
-
-    #     programs = collect(BUDepthIterator(grammar, :Number, max_depth=2, spec=spec, obs_equivalence=true))
-    #     @test RuleNode(4, [RuleNode(1), RuleNode(2)]) ∉ programs
-    # end
 end

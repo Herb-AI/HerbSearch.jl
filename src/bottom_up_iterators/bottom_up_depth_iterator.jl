@@ -40,7 +40,7 @@ TODO: Explain each field of this class.
 """
 mutable struct BUDepthData <: BottomUpData
     current_depth::Depth
-    unused_rules::Queue{Int}
+    unused_rules::Queue{RuleNode}
     obs_checker::Union{Nothing, ObservationalEquivalenceChecker}
 end
 
@@ -89,7 +89,8 @@ function combine!(
         end
 
         rule = dequeue!(data.unused_rules)
-        children_lists = map(symbol -> bank.depth_symbol_program_map[data.current_depth][symbol], grammar.childtypes[rule])
+        childtypes = grammar.childtypes[rule.ind]
+        children_lists = map(symbol -> bank.depth_symbol_program_map[data.current_depth][symbol], childtypes)
         return RuleNodeCombinations(rule, children_lists)
     end
 end
@@ -142,12 +143,13 @@ end
 function _create_unused_rules(
     iter::BUDepthIterator,
     terminals::Bool
-)::Queue{Int}
+)::Queue{RuleNode}
     grammar = get_grammar(iter.solver)
-    unused_rules = Queue{Int}()
+    unused_rules = Queue{RuleNode}()
+
     for (rule, is_terminal) in enumerate(grammar.isterminal)
         if is_terminal == terminals
-            enqueue!(unused_rules, rule)
+            enqueue!(unused_rules, RuleNode(rule))
         end
     end
     return unused_rules
