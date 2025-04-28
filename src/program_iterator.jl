@@ -155,18 +155,18 @@ processdecl(mod::Module, mut::Bool, decl::Expr, super=nothing) = @match decl beg
                         function $(escaped_name){T}( $(notkwargs...) ; solver::Solver, max_size = nothing, max_depth = nothing, $(kwargs_fields...) ) where T
                             if !isnothing(max_size) solver.max_size = max_size end
                             if !isnothing(max_depth) solver.max_depth = max_depth end
-                            return $(escaped_name)(solver, $(field_names...))
+                            return $(escaped_name){T}(solver, $(field_names...))
                         end
                         # solver with grammar and start symbol
                         function $(escaped_name){T}(grammar::AbstractGrammar, start_symbol::Symbol, $(notkwargs...) ; 
                                             max_size = typemax(Int), max_depth = typemax(Int), $(kwargs_fields...) ) where T
-                        return $(escaped_name)(GenericSolver(grammar, start_symbol, max_size = max_size, max_depth = max_depth), $(field_names...))
+                        return $(escaped_name){T}(GenericSolver(grammar, start_symbol, max_size = max_size, max_depth = max_depth), $(field_names...))
                         end
 
                         # solver with grammar and initial rulenode to start with
                         function $(escaped_name){T}(grammar::AbstractGrammar, initial_node::AbstractRuleNode, $(notkwargs...) ;
                                                 max_size = typemax(Int), max_depth = typemax(Int), $(kwargs_fields...) ) where T
-                            return $(escaped_name)(GenericSolver(grammar, initial_node, max_size = max_size, max_depth = max_depth), $(field_names...))
+                            return $(escaped_name){T}(GenericSolver(grammar, initial_node, max_size = max_size, max_depth = max_depth), $(field_names...))
                         end
                     end
                     )

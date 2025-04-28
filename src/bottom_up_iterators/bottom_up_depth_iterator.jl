@@ -1,74 +1,60 @@
 Base.@doc """
-    @programiterator BUDepthIterator(spec::Union{Nothing, Problem{Vector{IOExample}}}=nothing, obs_equivalence::Bool=false) <: BottomUpIterator
+    @programiterator BUDepthIterator{T}(spec::Union{Nothing, Problem{Vector{IOExample}}}=nothing, obs_equivalence::Bool=false) <: BottomUpIterator{T})
 
-Implementation of the `BottomUpIterator`. Iterates through complete programs in increasing order of their depth.
+TODO
 """ BUDepthIterator
-@programiterator BUDepthIterator(
+@programiterator BUDepthIterator{T}(
     spec::Union{Vector{<:IOExample}, Nothing} = nothing,
     obs_equivalence::Bool = false
-) <: BottomUpIterator{RuleNode}
+) <: BottomUpIterator{T}
 
 const Depth = UInt32
 
-"""
-    struct BUDepthBank <: BottomUpBank
-"""
-struct BUDepthBank <: BottomUpBank{RuleNode}
-    depth_symbol_program_map::Dict{Depth, Dict{Symbol, Vector{RuleNode}}}
+struct BUDepthBank{T} <: BottomUpBank{T}
+    depth_symbol_program_map::Dict{Depth, Dict{Symbol, Vector{T}}}
 end
 
-BottomUpBank{RuleNode}(iter::BUDepthIterator) = BUDepthBank(iter)
+BottomUpBank{T}(iter::BUDepthIterator) where T = BUDepthBank{T}(iter)
 
-"""
-	BUDepthBank(iter::BUDepthIterator)::BUDepthBank
-"""
-function BUDepthBank(
-    iter::BUDepthIterator
-)::BUDepthBank
-    depth_symbol_program_map = Dict{Depth, Dict{Symbol, Vector{RuleNode}}}()
-    bank = BUDepthBank(depth_symbol_program_map)
+function BUDepthBank{T}(
+    iter::BUDepthIterator{T}
+)::BUDepthBank{T} where T
+    depth_symbol_program_map = Dict{Depth, Dict{Symbol, Vector{T}}}()
+    bank = BUDepthBank{T}(depth_symbol_program_map)
 
     _increase_bound!(iter, bank, UInt32(1))
 
     return bank
 end
 
-"""
-    struct BUDepthData <: BottomUpData
-
-TODO: Explain each field of this class.
-"""
-mutable struct BUDepthData <: BottomUpData{RuleNode}
+mutable struct BUDepthData{T} <: BottomUpData{T}
     current_depth::Depth
-    unused_rules::Queue{RuleNode}
-    obs_checker::Union{Nothing, ObservationalEquivalenceChecker}
+    unused_rules::Queue{T}
+    obs_checker::Union{Nothing, ObservationalEquivalenceChecker{T}}
 end
 
-BottomUpData{RuleNode}(iter::BUDepthIterator) = BUDepthData(iter)
+BottomUpData{T}(iter::BUDepthIterator) where T = BUDepthData{T}(iter)
 
-"""
-    BUDepthData(iter::BUDepthIterator)::BUDepthData
-"""
-function BUDepthData(
-    iter::BUDepthIterator
-)::BUDepthData
+function BUDepthData{T}(
+    iter::BUDepthIterator{T}
+)::BUDepthData{T} where T
     unused_rules = _create_unused_rules(iter, true)
     current_depth = 1
 
-    obs_checker::Union{Nothing, ObservationalEquivalenceChecker} = nothing
+    obs_checker::Union{Nothing, ObservationalEquivalenceChecker{T}} = nothing
     if iter.obs_equivalence
         @assert !isnothing(iter.spec) "If `iter.obs_equivalence` is set to `true`, `spec` must not be `nothing`."
-        obs_checker = ObservationalEquivalenceChecker()
+        obs_checker = ObservationalEquivalenceChecker{T}()
     end
  
-    return BUDepthData(current_depth, unused_rules, obs_checker)
+    return BUDepthData{T}(current_depth, unused_rules, obs_checker)
 end
 
 function combine!(
-    iter::BUDepthIterator,
-    bank::BUDepthBank,
-    data::BUDepthData
-)::Union{RuleNodeCombinations, Nothing}
+    iter::BUDepthIterator{T},
+    bank::BUDepthBank{T},
+    data::BUDepthData{T}
+)::Union{RuleNodeCombinations, Nothing} where T
     grammar = get_grammar(iter.solver)
     max_depth = get_max_depth(iter.solver)
 
@@ -89,18 +75,19 @@ function combine!(
         end
 
         rule = dequeue!(data.unused_rules)
-        childtypes = grammar.childtypes[rule.ind]
+        childtypes = grammar.childtypes[_get_first_rule_index(rule)]
         children_lists = map(symbol -> bank.depth_symbol_program_map[data.current_depth][symbol], childtypes)
         return RuleNodeCombinations(rule, children_lists)
     end
 end
 
+
 function is_valid(
-    iter::BUDepthIterator,
-    program::RuleNode,
-    data::BUDepthData
-)::Bool
-    if depth(program) ≠ data.current_depth
+    iter::BUDepthIterator{T},
+    program::T,
+    data::BUDepthData{T}
+)::Bool where T
+    if depth(program) ≠ data.current_depth # TODO: `depth` call is slow.
         return false
     end
 
@@ -112,22 +99,22 @@ function is_valid(
 end
 
 function add_to_bank!(
-    iter::BUDepthIterator,
-    bank::BUDepthBank,
-    program::RuleNode
-)::Nothing
+    iter::BUDepthIterator{T},
+    bank::BUDepthBank{T},
+    program::T
+)::Nothing where T
     grammar = get_grammar(iter.solver)
-    program_depth = depth(program) # TODO: this might be slow.
-    symbol = grammar.types[program.ind]
+    program_depth = depth(program) # TODO: `depth` call is slow.
+    symbol = grammar.types[_get_first_rule_index(program)]
     push!(bank.depth_symbol_program_map[program_depth][symbol], program)
     return nothing
 end
 
 function _increase_bound!(
-    iter::BUDepthIterator,
-    bank::BUDepthBank,
+    iter::BUDepthIterator{T},
+    bank::BUDepthBank{T},
     new_depth::Depth
-)
+)::Nothing where T
     dict = bank.depth_symbol_program_map
     dict[new_depth] = Dict{Symbol, Vector{RuleNode}}()
 
@@ -140,8 +127,20 @@ function _increase_bound!(
     end
 end
 
+function _get_first_rule_index(
+    node::RuleNode
+)::Int64
+    return node.ind
+end
+
+function _get_first_rule_index(
+    node::UniformHole
+)::Int64
+    return findfirst(node.domain)
+end
+
 function _create_unused_rules(
-    iter::BUDepthIterator,
+    iter::BUDepthIterator{RuleNode},
     terminals::Bool
 )::Queue{RuleNode}
     grammar = get_grammar(iter.solver)
@@ -153,4 +152,32 @@ function _create_unused_rules(
         end
     end
     return unused_rules
+end
+
+function _create_unused_rules(
+    iter::BUDepthIterator{UniformHole},
+    terminals::Bool
+)::Queue{UniformHole}
+    grammar = get_grammar(iter.solver)
+
+    # Store the rules we need to partition into UniformHoles.
+    rules::BitVector = grammar.isterminal
+    if !terminals
+        rules = rules .⊻ BitVector(fill(true, length(rules)))
+    end
+
+    symbol_to_rules::Dict{Symbol, BitVector} = grammar.domains
+    hole_domains = Vector{BitVector}()
+    for (_, rules_for_symbol) ∈ symbol_to_rules
+        # Only partition terminal/non-terminal rules (based on `terminals`).
+        domain = rules_for_symbol .&& rules
+        append!(hole_domains, partition(Hole(domain), grammar))
+    end
+
+    uniform_roots = Queue{UniformHole}()
+    for domain ∈ hole_domains
+        enqueue!(uniform_roots, UniformHole(domain, Vector{UniformHole}()))
+    end
+
+    return uniform_roots
 end

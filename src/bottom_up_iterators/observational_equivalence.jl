@@ -1,15 +1,13 @@
-
-
-struct ObservationalEquivalenceChecker
+struct ObservationalEquivalenceChecker{T <: AbstractRuleNode}
     seen_hashes::Set{UInt64}
 end
 
-function ObservationalEquivalenceChecker()
-    return ObservationalEquivalenceChecker(Set{UInt64}())
+function ObservationalEquivalenceChecker{T}() where T
+    return ObservationalEquivalenceChecker{T}(Set{UInt64}())
 end
 
 function is_new_program!(
-    checker::ObservationalEquivalenceChecker,
+    checker::ObservationalEquivalenceChecker{RuleNode},
     program::RuleNode,
     grammar::ContextSensitiveGrammar,
     spec::Any # TODO: define a specific type for this
@@ -26,3 +24,10 @@ function is_new_program!(
         return false
     end
 end
+
+is_new_program!(
+    ::ObservationalEquivalenceChecker{UniformHole},
+    ::RuleNode,
+    ::ContextSensitiveGrammar,
+    ::Any
+)::Bool = true
