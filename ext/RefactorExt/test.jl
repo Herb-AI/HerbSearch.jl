@@ -2,7 +2,7 @@ using Markdown
 using InteractiveUtils
 include("RefactorExt.jl")
 using .RefactorExt
-#using HerbCore, HerbGrammar, .HerbSearch
+using HerbCore, HerbGrammar, HerbSearch
 
 
 # Define simple grammar

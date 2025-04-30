@@ -24,7 +24,7 @@ RefactorExt = ["Clingo_jll", "JSON"]
 [compat]
 Clingo_jll = "5.7.1"
 DataStructures = "0.17,0.18"
-HerbConstraints = "0.2.0"
+HerbConstraints = "0.4"
 HerbCore = "0.3.0"
 HerbGrammar = "0.5"
 HerbInterpret = "0.1.3"
