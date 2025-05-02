@@ -2,11 +2,13 @@ function aulile(
     problem::Problem{<:AbstractVector{<:IOExample}}, 
     iter::ProgramIterator,
     aux::Function,
-    max_iterations=typemax(Int), 
-    max_enumerations = 100000)::Union{Tuple{RuleNode, SynthResult}, Nothing}
+    max_iterations=5, 
+    max_enumerations = 1000000)::Union{Tuple{RuleNode, SynthResult}, Nothing}
 
-    for _ in 1:max_iterations
-        result = synth_with_aux(problem, iter, aux, max_enumerations=max_enumerations)
+    grammar = get_grammar(iter.solver)
+    result = nothing
+    for i in 1:max_iterations
+        result = synth_with_aux(problem, iter, grammar, aux, max_enumerations=max_enumerations)
         if result isa Nothing
             return nothing
         else 
@@ -14,15 +16,19 @@ function aulile(
             if synth_result == optimal_program
                 return result
             else 
-                
+                add_rule!(grammar, program)
             end
+            println("Grammar after step $(i): \n $(grammar) \n")
         end
     end
+
+    return result
 end
 
 function synth_with_aux(
 	problem::Problem{<:AbstractVector{<:IOExample}},
-	iterator::ProgramIterator, 
+	iterator::ProgramIterator,
+    grammar::AbstractGrammar,
     aux::Function;
 	shortcircuit::Bool = true,
 	allow_evaluation_errors::Bool = false,
@@ -31,7 +37,6 @@ function synth_with_aux(
 	mod::Module = Main)::Union{Tuple{RuleNode, SynthResult}, Nothing}
 
 	start_time = time()
-	grammar = get_grammar(iterator.solver)
 	symboltable = grammar2symboltable(grammar, mod)
 
     # Get initial distance of input and output
@@ -60,7 +65,7 @@ function synth_with_aux(
 			candidate_program = freeze_state(candidate_program)
             println("Found an optimal program!")
 			return (candidate_program, optimal_program)
-		elseif score <= best_score
+		elseif score < best_score
 			best_score = score
 			candidate_program = freeze_state(candidate_program)
 			best_program = candidate_program

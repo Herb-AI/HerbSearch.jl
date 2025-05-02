@@ -65,19 +65,19 @@ g = @csgrammar begin
     String = ">"
     String = "-"
     String = "."
-    String = "0"
-    String = "1"
-    String = "2"
-    String = "3"
-    String = "4"
-    String = "5"
-    String = "6"
-    String = "7"
-    String = "8"
-    String = "9"
+    # String = "0"
+    # String = "1"
+    # String = "2"
+    # String = "3"
+    # String = "4"
+    # String = "5"
+    # String = "6"
+    # String = "7"
+    # String = "8"
+    # String = "9"
     String = x
     String = String * String
-    String = replace(String, String => String)
+    String = replace(x, String => String)
 end
 
 @testset "Example Appending" begin    
@@ -89,7 +89,9 @@ end
         ])
     iterator = BFSIterator(g, :String, max_depth=5)
     
-    solution, flag = aulile(problem, iterator, aulile_levenstein)
+    test_result = aulile(problem, iterator, aulile_levenstein)
+    @test !(test_result isa Nothing)
+    solution, flag = test_result
     program = rulenode2expr(solution, g)
     println(program)
 
@@ -105,7 +107,9 @@ end
         ])
     iterator = BFSIterator(g, :String, max_depth=5)
         
-    solution, flag = aulile(problem, iterator, aulile_levenstein)
+    test_result = aulile(problem, iterator, aulile_levenstein)
+    @test !(test_result isa Nothing)
+    solution, flag = test_result
     program = rulenode2expr(solution, g)
     println(program)
 
@@ -121,7 +125,9 @@ end
         ])
     iterator = BFSIterator(g, :String, max_depth=5)
 
-    solution, flag = aulile(problem, iterator, aulile_levenstein)
+    test_result = aulile(problem, iterator, aulile_levenstein)
+    @test !(test_result isa Nothing)
+    solution, flag = test_result
     program = rulenode2expr(solution, g)
     println(program)
 
