@@ -56,7 +56,7 @@ end
 function aulile_levenstein(
     expected::IOExample{<:Any, <:AbstractString}, 
     actual::AbstractString)::Int
-    return levenshtein!(expected.out, actual, 1, 1, 1)
+    return levenshtein!(expected.out, actual, 1, 1, 1) # Equal costs for each mistake type
 end
 
 g = @csgrammar begin
@@ -81,6 +81,7 @@ g = @csgrammar begin
 end
 
 @testset "Example Appending" begin    
+    println("-----------------")
     problem = Problem([
         IOExample(Dict(:x => "1"), "1."), 
         IOExample(Dict(:x => "2"), "2."),
@@ -88,48 +89,41 @@ end
         ])
     iterator = BFSIterator(g, :String, max_depth=5)
     
-    solution, flag = synth(problem, iterator)
+    solution, flag = aulile(problem, iterator, aulile_levenstein)
     program = rulenode2expr(solution, g)
     println(program)
-
-    aulile(problem, iterator, aulile_levenstein)
 
     @test !(solution isa Nothing)
 end
 
-@testset "Example Replacing" begin    
+@testset "Example Replacing" begin   
+    println("-----------------") 
     problem = Problem([
         IOExample(Dict(:x => "1."), "1"), 
         IOExample(Dict(:x => "2."), "2"),
         IOExample(Dict(:x => "3."), "3")
         ])
     iterator = BFSIterator(g, :String, max_depth=5)
-    
-    solution, flag = synth(problem, iterator)
+        
+    solution, flag = aulile(problem, iterator, aulile_levenstein)
     program = rulenode2expr(solution, g)
     println(program)
-    
-    aulile(problem, iterator, aulile_levenstein)
 
     @test !(solution isa Nothing)
 end
 
 @testset "Aulile Example from Paper" begin
+    println("-----------------")
     problem = Problem([
         IOExample(Dict(:x => "801-456-8765"), "8014568765"), 
         IOExample(Dict(:x => "<978> 654-0299"), "9786540299"),
         IOExample(Dict(:x => "978.654.0299"), "9786540299")
         ])
     iterator = BFSIterator(g, :String, max_depth=5)
-    
-    solution, flag = synth(problem, iterator)
+
+    solution, flag = aulile(problem, iterator, aulile_levenstein)
     program = rulenode2expr(solution, g)
     println(program)
-    
-    output = execute_on_input(grammar2symboltable(g), program, Dict(:x => 6)) 
-    println(output)
-
-    aulile(problem, iterator, aulile_levenstein)
 
     @test true
 end
