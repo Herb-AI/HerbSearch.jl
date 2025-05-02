@@ -83,7 +83,9 @@ export
 	heuristic_smallest_domain, derivation_heuristic,
 
   divide_and_conquer,
-	EvaluationError
+	EvaluationError, 
+
+  aulile
 
   """
     refactor_grammar
