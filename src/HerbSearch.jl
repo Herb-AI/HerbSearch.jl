@@ -9,6 +9,9 @@ using HerbInterpret
 using HerbSpecification
 using MLStyle
 
+using DocStringExtensions
+using TimerOutputs
+
 include("sampling_grammar.jl")
 
 include("program_iterator.jl")
@@ -39,17 +42,13 @@ include("genetic_search_iterator.jl")
 
 include("random_iterator.jl")
 
-export 
-  ProgramIterator,
-  @programiterator,
-  
-  heuristic_leftmost,
-  heuristic_rightmost,
-  heuristic_random,
-  heuristic_smallest_domain,
+# include("divide_conquer_functions/divide.jl")
+# include("divide_conquer_functions/decide.jl")
+# include("divide_conquer_functions/conquer.jl")
 
-  derivation_heuristic,
+function divide_and_conquer end
 
+export
   synth,
   SynthResult,
   optimal_program,
@@ -75,7 +74,16 @@ export
   misclassification,
   validate_iterator,
   sample,
-  rand
+  rand,
+
+  ProgramIterator,
+	@programiterator, heuristic_leftmost,
+	heuristic_rightmost,
+	heuristic_random,
+	heuristic_smallest_domain, derivation_heuristic,
+
+  divide_and_conquer,
+	EvaluationError
 
   """
     refactor_grammar
@@ -85,5 +93,4 @@ export
   function refactor_grammar end
 
   export refactor_grammar
-
 end # module HerbSearch

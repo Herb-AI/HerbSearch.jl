@@ -36,6 +36,18 @@
         @test it.f1 && it.f2 == 4
     end
 
+    @testset "inheriting from something !<: ProgramIterator" begin
+        @test_throws ArgumentError @programiterator ConcreteIterator(
+            f1::Bool,
+            f2
+        ) <: AbstractFloat
+
+        # it = ConcreteIterator(g, s, max_depth = max_depth, max_size = max_size, true, 4)
+
+        # @test ConcreteIterator <: IteratorFamily
+        # @test it.f1 && it.f2 == 4
+    end
+
     @testset "mutable iterator" begin
         @programiterator mutable AnotherIterator() <: IteratorFamily
 
