@@ -18,15 +18,11 @@ TimerOutputs = "a759f4b9-e2f1-59dc-863e-4aeb61b1ea8f"
 
 [weakdeps]
 DecisionTree = "7806a523-6efd-50cb-b5f6-3fa6f1930dbb"
-
-[extensions]
-DivideAndConquerExt = "DecisionTree"
-
-[weakdeps]
 Clingo_jll = "e1d4ad0e-dc8b-5d2d-8155-e9a55b531f08"
 JSON = "682c06a0-de6a-54ab-a142-c8b1cf79cde6"
 
 [extensions]
+DivideAndConquerExt = "DecisionTree"
 RefactorExt = ["Clingo_jll", "JSON"]
 
 [compat]
