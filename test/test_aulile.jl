@@ -60,24 +60,25 @@ function aulile_levenstein(
 end
 
 g = @csgrammar begin
-    String = ""
+    String = " "
     String = "<"
     String = ">"
     String = "-"
     String = "."
-    # String = "0"
-    # String = "1"
-    # String = "2"
-    # String = "3"
-    # String = "4"
-    # String = "5"
-    # String = "6"
-    # String = "7"
-    # String = "8"
-    # String = "9"
+    String = " "
+    String = "0"
+    String = "1"
+    String = "2"
+    String = "3"
+    String = "4"
+    String = "5"
+    String = "6"
+    String = "7"
+    String = "8"
+    String = "9"
     String = x
     String = String * String
-    String = replace(x, String => String)
+    String = replace(String, String => "")
 end
 
 @testset "Example Appending" begin    
@@ -89,7 +90,7 @@ end
         ])
     iterator = BFSIterator(g, :String, max_depth=5)
     
-    test_result = aulile(problem, iterator, aulile_levenstein)
+    test_result = aulile(problem, iterator, :String, aulile_levenstein)
     @test !(test_result isa Nothing)
     solution, flag = test_result
     program = rulenode2expr(solution, g)
@@ -107,7 +108,7 @@ end
         ])
     iterator = BFSIterator(g, :String, max_depth=5)
         
-    test_result = aulile(problem, iterator, aulile_levenstein)
+    test_result = aulile(problem, iterator, :String, aulile_levenstein)
     @test !(test_result isa Nothing)
     solution, flag = test_result
     program = rulenode2expr(solution, g)
@@ -118,14 +119,15 @@ end
 
 @testset "Aulile Example from Paper" begin
     println("-----------------")
+
     problem = Problem([
         IOExample(Dict(:x => "801-456-8765"), "8014568765"), 
         IOExample(Dict(:x => "<978> 654-0299"), "9786540299"),
         IOExample(Dict(:x => "978.654.0299"), "9786540299")
         ])
-    iterator = BFSIterator(g, :String, max_depth=5)
+    iterator = BFSIterator(g, :String, max_depth=2)
 
-    test_result = aulile(problem, iterator, aulile_levenstein)
+    test_result = aulile(problem, iterator, :String, aulile_levenstein)
     @test !(test_result isa Nothing)
     solution, flag = test_result
     program = rulenode2expr(solution, g)
