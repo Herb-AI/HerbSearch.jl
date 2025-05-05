@@ -118,6 +118,8 @@ function HerbSearch.refactor_grammar(trees::AbstractVector{RuleNode}, grammar::A
     subtree_set = unique(subtree_set)
     @debug "Time for stage 1: $(time() - start_time)"
 
+    #println(subtree_set)
+
 
     start_time = time()
     @debug "Stage 2: parse subtrees to json"
@@ -125,6 +127,9 @@ function HerbSearch.refactor_grammar(trees::AbstractVector{RuleNode}, grammar::A
     model, global_dict = parse_json(data)
     @debug "Time for stage 2 : $(time() - start_time)"
     start_time = time()
+
+    println(trees)
+    println(data)
 
     #println(first(model, 2000))
 
@@ -137,7 +142,9 @@ function HerbSearch.refactor_grammar(trees::AbstractVector{RuleNode}, grammar::A
     data = String(take!(output))
     @debug "Time for stage 3 : " * string(time() - start_time)
 
-    println(data)
+
+    #println(model)
+    #println(data)
 
     @debug "Stage 4: Read clingo output to json"     
     best_values = read_last_witness_from_json(data)
@@ -153,6 +160,7 @@ function HerbSearch.refactor_grammar(trees::AbstractVector{RuleNode}, grammar::A
 
     new_grammar = deepcopy(grammar)
     add_rule!(new_grammar, best_compression)
+
     return new_grammar
 end
 

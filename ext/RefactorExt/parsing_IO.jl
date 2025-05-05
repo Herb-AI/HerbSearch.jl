@@ -152,14 +152,14 @@ function convert_to_json(subtrees::Vector{Any}, trees::Vector{RuleNode})
     modified_trees = []
     for i in 1:length(trees)
         str = string(trees[i])
-        modified_string = replace(str, r"hole\[Bool\[[^\]]*\]\]" => "_")
+        modified_string = replace(str, r"Hole\[Bool\[[^\]]*\]\]" => "_")
         push!(modified_trees, modified_string)
     end
     
     modified_subtrees = []
     for i in 1:length(subtrees)
         str = string(subtrees[i])
-        modified_string = replace(str, r"hole\[Bool\[[^\]]*\]\]" => "_")
+        modified_string = replace(str, r"Hole\[Bool\[[^\]]*\]\]" => "_")
         push!(modified_subtrees, modified_string)
     end
 
