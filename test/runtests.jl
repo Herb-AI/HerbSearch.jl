@@ -18,6 +18,7 @@ Random.seed!(1234)
 		HerbSearch,
 		piracies = (treat_as_own = [RuleNode, AbstractGrammar],),
 	)
+	include("test_aulile.jl")
 	include("test_search_procedure.jl")
 	include("test_context_free_iterators.jl")
 	include("test_sampling.jl")
