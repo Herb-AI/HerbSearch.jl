@@ -128,8 +128,8 @@ function HerbSearch.refactor_grammar(trees::AbstractVector{RuleNode}, grammar::A
     @debug "Time for stage 2 : $(time() - start_time)"
     start_time = time()
 
-    println(trees)
-    println(data)
+    #println(trees)
+    #println(data)
 
     #println(first(model, 2000))
 
@@ -144,7 +144,7 @@ function HerbSearch.refactor_grammar(trees::AbstractVector{RuleNode}, grammar::A
 
 
     #println(model)
-    #println(data)
+    println(data)
 
     @debug "Stage 4: Read clingo output to json"     
     best_values = read_last_witness_from_json(data)
@@ -153,13 +153,15 @@ function HerbSearch.refactor_grammar(trees::AbstractVector{RuleNode}, grammar::A
 
     node_assignments::Vector{String} = best_values
     stats = generate_stats(global_dict, node_assignments)
-    best_compression = generate_trees_from_compressions(global_dict, stats, grammar)
+    best_compressions = generate_trees_from_compressions(global_dict, stats, grammar)
 
-    
-    println(best_compression)
+    println(best_compressions)
 
     new_grammar = deepcopy(grammar)
-    add_rule!(new_grammar, best_compression)
+
+    for new_rule in best_compressions
+        add_rule!(new_grammar, new_rule)
+    end
 
     return new_grammar
 end

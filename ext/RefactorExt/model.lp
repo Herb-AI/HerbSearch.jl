@@ -4,7 +4,7 @@
 { assign(A, X) : comp_root(A) } 1 :- node(X, _).
 
 %% Only one compression tree is used
-:- #count {A: comp_root(A), assign(A, _)} != 1.
+:- #count {A: comp_root(A), assign(A, _)} < 4.
 
 %% The used compression tree is assigned to at least two nodes
 :- comp_root(A), assign(A, _), #count {X: node(X, _), assign(A, X)} < 2.

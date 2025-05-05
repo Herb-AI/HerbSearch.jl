@@ -70,11 +70,12 @@ Generates Herb trees from a given dictionary of compressions.
 function generate_trees_from_compressions(global_dict, stats, grammar)
     tree_stats_dict = Dict{RuleNode, NamedTuple{(:size,:occurrences), <:Tuple{Int64,Int64}}}()
 
+    res = []
     for (comp_id, values) in stats
         t = generate_tree_from_compression(comp_id, global_dict, comp_id, grammar)
         tree_stats_dict[t] = values
-        return t
+        push!(res, t)
     end
     
-    return tree_stats_dict
+    return res
 end
