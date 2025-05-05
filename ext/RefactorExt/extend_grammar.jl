@@ -73,6 +73,7 @@ function generate_trees_from_compressions(global_dict, stats, grammar)
     for (comp_id, values) in stats
         t = generate_tree_from_compression(comp_id, global_dict, comp_id, grammar)
         tree_stats_dict[t] = values
+        return t
     end
     
     return tree_stats_dict

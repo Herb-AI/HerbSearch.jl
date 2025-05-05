@@ -44,7 +44,7 @@ Parses a tree from a string.
 - `index::Int`: the index of the last node parsed
 - `output::String`: the parsed tree
 """ 
-function parse_tree(input::AbstractString, global_dict::Union{Nothing, Dict}=nothing, start_index::Int=0)::Tuple{Int, AbstractString}
+function parse_tree(input::AbstractString, global_dict::Union{Nothing, Dict}=nothing, start_index::Int=0, is_program::Bool=true)::Tuple{Int, AbstractString}
     nodes, edges, output = "","",""
     parent, index = start_index, start_index
     # parent_stack keeps track of the parent node
@@ -52,12 +52,13 @@ function parse_tree(input::AbstractString, global_dict::Union{Nothing, Dict}=not
     parent_stack, child_stack = Stack{Int64}(), Stack{Int64}() 
     # Initialize the root
     (num, i) = parse_number(1, input)
-    if start_index != 0
+    if !is_program
         nodes = nodes * "comp_root($start_index)."
         nodes = nodes * "\ncomp_node($(start_index), $(num))."
         global_dict[start_index] = (comp_id = start_index, parent_id = -1, child_nr = -1, type = parse(Int64, string(num)), children = Vector{Int64}())
-    else  
-        nodes = nodes * "node($(start_index), $(num))."
+    else
+        nodes = nodes * "root($start_index)."
+        nodes = nodes * "\nnode($(start_index), $(num))."
     end
 
     # Iterate over the input string
@@ -79,14 +80,14 @@ function parse_tree(input::AbstractString, global_dict::Union{Nothing, Dict}=not
         elseif isdigit(char)
             number, i = parse_number(i, input)
             index += 1 # Nr of node / edge
-            if start_index != 0
+            if !is_program
                 nodes = nodes * "\ncomp_node($index, $number)."
             else
                 nodes = nodes * "\nnode($index, $number)."
             end
             child_nr = pop!(child_stack)
             edges = edges * "\nedge($parent, $index, $child_nr)."
-            if start_index != 0
+            if !is_program
                 global_dict[index] = (comp_id = start_index, parent_id = parent, child_nr = child_nr, type = parse(Int64, string(number)), children = Vector{Int64}())
                 append!(global_dict[parent].children, index)
             end
@@ -95,10 +96,10 @@ function parse_tree(input::AbstractString, global_dict::Union{Nothing, Dict}=not
         end
         i += 1
     end
-    if start_index != 0
+    if !is_program
         output = "%Compression tree nodes\n" * nodes * "\n%Compression tree edges:" * edges
     else 
-        output = "%Maint AST\n%Nodes\n" * nodes * "\n%Edges:" * edges
+        output = "%Nodes\n" * nodes * "\n%Edges:" * edges
     end
     return index + 1, output
 end
@@ -119,15 +120,20 @@ The schema used follows this scheme. Entries can either be nodes with a certain 
 - `(output, global_dict)::(String: the parsed string, Dict`: the global dictionary)
 """
 function parse_json(json_content::AbstractString)
-   global_dict = Dict{Int64, NamedTuple{(:comp_id,:parent_id, :child_nr, :type, :children), <:Tuple{Int,Int,Int,Int,Vector}}}()
+    global_dict = Dict{Int64, NamedTuple{(:comp_id,:parent_id, :child_nr, :type, :children), <:Tuple{Int,Int,Int,Int,Vector}}}()
     # Read in the JSON file
     json_parsed = JSON.parse(json_content)
-    ast = json_parsed["ast"]
+    trees = json_parsed["trees"]
     subtrees = json_parsed["subtrees"]
     # Parse the JSON file
-    index, output = parse_tree(ast)
+    index, output = 0, ""
+    for (i, tree) in enumerate(trees)
+        index, temp_output = parse_tree(tree, global_dict, index, true)
+        output = output * ("\n\n%Program $i\n") * temp_output
+    end
+
     for (i, subtree) in enumerate(subtrees)
-        index, temp_output = parse_tree(subtree, global_dict, index)
+        index, temp_output = parse_tree(subtree, global_dict, index, false)
         output = output * ("\n\n%Subtree $i\n") * temp_output
     end
     return (output, global_dict)
@@ -142,7 +148,14 @@ Convert a list of subtrees to JSON. Returns the JSON string.
 - `subtrees::Vector{Any}`: the list of subtrees
 - `tree::RuleNode`: the root tree the subtrees were extracted from
 """
-function convert_subtrees_to_json(subtrees::Vector{Any}, tree::RuleNode)
+function convert_to_json(subtrees::Vector{Any}, trees::Vector{RuleNode})
+    modified_trees = []
+    for i in 1:length(trees)
+        str = string(trees[i])
+        modified_string = replace(str, r"hole\[Bool\[[^\]]*\]\]" => "_")
+        push!(modified_trees, modified_string)
+    end
+    
     modified_subtrees = []
     for i in 1:length(subtrees)
         str = string(subtrees[i])
@@ -151,7 +164,7 @@ function convert_subtrees_to_json(subtrees::Vector{Any}, tree::RuleNode)
     end
 
     result = Dict(
-        "ast" => length(string(tree)) > 2 ? string(tree) : string(tree)[1],
+        "trees" => modified_trees,
         "subtrees" => modified_subtrees
     )
     json_string = JSON.json(result)

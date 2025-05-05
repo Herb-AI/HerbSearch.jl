@@ -95,5 +95,6 @@ Determines whether a subtree should be selected.
 """
 function selection_criteria(tree::RuleNode, subtree::AbstractRuleNode)
     size = length(subtree)
-    return size > 1 && size < length(tree)
+    return size > 1 #&& size < length(tree)
 end
+

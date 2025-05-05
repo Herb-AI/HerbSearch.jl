@@ -28,7 +28,8 @@ The algorithm works in five stages:
 # Returns
 - `new_grammar::AbstractGrammar`: the optimised grammar
 """
-function HerbSearch.refactor_grammar(trees::AbstractVector{RuleNode}, grammar::AbstractGrammar, subtree_selection_strategy::SelectionStrategy, f_best::Float64)
+#=
+function HerbSearch.old_refactor_grammar(trees::AbstractVector{RuleNode}, grammar::AbstractGrammar, subtree_selection_strategy::SelectionStrategy, f_best::Float64)
     start_time = time()
     @debug "Stage 1: Enumerate subtrees and discard useless subtrees"
     subtree_set = Vector{Any}()
@@ -55,6 +56,8 @@ function HerbSearch.refactor_grammar(trees::AbstractVector{RuleNode}, grammar::A
     @debug "Time for stage 2 : $(time() - start_time)"
     start_time = time()
     
+    println(data[1])
+
     @debug "Stage 3: call clingo"
     dir_path = dirname(@__FILE__)     
     model_location = joinpath(dir_path, "model.lp")
@@ -87,6 +90,9 @@ function HerbSearch.refactor_grammar(trees::AbstractVector{RuleNode}, grammar::A
         push!(all_stats, stats)
     end
 
+    println(best_values[1])
+    println(all_stats[1])
+
     combined_stats = zip_stats(all_stats)
     best_compressions = select_compressions(subtree_selection_strategy, combined_stats, f_best)
     new_grammar = deepcopy(grammar)
@@ -96,6 +102,57 @@ function HerbSearch.refactor_grammar(trees::AbstractVector{RuleNode}, grammar::A
     end
     @debug "Time for stage 5 : " * string(time() - start_time)
     start_time = time()
+    return new_grammar
+end
+=#
+
+function HerbSearch.refactor_grammar(trees::AbstractVector{RuleNode}, grammar::AbstractGrammar)
+    start_time = time()
+    @debug "Stage 1: Enumerate subtrees and discard useless subtrees"
+    subtree_set = Vector{Any}()
+    for tree in trees
+        subtrees = enumerate_subtrees(tree, grammar)
+        subtrees = filter(subtree -> selection_criteria(tree, subtree), subtrees) #remove subtrees size 1
+        subtree_set = vcat(subtree_set, subtrees)
+    end
+    subtree_set = unique(subtree_set)
+    @debug "Time for stage 1: $(time() - start_time)"
+
+
+    start_time = time()
+    @debug "Stage 2: parse subtrees to json"
+    data = convert_to_json(subtree_set, trees)
+    model, global_dict = parse_json(data)
+    @debug "Time for stage 2 : $(time() - start_time)"
+    start_time = time()
+
+    #println(first(model, 2000))
+
+    @debug "Stage 3: call clingo"
+    dir_path = dirname(@__FILE__)     
+    model_location = joinpath(dir_path, "model.lp")
+    command = `$(clingo()) $(model_location) - --outf=2`
+    output = IOBuffer()
+    run(pipeline(ignorestatus(command), stdin=IOBuffer(model), stdout=output))
+    data = String(take!(output))
+    @debug "Time for stage 3 : " * string(time() - start_time)
+
+    println(data)
+
+    @debug "Stage 4: Read clingo output to json"     
+    best_values = read_last_witness_from_json(data)
+    @debug "Time for stage 4 : " * string(time() - start_time)
+    start_time = time()
+
+    node_assignments::Vector{String} = best_values
+    stats = generate_stats(global_dict, node_assignments)
+    best_compression = generate_trees_from_compressions(global_dict, stats, grammar)
+
+    
+    println(best_compression)
+
+    new_grammar = deepcopy(grammar)
+    add_rule!(new_grammar, best_compression)
     return new_grammar
 end
 
