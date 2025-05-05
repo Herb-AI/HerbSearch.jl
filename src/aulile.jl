@@ -1,13 +1,41 @@
+"""
+	AuxFunction(func::Function, best_value::Number)
+
+A wrapper struct for auxiliary evaluation functions used in the Aulile learning loop.
+
+- `func`: A function that returns a score based on an `IOExample` and the candidate output.
+- `best_value`: The target score the synthesizer attempts to minimize. When a program achieves this score across all examples, 
+    it is considered optimal.
+"""
 struct AuxFunction
     func::Function
     best_value::Number # NOTE: Aulile tries to *minimize* to this value
 end
 
-# Allow calling AuxFunction like a regular function
+# Make `AuxFunction` behave like a regular callable function.
 function (af::AuxFunction)(example::IOExample, output)
     return af.func(example, output)
 end
 
+"""
+	aulile(problem::Problem, iter_t::Type{<:ProgramIterator}, grammar::AbstractGrammar, start_symbol::Symbol, aux::AuxFunction; 
+        max_iterations=5, max_depth=5, max_enumerations=100000) -> Union{Tuple{RuleNode, SynthResult}, Nothing}
+
+Performs iterative library learning (Aulile) by enumerating programs using a grammar and synthesizing programs that 
+    minimize the auxiliary scoring function across `IOExample`s.
+
+- `problem`: A `Problem` object containing a list of `IOExample`s.
+- `iter_t`: Type of program iterator to use (must be constructible with grammar and symbol).
+- `grammar`: The grammar used to generate candidate programs.
+- `start_symbol`: The non-terminal symbol representing the start of the grammar.
+- `aux`: An `AuxFunction` that defines the evaluation metric and desired score.
+- `max_iterations`: Maximum number of learning iterations to perform.
+- `max_depth`: Maximum depth for program enumeration.
+- `max_enumerations`: Maximum number of candidate programs to try per iteration.
+
+Returns a tuple of the best discovered program and a `SynthResult` (either `optimal_program` or `suboptimal_program`), 
+    or `nothing` if no program was found.
+"""
 function aulile(
     problem::Problem{<:AbstractVector{<:IOExample}},
     iter_t::Type{<:ProgramIterator},
@@ -49,6 +77,26 @@ function aulile(
     return program, suboptimal_program
 end
 
+"""
+	synth_with_aux(problem::Problem, iterator::ProgramIterator, grammar::AbstractGrammar, aux::AuxFunction, 
+        best_score::Int; allow_evaluation_errors=false, max_time=typemax(Int), max_enumerations=typemax(Int), 
+        mod=Main) -> Union{Tuple{RuleNode, Int}, Nothing}
+
+Searches for the best program that minimizes the score defined by the auxiliary function.
+
+- `problem`: The problem definition with IO examples.
+- `iterator`: Program enumeration iterator.
+- `grammar`: Grammar used to generate and interpret programs.
+- `aux`: An `AuxFunction` used to compute score between program output and expected output.
+- `best_score`: Current best score to beat.
+- `allow_evaluation_errors`: Whether to tolerate runtime exceptions during evaluation.
+- `max_time`: Maximum allowed runtime for the synthesis loop.
+- `max_enumerations`: Maximum number of candidate programs to try.
+- `mod`: Module in which to resolve symbols from the grammar.
+
+Returns a tuple `(program, score)` of the best discovered program and its score. Returns `nothing` if no better 
+    program was found.
+"""
 function synth_with_aux(
     problem::Problem{<:AbstractVector{<:IOExample}},
     iterator::ProgramIterator,
@@ -103,6 +151,21 @@ function synth_with_aux(
     return (best_program, best_score)
 end
 
+"""
+	evaluate_with_aux(problem::Problem, expr::Any, symboltable::SymbolTable, aux::AuxFunction; 
+        allow_evaluation_errors=false) -> Number
+
+Evaluates a candidate program (given as an expression) over all examples in a problem using the auxiliary evaluation 
+    function.
+
+- `problem`: The problem definition with IO examples.
+- `expr`: The candidate program expression to evaluate.
+- `symboltable`: Symbol table used to evaluate functions in the expression.
+- `aux`: An `AuxFunction` used to compute the score between expected and actual output.
+- `allow_evaluation_errors`: Whether evaluation errors should be tolerated or raise an exception.
+
+Returns the total distance score. If evaluation errors are disallowed and one occurs, an `EvaluationError` is thrown.
+"""
 function evaluate_with_aux(
     problem::Problem{<:AbstractVector{<:IOExample}},
     expr::Any,
@@ -127,6 +190,5 @@ function evaluate_with_aux(
             break
         end
     end
-
     return distance_in_examples
 end
