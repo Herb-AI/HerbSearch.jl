@@ -1,8 +1,18 @@
+struct AuxFunction
+    func::Function
+    best_value::Number # NOTE: Aulile tries to *minimize* to this value
+end
+
+# Allow calling AuxFunction like a regular function
+function (af::AuxFunction)(example::IOExample, output)
+    return af.func(example, output)
+end
+
 function aulile(
     problem::Problem{<:AbstractVector{<:IOExample}},
     iter::ProgramIterator,
     start_symbol::Symbol,
-    aux::Function,
+    aux::AuxFunction,
     max_iterations=5,
     max_enumerations=100000)::Union{Tuple{RuleNode,SynthResult},Nothing}
 
@@ -24,12 +34,11 @@ function aulile(
             program, new_score = result
             @assert new_score < best_score
             best_score = new_score
-            if best_score <= 0
+            if best_score <= aux.best_value
                 return program, optimal_program
             else
                 add_rule!(grammar, program)
-                iterator_type = typeof(iter)
-                iter = iterator_type(grammar, start_symbol, max_depth=iter.solver.max_depth)
+                iter = typeof(iter)(grammar, start_symbol, max_depth=iter.solver.max_depth)
             end
             println("Grammar after step $(i): \n $(grammar) \n")
         end
@@ -42,7 +51,7 @@ function synth_with_aux(
     problem::Problem{<:AbstractVector{<:IOExample}},
     iterator::ProgramIterator,
     grammar::AbstractGrammar,
-    aux::Function,
+    aux::AuxFunction,
     best_score::Int;
     shortcircuit::Bool=true,
     allow_evaluation_errors::Bool=false,
@@ -52,13 +61,11 @@ function synth_with_aux(
 
     start_time = time()
     symboltable = grammar2symboltable(grammar, mod)
-
     best_program = nothing
 
     for (i, candidate_program) ∈ enumerate(iterator)
         # Create expression from rulenode representation of AST
         expr = rulenode2expr(candidate_program, grammar)
-
         # Evaluate the expression
         score = evaluate_with_aux(
             problem,
@@ -68,16 +75,16 @@ function synth_with_aux(
             shortcircuit=shortcircuit,
             allow_evaluation_errors=allow_evaluation_errors,
         )
-        if score == 0
+        # Update score if better
+        if score == aux.best_value
             candidate_program = freeze_state(candidate_program)
             println("Found an optimal program!")
-            return (candidate_program, 0)
+            return (candidate_program, aux.best_value)
         elseif score < best_score
             best_score = score
             candidate_program = freeze_state(candidate_program)
             best_program = candidate_program
         end
-
         # Check stopping criteria
         if i > max_enumerations || time() - start_time > max_time
             break
@@ -100,12 +107,11 @@ function evaluate_with_aux(
     problem::Problem{<:AbstractVector{<:IOExample}},
     expr::Any,
     symboltable::SymbolTable,
-    aux::Function;
+    aux::AuxFunction;
     shortcircuit::Bool=true,
     allow_evaluation_errors::Bool=false
 )::Number
     distance_in_examples = 0
-
     crashed = false
     for example ∈ problem.spec
         try

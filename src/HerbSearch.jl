@@ -85,7 +85,8 @@ export
   divide_and_conquer,
 	EvaluationError, 
 
-  aulile
+  aulile,
+  AuxFunction
 
   """
     refactor_grammar

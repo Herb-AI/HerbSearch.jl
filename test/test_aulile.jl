@@ -90,7 +90,7 @@ end
     ])
     iterator = BFSIterator(g, :String, max_depth=5)
 
-    test_result = aulile(problem, iterator, :String, aulile_levenstein)
+    test_result = aulile(problem, iterator, :String, AuxFunction(aulile_levenstein, 0))
     @test !(test_result isa Nothing)
     solution, flag = test_result
     program = rulenode2expr(solution, g)
@@ -108,7 +108,7 @@ end
     ])
     iterator = BFSIterator(g, :String, max_depth=5)
 
-    test_result = aulile(problem, iterator, :String, aulile_levenstein)
+    test_result = aulile(problem, iterator, :String, AuxFunction(aulile_levenstein, 0))
     @test !(test_result isa Nothing)
     solution, flag = test_result
     program = rulenode2expr(solution, g)
@@ -127,7 +127,7 @@ end
     ])
     iterator = BFSIterator(g, :String, max_depth=2)
 
-    test_result = aulile(problem, iterator, :String, aulile_levenstein)
+    test_result = aulile(problem, iterator, :String, AuxFunction(aulile_levenstein, 0))
     @test !(test_result isa Nothing)
     solution, flag = test_result
     program = rulenode2expr(solution, g)
