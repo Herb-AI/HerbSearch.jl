@@ -10,13 +10,15 @@ end
 
 function aulile(
     problem::Problem{<:AbstractVector{<:IOExample}},
-    iter::ProgramIterator,
+    iter_t::Type{<:ProgramIterator},
+    grammar::AbstractGrammar,
     start_symbol::Symbol,
-    aux::AuxFunction,
+    aux::AuxFunction;
     max_iterations=5,
+    max_depth=5,
     max_enumerations=100000)::Union{Tuple{RuleNode,SynthResult},Nothing}
 
-    grammar = get_grammar(iter.solver)
+    iter = iter_t(grammar, start_symbol, max_depth=max_depth)
     program = nothing
 
     # Get initial distance of input and output
@@ -38,7 +40,7 @@ function aulile(
                 return program, optimal_program
             else
                 add_rule!(grammar, program)
-                iter = typeof(iter)(grammar, start_symbol, max_depth=iter.solver.max_depth)
+                iter = iter_t(grammar, start_symbol, max_depth=max_depth)
             end
             println("Grammar after step $(i): \n $(grammar) \n")
         end
@@ -53,7 +55,6 @@ function synth_with_aux(
     grammar::AbstractGrammar,
     aux::AuxFunction,
     best_score::Int;
-    shortcircuit::Bool=true,
     allow_evaluation_errors::Bool=false,
     max_time=typemax(Int),
     max_enumerations=typemax(Int),
@@ -72,7 +73,6 @@ function synth_with_aux(
             expr,
             symboltable,
             aux,
-            shortcircuit=shortcircuit,
             allow_evaluation_errors=allow_evaluation_errors,
         )
         # Update score if better
@@ -108,10 +108,10 @@ function evaluate_with_aux(
     expr::Any,
     symboltable::SymbolTable,
     aux::AuxFunction;
-    shortcircuit::Bool=true,
     allow_evaluation_errors::Bool=false
 )::Number
     distance_in_examples = 0
+
     crashed = false
     for example ∈ problem.spec
         try
