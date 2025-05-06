@@ -4,7 +4,7 @@
 { assign(A, X) : comp_root(A) } 1 :- node(X, _).
 
 %% Only one compression tree is used
-:- #count {A: comp_root(A), assign(A, _)} < 4.
+:- #count {A: comp_root(A), assign(A, _)} > 1.
 
 %% The used compression tree is assigned to at least two nodes
 :- comp_root(A), assign(A, _), #count {X: node(X, _), assign(A, X)} < 2.
@@ -25,4 +25,4 @@ assign(M, Y) :- assign(K, X), edge(X, Y, I), edge(K, M, I).
 
 %% ------------------------- optimizing part ---------------------------------
 
-#maximize {1 , X : assign( _, X)}.
+#maximize {1, X : assign( _, X)}.
