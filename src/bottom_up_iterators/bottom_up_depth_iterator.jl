@@ -54,7 +54,7 @@ function combine!(
     iter::BUDepthIterator{T},
     bank::BUDepthBank{T},
     data::BUDepthData{T}
-)::Union{RuleNodeCombinations, Nothing} where T
+)::Union{RuleNodeCombinations{T}, Nothing} where T
     grammar = get_grammar(iter.solver)
     max_depth = get_max_depth(iter.solver)
 

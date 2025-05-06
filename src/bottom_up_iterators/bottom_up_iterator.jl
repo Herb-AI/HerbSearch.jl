@@ -35,19 +35,19 @@ abstract type BottomUpData{T <: AbstractRuleNode} end
 
 TODO: add documentation
 """
-mutable struct BottomUpIteratorTuple
-    cross_product_iterator::CrossProductIterator
+mutable struct BottomUpIteratorTuple{T <: AbstractRuleNode}
+    cross_product_iterator::CrossProductIterator{T}
     abstract_rulenode_iterator::AbstractRuleNodeIterator
 end
 
 function BottomUpIteratorTuple(
     iter::BottomUpIterator{T},
-    rulenode_combinations::RuleNodeCombinations,
+    rulenode_combinations::RuleNodeCombinations{T},
     bank::BottomUpBank{T},
     data::BottomUpData{T}
 )::Union{Nothing, BottomUpIteratorTuple} where T
     grammar = get_grammar(iter.solver)
-    cross_product_iterator = CrossProductIterator(rulenode_combinations)
+    cross_product_iterator = CrossProductIterator{T}(rulenode_combinations)
     program_collection = _get_next_program_collection!(iter, cross_product_iterator, bank, data)
     if isnothing(program_collection)
         return nothing
@@ -59,7 +59,7 @@ end
 
 function _get_next_program_collection!(
     iter::BottomUpIterator{T},
-    cross_product_iterator::CrossProductIterator,
+    cross_product_iterator::CrossProductIterator{T},
     bank::BottomUpBank{T},
     data::BottomUpData{T}
 )::Union{Nothing, AbstractRuleNode} where T
@@ -91,7 +91,7 @@ mutable struct BottomUpState{T <: AbstractRuleNode}
     data::BottomUpData{T}
 
     # Handled by the generic implementation.
-    iterator_tuple::Union{Nothing, BottomUpIteratorTuple}
+    iterator_tuple::Union{Nothing, BottomUpIteratorTuple{T}}
 end
 
 """
