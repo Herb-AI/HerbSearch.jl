@@ -132,10 +132,10 @@ function parse_json(json_content::AbstractString)
         output = output * ("\n\n%Program $i\n") * temp_output
     end
 
-    for (i, subtree) in enumerate(subtrees)
+    #=for (i, subtree) in enumerate(subtrees)
         index, temp_output = parse_tree(subtree, global_dict, index, false)
         output = output * ("\n\n%Subtree $i\n") * temp_output
-    end
+    end=#
     return (output, global_dict)
 end
 

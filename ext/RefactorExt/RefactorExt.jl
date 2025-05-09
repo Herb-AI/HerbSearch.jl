@@ -143,7 +143,7 @@ function HerbSearch.refactor_grammar(trees::AbstractVector{RuleNode}, grammar::A
     @debug "Time for stage 3 : " * string(time() - start_time)
 
 
-    #println(model)
+    println(model)
     println(data)
 
     @debug "Stage 4: Read clingo output to json"     
