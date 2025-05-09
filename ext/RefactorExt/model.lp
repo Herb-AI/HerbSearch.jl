@@ -67,28 +67,6 @@ assign(C_PARENT, PARENT) :- comp_node(C_NODE, _), comp_node(C_PARENT, _), edge(C
 #show comp_edge/3.
 %#show assign/2.
 
-comp_root(0).
-comp_node(0, 2).
-comp_node(1, 2).
-comp_node(2, 1).
-comp_node(3, 1).
-comp_node(4, 2).
-assign(0, 0).
-assign(1, 1).
-assign(2, 2).
-assign(3, 3).
-assign(4, 4).
-assign(0, 11).
-assign(1, 12).
-assign(2, 13).
-assign(3, 14).
-assign(4, 15).
-assign(0, 22).
-assign(1, 23).
-assign(2, 24).
-assign(3, 25).
-assign(4, 26).
-
 %% ------------------------- optimizing part ---------------------------------
 
 #maximize {1, X : assign(_, X)}.
