@@ -65,7 +65,7 @@ assign(C_PARENT, PARENT) :- comp_node(C_NODE, _), comp_node(C_PARENT, _), edge(C
 #show comp_root/1.
 #show comp_node/2.
 #show comp_edge/3.
-#show assign/2.
+%#show assign/2.
 
 comp_root(0).
 comp_node(0, 2).
