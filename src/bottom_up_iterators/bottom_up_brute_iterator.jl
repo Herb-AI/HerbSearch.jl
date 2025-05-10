@@ -4,8 +4,9 @@ Base.@doc """
 TODO
 """ BUBruteIterator
 @programiterator BUBruteIterator(
-    distance_function::Function, #TODO: is there any way to make this more specific?
+    distance_function::Function,
     spec::Vector{<:IOExample},
+    helper_iterator::ProgramIterator,
     obs_equivalence::Bool = false
 ) <: BottomUpIterator{RuleNode}
 
@@ -32,8 +33,10 @@ BottomUpData{T}(iter::BUBruteIterator) where T = BUBruteData(iter)
 function BUBruteData(
     iter::BUBruteIterator
 )::BUBruteData
-    remaining_terminals::Queue{RuleNode} = _create_unused_rules(iter, true)
+    grammar::ContextSensitiveGrammar = get_grammar(iter.solver)
+    remaining_terminals::Queue{RuleNode} = _create_unused_rules(iter, rule -> grammar.isterminal[rule])
     obs_checker = iter.obs_equivalence ? ObservationalEquivalenceChecker{RuleNode}() : nothing
+    _build_brute_grammar(iter)
     return BUBruteData(remaining_terminals, [], obs_checker)
 end
 
@@ -42,6 +45,8 @@ function combine!(
     bank::BUBruteBank,
     data::BUBruteData
 )::Union{RuleNodeCombinations{RuleNode}, Nothing}
+    grammar::ContextSensitiveGrammar = get_grammar(iter.solver)
+
     # This is checked in a loop to exit in the case the grammar has no nonterminals.
     while isempty(data.unused_rules)
         if isempty(bank.search_frontier)
@@ -49,7 +54,7 @@ function combine!(
         end
 
         data.current_expanded_childlist = [[dequeue!(bank.search_frontier)]]
-        data.unused_rules = _create_unused_rules(iter, false)
+        data.unused_rules = _create_unused_rules(iter, rule -> length(grammar.childtypes[rule]) == 1 && grammar.childtypes[rule][1] == (_get_startsymbol(iter)))
     end
 
     root::RuleNode = dequeue!(data.unused_rules)
@@ -74,20 +79,60 @@ function add_to_bank!(
     bank::BUBruteBank,
     program::RuleNode
 )::Nothing
-    println(rulenode2expr(program, get_grammar(iter.solver)))
     enqueue!(bank.search_frontier, program => _compute_distance(iter, program))
     return nothing
 end
 
+function _get_startsymbol(
+    iter::BUBruteIterator
+)::Symbol
+    root = iter.solver.state.tree
+    grammar = get_grammar(iter.solver)
+
+    @assert(root isa Hole, "The root of the solver's initial state is assumed to be a Hole.")
+    return grammar.types[findfirst(root.domain)]
+end
+
+function _build_brute_grammar(
+    iter::BUBruteIterator
+)
+    grammar = get_grammar(iter.solver)
+    symbol2rulenodes = Dict{Symbol, Vector{RuleNode}}()
+    for type ∈ grammar.types
+        symbol2rulenodes[type] = []
+    end
+
+    programs = collect(iter.helper_iterator)
+    for program ∈ programs
+        program_type = grammar.types[program.ind]
+        push!(symbol2rulenodes[program_type], program)
+    end
+
+    startsymbol = _get_startsymbol(iter)
+    for rule ∈ 1:length(grammar.rules)
+        for (i, childtype) ∈ enumerate(grammar.childtypes[rule])
+            if childtype != startsymbol
+                continue
+            end
+            children_lists::Vector{Vector{AbstractRuleNode}} = map(symbol -> symbol2rulenodes[symbol], grammar.childtypes[rule])
+            children_lists[i] = [Hole(get_domain(grammar, startsymbol))]
+
+            for children ∈ Iterators.product(children_lists...)
+                add_rule!(grammar, RuleNode(rule, collect(children)))
+            end
+        end
+    end
+end
+
 function _create_unused_rules(
     iter::BUBruteIterator,
-    terminals::Bool
+    predicate::Function # Int -> Bool
 )::Queue{RuleNode}
     grammar = get_grammar(iter.solver)
     unused_rules = Queue{RuleNode}()
 
-    for (rule, is_terminal) in enumerate(grammar.isterminal)
-        if is_terminal == terminals
+    for rule in 1:length(grammar.rules)
+        if predicate(rule)
             enqueue!(unused_rules, RuleNode(rule))
         end
     end
