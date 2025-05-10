@@ -22,6 +22,7 @@ include("bottom_up_iterators/cross_product_iterator.jl")
 include("bottom_up_iterators/abstract_rulenode_iterator.jl")
 include("bottom_up_iterators/bottom_up_iterator.jl")
 include("bottom_up_iterators/bottom_up_depth_iterator.jl")
+include("bottom_up_iterators/bottom_up_brute_iterator.jl")
 
 include("top_down_iterator.jl")
 
@@ -71,8 +72,7 @@ export
 
   BottomUpIterator,
   BUDepthIterator,
-  BURulenodeIterator,
-  BUUniformIterator,
+  BUBruteIterator,
 
   MHSearchIterator,
   VLSNSearchIterator,

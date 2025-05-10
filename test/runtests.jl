@@ -19,8 +19,9 @@ Random.seed!(1234)
     # include("test_stochastic/test_stochastic.jl")
     # include("test_genetic.jl")
     # include("test_programiterator_macro.jl")
-    include("test_bottom_up_depth_iterator.jl")
-    include("test_bottom_up_uniform_iterator.jl")
+    # include("test_bottom_up_depth_iterator.jl")
+    # include("test_bottom_up_uniform_iterator.jl") #TODO: merge these test files
+    include("test_bottom_up_brute_iterator.jl")
 
     # include("test_uniform_iterator.jl")
     # include("test_forbidden.jl")
