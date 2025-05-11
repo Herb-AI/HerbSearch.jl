@@ -108,23 +108,15 @@ end
 
 function HerbSearch.refactor_grammar(trees::AbstractVector{RuleNode}, grammar::AbstractGrammar)
     start_time = time()
-    @debug "Stage 1: Enumerate subtrees and discard useless subtrees"
-    subtree_set = Vector{Any}()
-    for tree in trees
-        subtrees = enumerate_subtrees(tree, grammar)
-        subtrees = filter(subtree -> selection_criteria(tree, subtree), subtrees) #remove subtrees size 1
-        subtree_set = vcat(subtree_set, subtrees)
-    end
-    subtree_set = unique(subtree_set)
-    @debug "Time for stage 1: $(time() - start_time)"
 
     #println(subtree_set)
 
 
     start_time = time()
     @debug "Stage 2: parse subtrees to json"
-    data = convert_to_json(subtree_set, trees)
-    model, global_dict = parse_json(data)
+    data = convert_to_json(trees)
+    println(data)
+    model = parse_json(data)
     @debug "Time for stage 2 : $(time() - start_time)"
     start_time = time()
 
@@ -152,10 +144,11 @@ function HerbSearch.refactor_grammar(trees::AbstractVector{RuleNode}, grammar::A
     start_time = time()
 
     node_assignments::Vector{String} = best_values
+    trees = parse_compressed_subtrees(node_assignments)
+    println(trees)
     stats = generate_stats(global_dict, node_assignments)
     best_compressions = generate_trees_from_compressions(global_dict, stats, grammar)
 
-    println(best_compressions)
 
     new_grammar = deepcopy(grammar)
 

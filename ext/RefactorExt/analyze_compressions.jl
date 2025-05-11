@@ -1,3 +1,19 @@
+
+"""
+Structure for pasing compression trees given by the 
+"""
+struct TreeNode
+    id::Int64
+    children::Vector{Tuple{Int64, TreeNode}} # tuple (position, child)
+    known_children::Set{Int64} # set of children that are not a hole
+
+    function TreeNode(id::Int64,
+         children::Vector{Tuple{Int64, TreeNode}} = Vector{Tuple{Int64, TreeNode}}(),
+         known_children::Set{Int64} = Set{Int64}())
+        new(id, children, known_children)
+    end
+end
+
 """
     generate_stats(global_dict::Dict, compressed_rulenode::Vector{String})
 
@@ -45,6 +61,96 @@ function generate_stats(global_dict::Dict, compressed_rulenode::Vector{String})
 
     return c_info
 end
+
+"""
+    parse_compressed_subtrees(compressed_rulenode::Vector{String})
+
+Parses string containing compression found by the model into trees.
+# Arguments
+- `compressed_rulenode::Vector{String}`: vector containing strings in format 
+"comp_root(X)", "comp_node(X, RULE)", "comp_edge(FROM, TO, POS)" and "assign(COMP_NODE, AST_NODE)"
+"""
+function parse_compressed_subtrees(compressed_rulenode::Vector{String})
+    roots = filter(s -> startswith(s, "comp_root("), compressed_rulenode)
+    edeges_str = filter(s -> startswith(s, "comp_edge("), compressed_rulenode)
+    nodes = filter(s -> startswith(s, "comp_node("), compressed_rulenode)
+    assignments_str = filter(s -> startswith(s, "assign("), compressed_rulenode)
+    
+    node_to_rule = Dict{Int64, Int64}()
+    trees = Vector{TreeNode}()
+    seen_nodes = Dict{Int64, TreeNode}()
+
+    # assignments = Dict{Int64, Int64}()
+    # for asgn in assignments_str
+    #     cmp_asgn = match(r"assign\((\d+), ?(\d+))", asgn)
+    #     assignments[parse(Int64, cmp_asgn[1])] = parse(Int64, cmp_asgn[2])   
+    # end
+    
+    # find all roots, add them as a last seen node of their id
+    for root in roots
+        r_id = parse(Int64, match(r"(\d+)", root)[1])
+        root = TreeNode(r_id)
+        push!(trees, root)
+        seen_nodes[r_id] = root 
+    end
+
+    # build dictionary node to rule
+    for node in nodes
+        n_r = match(r"comp_node\((\d+), ?(\d+)", node)
+        node_to_rule[parse(Int64, n_r[1])] = parse(Int64, n_r[2])
+    end
+    
+    # collect all nodes and build the trees
+    edges = Vector{Tuple{Int64, Int64, Int64}}()
+    for edge in edeges_str
+        s_d = match(r"comp_edge\((\d+), ?(\d+), ?(\d+)", edge)
+        from, to, pos = parse(Int64, s_d[1]), parse(Int64 ,s_d[2]), parse(Int64, s_d[3])
+        push!(edges, (from, to, pos))
+    end
+
+    edge = popfirst!(edges)
+    while !isempty(edges)
+        (from, to, pos) = edge
+        if !(from in seen_nodes.keys)
+            push!(edges, edge)
+            continue
+        end
+        to_node = TreeNode(to) # creating a new node here because we don't expect a node to be a destination more than once
+        push!(seen_nodes[from].children, (pos, to_node))
+        seen_nodes[to] = to_node
+        edge = popfirst!(edges)
+    end
+    for tree in trees
+        process_children_in_compression(tree)
+    end
+    return (trees, node_to_rule)
+end
+
+function process_children_in_compression(tree::TreeNode)
+    sort!(tree.children, by = x -> x[1])
+    for (child_id, ch) in tree.children
+        push!(tree.known_children, child_id)
+        process_children_in_compression(ch)
+    end
+end
+
+
+function construct_subtrees(grammar::AbstractGrammar, compression_trees::Vector{TreeNode}, node_to_rule::Dict{Int64, Int64})
+    for tree in compression_trees
+    end
+end
+
+function construct_rule(comp_tree::TreeNode, grammar::AbstractGrammar, node_to_rule::Dict{Int64, Int64})
+    rule = deepcopy(grammar.rules[node_to_rule[comp_tree.id]])
+    for i in eachindex(rule.children)
+        if !(i in comp_tree.known_children)
+            # remove_rule!()
+        else
+            rule.children[i] = construct_subtrees(comp_tree.children[i][2], grammar, node_to_rule)
+        end             
+    end
+end
+
 
 """
     get_compression_size(global_dict::Dict, compression_id::Int)

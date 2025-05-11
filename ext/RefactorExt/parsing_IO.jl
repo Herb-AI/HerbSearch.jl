@@ -124,7 +124,6 @@ function parse_json(json_content::AbstractString)
     # Read in the JSON file
     json_parsed = JSON.parse(json_content)
     trees = json_parsed["trees"]
-    subtrees = json_parsed["subtrees"]
     # Parse the JSON file
     index, output = 0, ""
     for (i, tree) in enumerate(trees)
@@ -136,7 +135,7 @@ function parse_json(json_content::AbstractString)
         index, temp_output = parse_tree(subtree, global_dict, index, false)
         output = output * ("\n\n%Subtree $i\n") * temp_output
     end=#
-    return (output, global_dict)
+    return output
 end
 
 """
@@ -148,24 +147,15 @@ Convert a list of subtrees to JSON. Returns the JSON string.
 - `subtrees::Vector{Any}`: the list of subtrees
 - `tree::RuleNode`: the root tree the subtrees were extracted from
 """
-function convert_to_json(subtrees::Vector{Any}, trees::Vector{RuleNode})
+function convert_to_json(trees::Vector{RuleNode})
     modified_trees = []
     for i in 1:length(trees)
         str = string(trees[i])
         modified_string = replace(str, r"Hole\[Bool\[[^\]]*\]\]" => "_")
         push!(modified_trees, modified_string)
     end
-    
-    modified_subtrees = []
-    for i in 1:length(subtrees)
-        str = string(subtrees[i])
-        modified_string = replace(str, r"Hole\[Bool\[[^\]]*\]\]" => "_")
-        push!(modified_subtrees, modified_string)
-    end
-
     result = Dict(
         "trees" => modified_trees,
-        "subtrees" => modified_subtrees
     )
     json_string = JSON.json(result)
     

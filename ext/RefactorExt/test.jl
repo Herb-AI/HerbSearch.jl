@@ -15,8 +15,6 @@ grammar = @csgrammar begin
     Int = Int / Int
 end
 
-test_one_plus_blank()
-
 function test_simple()
     # Define two simple programs that are deemed to be useful
     # Program 1: 1 + 1
@@ -59,3 +57,5 @@ function test_one_plus_blank()
     println("Optimised Grammar: ")
     println(optimised_grammar)
 end
+
+test_one_plus_blank()

@@ -11,7 +11,7 @@
 { comp_root(ROOT)} 1 :- comp_node(ROOT, _).
 
 % There are k=1 compression roots.
-:- #count {ROOT: comp_root(ROOT)} != 1.
+:- #count {ROOT: comp_root(ROOT)} != 2.
 
 % Each edge might be a compression edge.
 { comp_edge(PARENT, CHILD, ID)} 1 :- edge(PARENT, CHILD, ID).
@@ -70,7 +70,6 @@ assign(C_PARENT, PARENT) :- comp_node(C_NODE, _), comp_node(C_PARENT, _), comp_e
 #show comp_node/2.
 #show comp_edge/3.
 #show assign/2.
-#show bleh/2.
 
 %% ------------------------- optimizing part ---------------------------------
 
