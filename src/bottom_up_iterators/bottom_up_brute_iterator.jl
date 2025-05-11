@@ -33,10 +33,11 @@ BottomUpData{T}(iter::BUBruteIterator) where T = BUBruteData(iter)
 function BUBruteData(
     iter::BUBruteIterator
 )::BUBruteData
+    _build_brute_grammar!(iter)
+
     grammar::ContextSensitiveGrammar = get_grammar(iter.solver)
-    remaining_terminals::Queue{RuleNode} = _create_unused_rules(iter, rule -> grammar.isterminal[rule])
+    remaining_terminals::Queue{RuleNode} = _create_unused_rules(iter, rule -> grammar.isterminal[rule] && grammar.types[rule] == _get_startsymbol(iter))
     obs_checker = iter.obs_equivalence ? ObservationalEquivalenceChecker{RuleNode}() : nothing
-    _build_brute_grammar(iter)
     return BUBruteData(remaining_terminals, [], obs_checker)
 end
 
@@ -93,7 +94,7 @@ function _get_startsymbol(
     return grammar.types[findfirst(root.domain)]
 end
 
-function _build_brute_grammar(
+function _build_brute_grammar!(
     iter::BUBruteIterator
 )
     grammar = get_grammar(iter.solver)
