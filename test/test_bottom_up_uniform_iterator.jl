@@ -12,7 +12,8 @@
     
         problem = Problem([IOExample(Dict(:x => (fst, snd)), min(fst, snd)) for (fst, snd) in [(4, 5), (12, 14), (13, 10), (5, 1)]])        
 
-        iterator = BUDepthIterator{UniformHole}(g, :intExpr)
+        iterator = DepthBoundedIterator{UniformHole}(g, :intExpr)
+        # iterator = BUDepthIterator{UniformHole}(g, :intExpr)
         solution, flag = synth(problem, iterator) 
         program = rulenode2expr(solution, g)
 
@@ -28,7 +29,7 @@
         end
         
         problem = Problem([IOExample(Dict(:x => x), 2x+1) for x ∈ 1:5])       
-        iterator = BUDepthIterator{UniformHole}(g, :Number)
+        iterator = DepthBoundedIterator{UniformHole}(g, :Number)
 
         solution, flag = synth(problem, iterator) 
         program = rulenode2expr(solution, g)
@@ -46,7 +47,7 @@
         constraint = Forbidden(RuleNode(4, [RuleNode(1), RuleNode(2)]))
         addconstraint!(grammar, constraint)
 
-        programs = collect(BUDepthIterator{UniformHole}(grammar, :Number, max_depth=2))
+        programs = collect(DepthBoundedIterator{UniformHole}(grammar, :Number, max_depth=2))
         @test RuleNode(4, [RuleNode(1), RuleNode(2)]) ∉ programs
     end
 end
