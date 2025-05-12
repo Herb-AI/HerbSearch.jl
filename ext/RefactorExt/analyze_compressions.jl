@@ -1,16 +1,15 @@
-
 """
 Structure for pasing compression trees given by the 
 """
 struct TreeNode
     id::Int64
-    children::Vector{Tuple{Int64, TreeNode}} # tuple (position, child)
-    known_children::Set{Int64} # set of children that are not a hole
+    children::Dict{Int64, TreeNode}
+    # children::Vector{NamedTuple{(:pos, :child), Tuple{Int64, TreeNode}}} # tuple (position, child)
+    # known_children::Set{Int64} # set of children that are not a hole
 
     function TreeNode(id::Int64,
-         children::Vector{Tuple{Int64, TreeNode}} = Vector{Tuple{Int64, TreeNode}}(),
-         known_children::Set{Int64} = Set{Int64}())
-        new(id, children, known_children)
+         children::Dict{Int64, TreeNode} = Dict{Int64, TreeNode}())
+        new(id, children)
     end
 end
 
@@ -104,51 +103,83 @@ function parse_compressed_subtrees(compressed_rulenode::Vector{String})
     edges = Vector{Tuple{Int64, Int64, Int64}}()
     for edge in edeges_str
         s_d = match(r"comp_edge\((\d+), ?(\d+), ?(\d+)", edge)
-        from, to, pos = parse(Int64, s_d[1]), parse(Int64 ,s_d[2]), parse(Int64, s_d[3])
+        from, to, pos = parse(Int64, s_d[1]), parse(Int64 ,s_d[2]), 1+parse(Int64, s_d[3])
         push!(edges, (from, to, pos))
     end
 
-    edge = popfirst!(edges)
     while !isempty(edges)
+        edge = popfirst!(edges)
         (from, to, pos) = edge
         if !(from in seen_nodes.keys)
             push!(edges, edge)
             continue
         end
         to_node = TreeNode(to) # creating a new node here because we don't expect a node to be a destination more than once
-        push!(seen_nodes[from].children, (pos, to_node))
+        seen_nodes[from].children[pos] = to_node
         seen_nodes[to] = to_node
-        edge = popfirst!(edges)
-    end
-    for tree in trees
-        process_children_in_compression(tree)
     end
     return (trees, node_to_rule)
 end
 
-function process_children_in_compression(tree::TreeNode)
-    sort!(tree.children, by = x -> x[1])
-    for (child_id, ch) in tree.children
-        push!(tree.known_children, child_id)
-        process_children_in_compression(ch)
-    end
-end
+"""
+    construct_subtrees(grammar::AbstractGrammar, 
+    compression_trees::Vector{TreeNode}, 
+    node2rule::Dict{Int64, Int64})::Vector{RuleNode}
 
+Constructs a list of rules from a set of compression trees.
 
-function construct_subtrees(grammar::AbstractGrammar, compression_trees::Vector{TreeNode}, node_to_rule::Dict{Int64, Int64})
+# Arguments
+- `grammar::AbstractGrammar`: The original grammar.
+- `compression_trees::Vector{TreeNode}`: A vector of `TreeNode` objects representing the compressed subtrees.
+- `node2rule::Dict{Int64, Int64}`: A dictionary mapping node IDs to their corresponding rule in the grammar.
+
+# Returns
+- `Vector{RuleNode}`: A vector of `RuleNode` objects, each representing a rule constructed from the compression trees.
+"""
+function construct_subtrees(grammar::AbstractGrammar, compression_trees::Vector{TreeNode}, node2rule::Dict{Int64, Int64})
+    rules = []
     for tree in compression_trees
+        push!(rules, _construct_rule(tree, grammar, node2rule))
     end
+    return rules
 end
 
-function construct_rule(comp_tree::TreeNode, grammar::AbstractGrammar, node_to_rule::Dict{Int64, Int64})
-    rule = deepcopy(grammar.rules[node_to_rule[comp_tree.id]])
-    for i in eachindex(rule.children)
-        if !(i in comp_tree.known_children)
-            # remove_rule!()
+"""
+    construct_rule(comp_tree::TreeNode, grammar::AbstractGrammar, node2rule::Dict{Int64, Int64})::RuleNode
+
+Internal function to construct rule from an individual compression tree.
+
+# Arguments
+- `comp_tree::TreeNode`: A `TreeNode`, root of the compresison tree.
+- `grammar::AbstractGrammar`: The original grammar.
+- `node2rule::Dict{Int64, Int64}`: A dictionary mapping node IDs to their corresponding rule IDs.
+
+# Returns
+- `RuleNode`: A `RuleNode` object representing the constructed rule.
+
+# Description
+This function recursively traverses the compression tree (`comp_tree`) to construct a `RuleNode`. For each node in the tree:
+- If a child is not present in the compressed AST, a `Hole` is created for that position.
+- If a child is present, the function recursively constructs a `RuleNode` for the child.
+
+The resulting `RuleNode` represents the rule defined by the compression tree and the grammar.
+"""
+function _construct_rule(comp_tree::TreeNode, grammar::AbstractGrammar, node2rule::Dict{Int64, Int64})
+    rule_id = node2rule[comp_tree.id]
+    child_types = grammar.childtypes[rule_id]
+    children::Vector{AbstractRuleNode} = []
+    for i in eachindex(child_types)
+        if !(i in keys(comp_tree.children))
+            # child is NOT in the compressed AST, make a hole
+            push!(children, 
+            Hole(get_domain(grammar, grammar.bytype[child_types[i]])))
         else
-            rule.children[i] = construct_subtrees(comp_tree.children[i][2], grammar, node_to_rule)
-        end             
+            # child is in the compressed AST, make a rule for the child
+            push!(children, 
+            _construct_rule(comp_tree.children[i], grammar, node2rule))
+        end
     end
+    return RuleNode(rule_id, children)
 end
 
 

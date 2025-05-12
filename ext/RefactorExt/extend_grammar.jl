@@ -12,7 +12,7 @@ Generates a tree ([`RuleNode`](@ref)) from a given compression.
 # Returns
 - `tree::RuleNode`: the resulting [`RuleNode`](@ref)
 """
-function generate_tree_from_compression(parent, d, compression_id, grammar)
+function generate_tree_from_compression(parent, d, grammar)
     parent_type = d[parent].type
     actual_children = grammar.childtypes[parent_type]
     
@@ -20,7 +20,7 @@ function generate_tree_from_compression(parent, d, compression_id, grammar)
     current_child = 1
 
     for child in d[parent].children
-        child_tree = generate_tree_from_compression(child, d, compression_id, grammar)
+        child_tree = generate_tree_from_compression(child, d, grammar)
         child_nr = d[child].child_nr
         while current_child < child_nr + 1
             hole = Hole(get_domain(grammar, grammar.bytype[actual_children[current_child]]))
@@ -72,7 +72,7 @@ function generate_trees_from_compressions(global_dict, stats, grammar)
 
     res = []
     for (comp_id, values) in stats
-        t = generate_tree_from_compression(comp_id, global_dict, comp_id, grammar)
+        t = generate_tree_from_compression(comp_id, global_dict, grammar)
         tree_stats_dict[t] = values
         push!(res, t)
     end

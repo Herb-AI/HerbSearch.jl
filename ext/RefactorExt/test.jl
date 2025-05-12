@@ -57,5 +57,9 @@ function test_one_plus_blank()
     println("Optimised Grammar: ")
     println(optimised_grammar)
 end
+# println(grammar.rules[2].args[1])
 
-test_one_plus_blank()
+# println(fieldnames(typeof(grammar.rules[2])))
+# println(methods(typeof(grammar.rules[2])))
+
+test_simple()

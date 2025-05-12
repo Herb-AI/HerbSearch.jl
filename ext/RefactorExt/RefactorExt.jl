@@ -144,14 +144,12 @@ function HerbSearch.refactor_grammar(trees::AbstractVector{RuleNode}, grammar::A
     start_time = time()
 
     node_assignments::Vector{String} = best_values
-    trees = parse_compressed_subtrees(node_assignments)
-    println(trees)
-    stats = generate_stats(global_dict, node_assignments)
-    best_compressions = generate_trees_from_compressions(global_dict, stats, grammar)
+    (comp_trees, node2rule) = parse_compressed_subtrees(node_assignments)
+    # stats = generate_stats(global_dict, node_assignments)
+    # best_compressions = generate_trees_from_compressions(global_dict, stats, grammar)
 
-
+    best_compressions = construct_subtrees(grammar, comp_trees, node2rule)
     new_grammar = deepcopy(grammar)
-
     for new_rule in best_compressions
         add_rule!(new_grammar, new_rule)
     end
