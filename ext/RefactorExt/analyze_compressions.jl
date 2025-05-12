@@ -103,7 +103,7 @@ function parse_compressed_subtrees(compressed_rulenode::Vector{String})
     edges = Vector{Tuple{Int64, Int64, Int64}}()
     for edge in edeges_str
         s_d = match(r"comp_edge\((\d+), ?(\d+), ?(\d+)", edge)
-        from, to, pos = parse(Int64, s_d[1]), parse(Int64 ,s_d[2]), 1+parse(Int64, s_d[3])
+        from, to, pos = parse(Int64, s_d[1]), parse(Int64 ,s_d[2]), parse(Int64, s_d[3])
         push!(edges, (from, to, pos))
     end
 
@@ -179,6 +179,7 @@ function _construct_rule(comp_tree::TreeNode, grammar::AbstractGrammar, node2rul
             _construct_rule(comp_tree.children[i], grammar, node2rule))
         end
     end
+
     return RuleNode(rule_id, children)
 end
 
