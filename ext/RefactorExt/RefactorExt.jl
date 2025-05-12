@@ -2,8 +2,8 @@ module RefactorExt
 
 using HerbCore, HerbGrammar, HerbSearch, Clingo_jll
 
-include("parsing_IO.jl")
-include("analyze_compressions.jl")
+include("parsing_JSON.jl")
+include("compressions_postprocessing.jl")
 
 
 function HerbSearch.refactor_grammar(programs::AbstractVector{RuleNode}, grammar::AbstractGrammar)
