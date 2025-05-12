@@ -53,29 +53,18 @@ function levenshtein!(
     end
 end
 
-function aulile_levenstein(
+function levenshtein_string(
     expected::IOExample{<:Any,<:AbstractString},
     actual::AbstractString)::Int
     return levenshtein!(expected.out, actual, 1, 1, 1) # Equal costs for each mistake type
 end
 
-g = @csgrammar begin
+simple_grammar = @csgrammar begin
     String = " "
     String = "<"
     String = ">"
     String = "-"
     String = "."
-    String = " "
-    String = "0"
-    String = "1"
-    String = "2"
-    String = "3"
-    String = "4"
-    String = "5"
-    String = "6"
-    String = "7"
-    String = "8"
-    String = "9"
     String = x
     String = String * String
     String = replace(String, String => "")
@@ -88,10 +77,11 @@ end
         IOExample(Dict(:x => "2"), "2."),
         IOExample(Dict(:x => "3"), "3.")
     ])
-    test_result = aulile(problem, BFSIterator, g, :String, AuxFunction(aulile_levenstein, 0))
+    test_result = aulile(problem, BFSIterator, simple_grammar, :String,
+        AuxFunction(levenshtein_string, 0))
     @test !(test_result isa Nothing)
     solution, flag = test_result
-    program = rulenode2expr(solution, g)
+    program = rulenode2expr(solution, simple_grammar)
     println(program)
 
     @test !(solution isa Nothing)
@@ -104,10 +94,11 @@ end
         IOExample(Dict(:x => "2."), "2"),
         IOExample(Dict(:x => "3."), "3")
     ])
-    test_result = aulile(problem, BFSIterator, g, :String, AuxFunction(aulile_levenstein, 0))
+    test_result = aulile(problem, BFSIterator, simple_grammar, :String,
+        AuxFunction(levenshtein_string, 0))
     @test !(test_result isa Nothing)
     solution, flag = test_result
-    program = rulenode2expr(solution, g)
+    program = rulenode2expr(solution, simple_grammar)
     println(program)
 
     @test !(solution isa Nothing)
@@ -121,12 +112,51 @@ end
         IOExample(Dict(:x => "<978> 654-0299"), "9786540299"),
         IOExample(Dict(:x => "978.654.0299"), "9786540299")
     ])
-    test_result = aulile(problem, BFSIterator, g, :String, AuxFunction(aulile_levenstein, 0), max_depth=2)
+    test_result = aulile(problem, BFSIterator, simple_grammar, :String,
+        AuxFunction(levenshtein_string, 0), max_depth=2)
     @test !(test_result isa Nothing)
     solution, flag = test_result
-    program = rulenode2expr(solution, g)
+    program = rulenode2expr(solution, simple_grammar)
     println(program)
 
     @test true
 end
+
+using HerbBenchmarks
+using HerbBenchmarks.String_transformations_2020
+
+function levenshtein_string_state(
+    expected::IOExample{<:Any,<:HerbBenchmarks.String_transformations_2020.StringState},
+    actual::HerbBenchmarks.String_transformations_2020.StringState)::Int
+    return levenshtein!(expected.out.str, actual.str, 1, 1, 1) # Equal costs for each mistake type
+end
+
+@testset "Testing Aulile With Benchmark" begin
+    problem_grammar_pairs = get_all_problem_grammar_pairs(String_transformations_2020)
+    # problem_grammar_pairs = first(problem_grammar_pairs, 20)
+    grammar = problem_grammar_pairs[1].grammar
+
+    println("Initial grammar:")
+    println(grammar)
+
+    # Solve problems
+    programs = Vector{RuleNode}([])
+
+    for (i, pg) in enumerate(problem_grammar_pairs)
+        problem = pg.problem
+        test_result = aulile(problem, BFSIterator, grammar, :Start, AuxFunction(levenshtein_string_state, 0),
+            interpret=HerbBenchmarks.String_transformations_2020.interpret,
+            get_relevant_tags=HerbBenchmarks.String_transformations_2020.get_relevant_tags)
+
+        if !isnothing(test_result)
+            solution, flag = test_result
+            id = pg.identifier
+            println("\nProblem $i (id = $id)")
+            println("Solution found: ", solution)
+            push!(programs, solution)
+        end
+    end
+
+end
+
 

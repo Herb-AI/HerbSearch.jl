@@ -29,6 +29,8 @@ Performs iterative library learning (Aulile) by enumerating programs using a gra
 - `grammar`: The grammar used to generate candidate programs.
 - `start_symbol`: The non-terminal symbol representing the start of the grammar.
 - `aux`: An `AuxFunction` that defines the evaluation metric and desired score.
+- `interpret`: An interpret function for the grammar
+- `get_relevant_tags`: A grammar to tags converter specific to the problem
 - `max_iterations`: Maximum number of learning iterations to perform.
 - `max_depth`: Maximum depth for program enumeration.
 - `max_enumerations`: Maximum number of candidate programs to try per iteration.
@@ -42,9 +44,15 @@ function aulile(
     grammar::AbstractGrammar,
     start_symbol::Symbol,
     aux::AuxFunction;
+    interpret::Union{Function,Nothing}=nothing,
+    get_relevant_tags::Union{Function,Nothing}=nothing,
     max_iterations=5,
     max_depth=5,
     max_enumerations=100000)::Union{Tuple{RuleNode,SynthResult},Nothing}
+
+    if !(interpret isa Nothing)
+        @assert !(get_relevant_tags isa Nothing)
+    end
 
     iter = iter_t(grammar, start_symbol, max_depth=max_depth)
     program = nothing
@@ -52,12 +60,18 @@ function aulile(
     # Get initial distance of input and output
     best_score = 0
     for problem ∈ problem.spec
-        best_score += aux(problem, problem.in[:x])
+        best_score += aux(problem, only(values(problem.in))) # Assume single input argument
     end
     println("Initial Distance: $(best_score)")
 
     for i in 1:max_iterations
-        result = synth_with_aux(problem, iter, grammar, aux, best_score, max_enumerations=max_enumerations)
+        if interpret isa Nothing
+            result = synth_with_aux(problem, iter, grammar, aux, best_score,
+                max_enumerations=max_enumerations)
+        else
+            result = synth_with_aux(problem, iter, grammar, aux, best_score, something(interpret),
+                something(get_relevant_tags), max_enumerations=max_enumerations)
+        end
         if result isa Nothing
             return nothing
         else
@@ -75,6 +89,67 @@ function aulile(
     end
 
     return program, suboptimal_program
+end
+
+"""
+	synth_with_aux(problem::Problem, iterator::ProgramIterator, grammar::AbstractGrammar, aux::AuxFunction, 
+        best_score::Int, interpret::Function, get_relevant_tags::Function; allow_evaluation_errors=false, 
+        max_time=typemax(Int), max_enumerations=typemax(Int), mod=Main) -> Union{Tuple{RuleNode, Int}, Nothing}
+
+Searches for the best program that minimizes the score defined by the auxiliary function.
+
+- `problem`: The problem definition with IO examples.
+- `iterator`: Program enumeration iterator.
+- `grammar`: Grammar used to generate and interpret programs.
+- `aux`: An `AuxFunction` used to compute score between program output and expected output.
+- `best_score`: Current best score to beat.
+- `interpret`: An interpret function for the grammar
+- `get_relevant_tags`: A grammar to tags converter specific to the problem
+- `allow_evaluation_errors`: Whether to tolerate runtime exceptions during evaluation.
+- `max_time`: Maximum allowed runtime for the synthesis loop.
+- `max_enumerations`: Maximum number of candidate programs to try.
+- `mod`: Module in which to resolve symbols from the grammar.
+
+Returns a tuple `(program, score)` of the best discovered program and its score. Returns `nothing` if no better 
+    program was found.
+"""
+function synth_with_aux(
+    problem::Problem{<:AbstractVector{<:IOExample}},
+    iterator::ProgramIterator,
+    grammar::AbstractGrammar,
+    aux::AuxFunction,
+    best_score::Int,
+    interpret::Function,
+    get_relevant_tags::Function;
+    allow_evaluation_errors::Bool=false,
+    max_time=typemax(Int),
+    max_enumerations=typemax(Int),
+    mod::Module=Main)::Union{Tuple{RuleNode,Int},Nothing}
+
+    objective_states = [pair.out for pair in problem.spec]
+    for (i, program) ∈ enumerate(iterator)
+        states = [only(values(problem.in)) for problem in problem.spec]
+        # Can add this back for efficiency but needs a new function argument 
+        # grammartags = HerbBenchmarks.String_transformations_2020.get_relevant_tags(grammar) 
+
+        solved = true
+        for (objective_state, state) in zip(objective_states, states)
+            try
+                final_state = interpret(program, grammartags, state)
+
+                if objective_state != final_state
+                    solved = false
+                    break
+                end
+            catch BoundsError
+                break
+            end
+        end
+
+        if solved
+            return (program, 0)
+        end
+    end
 end
 
 """
