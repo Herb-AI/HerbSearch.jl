@@ -53,10 +53,21 @@ function levenshtein!(
     end
 end
 
-function levenshtein_string(
-    expected::IOExample{<:Any,<:AbstractString},
-    actual::AbstractString)::Int
-    return levenshtein!(expected.out, actual, 1, 1, 1) # Equal costs for each mistake type
+using Dates
+
+function print_time_test_start(test_name::AbstractString)::DateTime
+    println("--------------------------------------------------")
+    printstyled("Running Test: "; color=:blue)
+    println("$test_name")
+    println("--------------------------------------------------")
+    return Dates.now()
+end
+
+function print_time_test_end(start_time::DateTime)::DateTime
+    duration = max(Dates.now() - start_time, Dates.Millisecond(0))
+    printstyled("\nPass. Duration: "; color=:green)
+    println("$(duration)\n")
+    return duration
 end
 
 simple_grammar = @csgrammar begin
@@ -70,8 +81,14 @@ simple_grammar = @csgrammar begin
     String = replace(String, String => "")
 end
 
+function levenshtein_string(
+    expected::IOExample{<:Any,<:AbstractString},
+    actual::AbstractString)::Int
+    return levenshtein!(expected.out, actual, 1, 1, 1) # Equal costs for each mistake type
+end
+
 @testset "Example Appending" begin
-    println("-----------------")
+    start_time = print_time_test_start("Example Appending")
     problem = Problem([
         IOExample(Dict(:x => "1"), "1."),
         IOExample(Dict(:x => "2"), "2."),
@@ -81,14 +98,15 @@ end
         AuxFunction(levenshtein_string, 0))
     @test !(test_result isa Nothing)
     solution, flag = test_result
+    @test !(solution isa Nothing)
+    @test flag == optimal_program
     program = rulenode2expr(solution, simple_grammar)
     println(program)
-
-    @test !(solution isa Nothing)
+    print_time_test_end(start_time)
 end
 
 @testset "Example Replacing" begin
-    println("-----------------")
+    start_time = print_time_test_start("Example Replacing")
     problem = Problem([
         IOExample(Dict(:x => "1."), "1"),
         IOExample(Dict(:x => "2."), "2"),
@@ -100,13 +118,12 @@ end
     solution, flag = test_result
     program = rulenode2expr(solution, simple_grammar)
     println(program)
-
     @test !(solution isa Nothing)
+    print_time_test_end(start_time)
 end
 
 @testset "Aulile Example from Paper" begin
-    println("-----------------")
-
+    start_time = print_time_test_start("Aulile Example from Paper")
     problem = Problem([
         IOExample(Dict(:x => "801-456-8765"), "8014568765"),
         IOExample(Dict(:x => "<978> 654-0299"), "9786540299"),
@@ -118,8 +135,7 @@ end
     solution, flag = test_result
     program = rulenode2expr(solution, simple_grammar)
     println(program)
-
-    @test true
+    print_time_test_end(start_time)
 end
 
 using HerbBenchmarks
@@ -131,7 +147,8 @@ function levenshtein_string_state(
     return levenshtein!(expected.out.str, actual.str, 1, 1, 1) # Equal costs for each mistake type
 end
 
-@testset "Testing Aulile With Benchmark" begin
+@testset "Testing Aulile With String Benchmark" begin
+    start_time = print_time_test_start("String 2020 Benchmark")
     problem_grammar_pairs = get_all_problem_grammar_pairs(String_transformations_2020)
     # problem_grammar_pairs = first(problem_grammar_pairs, 20)
     grammar = problem_grammar_pairs[1].grammar
@@ -155,8 +172,10 @@ end
             println("Solution found: ", solution)
             push!(programs, solution)
         end
+        println("------------------------\n")
     end
 
+    print_time_test_end(start_time)
 end
 
 

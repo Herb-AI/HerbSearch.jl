@@ -18,6 +18,23 @@ function (af::AuxFunction)(example::IOExample, output)
 end
 
 """
+    print_new_grammar_rules(grammar::AbstractGrammar, init_grammar_size::Int)
+
+Prints the new grammar rules added after a specific point in the grammar.
+
+# Arguments
+- `grammar::AbstractGrammar`: The grammar object containing rules and types.
+- `init_grammar_size::Int`: The initial size of the grammar before new rules were added.
+"""
+function print_new_grammar_rules(grammar::AbstractGrammar, init_grammar_size::Int)
+    println("{...}")
+    for i in init_grammar_size+1:length(grammar.rules)
+        println(i, ": ", grammar.types[i], " = ", grammar.rules[i])
+    end
+    println()
+end
+
+"""
 	aulile(problem::Problem, iter_t::Type{<:ProgramIterator}, grammar::AbstractGrammar, start_symbol::Symbol, aux::AuxFunction; 
         max_iterations=5, max_depth=5, max_enumerations=100000) -> Union{Tuple{RuleNode, SynthResult}, Nothing}
 
@@ -62,7 +79,8 @@ function aulile(
     for problem ∈ problem.spec
         best_score += aux(problem, only(values(problem.in))) # Assume single input argument
     end
-    println("Initial Distance: $(best_score)")
+    println("Initial Distance: $(best_score)\n")
+    init_grammar_size = length(grammar.rules)
 
     for i in 1:max_iterations
         if interpret isa Nothing
@@ -84,7 +102,8 @@ function aulile(
                 add_rule!(grammar, program)
                 iter = iter_t(grammar, start_symbol, max_depth=max_depth)
             end
-            println("Grammar after step $(i): \n $(grammar) \n")
+            println("Grammar after step $(i):")
+            print_new_grammar_rules(grammar, max(init_grammar_size, length(grammar.rules) - 3))
         end
     end
 
@@ -220,7 +239,6 @@ function synth_with_aux(
     end
 
     println("Found a suboptimal program with distance: $(best_score)")
-    println(rulenode2expr(best_program, grammar))
 
     # The enumeration exhausted, but an optimal problem was not found
     return (best_program, best_score)
