@@ -32,6 +32,18 @@ function test_simple()
     println(optimised_grammar)
 end
 
+function test_no_compression()
+    # Define two simple programs that are deemed to be useful
+    # Program 1: 1 + 1
+    # Program 2: 1 * 1
+    ast1 = RuleNode(2, [RuleNode(1), RuleNode(1)])
+    ast2 = RuleNode(3, [RuleNode(1), RuleNode(1)])
+    useful_asts = [ast1, ast2]
+    optimised_grammar = RefactorExt.HerbSearch.refactor_grammar(useful_asts, grammar)
+    println("Optimised Grammar: ")
+    println(optimised_grammar)
+end
+
 function test_many_refactorings()
     # Program 1: (1 + 1) + ((1 - 1) + (1 - 1))
     # Program 2: (1 + 1) + ((1 * 1) + (1 * 1))
@@ -72,7 +84,7 @@ function test_string_problems()
 
     for (i, pg) in enumerate(problem_grammar_pairs)
         problem = pg.problem.spec
-        iterator = HerbSearch.DFSIterator(grammar, :Start, max_depth=8)
+        iterator = HerbSearch.DFSIterator(grammar, :Sequence, max_depth=7)
         program = synth_string_program(problem, grammar, iterator)
 
         if !isnothing(program)
@@ -84,7 +96,7 @@ function test_string_problems()
     end
     
     # Optimize grammar
-    optimised_grammar = RefactorExt.HerbSearch.refactor_grammar(programs, grammar)
+    optimised_grammar = RefactorExt.HerbSearch.refactor_grammar(programs, grammar, 1)
     
     println("Optimized grammar:")
     println(optimised_grammar)
@@ -118,4 +130,8 @@ function synth_string_program(problems::Vector{IOExample{Any, HerbBenchmarks.Str
     end
 end
 
+#test_no_compression()
+#test_simple()
+#test_many_refactorings()
+#test_one_plus_blank()
 test_string_problems()
