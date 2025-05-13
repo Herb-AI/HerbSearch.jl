@@ -27,7 +27,7 @@ function test_simple()
     # Program 2: (1 + 1) * (1 + 1)
     #ast2 = RuleNode(3, [RuleNode(2, [RuleNode(1), RuleNode(1)]), RuleNode(2, [RuleNode(1), RuleNode(1)])])
     useful_asts = [ast1, ast2]#[ast2, ast1]
-    optimised_grammar = RefactorExt.HerbSearch.refactor_grammar(useful_asts, grammar)
+    optimised_grammar = RefactorExt.HerbSearch.refactor_grammar(useful_asts, grammar, 1)
     println("Optimised Grammar: ")
     println(optimised_grammar)
 end
@@ -39,7 +39,7 @@ function test_no_compression()
     ast1 = RuleNode(2, [RuleNode(1), RuleNode(1)])
     ast2 = RuleNode(3, [RuleNode(1), RuleNode(1)])
     useful_asts = [ast1, ast2]
-    optimised_grammar = RefactorExt.HerbSearch.refactor_grammar(useful_asts, grammar)
+    optimised_grammar = RefactorExt.HerbSearch.refactor_grammar(useful_asts, grammar, 1)
     println("Optimised Grammar: ")
     println(optimised_grammar)
 end
@@ -52,7 +52,7 @@ function test_many_refactorings()
     ast2 = RuleNode(2, [RuleNode(2, [RuleNode(1), RuleNode(1)]), RuleNode(2, [RuleNode(4, [RuleNode(1), RuleNode(1)]),RuleNode(4, [RuleNode(1), RuleNode(1)])])])
     ast3 = RuleNode(2, [RuleNode(2, [RuleNode(1), RuleNode(1)]), RuleNode(2, [RuleNode(5, [RuleNode(1), RuleNode(1)]),RuleNode(5, [RuleNode(1), RuleNode(1)])])])
     useful_asts = [ast1, ast2, ast3]
-    optimised_grammar = RefactorExt.HerbSearch.refactor_grammar(useful_asts, grammar)
+    optimised_grammar = RefactorExt.HerbSearch.refactor_grammar(useful_asts, grammar, 1)
     println("Optimised Grammar: ")
     println(optimised_grammar)
 end
@@ -65,7 +65,7 @@ function test_one_plus_blank()
     ast2 = RuleNode(2, [RuleNode(1), RuleNode(4, [RuleNode(1), RuleNode(1)])])
     ast3 = RuleNode(2, [RuleNode(1), RuleNode(1)])
     useful_asts = [ast1, ast2, ast3]
-    optimised_grammar = RefactorExt.HerbSearch.refactor_grammar(useful_asts, grammar)
+    optimised_grammar = RefactorExt.HerbSearch.refactor_grammar(useful_asts, grammar, 1)
     println("Optimised Grammar: ")
     println(optimised_grammar)
 end

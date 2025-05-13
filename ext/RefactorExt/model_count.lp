@@ -12,6 +12,7 @@
 
 % There are k=1 compression roots.
 :- #count {ROOT: comp_root(ROOT)} != k.
+%--- Removing count makes it slower:
 %:- comp_root(ROOT_1), comp_root(ROOT_2), ROOT_1 != ROOT_2.
 
 % Each edge might be a compression edge.
@@ -26,12 +27,12 @@ comp_node(NODE, RULE) :- node(NODE, RULE), comp_edge(_, NODE, _).
 
 % A compression node is the root if does not have an incomming compression edge.
 comp_root(ROOT) :- comp_node(ROOT, _), #count {PARENT: comp_edge(PARENT, ROOT, _)} = 0.
-% ---
+%--- Removing count does not do anything
 %comp_root(ROOT) :- comp_node(ROOT, _), not comp_edge(_, ROOT, _).
 
 % A compression root must have at least one child.
 :- comp_root(ROOT), #count {CHILD: comp_edge(ROOT, CHILD, _)} = 0.
-% ----
+% --- Removing count makes it way lower
 %:- comp_root(ROOT), not comp_edge(ROOT, _, _).
 
 % -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
@@ -52,7 +53,7 @@ comp_node(C_NODE, RULE) :- assign(C_NODE, _), node(C_NODE, RULE).
 
 % Each compression root must be assigned at least twice.
 :- comp_root(C_NODE), #count {NODE: assign(C_NODE, NODE)} < 2.
-% ------
+%--- Removing count statement makes it way slower
 %comp_root_assigned_twice(ROOT) :- comp_root(ROOT), assign(ROOT, NODE_1), assign(ROOT, NODE_2), NODE_1 != NODE_2.
 %:- comp_root(ROOT), not comp_root_assigned_twice(ROOT).
 
@@ -64,9 +65,8 @@ assign(C_PARENT, PARENT) :- comp_edge(C_PARENT, C_NODE, ID), edge(PARENT, NODE, 
 
 % Enforce that assigned children have the correct index.
 :- assign(C_NODE, NODE), comp_edge(C_PARENT, C_NODE, ID), #count{PARENT: edge(PARENT, NODE, ID)} = 0.
-%--
+%-- Removing count statement does not do anything
 %:- assign(C_NODE, NODE), comp_edge(C_PARENT, C_NODE, ID), not edge(_, NODE, ID).
-
 
 
 #show comp_root/1.
@@ -75,6 +75,6 @@ assign(C_PARENT, PARENT) :- comp_edge(C_PARENT, C_NODE, ID), edge(PARENT, NODE, 
 
 %% ------------------------- optimizing part ---------------------------------
 
-% Maximize raw assignment
-%#maximize {1, X : assign(_, X)}.
-:~ assign(_, Y). [-5]
+% Maximize assignment
+#maximize {1, X : assign(_, X)}.
+%:~ assign(X, Y). [-1,Y]
