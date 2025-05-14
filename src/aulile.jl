@@ -63,8 +63,9 @@ function aulile(
     aux::AuxFunction;
     interpret::Union{Function,Nothing}=nothing,
     get_relevant_tags::Union{Function,Nothing}=nothing,
-    max_iterations=5,
-    max_depth=5,
+    allow_evaluation_errors::Bool=false,
+    max_iterations=10000,
+    max_depth=10,
     max_enumerations=100000)::Union{Tuple{RuleNode,SynthResult},Nothing}
 
     if !(interpret isa Nothing)
@@ -88,13 +89,19 @@ function aulile(
                 max_enumerations=max_enumerations)
         else
             result = synth_with_aux(problem, iter, grammar, aux, best_score, something(interpret),
-                something(get_relevant_tags), max_enumerations=max_enumerations)
+                something(get_relevant_tags), allow_evaluation_errors=allow_evaluation_errors,
+                max_enumerations=max_enumerations)
         end
         if result isa Nothing
             return nothing
         else
             program, new_score = result
-            @assert new_score < best_score
+            if best_score > 0
+                @assert new_score < best_score
+            else
+                # In the case where the distance is optimal from the start
+                @assert new_score <= best_score
+            end
             best_score = new_score
             if best_score <= aux.best_value
                 return program, optimal_program
@@ -145,30 +152,46 @@ function synth_with_aux(
     max_enumerations=typemax(Int),
     mod::Module=Main)::Union{Tuple{RuleNode,Int},Nothing}
 
-    objective_states = [pair.out for pair in problem.spec]
-    for (i, program) ∈ enumerate(iterator)
-        states = [only(values(problem.in)) for problem in problem.spec]
-        # Can add this back for efficiency but needs a new function argument 
-        # grammartags = HerbBenchmarks.String_transformations_2020.get_relevant_tags(grammar) 
+    grammartags = get_relevant_tags(grammar)
 
-        solved = true
-        for (objective_state, state) in zip(objective_states, states)
-            try
-                final_state = interpret(program, grammartags, state)
+    start_time = time()
+    best_program = nothing
 
-                if objective_state != final_state
-                    solved = false
-                    break
-                end
-            catch BoundsError
-                break
-            end
+    for (i, candidate_program) ∈ enumerate(iterator)
+        # Evaluate the expression
+        score = evaluate_with_aux(
+            problem,
+            candidate_program,
+            grammartags,
+            aux,
+            interpret,
+            allow_evaluation_errors=allow_evaluation_errors,
+        )
+        # Update score if better
+        if score == aux.best_value
+            candidate_program = freeze_state(candidate_program)
+            println("Found an optimal program!")
+            return (candidate_program, aux.best_value)
+        elseif score < best_score
+            best_score = score
+            candidate_program = freeze_state(candidate_program)
+            best_program = candidate_program
         end
-
-        if solved
-            return (program, 0)
+        # Check stopping criteria
+        if i > max_enumerations || time() - start_time > max_time
+            break
         end
     end
+
+    if isnothing(best_program)
+        println("Did not find a better program")
+        return nothing
+    end
+
+    println("Found a suboptimal program with distance: $(best_score)")
+
+    # The enumeration exhausted, but an optimal problem was not found
+    return (best_program, best_score)
 end
 
 """
@@ -242,6 +265,54 @@ function synth_with_aux(
 
     # The enumeration exhausted, but an optimal problem was not found
     return (best_program, best_score)
+end
+
+"""
+	evaluate_with_aux(problem::Problem, expr::Any, symboltable::SymbolTable, aux::AuxFunction; 
+        allow_evaluation_errors=false) -> Number
+
+Evaluates a candidate program (given as an expression) over all examples in a problem using the auxiliary evaluation 
+    function.
+
+- `problem`: The problem definition with IO examples.
+- `expr`: The candidate program expression to evaluate.
+- `symboltable`: Symbol table used to evaluate functions in the expression.
+- `aux`: An `AuxFunction` used to compute the score between expected and actual output.
+- `allow_evaluation_errors`: Whether evaluation errors should be tolerated or raise an exception.
+
+Returns the total distance score. If evaluation errors are disallowed and one occurs, an `EvaluationError` is thrown.
+"""
+function evaluate_with_aux(
+    problem::Problem{<:AbstractVector{<:IOExample}},
+    program::Any,
+    grammartags::Dict{Int,Symbol},
+    aux::AuxFunction,
+    interpret::Function;
+    allow_evaluation_errors::Bool=false
+)::Number
+    distance_in_examples = 0
+
+    crashed = false
+    for example ∈ problem.spec
+        try
+            output = interpret(program, grammartags, only(values(example.in)))
+            distance_in_examples += aux(example, output)
+        catch e
+            # You could also decide to handle less severe errors (such as index out of range) differently,
+            # for example by just increasing the error value and keeping the program as a candidate.
+            crashed = true
+            # Throw the error again if evaluation errors aren't allowed
+            # eval_error = EvaluationError(expr, example.in, e)
+            # allow_evaluation_errors || throw(eval_error)
+            allow_evaluation_errors || throw(e)
+            break
+        end
+    end
+    if crashed
+        return typemax(Int)
+    else
+        return distance_in_examples
+    end
 end
 
 """

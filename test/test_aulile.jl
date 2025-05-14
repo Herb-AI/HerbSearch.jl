@@ -55,18 +55,33 @@ end
 
 using Dates
 
-function print_time_test_start(test_name::AbstractString)::DateTime
-    println("--------------------------------------------------")
-    printstyled("Running Test: "; color=:blue)
-    println("$test_name")
-    println("--------------------------------------------------")
+"""
+Prints test message (name) and returns the start time
+"""
+function print_time_test_start(message::AbstractString; print_separating_dashes=true)::DateTime
+    println()
+    if print_separating_dashes
+        println("--------------------------------------------------")
+    end
+    printstyled(message * "\n"; color=:blue)
+    if print_separating_dashes
+        println("--------------------------------------------------")
+    end
     return Dates.now()
 end
 
-function print_time_test_end(start_time::DateTime)::DateTime
+"""
+Prints the duration of the test
+"""
+function print_time_test_end(start_time::DateTime; test_passed=true)::DateTime
     duration = max(Dates.now() - start_time, Dates.Millisecond(0))
-    printstyled("\nPass. Duration: "; color=:green)
-    println("$(duration)\n")
+    println()
+    if test_passed
+        printstyled("Pass. Duration: "; color=:green)
+    else
+        printstyled("Fail. Duration: "; color=:red)
+    end
+    println("$(duration)")
     return duration
 end
 
@@ -88,7 +103,7 @@ function levenshtein_string(
 end
 
 @testset "Example Appending" begin
-    start_time = print_time_test_start("Example Appending")
+    start_time = print_time_test_start("Running Test: Example Appending")
     problem = Problem([
         IOExample(Dict(:x => "1"), "1."),
         IOExample(Dict(:x => "2"), "2."),
@@ -106,7 +121,7 @@ end
 end
 
 @testset "Example Replacing" begin
-    start_time = print_time_test_start("Example Replacing")
+    start_time = print_time_test_start("Running Test: Example Replacing")
     problem = Problem([
         IOExample(Dict(:x => "1."), "1"),
         IOExample(Dict(:x => "2."), "2"),
@@ -123,7 +138,7 @@ end
 end
 
 @testset "Aulile Example from Paper" begin
-    start_time = print_time_test_start("Aulile Example from Paper")
+    start_time = print_time_test_start("Running Test: Aulile Example from Paper")
     problem = Problem([
         IOExample(Dict(:x => "801-456-8765"), "8014568765"),
         IOExample(Dict(:x => "<978> 654-0299"), "9786540299"),
@@ -148,34 +163,40 @@ function levenshtein_string_state(
 end
 
 @testset "Testing Aulile With String Benchmark" begin
-    start_time = print_time_test_start("String 2020 Benchmark")
+    total_start_time = print_time_test_start("Running Test: String 2020 Benchmark")
     problem_grammar_pairs = get_all_problem_grammar_pairs(String_transformations_2020)
-    # problem_grammar_pairs = first(problem_grammar_pairs, 20)
+    problem_grammar_pairs = first(problem_grammar_pairs, 25)
     grammar = problem_grammar_pairs[1].grammar
-
-    println("Initial grammar:")
-    println(grammar)
-
     # Solve problems
     programs = Vector{RuleNode}([])
 
+    passed_tests = 0
     for (i, pg) in enumerate(problem_grammar_pairs)
+        id = pg.identifier
+        start_time = print_time_test_start("Problem $i (id = $id)", print_separating_dashes=false)
         problem = pg.problem
         test_result = aulile(problem, BFSIterator, grammar, :Start, AuxFunction(levenshtein_string_state, 0),
             interpret=HerbBenchmarks.String_transformations_2020.interpret,
-            get_relevant_tags=HerbBenchmarks.String_transformations_2020.get_relevant_tags)
+            get_relevant_tags=HerbBenchmarks.String_transformations_2020.get_relevant_tags,
+            allow_evaluation_errors=true,
+            max_iterations=10, max_depth=5)
 
         if !isnothing(test_result)
             solution, flag = test_result
-            id = pg.identifier
-            println("\nProblem $i (id = $id)")
-            println("Solution found: ", solution)
+            @assert flag == optimal_program
+            passed_tests += 1
+            println(rulenode2expr(solution, grammar))
+            print_time_test_end(start_time)
             push!(programs, solution)
+        else
+            print_time_test_end(start_time, test_passed=false)
         end
-        println("------------------------\n")
+
+        println("------------------------")
     end
 
-    print_time_test_end(start_time)
+    println("\nPassed $(passed_tests)/$(length(problem_grammar_pairs)) tests.")
+    print_time_test_end(total_start_time, test_passed=(passed_tests == length(problem_grammar_pairs)))
 end
 
 
