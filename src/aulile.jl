@@ -80,7 +80,7 @@ function aulile(
     for problem ∈ problem.spec
         best_score += aux(problem, only(values(problem.in))) # Assume single input argument
     end
-    println("Initial Distance: $(best_score)\n")
+    println("Initial Distance: $(best_score)")
     init_grammar_size = length(grammar.rules)
 
     for i in 1:max_iterations
@@ -179,6 +179,7 @@ function synth_with_aux(
         end
         # Check stopping criteria
         if i > max_enumerations || time() - start_time > max_time
+            println("Reached stopping criteria")
             break
         end
     end

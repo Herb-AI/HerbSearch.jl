@@ -86,6 +86,7 @@ export
 	EvaluationError, 
 
   aulile,
+  synth_with_aux,
   AuxFunction
 
   """

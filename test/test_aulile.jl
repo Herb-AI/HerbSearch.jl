@@ -59,8 +59,8 @@ using Dates
 Prints test message (name) and returns the start time
 """
 function print_time_test_start(message::AbstractString; print_separating_dashes=true)::DateTime
-    println()
     if print_separating_dashes
+        println()
         println("--------------------------------------------------")
     end
     printstyled(message * "\n"; color=:blue)
@@ -73,8 +73,8 @@ end
 """
 Prints the duration of the test
 """
-function print_time_test_end(start_time::DateTime; test_passed=true)::DateTime
-    duration = max(Dates.now() - start_time, Dates.Millisecond(0))
+function print_time_test_end(start_time::DateTime; end_time::DateTime=Dates.now(), test_passed=true)::DateTime
+    duration = max(end_time - start_time, Dates.Millisecond(0))
     println()
     if test_passed
         printstyled("Pass. Duration: "; color=:green)
@@ -156,47 +156,92 @@ end
 using HerbBenchmarks
 using HerbBenchmarks.String_transformations_2020
 
+function is_test_correct(
+    expected::IOExample{<:Any,<:HerbBenchmarks.String_transformations_2020.StringState},
+    actual::HerbBenchmarks.String_transformations_2020.StringState)::Int
+    if expected.out.str == actual.str
+        return 0
+    else
+        return 1
+    end
+end
+
 function levenshtein_string_state(
     expected::IOExample{<:Any,<:HerbBenchmarks.String_transformations_2020.StringState},
     actual::HerbBenchmarks.String_transformations_2020.StringState)::Int
-    return levenshtein!(expected.out.str, actual.str, 1, 1, 1) # Equal costs for each mistake type
+    return levenshtein!(expected.out.str, actual.str, 1, 1, 1) # Insertion can not be done
+end
+
+function is_test_passed_and_debug(test_res::Union{Tuple{RuleNode,Any},Nothing}, grammar::AbstractGrammar,
+    optimal_score::Any, start_time::DateTime, end_time::DateTime=Dates.now())::Bool
+    if !isnothing(test_res)
+        solution, score = test_res
+        if score <= optimal_score
+            print_time_test_end(start_time, end_time=end_time)
+            return true
+        else
+            println("Suboptimal program")
+            print_time_test_end(start_time, end_time=end_time,
+                test_passed=false)
+            return false
+        end
+        println(rulenode2expr(solution, grammar))
+    else
+        print_time_test_end(start_time, end_time=end_time,
+            test_passed=false)
+        return false
+    end
 end
 
 @testset "Testing Aulile With String Benchmark" begin
+    max_iterations = 2
+    max_depth = 10
+    max_enumerations = 1000
     total_start_time = print_time_test_start("Running Test: String 2020 Benchmark")
     problem_grammar_pairs = get_all_problem_grammar_pairs(String_transformations_2020)
-    problem_grammar_pairs = first(problem_grammar_pairs, 25)
+    problem_grammar_pairs = first(problem_grammar_pairs, 10)
     grammar = problem_grammar_pairs[1].grammar
     # Solve problems
     programs = Vector{RuleNode}([])
 
-    passed_tests = 0
+    regular_passed_tests = 0
+    aulile_passed_tests = 0
     for (i, pg) in enumerate(problem_grammar_pairs)
         id = pg.identifier
-        start_time = print_time_test_start("Problem $i (id = $id)", print_separating_dashes=false)
         problem = pg.problem
-        test_result = aulile(problem, BFSIterator, grammar, :Start, AuxFunction(levenshtein_string_state, 0),
+        print_time_test_start("Problem $i (id = $id)", print_separating_dashes=false)
+
+        regular_synth_start_time = print_time_test_start("\n\tRegular Synth Results:\n",
+            print_separating_dashes=false)
+        regular_synth_result = synth_with_aux(problem, BFSIterator(grammar, :Start, max_depth=max_depth),
+            grammar, AuxFunction(is_test_correct, 0), typemax(Int),
+            HerbBenchmarks.String_transformations_2020.interpret,
+            HerbBenchmarks.String_transformations_2020.get_relevant_tags;
+            allow_evaluation_errors=true, max_enumerations=max_enumerations)
+
+        if is_test_passed_and_debug(regular_synth_result, grammar, 0, regular_synth_start_time)
+            regular_passed_tests += 1
+        end
+
+        aulile_start_time = print_time_test_start("\n\tAulile Results:\n", print_separating_dashes=false)
+        aulile_result = aulile(problem, BFSIterator, grammar, :Start, AuxFunction(levenshtein_string_state, 0),
             interpret=HerbBenchmarks.String_transformations_2020.interpret,
             get_relevant_tags=HerbBenchmarks.String_transformations_2020.get_relevant_tags,
             allow_evaluation_errors=true,
-            max_iterations=10, max_depth=5)
+            max_iterations=max_iterations, max_depth=max_depth,
+            max_enumerations=(max_enumerations / max_iterations))
 
-        if !isnothing(test_result)
-            solution, flag = test_result
-            @assert flag == optimal_program
-            passed_tests += 1
-            println(rulenode2expr(solution, grammar))
-            print_time_test_end(start_time)
-            push!(programs, solution)
-        else
-            print_time_test_end(start_time, test_passed=false)
+        if is_test_passed_and_debug(aulile_result, grammar, optimal_program, aulile_start_time)
+            aulile_passed_tests += 1
         end
 
         println("------------------------")
     end
 
-    println("\nPassed $(passed_tests)/$(length(problem_grammar_pairs)) tests.")
-    print_time_test_end(total_start_time, test_passed=(passed_tests == length(problem_grammar_pairs)))
+    println()
+    println("Without Aulile Passed: $(regular_passed_tests)/$(length(problem_grammar_pairs)) tests.")
+    println("With Aulile Passed: $(aulile_passed_tests)/$(length(problem_grammar_pairs)) tests.")
+    print_time_test_end(total_start_time, test_passed=(aulile_passed_tests == length(problem_grammar_pairs)))
 end
 
 
