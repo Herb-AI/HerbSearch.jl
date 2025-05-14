@@ -56,7 +56,7 @@ end
 using Dates
 
 """
-Prints test message (name) and returns the start time
+    Prints test message (name) and returns the start time
 """
 function print_time_test_start(message::AbstractString; print_separating_dashes=true)::DateTime
     if print_separating_dashes
@@ -71,7 +71,7 @@ function print_time_test_start(message::AbstractString; print_separating_dashes=
 end
 
 """
-Prints the duration of the test
+    Prints and returns the duration of the test
 """
 function print_time_test_end(start_time::DateTime; end_time::DateTime=Dates.now(), test_passed=true)::DateTime
     duration = max(end_time - start_time, Dates.Millisecond(0))
@@ -156,6 +156,9 @@ end
 using HerbBenchmarks
 using HerbBenchmarks.String_transformations_2020
 
+"""
+    Default auxiliary function of just checking how many tests are correct.
+"""
 function is_test_correct(
     expected::IOExample{<:Any,<:HerbBenchmarks.String_transformations_2020.StringState},
     actual::HerbBenchmarks.String_transformations_2020.StringState)::Int
@@ -169,9 +172,12 @@ end
 function levenshtein_string_state(
     expected::IOExample{<:Any,<:HerbBenchmarks.String_transformations_2020.StringState},
     actual::HerbBenchmarks.String_transformations_2020.StringState)::Int
-    return levenshtein!(expected.out.str, actual.str, 1, 1, 1) # Insertion can not be done
+    return levenshtein!(expected.out.str, actual.str, 1, 1, 1) # Equal costs for error types
 end
 
+"""
+    Prints debugging information and returns whether the test passed
+"""
 function is_test_passed_and_debug(test_res::Union{Tuple{RuleNode,Any},Nothing}, grammar::AbstractGrammar,
     optimal_score::Any, start_time::DateTime, end_time::DateTime=Dates.now())::Bool
     if !isnothing(test_res)

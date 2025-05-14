@@ -48,6 +48,7 @@ Performs iterative library learning (Aulile) by enumerating programs using a gra
 - `aux`: An `AuxFunction` that defines the evaluation metric and desired score.
 - `interpret`: An interpret function for the grammar
 - `get_relevant_tags`: A grammar to tags converter specific to the problem
+- `allow_evaluation_errors`: Whether to allow evaluation errors (such as in the grammar)
 - `max_iterations`: Maximum number of learning iterations to perform.
 - `max_depth`: Maximum depth for program enumeration.
 - `max_enumerations`: Maximum number of candidate programs to try per iteration.
@@ -276,9 +277,10 @@ Evaluates a candidate program (given as an expression) over all examples in a pr
     function.
 
 - `problem`: The problem definition with IO examples.
-- `expr`: The candidate program expression to evaluate.
-- `symboltable`: Symbol table used to evaluate functions in the expression.
+- `program`: The candidate program to evaluate.
+- `grammartags`: The grammar tags as returned by the function get_grammar_tags.
 - `aux`: An `AuxFunction` used to compute the score between expected and actual output.
+- `interpret`: The interpret function that provides the output of the program on the given input
 - `allow_evaluation_errors`: Whether evaluation errors should be tolerated or raise an exception.
 
 Returns the total distance score. If evaluation errors are disallowed and one occurs, an `EvaluationError` is thrown.
