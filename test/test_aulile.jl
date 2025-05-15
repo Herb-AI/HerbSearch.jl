@@ -206,13 +206,14 @@ end
     total_start_time = print_time_test_start("Running Test: String 2020 Benchmark")
     problem_grammar_pairs = get_all_problem_grammar_pairs(String_transformations_2020)
     problem_grammar_pairs = first(problem_grammar_pairs, 10)
-    grammar = problem_grammar_pairs[1].grammar
+    init_grammar = problem_grammar_pairs[1].grammar
     # Solve problems
     programs = Vector{RuleNode}([])
 
     regular_passed_tests = 0
     aulile_passed_tests = 0
     for (i, pg) in enumerate(problem_grammar_pairs)
+        grammar = deepcopy(init_grammar)
         id = pg.identifier
         problem = pg.problem
         print_time_test_start("Problem $i (id = $id)", print_separating_dashes=false)
