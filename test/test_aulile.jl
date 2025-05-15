@@ -182,16 +182,16 @@ function is_test_passed_and_debug(test_res::Union{Tuple{RuleNode,Any},Nothing}, 
     optimal_score::Any, start_time::DateTime, end_time::DateTime=Dates.now())::Bool
     if !isnothing(test_res)
         solution, score = test_res
-        if score <= optimal_score
+        passed = score <= optimal_score
+        if passed
             print_time_test_end(start_time, end_time=end_time)
-            return true
         else
             println("Suboptimal program")
             print_time_test_end(start_time, end_time=end_time,
                 test_passed=false)
-            return false
         end
         println(rulenode2expr(solution, grammar))
+        return passed
     else
         print_time_test_end(start_time, end_time=end_time,
             test_passed=false)
