@@ -9,7 +9,7 @@ include("compressions_postprocessing.jl")
 function HerbSearch.refactor_grammar(programs::AbstractVector{RuleNode}, grammar::AbstractGrammar, k::Int)
     # Parse programs into model
     model = parse_programs(programs)
-    model *= "#const k = $k."
+    model *= "\n#const k = $k.\n"
 
     # Run model
     dir_path = dirname(@__FILE__)     
