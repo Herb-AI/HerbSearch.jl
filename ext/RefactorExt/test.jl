@@ -13,6 +13,39 @@ grammar = @csgrammar begin
     Int = Int * Int
     Int = Int - Int
     Int = Int / Int
+    Int = 1 + Num
+    Int = 1 + Int
+    Num = 3
+    Num = 4
+    Num = 5
+    Int = Num
+end
+
+function test_for_debug_success()
+    ast1 = RuleNode(2, [RuleNode(1), RuleNode(6, [RuleNode(7)])])
+    ast2 = RuleNode(2, [RuleNode(1), RuleNode(6, [RuleNode(8)])])
+    ast3 = RuleNode(2, [RuleNode(1), RuleNode(6, [RuleNode(9)])])
+    # 1 + (1 + (Num 3))
+    # 1 + (1 + (Num 4))
+    # 1 + (1 + (Num 5))
+    useful_asts = [ast1, ast2, ast3]
+    optimised_grammar = RefactorExt.HerbSearch.refactor_grammar(useful_asts, grammar)
+    println("Optimised Grammar: ")
+    println(optimised_grammar)
+end
+
+
+function test_for_debug_fail()
+    ast1 = RuleNode(2, [RuleNode(1), RuleNode(7, [RuleNode(11, [RuleNode(8)])])])
+    ast2 = RuleNode(2, [RuleNode(1), RuleNode(7, [RuleNode(11, [RuleNode(9)])])])
+    ast3 = RuleNode(2, [RuleNode(1), RuleNode(7, [RuleNode(11, [RuleNode(10)])])])
+    # 1 + (1 + (Int (Num 3)))
+    # 1 + (1 + (Int (Num 4)))
+    # 1 + (1 + (Int (Num 5)))
+    useful_asts = [ast1, ast2, ast3]
+    optimised_grammar = RefactorExt.HerbSearch.refactor_grammar(useful_asts, grammar)
+    println("Optimised Grammar: ")
+    println(optimised_grammar)
 end
 
 function test_simple()
@@ -89,14 +122,14 @@ function test_string_problems()
 
         if !isnothing(program)
             id = pg.identifier
-            println("\nProblem $i (id = $id)")
-            println("Solution found: ", program)
+            # println("\nProblem $i (id = $id)")
+            # println("Solution found: ", program)
             push!(programs, program)
         end
     end
     
     # Optimize grammar
-    optimised_grammar = RefactorExt.HerbSearch.refactor_grammar(programs, grammar, 1)
+    optimised_grammar = RefactorExt.HerbSearch.refactor_grammar(programs, grammar, 4)
     
     println("Optimized grammar:")
     println(optimised_grammar)
@@ -130,8 +163,10 @@ function synth_string_program(problems::Vector{IOExample{Any, HerbBenchmarks.Str
     end
 end
 
-#test_no_compression()
-#test_simple()
-#test_many_refactorings()
-#test_one_plus_blank()
-test_string_problems()
+test_for_debug_success()
+test_for_debug_fail()
+# test_no_compression()
+# test_simple()
+# test_many_refactorings()
+# test_one_plus_blank()
+# test_string_problems()
