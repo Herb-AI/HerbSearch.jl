@@ -13,12 +13,12 @@ grammar = @csgrammar begin
     Int = Int * Int
     Int = Int - Int
     Int = Int / Int
-    # Int = 1 + Num
-    # Int = 1 + Int
-    # Num = 3
-    # Num = 4
-    # Num = 5
-    # Int = Num
+    Int = 1 + Num
+    Int = 1 + Int
+    Num = 3
+    Num = 4
+    Num = 5
+    Int = Num
 end
 
 function test_for_debug_success()
@@ -165,10 +165,10 @@ function synth_string_program(problems::Vector{IOExample{Any, HerbBenchmarks.Str
     end
 end
 
-# test_for_debug_success()
-# test_for_debug_fail()
+test_for_debug_success()
+test_for_debug_fail()
 # test_no_compression()
-test_simple()
-test_many_refactorings()
-test_one_plus_blank()
+# test_simple()
+# test_many_refactorings()
+# test_one_plus_blank()
 # test_string_problems()

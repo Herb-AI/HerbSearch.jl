@@ -11,10 +11,10 @@ function HerbSearch.refactor_grammar(programs::AbstractVector{RuleNode}, grammar
     model = parse_programs(programs)
     model *= "\n#const k = $k.\n"
 
-    old_model = true
+    OLD_MODEL = true
     # Run model
     dir_path = dirname(@__FILE__)     
-    if old_model
+    if OLD_MODEL
         model_location = joinpath(dir_path, "model.lp")
     else
         model_location = joinpath(dir_path, "optimization_attempts.lp")
@@ -24,12 +24,12 @@ function HerbSearch.refactor_grammar(programs::AbstractVector{RuleNode}, grammar
     run(pipeline(ignorestatus(command), stdin=IOBuffer(model), stdout=output))
     data = String(take!(output))
 
-    # println(data)
+    println(data)
     
     # Convert result into grammar rule
     best_values = read_last_witness_from_json(data)
     node_assignments::Vector{String} = best_values
-    (comp_trees, node2rule) = parse_compressed_subtrees(node_assignments, old_model)
+    (comp_trees, node2rule) = parse_compressed_subtrees(node_assignments, OLD_MODEL)
     
     best_compressions = construct_subtrees(grammar, comp_trees, node2rule)
 

@@ -10,7 +10,7 @@ comp_root_option(1..k).
 
 #const max_children = 2.
 
-#const max_compression_nodes = 10.
+#const max_compression_nodes = 20.
 
 % TODO: enforce order on existing nodes
 comp_node_option(k+1..k+max_compression_nodes).
@@ -23,6 +23,11 @@ comp_node_option(k+1..k+max_compression_nodes).
 { comp_edge(PARENT, CHILD, 1..max_children) } 1 :- comp_node_option(PARENT), comp_node_option(CHILD).
 
 { comp_node(NODE, 1..amount_of_rules) } 1 :- comp_node_option(NODE).
+
+
+compressed(NODE) :- comp_root(NODE, _).
+compressed(NODE) :- comp_node(NODE, _).
+:- compressed(K), K > 1, not compressed(K-1).
 
 % comp_root(1, 2).
 % comp_node(2, 1).
