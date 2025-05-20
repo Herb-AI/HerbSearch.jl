@@ -96,11 +96,18 @@ simple_grammar = @csgrammar begin
     String = replace(String, String => "")
 end
 
-function levenshtein_string(
-    expected::IOExample{<:Any,<:AbstractString},
-    actual::AbstractString)::Int
-    return levenshtein!(expected.out, actual, 1, 1, 1) # Equal costs for each mistake type
-end
+levenshtein_aux = AuxFunction(
+    (expected::IOExample{<:Any,<:AbstractString}, actual::AbstractString) ->
+        levenshtein!(expected.out, actual, 1, 1, 1),
+    problem::Problem -> begin
+        score = 0
+        for example ∈ problem.spec
+            score += levenshtein!(example.out, only(values(example.in)), 1, 1, 1)
+        end
+        return score
+    end,
+    0
+)
 
 @testset "Example Appending" begin
     start_time = print_time_test_start("Running Test: Example Appending")
@@ -109,8 +116,7 @@ end
         IOExample(Dict(:x => "2"), "2."),
         IOExample(Dict(:x => "3"), "3.")
     ])
-    test_result = aulile(problem, BFSIterator, simple_grammar, :String,
-        AuxFunction(levenshtein_string, 0))
+    test_result = aulile(problem, BFSIterator, simple_grammar, :String, levenshtein_aux)
     @test !(test_result isa Nothing)
     solution, flag = test_result
     @test !(solution isa Nothing)
@@ -127,8 +133,7 @@ end
         IOExample(Dict(:x => "2."), "2"),
         IOExample(Dict(:x => "3."), "3")
     ])
-    test_result = aulile(problem, BFSIterator, simple_grammar, :String,
-        AuxFunction(levenshtein_string, 0))
+    test_result = aulile(problem, BFSIterator, simple_grammar, :String, levenshtein_aux)
     @test !(test_result isa Nothing)
     solution, flag = test_result
     program = rulenode2expr(solution, simple_grammar)
@@ -144,8 +149,7 @@ end
         IOExample(Dict(:x => "<978> 654-0299"), "9786540299"),
         IOExample(Dict(:x => "978.654.0299"), "9786540299")
     ])
-    test_result = aulile(problem, BFSIterator, simple_grammar, :String,
-        AuxFunction(levenshtein_string, 0), max_depth=2)
+    test_result = aulile(problem, BFSIterator, simple_grammar, :String, levenshtein_aux, max_depth=2)
     @test !(test_result isa Nothing)
     solution, flag = test_result
     program = rulenode2expr(solution, simple_grammar)
@@ -156,24 +160,23 @@ end
 using HerbBenchmarks
 using HerbBenchmarks.String_transformations_2020
 
-"""
-    Default auxiliary function of just checking how many tests are correct.
-"""
-function is_test_correct(
-    expected::IOExample{<:Any,<:HerbBenchmarks.String_transformations_2020.StringState},
-    actual::HerbBenchmarks.String_transformations_2020.StringState)::Int
-    if expected.out.str == actual.str
-        return 0
-    else
-        return 1
-    end
-end
+del_cost = 1
+insr_cost = 1
+subst_cost = 1
+levenshtein_benchmark_aux = AuxFunction(
+    (expected::IOExample{<:Any,<:HerbBenchmarks.String_transformations_2020.StringState},
+        actual::HerbBenchmarks.String_transformations_2020.StringState) ->
+        levenshtein!(expected.out.str, actual.str, del_cost, insr_cost, subst_cost),
+    problem::Problem -> begin
+        score = 0
+        for example ∈ problem.spec
+            score += levenshtein!(example.out.str, only(values(example.in)).str, del_cost, insr_cost, subst_cost)
+        end
+        return score
+    end,
+    0
+)
 
-function levenshtein_string_state(
-    expected::IOExample{<:Any,<:HerbBenchmarks.String_transformations_2020.StringState},
-    actual::HerbBenchmarks.String_transformations_2020.StringState)::Int
-    return levenshtein!(expected.out.str, actual.str, 1, 1, 1) # Equal costs for error types
-end
 
 """
     Prints debugging information and returns whether the test passed
@@ -221,9 +224,8 @@ end
         regular_synth_start_time = print_time_test_start("\n\tRegular Synth Results:\n",
             print_separating_dashes=false)
         regular_synth_result = synth_with_aux(problem, BFSIterator(grammar, :Start, max_depth=max_depth),
-            grammar, AuxFunction(is_test_correct, 0), typemax(Int),
-            HerbBenchmarks.String_transformations_2020.interpret,
-            HerbBenchmarks.String_transformations_2020.get_relevant_tags;
+            grammar, default_aux, typemax(Int),
+            interpret=HerbBenchmarks.String_transformations_2020.interpret,
             allow_evaluation_errors=true, max_enumerations=max_enumerations)
 
         if is_test_passed_and_debug(regular_synth_result, grammar, 0, regular_synth_start_time)
@@ -231,9 +233,8 @@ end
         end
 
         aulile_start_time = print_time_test_start("\n\tAulile Results:\n", print_separating_dashes=false)
-        aulile_result = aulile(problem, BFSIterator, grammar, :Start, AuxFunction(levenshtein_string_state, 0),
+        aulile_result = aulile(problem, BFSIterator, grammar, :Start, levenshtein_benchmark_aux,
             interpret=HerbBenchmarks.String_transformations_2020.interpret,
-            get_relevant_tags=HerbBenchmarks.String_transformations_2020.get_relevant_tags,
             allow_evaluation_errors=true,
             max_iterations=max_iterations, max_depth=max_depth,
             max_enumerations=(max_enumerations / max_iterations))

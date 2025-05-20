@@ -87,7 +87,8 @@ export
 
   aulile,
   synth_with_aux,
-  AuxFunction
+  AuxFunction,
+  default_aux
 
   """
     refactor_grammar
