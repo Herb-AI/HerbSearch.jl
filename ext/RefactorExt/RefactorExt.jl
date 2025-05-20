@@ -11,10 +11,14 @@ function HerbSearch.refactor_grammar(programs::AbstractVector{RuleNode}, grammar
     model = parse_programs(programs)
     model *= "\n#const k = $k.\n"
 
+    old_model = true
     # Run model
     dir_path = dirname(@__FILE__)     
-    #model_location = joinpath(dir_path, "model.lp")
-    model_location = joinpath(dir_path, "model_count.lp")
+    if old_model
+        model_location = joinpath(dir_path, "model.lp")
+    else
+        model_location = joinpath(dir_path, "optimization_attempts.lp")
+    end
     command = `$(clingo()) $(model_location) - --outf=2`
     output = IOBuffer()
     run(pipeline(ignorestatus(command), stdin=IOBuffer(model), stdout=output))
@@ -25,13 +29,15 @@ function HerbSearch.refactor_grammar(programs::AbstractVector{RuleNode}, grammar
     # Convert result into grammar rule
     best_values = read_last_witness_from_json(data)
     node_assignments::Vector{String} = best_values
-    (comp_trees, node2rule) = parse_compressed_subtrees(node_assignments)
-
+    (comp_trees, node2rule) = parse_compressed_subtrees(node_assignments, old_model)
+    
     best_compressions = construct_subtrees(grammar, comp_trees, node2rule)
 
     new_grammar = deepcopy(grammar)
     for new_rule in best_compressions
+        println("uncompressed rule:\t$new_rule")
         comp_rule = merge_nonbranching_elements(new_rule, grammar)
+        println("compressed rule:\t$comp_rule")
         add_rule!(new_grammar, comp_rule)
     end
 

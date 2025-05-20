@@ -21,7 +21,7 @@ Parses string containing compression found by the model into trees.
 - `compressed_rulenode::Vector{String}`: vector containing strings in format 
 "comp_root(X)", "comp_node(X, RULE)", "comp_edge(FROM, TO, POS)" and "assign(COMP_NODE, AST_NODE)"
 """
-function parse_compressed_subtrees(compressed_rulenode::Vector{String})
+function parse_compressed_subtrees(compressed_rulenode::Vector{String}, old_model::Bool = false)
     roots = filter(s -> startswith(s, "comp_root("), compressed_rulenode)
     edeges_str = filter(s -> startswith(s, "comp_edge("), compressed_rulenode)
     nodes = filter(s -> startswith(s, "comp_node("), compressed_rulenode)
@@ -38,11 +38,22 @@ function parse_compressed_subtrees(compressed_rulenode::Vector{String})
     # end
     
     # find all roots, add them as a last seen node of their id
-    for root in roots
-        r_id = parse(Int64, match(r"(\d+)", root)[1])
-        root = TreeNode(r_id)
-        push!(trees, root)
-        seen_nodes[r_id] = root 
+    if old_model
+        for root in roots
+            r_id = parse(Int64, match(r"(\d+)", root)[1])
+            root = TreeNode(r_id)
+            push!(trees, root)
+            seen_nodes[r_id] = root 
+        end
+    else
+        for root in roots
+            id_rule  = match(r"\((\d+), ?(\d+)", root)
+            r_id, rule = parse(Int64, id_rule[1]), parse(Int64, id_rule[2])
+            root = TreeNode(r_id)
+            push!(trees, root)
+            node_to_rule[r_id] = rule
+            seen_nodes[r_id] = root 
+        end
     end
 
     # build dictionary node to rule
