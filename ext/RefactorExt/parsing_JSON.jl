@@ -52,6 +52,11 @@ Reads a JSON file and returns the parsed content.
 """
 function read_last_witness_from_json(json_content)
     json_parsed = JSON.parse(json_content)
+
+    if !("Witnesses" in keys(json_parsed["Call"][1]))
+        return nothing
+    end
+
     witnesses = json_parsed["Call"][1]["Witnesses"]
     last_witness = witnesses[end]
     last_value = last_witness["Value"] #The best solution found

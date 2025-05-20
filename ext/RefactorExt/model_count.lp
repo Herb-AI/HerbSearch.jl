@@ -93,12 +93,6 @@ assign(C_PARENT, PARENT) :- comp_edge(C_PARENT, C_NODE, ID), edge(PARENT, NODE, 
 %:- assign(C_NODE, NODE), comp_edge(C_PARENT, C_NODE, ID), not edge(_, NODE, ID).
 
 
-% comp_root(1, 2).
-% comp_node(2, 1).
-% comp_node(3, 1).
-% comp_edge(1, 2, 1).
-% comp_edge(1, 3, 2).
-
 #show comp_root/2.
 #show comp_node/2.
 #show comp_edge/3.

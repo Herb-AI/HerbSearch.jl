@@ -30,7 +30,7 @@ function test_for_debug_success()
     # 1 + (1 + (Num 4))
     # 1 + (1 + (Num 5))
     useful_asts = [ast1, ast2, ast3]
-    optimised_grammar = RefactorExt.HerbSearch.refactor_grammar(useful_asts, grammar)
+    optimised_grammar = RefactorExt.HerbSearch.refactor_grammar(useful_asts, grammar, 1, 2, 10, 60)
     println("Optimised Grammar: ")
     println(optimised_grammar)
 end
@@ -45,7 +45,7 @@ function test_for_debug_fail()
     # 1 + (1 + (Int (Num 4)))
     # 1 + (1 + (Int (Num 5)))
     useful_asts = [ast1, ast2, ast3]
-    optimised_grammar = RefactorExt.HerbSearch.refactor_grammar(useful_asts, grammar)
+    optimised_grammar = RefactorExt.HerbSearch.refactor_grammar(useful_asts, grammar, 1, 2, 10, 60)
     println("Optimised Grammar: ")
     println(optimised_grammar)
 end
@@ -62,7 +62,7 @@ function test_simple()
     # Program 2: (1 + 1) * (1 + 1)
     #ast2 = RuleNode(3, [RuleNode(2, [RuleNode(1), RuleNode(1)]), RuleNode(2, [RuleNode(1), RuleNode(1)])])
     useful_asts = [ast1, ast2]#[ast2, ast1]
-    optimised_grammar = RefactorExt.HerbSearch.refactor_grammar(useful_asts, grammar, 1)
+    optimised_grammar = RefactorExt.HerbSearch.refactor_grammar(useful_asts, grammar, 1, 2, 10, 60)
     println("Optimised Grammar: ")
     println(optimised_grammar)
 end
@@ -74,7 +74,7 @@ function test_no_compression()
     ast1 = RuleNode(2, [RuleNode(1), RuleNode(1)])
     ast2 = RuleNode(3, [RuleNode(1), RuleNode(1)])
     useful_asts = [ast1, ast2]
-    optimised_grammar = RefactorExt.HerbSearch.refactor_grammar(useful_asts, grammar, 1)
+    optimised_grammar = RefactorExt.HerbSearch.refactor_grammar(useful_asts, grammar, 1, 2, 10, 60)
     println("Optimised Grammar: ")
     println(optimised_grammar)
 end
@@ -87,7 +87,7 @@ function test_many_refactorings()
     ast2 = RuleNode(2, [RuleNode(2, [RuleNode(1), RuleNode(1)]), RuleNode(2, [RuleNode(4, [RuleNode(1), RuleNode(1)]),RuleNode(4, [RuleNode(1), RuleNode(1)])])])
     ast3 = RuleNode(2, [RuleNode(2, [RuleNode(1), RuleNode(1)]), RuleNode(2, [RuleNode(5, [RuleNode(1), RuleNode(1)]),RuleNode(5, [RuleNode(1), RuleNode(1)])])])
     useful_asts = [ast1, ast2, ast3]
-    optimised_grammar = RefactorExt.HerbSearch.refactor_grammar(useful_asts, grammar, 1)
+    optimised_grammar = RefactorExt.HerbSearch.refactor_grammar(useful_asts, grammar, 4, 2, 30, 60)
     println("Optimised Grammar: ")
     println(optimised_grammar)
 end
@@ -100,7 +100,7 @@ function test_one_plus_blank()
     ast2 = RuleNode(2, [RuleNode(1), RuleNode(4, [RuleNode(1), RuleNode(1)])])
     ast3 = RuleNode(2, [RuleNode(1), RuleNode(1)])
     useful_asts = [ast1, ast2, ast3]
-    optimised_grammar = RefactorExt.HerbSearch.refactor_grammar(useful_asts, grammar, 1)
+    optimised_grammar = RefactorExt.HerbSearch.refactor_grammar(useful_asts, grammar, 1, 2, 10, 60)
     println("Optimised Grammar: ")
     println(optimised_grammar)
 end
@@ -108,7 +108,7 @@ end
 function test_string_problems()
     # Load grammar and problems
     problem_grammar_pairs = get_all_problem_grammar_pairs(String_transformations_2020)
-    problem_grammar_pairs = first(problem_grammar_pairs, 20)
+    problem_grammar_pairs = first(problem_grammar_pairs, 15)
     grammar = problem_grammar_pairs[1].grammar
 
     println("Initial grammar:")
@@ -124,14 +124,14 @@ function test_string_problems()
 
         if !isnothing(program)
             id = pg.identifier
-            # println("\nProblem $i (id = $id)")
-            # println("Solution found: ", program)
+            println("\nProblem $i (id = $id)")
+            println("Solution found: ", program)
             push!(programs, program)
         end
     end
     
     # Optimize grammar
-    optimised_grammar = RefactorExt.HerbSearch.refactor_grammar(programs, grammar, 1)
+    optimised_grammar = RefactorExt.HerbSearch.refactor_grammar(programs, grammar, 3, 2, 30, 15)
     
     println("Optimized grammar:")
     println(optimised_grammar)
@@ -165,10 +165,12 @@ function synth_string_program(problems::Vector{IOExample{Any, HerbBenchmarks.Str
     end
 end
 
-test_for_debug_success()
-test_for_debug_fail()
+# test_for_debug_success()
+# test_for_debug_fail()
 # test_no_compression()
 # test_simple()
 # test_many_refactorings()
 # test_one_plus_blank()
-# test_string_problems()
+ test_string_problems()
+
+# 13.042
