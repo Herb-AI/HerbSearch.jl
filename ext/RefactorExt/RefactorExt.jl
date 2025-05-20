@@ -6,7 +6,7 @@ include("parsing_JSON.jl")
 include("compressions_postprocessing.jl")
 
 
-function HerbSearch.refactor_grammar(programs::AbstractVector{RuleNode}, grammar::AbstractGrammar, k::Int)
+function HerbSearch.refactor_grammar(programs::AbstractVector{RuleNode}, grammar::AbstractGrammar, k::Int = 1)
     # Parse programs into model
     model = parse_programs(programs)
     model *= "\n#const k = $k.\n"
@@ -20,7 +20,7 @@ function HerbSearch.refactor_grammar(programs::AbstractVector{RuleNode}, grammar
     run(pipeline(ignorestatus(command), stdin=IOBuffer(model), stdout=output))
     data = String(take!(output))
 
-    println(data)
+    # println(data)
     
     # Convert result into grammar rule
     best_values = read_last_witness_from_json(data)
@@ -31,7 +31,8 @@ function HerbSearch.refactor_grammar(programs::AbstractVector{RuleNode}, grammar
 
     new_grammar = deepcopy(grammar)
     for new_rule in best_compressions
-        add_rule!(new_grammar, new_rule)
+        comp_rule = merge_nonbranching_elements(new_rule, grammar)
+        add_rule!(new_grammar, comp_rule)
     end
 
     return new_grammar

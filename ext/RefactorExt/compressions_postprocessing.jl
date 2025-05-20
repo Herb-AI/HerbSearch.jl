@@ -91,7 +91,8 @@ Constructs a list of rules from a set of compression trees.
 function construct_subtrees(grammar::AbstractGrammar, compression_trees::Vector{TreeNode}, node2rule::Dict{Int64, Int64})
     rules = []
     for tree in compression_trees
-        push!(rules, _construct_rule(tree, grammar, node2rule))
+        new_node =  _construct_rule(tree, grammar, node2rule)
+        push!(rules, new_node)
     end
     return rules
 end
@@ -130,7 +131,30 @@ function _construct_rule(comp_tree::TreeNode, grammar::AbstractGrammar, node2rul
             push!(children, 
             _construct_rule(comp_tree.children[i], grammar, node2rule))
         end
-    end
-
+    end 
     return RuleNode(rule_id, children)
+end
+
+
+function merge_nonbranching_elements(rule::RuleNode, grammar::AbstractGrammar)
+    # println(rule)
+    for i in eachindex(rule.children)
+        if !(isa(rule.children[i], AbstractHole))
+            rule.children[i] = merge_rec(rule.children[i], grammar)
+        end
+    end
+    return rule
+end
+
+function merge_rec(rule::RuleNode, grammar::AbstractGrammar)
+    if length(rule.children) == 1  && !(isa(grammar.rules[rule.ind], Expr))
+        if (isa(rule.children[1], AbstractHole))
+            return rule.children[1]
+        else
+            return merge_rec(rule.children[1], grammar)
+        end
+    else
+        return(merge_nonbranching_elements(rule, grammar))
+    end
+    return rule
 end
