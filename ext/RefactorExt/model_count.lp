@@ -4,36 +4,55 @@
 %
 % -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
-% Each node might be compression node.
-{ comp_node(NODE, RULE)} 1 :- node(NODE, RULE).
+comp_root_option(1..k).
 
-% Each compression node might be a compression root.
-{ comp_root(ROOT)} 1 :- comp_node(ROOT, _).
+#const amount_of_rules = 5.
 
-% There are k=1 compression roots.
-:- #count {ROOT: comp_root(ROOT)} != k.
-%--- Removing count makes it slower:
-%:- comp_root(ROOT_1), comp_root(ROOT_2), ROOT_1 != ROOT_2.
+#const max_children = 2.
 
-% Each edge might be a compression edge.
-{ comp_edge(PARENT, CHILD, ID)} 1 :- edge(PARENT, CHILD, ID).
+#const max_compression_nodes = 10.
 
-% A compression edge must be between two compression nodes
-comp_node(NODE, RULE) :- node(NODE, RULE), comp_edge(NODE, _, _).
-comp_node(NODE, RULE) :- node(NODE, RULE), comp_edge(_, NODE, _).
+% TODO: enforce order on existing nodes
+comp_node_option(k+1..k+max_compression_nodes).
 
-% A compression root cannot be the child of another compression node.
-:- comp_root(ROOT), comp_node(PARENT, _), comp_edge(PARENT, ROOT, _).
 
-% A compression node is the root if does not have an incomming compression edge.
-comp_root(ROOT) :- comp_node(ROOT, _), #count {PARENT: comp_edge(PARENT, ROOT, _)} = 0.
-%--- Removing count does not do anything
-%comp_root(ROOT) :- comp_node(ROOT, _), not comp_edge(_, ROOT, _).
+1 { comp_root(K, 1..amount_of_rules) } 1 :- comp_root_option(K).
 
-% A compression root must have at least one child.
-:- comp_root(ROOT), #count {CHILD: comp_edge(ROOT, CHILD, _)} = 0.
-% --- Removing count makes it way lower
-%:- comp_root(ROOT), not comp_edge(ROOT, _, _).
+1 { comp_edge(K, CHILD, 1..max_children): comp_node_option(CHILD) } max_children :- comp_root_option(K).
+
+{ comp_edge(PARENT, CHILD, 1..max_children) } 1 :- comp_node_option(PARENT), comp_node_option(CHILD).
+
+{ comp_node(NODE, 1..amount_of_rules) } 1 :- comp_node_option(NODE).
+
+% comp_root(1, 2).
+% comp_node(2, 1).
+% comp_node(3, 1).
+% comp_edge(1, 2, 1).
+% comp_edge(1, 3, 2).
+
+
+:- comp_edge(NODE, NODE, _).
+
+:- comp_edge(PARENT, CHILD, POS_1), comp_edge(PARENT, CHILD, POS_2), POS_1 != POS_2.
+
+:- comp_edge(PARENT, CHILD_1, POS_1), comp_edge(PARENT, CHILD_2, POS_1), CHILD_1 != CHILD_2.
+
+
+edge_rule(P_RULE, C_RULE, ID) :- node(PARENT, P_RULE), node(CHILD, C_RULE), edge(PARENT, CHILD, ID).
+comp_edge_rule(P_RULE, C_RULE, ID) :- comp_node(PARENT, P_RULE), comp_node(CHILD, C_RULE), comp_edge(PARENT, CHILD, ID).
+comp_edge_rule(P_RULE, C_RULE, ID) :- comp_root(_, P_RULE), comp_node(CHILD, C_RULE), comp_edge(PARENT, CHILD, ID).
+:- comp_edge_rule(P_RULE, C_RULE, ID), not edge_rule(P_RULE, C_RULE, ID).
+% Possible problem: not grounded
+
+%tree_exists(ROOT) :- comp_root(_, RULE), node(_, RULE).
+%tree_exists(NODE) :- comp_node(PARENT, CP_RULE), comp_node(CHILD, CC_RULE), tree_exists(PARENT), node(_, )
+
+has_parent(NODE) :- comp_node(NODE, _), comp_edge(_, NODE, _).
+:- comp_node(NODE, _), not has_parent(NODE).
+
+% Each edge is connected comp nodes
+:- comp_edge(_, CHILD, _), not comp_node(CHILD, _).
+
 
 % -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 %
@@ -42,17 +61,22 @@ comp_root(ROOT) :- comp_node(ROOT, _), #count {PARENT: comp_edge(PARENT, ROOT, _
 % -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
 
-% Each node might be assigned to an compression node with the same rule.
-{ assign(C_NODE, NODE)} 1 :- node(NODE, RULE), comp_node(C_NODE, RULE).
+% Each node might be assigned to an compression root with the same rule.
+{ assign(C_NODE, NODE)} 1 :- node(NODE, RULE), comp_root(C_NODE, RULE).
+
+% Each compression node must be assigned
+:- comp_node(C_NODE, _), not assign(C_NODE, _).
 
 % A node that is assigned must be a compression node.
-comp_node(C_NODE, RULE) :- assign(C_NODE, _), node(C_NODE, RULE).
+comp_node_or_root(C_NODE) :- comp_node(C_NODE, _).
+comp_node_or_root(C_NODE) :- comp_root(C_NODE, _).
+:- assign(C_NODE, _), not comp_node_or_root(C_NODE).
 
 % Assigned nodes should have the same rule.
 :- comp_node(C_NODE, RULE_1), node(NODE, RULE_2), assign(C_NODE, NODE), RULE_1 != RULE_2.
 
 % Each compression root must be assigned at least twice.
-:- comp_root(C_NODE), #count {NODE: assign(C_NODE, NODE)} < 2.
+:- comp_root(C_NODE, _), #count {NODE: assign(C_NODE, NODE)} < 2.
 %--- Removing count statement makes it way slower
 %comp_root_assigned_twice(ROOT) :- comp_root(ROOT), assign(ROOT, NODE_1), assign(ROOT, NODE_2), NODE_1 != NODE_2.
 %:- comp_root(ROOT), not comp_root_assigned_twice(ROOT).
@@ -69,9 +93,11 @@ assign(C_PARENT, PARENT) :- comp_edge(C_PARENT, C_NODE, ID), edge(PARENT, NODE, 
 %:- assign(C_NODE, NODE), comp_edge(C_PARENT, C_NODE, ID), not edge(_, NODE, ID).
 
 
-#show comp_root/1.
+#show comp_root/2.
 #show comp_node/2.
 #show comp_edge/3.
+%#show assign/2.
+
 
 %% ------------------------- optimizing part ---------------------------------
 

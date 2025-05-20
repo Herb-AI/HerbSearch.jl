@@ -6,12 +6,23 @@ include("parsing_JSON.jl")
 include("compressions_postprocessing.jl")
 
 
-function HerbSearch.refactor_grammar(programs::AbstractVector{RuleNode}, grammar::AbstractGrammar, k::Int = 1)
+function HerbSearch.refactor_grammar(programs::AbstractVector{RuleNode}, grammar::AbstractGrammar, k::Int = 1, max_children::Int = 2, max_compression_nodes::Int = 10, time_limit_sec::Int = 60)
     # Parse programs into model
     model = parse_programs(programs)
-    model *= "\n#const k = $k.\n"
 
-    OLD_MODEL = true
+    # Add constants to program
+    amount_of_rules = length(grammar.rules)
+
+    model *= "\n"
+    model *= "\n#const k = $k.\n"
+    model *= "\n#const amount_of_rules = $amount_of_rules.\n"
+    model *= "\n#const max_children = $max_children.\n"
+    model *= "\n#const max_compression_nodes = $max_compression_nodes.\n"
+
+
+    println(model)
+
+    OLD_MODEL = false
     # Run model
     dir_path = dirname(@__FILE__)     
     if OLD_MODEL
@@ -19,7 +30,7 @@ function HerbSearch.refactor_grammar(programs::AbstractVector{RuleNode}, grammar
     else
         model_location = joinpath(dir_path, "optimization_attempts.lp")
     end
-    command = `$(clingo()) $(model_location) - --outf=2`
+    command = `$(clingo()) $(model_location) - --outf=2 --time-limit=$time_limit_sec`
     output = IOBuffer()
     run(pipeline(ignorestatus(command), stdin=IOBuffer(model), stdout=output))
     data = String(take!(output))
@@ -28,6 +39,11 @@ function HerbSearch.refactor_grammar(programs::AbstractVector{RuleNode}, grammar
     
     # Convert result into grammar rule
     best_values = read_last_witness_from_json(data)
+
+    if isnothing(best_values)
+        return grammar
+    end
+
     node_assignments::Vector{String} = best_values
     (comp_trees, node2rule) = parse_compressed_subtrees(node_assignments, OLD_MODEL)
     

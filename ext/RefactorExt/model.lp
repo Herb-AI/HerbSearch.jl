@@ -5,17 +5,28 @@
 % -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
 % Each node might be compression node.
-{ comp_node(NODE, RULE)} 1 :- node(NODE, RULE).
+%{ comp_node(NODE, RULE)} 1 :- node(NODE, RULE).
+comp_node(NODE, RULE) :- node(NODE, RULE), not not_comp_node(NODE, RULE).
+not_comp_node(NODE, RULE) :- node(NODE, RULE), not comp_node(NODE, RULE).
+:- comp_node(NODE, RULE), not_comp_node(NODE, RULE).
 
 % Each compression node might be a compression root.
-{ comp_root(ROOT)} 1 :- comp_node(ROOT, _).
+%{ comp_root(ROOT)} 1 :- comp_node(ROOT, _).
+comp_root(ROOT) :- comp_node(ROOT, _), not not_comp_root(ROOT).
+not_comp_root(ROOT) :- comp_node(ROOT, _), not comp_root(ROOT).
+:- comp_root(ROOT), not_comp_root(ROOT).
+
 
 % There are k=1 compression roots.
 %:- #count {ROOT: comp_root(ROOT)} != 1.
 :- comp_root(ROOT_1), comp_root(ROOT_2), ROOT_1 != ROOT_2.
 
 % Each edge might be a compression edge.
-{ comp_edge(PARENT, CHILD, ID)} 1 :- edge(PARENT, CHILD, ID).
+%{ comp_edge(PARENT, CHILD, ID)} 1 :- edge(PARENT, CHILD, ID).
+comp_edge(PARENT, CHILD, ID) :- edge(PARENT, CHILD, ID), not not_comp_edge(PARENT, CHILD, ID).
+not_comp_edge(PARENT, CHILD, ID) :- edge(PARENT, CHILD, ID), not comp_edge(PARENT, CHILD, ID).
+:- comp_edge(PARENT, CHILD, ID), not_comp_edge(PARENT, CHILD, ID).
+
 
 % A compression edge must be between two compression nodes
 comp_node(NODE, RULE) :- node(NODE, RULE), comp_edge(NODE, _, _).
@@ -42,7 +53,11 @@ comp_root(ROOT) :- comp_node(ROOT, _), not comp_edge(_, ROOT, _).
 
 
 % Each node might be assigned to an compression node with the same rule.
-{ assign(C_NODE, NODE)} 1 :- node(NODE, RULE), comp_node(C_NODE, RULE).
+%{ assign(C_NODE, NODE)} 1 :- node(NODE, RULE), comp_node(C_NODE, RULE).
+% Decision choice using negation-as-failure
+assign(C_NODE, NODE) :- node(NODE, RULE), comp_node(C_NODE, RULE), not not_assign(C_NODE, NODE).
+not_assign(C_NODE, NODE) :- node(NODE, RULE), comp_node(C_NODE, RULE), not assign(C_NODE, NODE).
+:- assign(C_NODE, NODE), not_assign(C_NODE, NODE).
 
 % A node that is assigned must be a compression node.
 comp_node(C_NODE, RULE) :- assign(C_NODE, _), node(C_NODE, RULE).
