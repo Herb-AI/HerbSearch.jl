@@ -136,6 +136,15 @@ function _construct_rule(comp_tree::TreeNode, grammar::AbstractGrammar, node2rul
 end
 
 
+"""
+# Arguments
+- rule::RuleNode - rule in which nonbranching elements will be removed.
+- grammar::AbstractGrammar - Grammar of the rule. Used to get types of rules used in the first argument.
+
+# Description
+If a rule has nonbranching elements (e.g. rule A that can only go to B that goes only to C), such sequences will be replaced with
+A -> C. The first symbol of such sequence will be start, and last will be end. Holes are not replaced.
+"""
 function merge_nonbranching_elements(rule::RuleNode, grammar::AbstractGrammar)
     # println(rule)
     for i in eachindex(rule.children)
@@ -146,6 +155,15 @@ function merge_nonbranching_elements(rule::RuleNode, grammar::AbstractGrammar)
     return rule
 end
 
+
+"""
+# Arguments
+- rule::RuleNode - rule in which nonbranching elements will be removed.
+- grammar::AbstractGrammar - Grammar of the rule. Used to get types of rules used in the first argument.
+
+# Description
+Internal function used to remove nonbranching fragments. May not preserve head of the rule.
+"""
 function merge_rec(rule::RuleNode, grammar::AbstractGrammar)
     if length(rule.children) == 1  && !(isa(grammar.rules[rule.ind], Expr))
         if (isa(rule.children[1], AbstractHole))
