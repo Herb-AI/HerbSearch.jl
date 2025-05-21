@@ -1,5 +1,4 @@
 using ConflictAnalysis
-using Satisfiability
 
 """
     @enum SynthResult optimal_program=1 suboptimal_program=2
@@ -33,7 +32,8 @@ function synth(
     allow_evaluation_errors::Bool=false,
     max_time = typemax(Int),
     max_enumerations = typemax(Int),
-    mod::Module=Main
+    mod::Module=Main,
+    conflict_analysis::Bool=true
     
 )::Union{Tuple{RuleNode, SynthResult}, Nothing}
     start_time = time()
@@ -44,26 +44,22 @@ function synth(
 
     best_score = 0
     best_program = nothing
+    result = suboptimal_program
 
-    interactive_solver = open(CVC5())
-    send_command(interactive_solver, "(set-option :produce-unsat-cores true)", dont_wait=true)
-    send_command(interactive_solver, "(set-option :minimal-unsat-cores true)", dont_wait=true)
-
-    muc_tech = MUCTechnique(interactive_solver)
+    muc_tech = MUCTechnique()
 
     for (i, candidate_program) ∈ enumerate(iterator)
         # Create expression from rulenode representation of AST
         expr = rulenode2expr(candidate_program, grammar)
-        # @show candidate_program
-        # @show expr
 
         # Evaluate the expression
         score = evaluate(problem, expr, symboltable, shortcircuit=shortcircuit, allow_evaluation_errors=allow_evaluation_errors)
-        counter += 1
+        counter = i
         if score == 1
             candidate_program = freeze_state(candidate_program)
-            println("Total number of enumerations: $counter")
-            return (candidate_program, optimal_program)
+            best_program = candidate_program
+            result = optimal_program
+            break;
         else
             if score >= best_score
                 best_score = score
@@ -72,33 +68,37 @@ function synth(
             end
 
             # Only apply conflict analysis if shortcircuit is true
-            if shortcircuit
+            if conflict_analysis
                 faulty_spec = problem.spec[floor(Int16, score * length(problem.spec) + 1)]
 
                 jobs = [
                     ConflictJob(muc_tech, MUCInput(candidate_program, grammar, problem, faulty_spec))
                 ]
-
                 constraints = run_conflict_pipeline(jobs)
 
-                for constraint ∈ constraints
-                    @show constraint.cons
-                    addconstraint!(grammar, constraint.cons)
+                herb_cons = AbstractGrammarConstraint[]
+                for c ∈ constraints
+                    push!(herb_cons, c.cons)
+                end
+
+                if length(herb_cons) > 0
+                    add_constraints!(iterator, herb_cons)
                 end
             end
         end
 
         # Check stopping criteria
         if i > max_enumerations || time() - start_time > max_time
+            println("Stopping criteria met")
             break;
         end
     end
 
-    # Close the interactive solver
-    close(interactive_solver)
+    # Clean up
+    close_solver(muc_tech)
 
     println("Total number of enumerations: $counter")
 
     # The enumeration exhausted, but an optimal problem was not found
-    return (best_program, suboptimal_program)
+    return (best_program, result)
 end
