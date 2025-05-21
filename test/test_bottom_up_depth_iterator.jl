@@ -61,10 +61,10 @@
         end
 
         spec = [IOExample(Dict(:x => x), 2x+1) for x ∈ 1:5]
-        programs = collect(DepthBoundedIterator{RuleNode}(g, :Number, max_depth=2, spec=spec, obs_equivalence=false))
+        programs = collect(DepthBoundedIterator{RuleNode}(g, :Number, max_bound=2, spec=spec, obs_equivalence=false))
         @test RuleNode(4, [RuleNode(1), RuleNode(1)]) ∈ programs
 
-        programs = collect(DepthBoundedIterator{RuleNode}(g, :Number, max_depth=2, spec=spec, obs_equivalence=true))
+        programs = collect(DepthBoundedIterator{RuleNode}(g, :Number, max_bound=2, spec=spec, obs_equivalence=true))
         @test RuleNode(4, [RuleNode(1), RuleNode(1)]) ∉ programs
     end
 end

@@ -2,10 +2,10 @@ Base.@doc """
     @programiterator SizeBoundedIterator{T}(
         spec::Union{Vector{<:IOExample}, Nothing} = nothing,
         obs_equivalence::Bool = false,
-        max_bound::Float64 = typemax(Float64)
-    ) <: Bounded_BU_Iterator{T}
+        max_bound::Int64 = typemax(Int64)
+    ) <: BUBoundedIterator{T}
 
-A concrete implementation of Bounded_BU_Iterator that enumerates programs by their size.
+A concrete implementation of BUBoundedIterator that enumerates programs by their size.
 Size is defined as:
 - Terminals have size 1
 - For non-terminals: size(op(c1,c2,...)) = 1 + sum(sizes of children)
@@ -13,27 +13,21 @@ Size is defined as:
 @programiterator SizeBoundedIterator{T}(
     spec::Union{Vector{<:IOExample}, Nothing} = nothing,
     obs_equivalence::Bool = false,
-    max_bound::Float64 = typemax(Float64)
-) <: Bounded_BU_Iterator{T}
+    max_bound::Int64 = typemax(Int64)
+) <: BUBoundedIterator{T}
 
-function get_initial_bound(iter::SizeBoundedIterator{T})::Float64 where T
-    return 1.0  # Terminals have size 1
-end
-
-function bound_function(iter::SizeBoundedIterator{T}, program::T)::Float64 where T
-    # If we already have a size function in the codebase, we should use that
-    # Otherwise, we need to implement it
-    return Float64(length(program))
+function bound_function(iter::SizeBoundedIterator{T}, program::T)::Int64 where T
+    return length(program)
 end
 
 function combine_bound_function(
     iter::SizeBoundedIterator{T}, 
     rule_idx::Int, 
-    children_bounds::Vector{Float64}
-)::Float64 where T
+    children_bounds::Vector{Int64}
+)::Int64 where T
     if isempty(children_bounds)
-        return 1.0  # Terminal
+        return 1  # Terminal
     else
-        return 1.0 + sum(children_bounds)  # 1 + sum of children sizes
+        return 1 + sum(children_bounds)  # 1 + sum of children sizes
     end
 end

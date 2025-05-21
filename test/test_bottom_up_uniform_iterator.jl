@@ -47,7 +47,7 @@
         constraint = Forbidden(RuleNode(4, [RuleNode(1), RuleNode(2)]))
         addconstraint!(grammar, constraint)
 
-        programs = collect(DepthBoundedIterator{UniformHole}(grammar, :Number, max_depth=2))
+        programs = collect(DepthBoundedIterator{UniformHole}(grammar, :Number, max_bound=2))
         @test RuleNode(4, [RuleNode(1), RuleNode(2)]) ∉ programs
     end
 end

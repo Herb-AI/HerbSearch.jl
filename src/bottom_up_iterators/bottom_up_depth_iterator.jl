@@ -14,7 +14,7 @@ struct BUDepthBank{T} <: BottomUpBank{T}
     depth_symbol_program_map::Dict{Depth, Dict{Symbol, Vector{T}}}
 end
 
-BottomUpBank{T}(iter::BUDepthIterator) where T = BUDepthBank{T}(iter)
+BottomUpBank{T}(iter::BUDepthIterator{T}) where T = BUDepthBank{T}(iter)
 
 function BUDepthBank{T}(
     iter::BUDepthIterator{T}
@@ -33,7 +33,7 @@ mutable struct BUDepthData{T} <: BottomUpData{T}
     obs_checker::Union{Nothing, ObservationalEquivalenceChecker{T}}
 end
 
-BottomUpData{T}(iter::BUDepthIterator) where T = BUDepthData{T}(iter)
+BottomUpData{T}(iter::BUDepthIterator{T}) where T = BUDepthData{T}(iter)
 
 function BUDepthData{T}(
     iter::BUDepthIterator{T}
@@ -105,6 +105,8 @@ function add_to_bank!(
 )::Nothing where T
     grammar = get_grammar(iter.solver)
     program_depth = depth(program) # TODO: `depth` call is slow.
+
+    # Add the program to the appropriate collection
     symbol = grammar.types[_get_first_rule_index(program)]
     push!(bank.depth_symbol_program_map[program_depth][symbol], program)
     return nothing
