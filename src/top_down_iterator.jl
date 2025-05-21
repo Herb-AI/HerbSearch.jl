@@ -22,7 +22,7 @@ Assigns a priority value to a `tree` that needs to be considered later in the se
 - `isrequeued`: The same tree shape will be requeued. The next time this tree shape is considered, the `UniformSolver` will produce the next complete program deriving from this shape.
 """
 function priority_function(
-    ::TopDownIterator, 
+    iter::TopDownIterator, 
     g::AbstractGrammar, 
     tree::AbstractRuleNode, 
     parent_value::Union{Real, Tuple{Vararg{Real}}},
@@ -32,6 +32,13 @@ function priority_function(
     if isrequeued
         return parent_value;
     end
+
+    if parent_value isa Tuple && length(parent_value) == 2
+        # Increment insertion_counter and update tuple
+        iter.insertion_counter += 1
+        return (parent_value[1] + 1, iter.insertion_counter)
+    end
+
     return parent_value + 1;
 end
 
@@ -98,7 +105,10 @@ Base.@doc """
 
 Creates a breadth-first search iterator for traversing given a grammar, starting from the given symbol. The iterator returns trees in the grammar in increasing order of size.
 """ BFSIterator
-@programiterator BFSIterator() <: AbstractBFSIterator
+@programiterator mutable BFSIterator(
+    uniform_solver_ref::Ref{Union{UniformSolver, Nothing}} = Ref(nothing),
+    insertion_counter::Int = 0
+) <: AbstractBFSIterator
 
 """
     AbstractDFSIterator <: TopDownIterator
@@ -198,7 +208,7 @@ function Base.iterate(iter::TopDownIterator)
     solver = iter.solver
 
     if isfeasible(solver)
-        enqueue!(pq, get_state(solver), priority_function(iter, get_grammar(solver), get_tree(solver), 0, false))
+        enqueue!(pq, get_state(solver), priority_function(iter, get_grammar(solver), get_tree(solver), (0, 0), false))
     end
     return _find_next_complete_tree(iter.solver, pq, iter)
 end
@@ -235,6 +245,7 @@ function _find_next_complete_tree(
     pq::PriorityQueue,
     iter::TopDownIterator
 )
+    # print_priority_queue_overview(pq)
     while length(pq) ≠ 0
         (item, priority_value) = dequeue_pair!(pq)
         if item isa UniformIterator
@@ -255,6 +266,9 @@ function _find_next_complete_tree(
                 track!(solver, "#FixedShapedTrees")
                 # Always use the Uniform Solver
                 uniform_solver = UniformSolver(get_grammar(solver), get_tree(solver), with_statistics=solver.statistics)
+                if hasproperty(iter, :uniform_solver_ref) && iter.uniform_solver_ref !== nothing
+                    iter.uniform_solver_ref[] = uniform_solver
+                end
                 uniform_iterator = UniformIterator(uniform_solver, iter)
                 solution = next_solution!(uniform_iterator)
                 if !isnothing(solution)
@@ -289,4 +303,24 @@ function _find_next_complete_tree(
         end
     end
     return nothing
+end
+
+
+function add_constraints!(iter::TopDownIterator, constraints::Vector{AbstractGrammarConstraint})
+    HerbConstraints.add_constraints!(iter.solver, constraints)
+    if hasproperty(iter, :uniform_solver_ref) && iter.uniform_solver_ref !== nothing
+        HerbConstraints.add_constraints!(iter.uniform_solver_ref[], constraints)
+    end
+end
+
+# Prints a compact overview of the amount of entries for every priority_value in the pq
+function print_priority_queue_overview(pq::DataStructures.PriorityQueue)
+    counts = Dict{Any, Int}()
+    for (_, priority) in pq
+        counts[priority] = get(counts, priority, 0) + 1
+    end
+    println("Priority value counts:")
+    for (priority, count) in sort(collect(counts); by=x->x[1])
+        println("  $priority: $count")
+    end
 end
