@@ -41,7 +41,7 @@ function knorf(
     problem::Problem{<:AbstractVector{<:IOExample}},
     iterator::Type{<:ProgramIterator},
     grammar::AbstractGrammar,
-    max_iterations=100,
+    max_iterations=5,
     best_solutions_per_iteration=10,
     max_enumerations=10000,
     shortcircuit::Bool=true,
@@ -80,15 +80,20 @@ function knorf(
         end
 
         # The enumeration exhausted, but an optimal problem was not found
-        grammar = RefactorExt.HerbSearch.refactor_grammar(programs, grammar, k)
-
+        programs = Vector{RuleNode}()
+        
         while length(best_programs) > 1
-            dequeue!(best_programs)
+            push!(programs, dequeue!(best_programs))
         end 
-
         program, score = dequeue_pair!(best_programs)
         if score > best_score
             best_program = program
+        end
+        push!(programs, program)
+
+        # Refactor the grammar before the next pass (if there is one)
+        if j < max_iterations
+            grammar = RefactorExt.HerbSearch.refactor_grammar(programs, grammar, k)
         end
     end
 
