@@ -131,7 +131,7 @@ function test_string_problems()
     end
     
     # Optimize grammar
-    optimised_grammar = RefactorExt.HerbSearch.refactor_grammar(programs, grammar, 3, 2, 30, 15)
+    optimised_grammar = RefactorExt.HerbSearch.refactor_grammar(programs, grammar, 3, 2, 30, 60*10)
     
     println("Optimized grammar:")
     println(optimised_grammar)
@@ -172,5 +172,3 @@ end
 # test_many_refactorings()
 # test_one_plus_blank()
  test_string_problems()
-
-# 13.042

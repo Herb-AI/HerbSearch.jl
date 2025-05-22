@@ -37,12 +37,16 @@ edge_rule(P_RULE, C_RULE, ID) :- node(PARENT_1, P_RULE), node(CHILD_1, C_RULE), 
 { comp_node(NODE, RULE) : rules(RULE) } 1 :- comp_node_option(NODE).
 
 
+may_be_child_of_root(CHILD, ROOT) :- CHILD = k+max_compression_nodes*(ROOT - 1)+1..k+max_compression_nodes*(ROOT - 1)+max_children, ROOT = 1..k.
 1 { comp_edge(ROOT, CHILD, POS) : comp_node(CHILD, CHILD_RULE), edge_rule(ROOT_RULE, CHILD_RULE, POS) } max_children :- comp_root(ROOT, ROOT_RULE).
+%may_be_child_of_root(CHILD, ROOT) 
 
 %{ comp_edge(PARENT, CHILD, 1..max_children) } 1 :- comp_node_option(PARENT), comp_node_option(CHILD), CHILD > PARENT, CHILD <= PARENT + max_children.
 %{ comp_edge(PARENT, CHILD, POS) : edge_rule(PARENT_RULE, CHILD_RULE, POS) } 1 :- comp_node(PARENT, PARENT_RULE), comp_node(CHILD, CHILD_RULE), CHILD > PARENT, CHILD <= PARENT + max_children.
 %{ comp_edge(PARENT, CHILD, POS) : comp_node(PARENT, PARENT_RULE), edge_rule(PARENT_RULE, CHILD_RULE, POS), CHILD > PARENT, CHILD <= PARENT + max_children } 1 :- comp_node(CHILD, CHILD_RULE).
-comp_edge(PARENT, CHILD, POS) :- comp_node(PARENT, PARENT_RULE), edge_rule(PARENT_RULE, CHILD_RULE, POS), CHILD > PARENT, CHILD <= PARENT + max_children, comp_node(CHILD, CHILD_RULE).
+%  k:  k+(K-1)*max_compression_nodes+1  ... k+K*max_compression_nodes+1
+may_connect(PARENT, CHILD) :- CHILD > PARENT, CHILD <= PARENT + max_children, PARENT = k+(ROOT-1)*max_compression_nodes+1..k+ROOT*max_compression_nodes, CHILD = PARENT+1..k+ROOT*max_compression_nodes, ROOT = 1..k.
+comp_edge(PARENT, CHILD, POS) :- comp_node(PARENT, PARENT_RULE), edge_rule(PARENT_RULE, CHILD_RULE, POS), comp_node(CHILD, CHILD_RULE), may_connect(PARENT, CHILD).
 
 
 % ---------------- Node constraints ----------------
@@ -91,9 +95,10 @@ comp_edge_rule(P_RULE, C_RULE, ID) :- comp_root(PARENT, P_RULE), comp_node(CHILD
 
 % If there are K compression nodes, than they only have indices 1..K.
 % Change this to within a tree
+first_node_of_tree(k+max_compression_nodes*(ROOT - 1)+1) :- ROOT = 1..k.
 compressed(NODE) :- comp_root(NODE, _).
 compressed(NODE) :- comp_node(NODE, _).
-:- compressed(K), K > 1, not compressed(K-1).
+:- compressed(NODE), NODE > 1, not compressed(NODE-1), not first_node_of_tree(NODE).
 
 % The index of a child left of its sibling cannot be larger than that of its sibling.
 :- comp_edge(PARENT, CHILD_1, POS_1), comp_edge(PARENT, CHILD_2, POS_2), POS_1 < POS_2, CHILD_1 > CHILD_2.
@@ -153,6 +158,8 @@ connects_to_root(NODE, ROOT) :- comp_edge(PARENT, NODE, _), connects_to_root(PAR
 #show comp_root/2.
 #show comp_node/2.
 #show comp_edge/3.
+#show may_connect/2.
+#show first_node_of_tree/1.
 
 %% ------------------------- optimizing part ---------------------------------
 
