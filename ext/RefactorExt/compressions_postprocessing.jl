@@ -67,7 +67,7 @@ function parse_compressed_subtrees(compressed_rulenode::Vector{String}, old_mode
     while !isempty(edges)
         edge = popfirst!(edges)
         (from, to, pos) = edge
-        if !(from in seen_nodes.keys)
+        if !(from in keys(seen_nodes))
             push!(edges, edge)
             continue
         end
