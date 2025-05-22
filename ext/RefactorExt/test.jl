@@ -131,7 +131,7 @@ function test_string_problems()
     end
     
     # Optimize grammar
-    optimised_grammar = RefactorExt.HerbSearch.refactor_grammar(programs, grammar, 3, 2, 30, 60*10)
+    optimised_grammar = RefactorExt.HerbSearch.refactor_grammar(programs, grammar, 3, 2, 100, 60*10)
     
     println("Optimized grammar:")
     println(optimised_grammar)
