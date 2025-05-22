@@ -13,19 +13,7 @@
 % #const max_compression_nodes = ?.
 
 comp_root_option(1..k).
-comp_node_option(k+1..k*max_compression_nodes).
-
-%       1:  k+1                         ...     k+max_compression_nodes
-%       2:  k+max_compression_nodes+1   ...     k+2*max_compression_nodes
-%       ..
-%       k:  k+(K-1)*max_compression_nodes+1  ... k+K*max_compression_nodes+1
-
-%       1:  k+1                         ...     k+max_children
-%       2:  k+max_compression_nodes+1   ...     k+max_compression_nodes+max_children
-%       ..
-%       k:  k+(K-1)*max_compression_nodes+1  ... k+K*max_compression_nodes+max_children
-
-
+comp_node_option(k+1..max_compression_nodes).
 
 % ---------------- Generation ----------------
 
