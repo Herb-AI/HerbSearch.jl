@@ -20,7 +20,7 @@ function HerbSearch.refactor_grammar(programs::AbstractVector{RuleNode}, grammar
     model *= "\n#const max_compression_nodes = $max_compression_nodes.\n"
 
 
-    println(model)
+    # println(model)
 
     OLD_MODEL = false
     # Run model
@@ -35,7 +35,7 @@ function HerbSearch.refactor_grammar(programs::AbstractVector{RuleNode}, grammar
     run(pipeline(ignorestatus(command), stdin=IOBuffer(model), stdout=output))
     data = String(take!(output))
 
-    println(data)
+    # println(data)
     
     # Convert result into grammar rule
     best_values = read_last_witness_from_json(data)
@@ -51,10 +51,15 @@ function HerbSearch.refactor_grammar(programs::AbstractVector{RuleNode}, grammar
 
     new_grammar = deepcopy(grammar)
     for new_rule in best_compressions
-        println("uncompressed rule:\t$new_rule")
+        println(new_rule)
+        println(isa(new_rule, Expr))
         comp_rule = merge_nonbranching_elements(new_rule, grammar)
-        println("compressed rule:\t$comp_rule")
-        add_rule!(new_grammar, comp_rule)
+        # lift_holes(comp_rule, grammar)
+        try
+            add_rule!(new_grammar, comp_rule)
+        catch
+
+        end
     end
 
     return new_grammar
