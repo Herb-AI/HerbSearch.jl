@@ -30,12 +30,6 @@ function parse_compressed_subtrees(compressed_rulenode::Vector{String}, old_mode
     node_to_rule = Dict{Int64, Int64}()
     trees = Vector{TreeNode}()
     seen_nodes = Dict{Int64, TreeNode}()
-
-    # assignments = Dict{Int64, Int64}()
-    # for asgn in assignments_str
-    #     cmp_asgn = match(r"assign\((\d+), ?(\d+))", asgn)
-    #     assignments[parse(Int64, cmp_asgn[1])] = parse(Int64, cmp_asgn[2])   
-    # end
     
     # find all roots, add them as a last seen node of their id
     if old_model
@@ -73,11 +67,11 @@ function parse_compressed_subtrees(compressed_rulenode::Vector{String}, old_mode
     while !isempty(edges)
         edge = popfirst!(edges)
         (from, to, pos) = edge
-        if !(from in seen_nodes.keys)
+        if !(from in keys(seen_nodes))
             push!(edges, edge)
             continue
         end
-        to_node = TreeNode(to) # creating a new node here because we don't expect a node to be a destination more than once
+        to_node = TreeNode(to)
         seen_nodes[from].children[pos] = to_node
         seen_nodes[to] = to_node
     end
@@ -108,26 +102,7 @@ function construct_subtrees(grammar::AbstractGrammar, compression_trees::Vector{
     return rules
 end
 
-"""
-    construct_rule(comp_tree::TreeNode, grammar::AbstractGrammar, node2rule::Dict{Int64, Int64})::RuleNode
 
-Internal function to construct rule from an individual compression tree.
-
-# Arguments
-- `comp_tree::TreeNode`: A `TreeNode`, root of the compresison tree.
-- `grammar::AbstractGrammar`: The original grammar.
-- `node2rule::Dict{Int64, Int64}`: A dictionary mapping node IDs to their corresponding rule IDs.
-
-# Returns
-- `RuleNode`: A `RuleNode` object representing the constructed rule.
-
-# Description
-This function recursively traverses the compression tree (`comp_tree`) to construct a `RuleNode`. For each node in the tree:
-- If a child is not present in the compressed AST, a `Hole` is created for that position.
-- If a child is present, the function recursively constructs a `RuleNode` for the child.
-
-The resulting `RuleNode` represents the rule defined by the compression tree and the grammar.
-"""
 function _construct_rule(comp_tree::TreeNode, grammar::AbstractGrammar, node2rule::Dict{Int64, Int64})
     rule_id = node2rule[comp_tree.id]
     child_types = grammar.childtypes[rule_id]
@@ -135,8 +110,9 @@ function _construct_rule(comp_tree::TreeNode, grammar::AbstractGrammar, node2rul
     for i in eachindex(child_types)
         if !(i in keys(comp_tree.children))
             # child is NOT in the compressed AST, make a hole
+            hole = Hole(get_domain(grammar, grammar.bytype[child_types[i]]))
             push!(children, 
-            Hole(get_domain(grammar, grammar.bytype[child_types[i]])))
+            hole)
         else
             # child is in the compressed AST, make a rule for the child
             push!(children, 
@@ -157,33 +133,54 @@ If a rule has nonbranching elements (e.g. rule A that can only go to B that goes
 A -> C. The first symbol of such sequence will be start, and last will be end. Holes are not replaced.
 """
 function merge_nonbranching_elements(rule::RuleNode, grammar::AbstractGrammar)
-    # println(rule)
     for i in eachindex(rule.children)
         if !(isa(rule.children[i], AbstractHole))
-            rule.children[i] = merge_rec(rule.children[i], grammar)
+            rule.children[i] = _merge_rec(rule.children[i], grammar)
         end
     end
     return rule
 end
 
 
-"""
-# Arguments
-- rule::RuleNode - rule in which nonbranching elements will be removed.
-- grammar::AbstractGrammar - Grammar of the rule. Used to get types of rules used in the first argument.
-
-# Description
-Internal function used to remove nonbranching fragments. May not preserve head of the rule.
-"""
-function merge_rec(rule::RuleNode, grammar::AbstractGrammar)
+function _merge_rec(rule::RuleNode, grammar::AbstractGrammar)
     if length(rule.children) == 1  && !(isa(grammar.rules[rule.ind], Expr))
         if (isa(rule.children[1], AbstractHole))
             return rule.children[1]
         else
-            return merge_rec(rule.children[1], grammar)
+            return _merge_rec(rule.children[1], grammar)
         end
     else
         return(merge_nonbranching_elements(rule, grammar))
     end
     return rule
 end
+
+# function lift_holes(rule::RuleNode, grammar::AbstractGrammar)
+#     for i in  eachindex(rule.children)
+#         c = rule.children[i]
+#         if isa(c, AbstractHole) # && !isfilled(c)
+#             new_hole = _lift_hole(c, grammar)
+#             rule.children[i] = new_hole
+#         else
+#             lift_holes(c, grammar)
+#         end
+#     end
+# end
+
+# function _lift_hole(hole::AbstractHole, grammar::AbstractGrammar)
+#     if isfilled(hole)
+#         return hole
+#     end
+#     type = get_hole_type(hole, grammar)
+
+#     new_hole = Hole(get_domain(grammar, grammar.bytype[type]))
+#     return new_hole
+
+# end
+
+
+# function get_hole_type(hole::AbstractHole, grammar::AbstractGrammar)
+#     @assert !isfilled(hole) "Hole $(hole) is convertable to an expression. There is no need to represent it using a symbol."
+#     index = findfirst(hole.domain)
+#     return isnothing(index) ? :Nothing : grammar.types[index]
+# end
