@@ -23,9 +23,9 @@ end
 
 function test_for_debug_success()
     # only wotks with additional rules
-    ast1 = RuleNode(2, [RuleNode(1), RuleNode(6, [RuleNode(7)])])
-    ast2 = RuleNode(2, [RuleNode(1), RuleNode(6, [RuleNode(8)])])
-    ast3 = RuleNode(2, [RuleNode(1), RuleNode(6, [RuleNode(9)])])
+    ast1 = RuleNode(2, [RuleNode(1), RuleNode(6, [RuleNode(8)])])
+    ast2 = RuleNode(2, [RuleNode(1), RuleNode(6, [RuleNode(9)])])
+    ast3 = RuleNode(2, [RuleNode(1), RuleNode(6, [RuleNode(10)])])
     # 1 + (1 + (Num 3))
     # 1 + (1 + (Num 4))
     # 1 + (1 + (Num 5))
@@ -131,7 +131,7 @@ function test_string_problems()
     end
     
     # Optimize grammar
-    optimised_grammar = RefactorExt.HerbSearch.refactor_grammar(programs, grammar, 3, 2, 30, 15)
+    optimised_grammar = RefactorExt.HerbSearch.refactor_grammar(programs, grammar, 3, 2, 100, 60*10)
     
     println("Optimized grammar:")
     println(optimised_grammar)
@@ -171,6 +171,6 @@ end
 # test_simple()
 # test_many_refactorings()
 # test_one_plus_blank()
- test_string_problems()
+test_string_problems()
 
 # 13.042
