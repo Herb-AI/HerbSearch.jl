@@ -6,7 +6,14 @@ include("parsing_JSON.jl")
 include("compressions_postprocessing.jl")
 
 
-function HerbSearch.refactor_grammar(programs::AbstractVector{RuleNode}, grammar::AbstractGrammar, k::Int = 1, max_children::Int = 2, max_compression_nodes::Int = 10, time_limit_sec::Int = 60)
+function HerbSearch.refactor_grammar(
+    programs::AbstractVector{RuleNode}, 
+    grammar::AbstractGrammar, 
+    k::Int = 1, 
+    max_children::Int = 2, 
+    max_compression_nodes::Int = 10, 
+    time_limit_sec::Int = 60)::AbstractGrammar
+
     # Parse programs into model
     model = parse_programs(programs)
 
