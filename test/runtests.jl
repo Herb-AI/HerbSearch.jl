@@ -19,6 +19,8 @@ Random.seed!(1234)
 		piracies = (treat_as_own = [RuleNode, AbstractGrammar],),
 	)
 	include("test_aulile.jl")
+	include("string_benchmark.jl")
+	include("karel_benchmark.jl")
 
 	include("test_search_procedure.jl")
 	include("test_context_free_iterators.jl")

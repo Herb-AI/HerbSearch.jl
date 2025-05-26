@@ -1,6 +1,5 @@
 include("benchmark_helpers.jl")
 using HerbBenchmarks
-using HerbBenchmarks.String_transformations_2020
 using HerbBenchmarks.Karel_2018
 
 @testset "Testing Aulile With String Benchmark" begin
