@@ -30,12 +30,12 @@ Random.seed!(1234)
 	include("test_contains_subtree.jl")
 	include("test_unique.jl")
 	include("test_constraints.jl")
+	include("test_bottom_up.jl")
 
 	# 	# Excluded because it contains long tests
 	# 	# include("test_realistic_searches.jl")
-end
-
-@testset verbose = true "Divide and conquer extension" begin
-	include("test_divide_conquer.jl")
-	include("test_divide_conquer_example.jl")
+	@testset verbose = true "Divide and conquer extension" begin
+		include("test_divide_conquer.jl")
+		include("test_divide_conquer_example.jl")
+	end
 end
