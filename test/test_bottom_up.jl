@@ -34,7 +34,7 @@ import HerbSearch.init_combine_structure
         @programiterator mutable MyBU(bank) <: BottomUpIterator
 
         function HerbSearch.init_combine_structure(iter::MyBU)
-                Dict(:max_combination_depth => 4)
+                Dict(:max_combination_depth => iter.solver.max_depth)
         end
 
         @testset "Basic Bottom Up Iterator" begin
