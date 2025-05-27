@@ -30,8 +30,7 @@ edge_rule(P_RULE, C_RULE, ID) :- node(PARENT_1, P_RULE), node(CHILD_1, C_RULE), 
 %{ comp_edge(PARENT, CHILD, 1..max_children) } 1 :- comp_node_option(PARENT), comp_node_option(CHILD), CHILD > PARENT, CHILD <= PARENT + max_children.
 %{ comp_edge(PARENT, CHILD, POS) : edge_rule(PARENT_RULE, CHILD_RULE, POS) } 1 :- comp_node(PARENT, PARENT_RULE), comp_node(CHILD, CHILD_RULE), CHILD > PARENT, CHILD <= PARENT + max_children.
 %{ comp_edge(PARENT, CHILD, POS) : comp_node(PARENT, PARENT_RULE), edge_rule(PARENT_RULE, CHILD_RULE, POS), CHILD > PARENT, CHILD <= PARENT + max_children } 1 :- comp_node(CHILD, CHILD_RULE).
-comp_edge(PARENT, CHILD, POS) :- comp_node(PARENT, PARENT_RULE), edge_rule(PARENT_RULE, CHILD_RULE, POS), CHILD > PARENT, CHILD <= PARENT + max_children, comp_node(CHILD, CHILD_RULE).
-
+{ comp_edge(PARENT, CHILD, POS) } 1 :- comp_node(PARENT, PARENT_RULE), edge_rule(PARENT_RULE, CHILD_RULE, POS), CHILD > PARENT, CHILD <= PARENT + max_children, comp_node(CHILD, CHILD_RULE).
 
 % ---------------- Node constraints ----------------
 
@@ -105,10 +104,10 @@ connects_to_root(NODE, ROOT) :- comp_edge(PARENT, NODE, _), connects_to_root(PAR
 % ---------------- Generation ----------------
 
 % Each node might be assigned to an compression root with the same rule.
-{ assign(C_NODE, NODE) } 1 :- node(NODE, RULE), comp_root(C_NODE, RULE).
+{ assign(C_NODE, NODE) : comp_root(C_NODE, RULE) } 1 :- node(NODE, RULE).
 
 % Each node might be assigned to an node.
-{ assign(C_NODE, NODE) } 1 :- node(NODE, RULE), comp_node(C_NODE, RULE).
+{ assign(C_NODE, NODE) : comp_node(C_NODE, RULE) } 1 :- node(NODE, RULE).
 
 
 % ---------------- Constraints ----------------
