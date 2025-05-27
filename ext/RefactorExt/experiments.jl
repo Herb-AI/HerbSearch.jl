@@ -1,6 +1,7 @@
 using Markdown
 using InteractiveUtils
 using Random
+using Dates
 include("RefactorExt.jl")
 using .RefactorExt
 include("../../src/HerbSearch.jl")
@@ -11,23 +12,24 @@ function experiments_main(
     using_mth::Int,
     k::Int, 
     time_out::Int # in seconds
-)   
+)    
+    timestamp = Dates.format(now(), "yyyy-mm-dd_HH-MM-SS")
     SHUFFLE_KEY = 1234
     rng = MersenneTwister(SHUFFLE_KEY)
     dir_path = dirname(@__FILE__)
     res_path = joinpath(dir_path, "results")
     mkpath(res_path)
-    res_file_name = "P_$(problem_name)_Frac_$(using_mth)_K-$(k).txt"
+    res_file_name = "P_$(problem_name)_Frac_$(using_mth)_K-$(k)__$(timestamp).txt"
     res_file_path = joinpath(res_path, res_file_name)
 
     # open results file and redirect STDIO
     open(res_file_path, "w") do io
         redirect_stdout(io) do
-            println("Problem set: $(problem_name)\nUsing $(using_mth) fraction\nK = $(k)\tTimeout: $(time_out)")
+            println("Problem set: $(problem_name)\nUsing $(using_mth) fraction\nK = $(k)\tTimeout: $(time_out)\n")
             # get mth fraction of the problems
             benchmark = get_benchmark(problem_name)
             problem_grammar_pairs = get_all_problem_grammar_pairs(benchmark)
-            shuffle!(problem_grammar_pairs)
+            shuffle!(problem_grammar_pairs, rng)
             grammar = problem_grammar_pairs[1].grammar
             problems = take_mth_fraction(problem_grammar_pairs, 5, using_mth)
             solutions = Vector{RuleNode}([])
@@ -49,7 +51,7 @@ function experiments_main(
             # refactor_solutions
             optimiszed_grammar = RefactorExt.HerbSearch.refactor_grammar(
                 solutions, grammar, k, k*15, time_out)
-            println("Grammar:\n$(optimiszed_grammar)")
+            println("\nGrammar:\n$(optimiszed_grammar)")
         end
     end
 end
@@ -69,7 +71,7 @@ function get_benchmark(problem_name::String)
         return Robots_2020
     elseif problem_name == "pixels"
         return HerbBenchmarks.Pixels_2020
-    elseif problem_name == "bitvector"
+    elseif problem_name == "bitvectors"
         return HerbBenchmarks.PBE_BV_Track_2018
     else
         return HerbBenchmarks.String_transformations_2020
@@ -106,9 +108,9 @@ function synth_program(problems::Vector,
     end
 end
 
-println("strings")
-experiments_main("strings", 1, 3, 10)
-println("robots")
-experiments_main("robots", 1, 3, 10)
-println("bitvector")
-experiments_main("bitvector", 1, 3, 10)
+# println("strings")
+# experiments_main("strings", 1, 3, 10)
+# println("robots")
+# experiments_main("robots", 1, 3, 10)
+println("bitvectors")
+experiments_main("bitvectors", 1, 3, 10)
