@@ -87,7 +87,7 @@ function test_many_refactorings()
     ast2 = RuleNode(2, [RuleNode(2, [RuleNode(1), RuleNode(1)]), RuleNode(2, [RuleNode(4, [RuleNode(1), RuleNode(1)]),RuleNode(4, [RuleNode(1), RuleNode(1)])])])
     ast3 = RuleNode(2, [RuleNode(2, [RuleNode(1), RuleNode(1)]), RuleNode(2, [RuleNode(5, [RuleNode(1), RuleNode(1)]),RuleNode(5, [RuleNode(1), RuleNode(1)])])])
     useful_asts = [ast1, ast2, ast3]
-    optimised_grammar = RefactorExt.HerbSearch.refactor_grammar(useful_asts, grammar, 4, 2, 30, 60)
+    optimised_grammar = RefactorExt.HerbSearch.refactor_grammar(useful_asts, grammar, 1, 10, 60)
     println("Optimised Grammar: ")
     println(optimised_grammar)
 end
@@ -169,8 +169,8 @@ end
 # test_for_debug_fail()
 # test_no_compression()
 # test_simple()
-# test_many_refactorings()
+test_many_refactorings()
 # test_one_plus_blank()
-test_string_problems()
+# test_string_problems()
 
 # 13.042

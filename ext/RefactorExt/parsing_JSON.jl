@@ -60,5 +60,6 @@ function read_last_witness_from_json(json_content)
     witnesses = json_parsed["Call"][1]["Witnesses"]
     last_witness = witnesses[end]
     last_value = last_witness["Value"] #The best solution found
-    return last_value
+    last_cost = last_witness["Costs"]
+    return last_cost, last_value
 end
