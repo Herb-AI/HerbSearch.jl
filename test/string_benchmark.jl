@@ -19,11 +19,11 @@ levenshtein_benchmark_aux = AuxFunction(
     0
 )
 
-@testset "Testing Aulile With String Benchmark" begin
+@testset "String Benchmark" begin
     max_iterations = 2
     max_depth = 10
     max_enumerations = 1000
-    total_start_time = print_time_test_start("Running Test: String 2020 Benchmark")
+    total_start_time = print_time_test_start("String 2020 Benchmark")
     problem_grammar_pairs = get_all_problem_grammar_pairs(String_transformations_2020)
     problem_grammar_pairs = first(problem_grammar_pairs, 10)
     init_grammar = problem_grammar_pairs[1].grammar
