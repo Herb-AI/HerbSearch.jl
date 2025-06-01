@@ -29,21 +29,20 @@ function experiments_main(
             # get mth fraction of the problems
             benchmark = get_benchmark(problem_name)
             problem_grammar_pairs = get_all_problem_grammar_pairs(benchmark)
-            shuffle!(problem_grammar_pairs, rng)
+            shuffle!(rng, problem_grammar_pairs)
             grammar = problem_grammar_pairs[1].grammar
             problems = take_mth_fraction(problem_grammar_pairs, 5, using_mth)
             solutions = Vector{RuleNode}([])
             # solve prolems
             for (_, pg) in enumerate(problems)
                 problem = pg.problem.spec
-                if problem_name == "bitvector"
+                if problem_name == "bitvectors"
                     gr_key = :Start
                 else
                     gr_key = :Sequence
                 end
                 iterator = HerbSearch.DFSIterator(grammar, gr_key, max_depth=7) 
                 program = synth_program(problem, grammar, iterator, benchmark)
-
                 if !isnothing(program)
                     push!(solutions, program)
                 end
@@ -87,18 +86,27 @@ function synth_program(problems::Vector,
     for program ∈ iterator
         # there shpuld only be one value
         states = [collect(values(problem.in))[1] for problem in problems]
-        grammartags =  benchmark.get_relevant_tags(grammar)
-        
+        vecs = false
+        if hasmethod(benchmark, Tuple{typeof(grammar)})
+            grammartags =  benchmark.get_relevant_tags(grammar)
+        else
+            vecs = true
+        end
+        # println(grammartags)
         solved = true
         for (objective_state, state) in zip(objective_states, states)
             try
-                final_state = benchmark.interpret(program, grammartags, state)
-                
+                if !vecs
+                    final_state = benchmark.interpret(program, grammartags, state)
+                else
+                    final_state = state
+                end
                 if objective_state != final_state
                     solved = false
                     break
                 end
             catch BoundsError
+                println("erroring")
                 break
             end           
         end
@@ -108,9 +116,10 @@ function synth_program(problems::Vector,
     end
 end
 
-# println("strings")
-# experiments_main("strings", 1, 3, 10)
+
+println("\nstrings")
+experiments_main("strings", 1, 3, 10)
+# println("\nbitvectors")
+# experiments_main("bitvectors", 1, 3, 10)
 # println("robots")
 # experiments_main("robots", 1, 3, 10)
-println("bitvectors")
-experiments_main("bitvectors", 1, 3, 10)
