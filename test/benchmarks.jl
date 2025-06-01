@@ -58,11 +58,31 @@ end
 
 function robot_dist(expected::HerbBenchmarks.Robots_2020.RobotState, 
         actual::HerbBenchmarks.Robots_2020.RobotState)
-    dist = abs(expected.holds_ball - actual.holds_ball)
-    dist += abs(expected.robot_x - actual.robot_x)
-    dist += abs(expected.robot_y - actual.robot_y)
-    dist += abs(expected.ball_x - actual.ball_x)
-    dist += abs(expected.ball_y - actual.ball_y)
+    dist = 0
+
+    if actual.ball_x == expected.ball_x && actual.ball_y == expected.ball_y &&
+       actual.holds_ball == expected.holds_ball
+        # Ball is already in correct place, just compare state
+        dist += abs(expected.robot_x - actual.robot_x)
+        dist += abs(expected.robot_y - actual.robot_y)
+    else
+        # 1. Robot goes to current ball position
+        dist += abs(actual.robot_x - actual.ball_x)
+        dist += abs(actual.robot_y - actual.ball_y)
+
+        dist += abs(actual.holds_ball - 1) # Pick up ball
+
+        # 2. Move ball to expected ball position
+        dist += abs(expected.ball_x - actual.ball_x)
+        dist += abs(expected.ball_y - actual.ball_y)
+
+        dist += abs(expected.holds_ball - 1) # Drop ball
+
+        # 3. Move robot to final target position
+        dist += abs(expected.robot_x - expected.ball_x)
+        dist += abs(expected.robot_y - expected.ball_y)
+    end
+
     return dist
 end
 
@@ -112,7 +132,8 @@ using HerbBenchmarks.String_transformations_2020
     run_benchmark("String 2020 Benchmark", get_default_grammar(String_transformations_2020), 
         first(get_all_problems(String_transformations_2020), 10), get_all_identifiers(String_transformations_2020), 
         levenshtein_benchmark_aux, HerbBenchmarks.String_transformations_2020.interpret, 
-        max_depth=max_depth, max_iterations=max_iterations, max_enumerations=max_enumerations)
+        max_depth=max_depth, max_iterations=max_iterations, max_enumerations=max_enumerations, 
+        allow_evaluation_errors=true)
 end
 
 using HerbBenchmarks.Karel_2018
@@ -125,7 +146,8 @@ using HerbBenchmarks.Karel_2018
     run_benchmark("Karel 2018 Benchmark", Karel_2018.grammar_karel, 
         first(Karel_2018.get_all_problems(), 10), Vector{String}(), 
         karel_benchmark_aux, HerbBenchmarks.Karel_2018.interpret, 
-        max_depth=max_depth, max_iterations=max_iterations, max_enumerations=max_enumerations)
+        max_depth=max_depth, max_iterations=max_iterations, max_enumerations=max_enumerations, 
+        allow_evaluation_errors=true)
 end
 
 using HerbBenchmarks.Robots_2020
@@ -138,7 +160,8 @@ using HerbBenchmarks.Robots_2020
     run_benchmark("Robots 2020 Benchmark", get_default_grammar(Robots_2020), 
         first(get_all_problems(Robots_2020), 10), get_all_identifiers(Robots_2020), 
         robot_benchmark_aux, HerbBenchmarks.Robots_2020.interpret, 
-        max_depth=max_depth, max_iterations=max_iterations, max_enumerations=max_enumerations)
+        max_depth=max_depth, max_iterations=max_iterations, max_enumerations=max_enumerations, 
+        allow_evaluation_errors=true)
 end
 
 using HerbBenchmarks.Pixels_2020
@@ -151,5 +174,6 @@ using HerbBenchmarks.Pixels_2020
     run_benchmark("Pixels 2020 Benchmark", get_default_grammar(Pixels_2020), 
         first(get_all_problems(Pixels_2020), 10), get_all_identifiers(Pixels_2020), 
         pixel_benchmark_aux, HerbBenchmarks.Pixels_2020.interpret, 
-        max_depth=max_depth, max_iterations=max_iterations, max_enumerations=max_enumerations)
+        max_depth=max_depth, max_iterations=max_iterations, max_enumerations=max_enumerations, 
+        allow_evaluation_errors=true)
 end
