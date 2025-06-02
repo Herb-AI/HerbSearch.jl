@@ -41,7 +41,7 @@ function HerbSearch.refactor_grammar(
     # println(data)
     
     # Convert result into grammar rule
-    best_cost, best_values = read_last_witness_from_json(data)
+    optimal, best_cost, best_values = read_last_witness_from_json(data)
 
     if isnothing(best_values)
         return grammar
@@ -64,6 +64,7 @@ function HerbSearch.refactor_grammar(
     end
 
     println("Cost is $(best_cost)")
+    println("Optimal: $optimal")
 
     return new_grammar
 end
