@@ -1,0 +1,42 @@
+Problem set: robots
+Using 5 fraction
+K = 4	Timeout: 300
+
+Cost is Any[-758]
+Optimal: false
+
+Grammar:
+1: Start = Sequence
+2: Sequence = Operation
+3: Sequence = begin
+    Operation
+    Sequence
+end
+4: Operation = Transformation
+5: Operation = ControlStatement
+6: Transformation = moveRight()
+7: Transformation = moveDown()
+8: Transformation = moveLeft()
+9: Transformation = moveUp()
+10: Transformation = drop()
+11: Transformation = grab()
+12: ControlStatement = IF(Condition, Sequence, Sequence)
+13: ControlStatement = WHILE(Condition, Sequence)
+14: Condition = atTop()
+15: Condition = atBottom()
+16: Condition = atLeft()
+17: Condition = atRight()
+18: Condition = notAtTop()
+19: Condition = notAtBottom()
+20: Condition = notAtLeft()
+21: Condition = notAtRight()
+22: Sequence = IF(Condition, Transformation, begin
+        Transformation
+        Sequence
+    end)
+23: ControlStatement = IF(Condition, moveRight(), begin
+        moveDown()
+        Transformation
+    end)
+24: Sequence = WHILE(notAtRight(), moveDown())
+

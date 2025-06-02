@@ -1,0 +1,36 @@
+Problem set: pixels
+Using 1 fraction
+K = 4	Timeout: 600
+
+Cost is Any[-707]
+Optimal: true
+
+Grammar:
+1: Start = Sequence
+2: Sequence = Operation
+3: Sequence = begin
+    Operation
+    Sequence
+end
+4: Operation = Transformation
+5: Operation = ControlStatement
+6: Transformation = moveRight()
+7: Transformation = moveLeft()
+8: Transformation = moveUp()
+9: Transformation = moveDown()
+10: Transformation = draw0()
+11: Transformation = draw1()
+12: ControlStatement = IF(Condition, Sequence, Sequence)
+13: ControlStatement = WHILE(Condition, Sequence)
+14: Condition = atTop()
+15: Condition = atBottom()
+16: Condition = atLeft()
+17: Condition = atRight()
+18: Condition = notAtTop()
+19: Condition = notAtBottom()
+20: Condition = notAtLeft()
+21: Condition = notAtRight()
+22: Sequence = moveLeft()
+23: Sequence = WHILE(notAtRight(), moveLeft())
+24: Operation = WHILE(notAtRight(), Operation)
+

@@ -1,0 +1,4 @@
+Problem set: pixels
+Using 3 fraction
+K = 16	Timeout: 300
+

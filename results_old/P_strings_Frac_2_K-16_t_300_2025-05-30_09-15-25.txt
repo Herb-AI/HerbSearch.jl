@@ -1,0 +1,4 @@
+Problem set: strings
+Using 2 fraction
+K = 16	Timeout: 300
+
