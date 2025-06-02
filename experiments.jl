@@ -40,13 +40,13 @@ function experiments_main(
             # solve prolems
             for (_, pg) in enumerate(problems)
                 problem = pg.problem.spec
-                if problem_name == "bitvector"
+                if problem_name == "bitvectors"
                     gr_key = :Start
                 else
                     gr_key = :Sequence
                 end
                 iterator = HerbSearch.DFSIterator(grammar, gr_key, max_depth=7) 
-                program = synth_program(problem, grammar, iterator, benchmark)
+                program = synth_program(problem, grammar, iterator, benchmark, problem_name)
 
                 if !isnothing(program)
                     push!(solutions, program)
@@ -86,18 +86,28 @@ end
 function synth_program(problems::Vector,
     grammar::ContextSensitiveGrammar,
     iterator::HerbSearch.ProgramIterator,
-    benchmark)
+    benchmark, name::String)
     objective_states = [problem.out for problem in problems]
+    # a bitvectos have a different way of comparing results
+    vecs = false
+    if name == "bitvectors"
+        vecs = true
+    end
     for program ∈ iterator
         # there shpuld only be one value
         states = [collect(values(problem.in))[1] for problem in problems]
-        grammartags =  benchmark.get_relevant_tags(grammar)
-        
+        grammartags = Dict{Int,Symbol}()
+        if !vecs
+            grammartags = benchmark.get_relevant_tags(grammar)
+        end
         solved = true
         for (objective_state, state) in zip(objective_states, states)
             try
-                final_state = benchmark.interpret(program, grammartags, state)
-                
+                if !vecs
+                    final_state = benchmark.interpret(program, grammartags, state)
+                else
+                    final_state = state
+                end
                 if objective_state != final_state
                     solved = false
                     break
@@ -112,14 +122,14 @@ function synth_program(problems::Vector,
     end
 end
 
-# println("strings")
-experiments_main("strings", 1, 3, 60)
-# println("robots")
-# experiments_main("robots", 1, 3, 10)
+println("strings")
+experiments_main("strings", 1, 3, 10)
+println("robots")
+experiments_main("robots", 1, 3, 10)
+println("pixels")
+experiments_main("pixels", 1, 3, 10)
+
 # println("bitvectors")
 # experiments_main("bitvectors", 1, 3, 10)
-# println("pixels")
-# experiments_main("pixels", 1, 3, 10)
-
 
 # experiments_main(ARGS[1], parse(Int, ARGS[2]), parse(Int, ARGS[3]), parse(Int, ARGS[4]))
