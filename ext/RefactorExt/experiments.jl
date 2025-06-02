@@ -42,7 +42,7 @@ function experiments_main(
                     gr_key = :Sequence
                 end
                 iterator = HerbSearch.DFSIterator(grammar, gr_key, max_depth=7) 
-                program = synth_program(problem, grammar, iterator, benchmark)
+                program = synth_program(problem, grammar, iterator, benchmark, problem_name)
                 if !isnothing(program)
                     push!(solutions, program)
                 end
@@ -81,18 +81,19 @@ end
 function synth_program(problems::Vector,
     grammar::ContextSensitiveGrammar,
     iterator::HerbSearch.ProgramIterator,
-    benchmark)
+    benchmark, name::String)
     objective_states = [problem.out for problem in problems]
+    vecs = false
+    if name == "bitvectors"
+        vecs = true
+    end
     for program ∈ iterator
         # there shpuld only be one value
         states = [collect(values(problem.in))[1] for problem in problems]
-        vecs = false
-        if hasmethod(benchmark, Tuple{typeof(grammar)})
-            grammartags =  benchmark.get_relevant_tags(grammar)
-        else
-            vecs = true
+        grammartags = Dict{Int,Symbol}()
+        if !vecs
+            grammartags = benchmark.get_relevant_tags(grammar)
         end
-        # println(grammartags)
         solved = true
         for (objective_state, state) in zip(objective_states, states)
             try
@@ -106,7 +107,6 @@ function synth_program(problems::Vector,
                     break
                 end
             catch BoundsError
-                println("erroring")
                 break
             end           
         end
@@ -118,8 +118,8 @@ end
 
 
 println("\nstrings")
-experiments_main("strings", 1, 3, 10)
-# println("\nbitvectors")
-# experiments_main("bitvectors", 1, 3, 10)
+experiments_main("strings", 1, 3, 5)
+println("\nbitvectors")
+experiments_main("bitvectors", 1, 3, 10)
 # println("robots")
 # experiments_main("robots", 1, 3, 10)
