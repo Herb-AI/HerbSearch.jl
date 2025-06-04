@@ -1,4 +1,0 @@
-Problem set: strings
-Using 2 fraction
-K = 12	Timeout: 300
-

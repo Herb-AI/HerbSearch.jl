@@ -40,16 +40,4 @@ srun --exclusive -N1 -n1 julia --project=HerbSearch experiments.jl strings 3 8 7
 srun --exclusive -N1 -n1 julia --project=HerbSearch experiments.jl strings 4 8 7200 &
 srun --exclusive -N1 -n1 julia --project=HerbSearch experiments.jl strings 5 8 7200 &
 
-srun --exclusive -N1 -n1 julia --project=HerbSearch experiments.jl strings 1 12 7200 &
-srun --exclusive -N1 -n1 julia --project=HerbSearch experiments.jl strings 2 12 7200 &
-srun --exclusive -N1 -n1 julia --project=HerbSearch experiments.jl strings 3 12 7200 &
-srun --exclusive -N1 -n1 julia --project=HerbSearch experiments.jl strings 4 12 7200 &
-srun --exclusive -N1 -n1 julia --project=HerbSearch experiments.jl strings 5 12 7200 &
-
-srun --exclusive -N1 -n1 julia --project=HerbSearch experiments.jl strings 1 16 7200 &
-srun --exclusive -N1 -n1 julia --project=HerbSearch experiments.jl strings 2 16 7200 &
-srun --exclusive -N1 -n1 julia --project=HerbSearch experiments.jl strings 3 16 7200 &
-srun --exclusive -N1 -n1 julia --project=HerbSearch experiments.jl strings 4 16 7200 &
-srun --exclusive -N1 -n1 julia --project=HerbSearch experiments.jl strings 5 16 7200 &
-
 wait

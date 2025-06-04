@@ -1,4 +1,0 @@
-Problem set: robots
-Using 1 fraction
-K = 16	Timeout: 300
-

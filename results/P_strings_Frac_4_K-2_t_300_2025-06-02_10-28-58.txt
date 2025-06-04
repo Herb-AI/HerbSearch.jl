@@ -1,0 +1,43 @@
+Problem set: strings
+Using 4 fraction
+K = 2	Timeout: 300
+
+Cost is Any[-492]
+Optimal: false
+
+Grammar:
+1: Start = Sequence
+2: Sequence = Operation
+3: Sequence = begin
+    Operation
+    Sequence
+end
+4: Operation = Transformation
+5: Operation = ControlStatement
+6: Transformation = moveRight()
+7: Transformation = moveLeft()
+8: Transformation = makeUppercase()
+9: Transformation = makeLowercase()
+10: Transformation = drop()
+11: ControlStatement = IF(Condition, Sequence, Sequence)
+12: ControlStatement = WHILE(Condition, Sequence)
+13: Condition = atEnd()
+14: Condition = notAtEnd()
+15: Condition = atStart()
+16: Condition = notAtStart()
+17: Condition = isLetter()
+18: Condition = isNotLetter()
+19: Condition = isUppercase()
+20: Condition = isNotUppercase()
+21: Condition = isLowercase()
+22: Condition = isNotLowercase()
+23: Condition = isNumber()
+24: Condition = isNotNumber()
+25: Condition = isSpace()
+26: Condition = isNotSpace()
+27: Sequence = WHILE(isNotLowercase(), begin
+        drop()
+        makeUppercase()
+    end)
+28: Sequence = WHILE(Condition, drop())
+

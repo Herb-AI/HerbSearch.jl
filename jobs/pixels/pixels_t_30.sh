@@ -40,16 +40,4 @@ srun --exclusive -N1 -n1 julia --project=HerbSearch experiments.jl pixels 3 8 18
 srun --exclusive -N1 -n1 julia --project=HerbSearch experiments.jl pixels 4 8 1800 &
 srun --exclusive -N1 -n1 julia --project=HerbSearch experiments.jl pixels 5 8 1800 &
 
-srun --exclusive -N1 -n1 julia --project=HerbSearch experiments.jl pixels 1 12 1800 &
-srun --exclusive -N1 -n1 julia --project=HerbSearch experiments.jl pixels 2 12 1800 &
-srun --exclusive -N1 -n1 julia --project=HerbSearch experiments.jl pixels 3 12 1800 &
-srun --exclusive -N1 -n1 julia --project=HerbSearch experiments.jl pixels 4 12 1800 &
-srun --exclusive -N1 -n1 julia --project=HerbSearch experiments.jl pixels 5 12 1800 &
-
-srun --exclusive -N1 -n1 julia --project=HerbSearch experiments.jl pixels 1 16 1800 &
-srun --exclusive -N1 -n1 julia --project=HerbSearch experiments.jl pixels 2 16 1800 &
-srun --exclusive -N1 -n1 julia --project=HerbSearch experiments.jl pixels 3 16 1800 &
-srun --exclusive -N1 -n1 julia --project=HerbSearch experiments.jl pixels 4 16 1800 &
-srun --exclusive -N1 -n1 julia --project=HerbSearch experiments.jl pixels 5 16 1800 &
-
 wait

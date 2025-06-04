@@ -1,4 +1,0 @@
-Problem set: robots
-Using 5 fraction
-K = 12	Timeout: 1800
-
