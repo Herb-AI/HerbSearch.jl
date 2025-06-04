@@ -1,5 +1,6 @@
 using Glob
 using Plots
+using Statistics
 
 # File matching pattern
 path_to_folder = "results/"
@@ -74,39 +75,41 @@ for (benchmark, entries) in data
     plt = plot(xlabel="Timeout (s)", ylabel="Result (Cost)",
                title="Results for $benchmark", xscale=:log10, legend=:outertopright)
 
-    for k in ks, run in runs
-        pts = filter(e -> e[3] == k && e[4] == run, entries)
+    for k in ks
+        timeout_groups = Dict{Int, Vector{Int}}()
 
-        for e in pts
-            push!(existing_points, (benchmark, run, k, e[1]))
+        # Collect all results grouped by (k, timeout) across runs
+        for entry in entries
+            (timeout, result, k_val, run_val, optimal) = entry
+            push!(existing_points, (benchmark, run_val, k, timeout))
+            if k_val == k
+                push!(get!(timeout_groups, timeout, Int[]), result)
+            end
         end
 
-        if !isempty(pts)
-            timeouts = [e[1] for e in pts]
-            results = [e[2] for e in pts]
-            optimal_flags = [e[5] for e in pts]
-            c = color_map[(k, run)]
+        if !isempty(timeout_groups)
+            sorted_timeouts = sort(collect(keys(timeout_groups)))
+            means = Float64[]
+            stds = Float64[]
 
-            # Prepare marker colors: filled if optimal, white if not
-            shapes = [optimal ? :square : :circle for optimal in optimal_flags]
+            for t in sorted_timeouts
+                values = timeout_groups[t]
+                push!(means, mean(values))
+                push!(stds, std(values))
+            end
 
-            # Plot actual data WITHOUT label (so no legend entry)
-            scatter!(timeouts, results,
-                label = "",
-                marker = shapes,
-                markersize = 4,
-                markercolor = c,
-                markerstrokecolor=:transparent,
-                markerstrokewidth=0)
+            c = color_map[(k, 1)]  # Use same base color regardless of run
 
-            # Add one invisible point just for the legend with default filled circle
-            scatter!([NaN], [NaN],
-                label = "K=$k, run=$run",
-                marker = :circle,
-                markersize = 4,
-                markercolor = c,
-                markerstrokecolor=:transparent,
-                markerstrokewidth=0)
+            plot!(sorted_timeouts, means,
+                  yerror = stds,
+                  label = "K=$k",
+                  lw = 2,
+                  marker = :circle,
+                  markersize = 4,
+                  markercolor = c,
+                  markerstrokecolor = :transparent,
+                  markerstrokewidth = 0,
+                  color = c)
         end
     end
 
