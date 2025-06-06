@@ -24,14 +24,16 @@ end
 function synth_program(problems::Vector,
     grammar::ContextSensitiveGrammar,
     iterator::HerbSearch.ProgramIterator,
-    benchmark, name::String)::RuleNode
+    benchmark, name::String)
     objective_states = [problem.out for problem in problems]
     # a bitvectos have a different way of comparing results
     vecs = false
     if name == "bitvectors"
         vecs = true
     end
+    count = 0
     for program ∈ iterator
+        count += 1
         # there shpuld only be one value
         states = [collect(values(problem.in))[1] for problem in problems]
         grammartags = Dict{Int,Symbol}()
@@ -55,7 +57,7 @@ function synth_program(problems::Vector,
             end           
         end
         if solved
-            return program
+            return program, count
         end
     end
 end
@@ -86,8 +88,36 @@ function get_size_of_a_tree(rule::RuleNode)
         if typeof(c) == RuleNode 
             res += get_size_of_a_tree(c)
         else
-            # TODO: why do we have non-rule nodes in programs?
+            # this is a terminal I guess
+            res += 1
         end
     end
     return res
+end
+
+function synth_and_compress(compress_set::Vector{<:Problem},
+    grammar::AbstractGrammar,
+    benchmark::Module,
+    problem_name::String,
+    k::Int64, 
+    time_out::Int64)
+    solutions = Vector{RuleNode}([])
+    for p in compress_set
+        problem = p.spec
+        if problem_name == "bitvectors"
+            gr_key = :Start
+        else
+            gr_key = :Sequence
+        end
+        iterator = HerbSearch.DFSIterator(grammar, gr_key, max_depth=7) 
+        program, _ = synth_program(problem, grammar, iterator, benchmark, problem_name)
+
+        if !isnothing(program)
+            push!(solutions, program)
+        end
+    end
+    # refactor_solutions
+    optimiszed_grammar = RefactorExt.HerbSearch.refactor_grammar(
+        solutions, grammar, k, k*15, time_out)
+    return optimiszed_grammar
 end

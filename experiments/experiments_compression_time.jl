@@ -43,7 +43,7 @@ function experiments_main(
                     gr_key = :Sequence
                 end
                 iterator = HerbSearch.DFSIterator(grammar, gr_key, max_depth=7) 
-                program = synth_program(problem, grammar, iterator, benchmark, problem_name)
+                program, _ = synth_program(problem, grammar, iterator, benchmark, problem_name)
 
                 if !isnothing(program)
                     push!(solutions, program)
@@ -56,7 +56,6 @@ function experiments_main(
         end
     end
 end
-
 
 println("strings")
 experiments_main("strings", 1, 3, 10)
