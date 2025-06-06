@@ -26,17 +26,17 @@ function experiments_main(
     # open results file and redirect STDIO
     open(res_file_path, "w") do io
         redirect_stdout(io) do
+        end
             println("Problem set: $(problem_name)\nUsing $(using_mth) fraction\nK = $(k)\tTimeout: $(time_out)\n")
             # get mth fraction of the problems
             benchmark = get_benchmark(problem_name)
             problem_grammar_pairs = get_all_problem_grammar_pairs(benchmark)
-            shuffle!(rng, problem_grammar_pairs)
+            compress, rest = split_problems(problem_grammar_pairs, using_mth)
             grammar = problem_grammar_pairs[1].grammar
-            problems = take_mth_fraction(problem_grammar_pairs, 5, using_mth)
             solutions = Vector{RuleNode}([])
             # solve prolems
-            for (_, pg) in enumerate(problems)
-                problem = pg.problem.spec
+            for p in compress
+                problem = p.spec
                 if problem_name == "bitvectors"
                     gr_key = :Start
                 else
@@ -52,21 +52,21 @@ function experiments_main(
             # refactor_solutions
             optimiszed_grammar = RefactorExt.HerbSearch.refactor_grammar(
                 solutions, grammar, k, k*15, time_out)
-            synthesize_and_time(problem_grammar_pairs, optimiszed_grammar, benchmark, problem_name)
-        end
+            synthesize_and_time(rest, optimiszed_grammar, benchmark, problem_name)
+        # end
     end
 end
 
-function synthesize_and_time(problems::Vector{ProblemGrammarPair},
+function synthesize_and_time(problems::Vector{Any},
     grammar::ContextSensitiveGrammar,
-    benchmark, problem_name::String)
+    benchmark::Module, problem_name::String)
     time_all = Millisecond(Time(now())).value
 
-    for (_, pg) in enumerate(problems)
-        problem = pg.problem.spec
+    for problem in problems
+        spec = problem.spec
         gr_key = :Start # starting from "start" here because we don't need to refactor now
         iterator = HerbSearch.DFSIterator(grammar, gr_key, max_depth=8) 
-        program::RuleNode = synth_program(problem, grammar, iterator, benchmark, problem_name)
+        program::RuleNode = synth_program(spec, grammar, iterator, benchmark, problem_name)
         println("Tree size $(get_size_of_a_tree(program))")
     end
     println("Total time (ms) $(Millisecond(Time(now())).value-time_all)")
@@ -96,5 +96,5 @@ timestamp = Dates.format(now(), "yyyy-mm-dd_HH-MM-SS")
 end
 
 println("strings")
-baseline_run("strings")
+# baseline_run("strings")
 experiments_main("strings", 1, 3, 10) 
