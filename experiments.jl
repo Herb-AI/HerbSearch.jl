@@ -6,11 +6,11 @@ using Markdown
 using InteractiveUtils
 using Random
 using Dates
-include("../ext/RefactorExt/RefactorExt.jl")
+include("ext/RefactorExt/RefactorExt.jl")
 using .RefactorExt
-include("../src/HerbSearch.jl")
+include("src/HerbSearch.jl")
 using HerbCore, HerbGrammar, .HerbSearch, HerbSpecification, HerbBenchmarks
-include("utils.jl")
+include("experiments/utils.jl")
 
 function experiment_speedup_main(
     problem_name::String, 
@@ -88,9 +88,24 @@ timestamp = Dates.format(now(), "yyyy-mm-dd_HH-MM-SS")
     end
 end
 
-println("strings")
-baseline_run("strings")
+# if ARGS[1] == "string_baseline"
+#     baseline_run("strings")
+# elseif ARGS[1] == "robots_baseline"
+#     baseline_run("robots")
+# elseif ARGS[1] == "pixels_baseline"
+#     baseline_run("pixels")
+# else
+#     experiment_speedup_main(ARGS[1], parse(Int, ARGS[2]), parse(Int, ARGS[3]), parse(Int, ARGS[4]))
+# end 
+
+# println("strings")
+# baseline_run("strings")
 # experiment_speedup_main("strings", 1, 3, 10) 
+
+println("robots")
+baseline_run("robots")
+# experiment_speedup_main("strings", 1, 3, 10) 
+
 # println("pixels")
 # baseline_run("pixels")
 # experiment_speedup_main("pixels", 1, 3, 10) 

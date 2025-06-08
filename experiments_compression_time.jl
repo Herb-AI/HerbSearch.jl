@@ -6,11 +6,11 @@ using Markdown
 using InteractiveUtils
 using Random
 using Dates
-include("../ext/RefactorExt/RefactorExt.jl")
+include("ext/RefactorExt/RefactorExt.jl")
 using .RefactorExt
-include("../src/HerbSearch.jl")
+include("src/HerbSearch.jl")
 using HerbCore, HerbGrammar, .HerbSearch, HerbSpecification, HerbBenchmarks
-include("utils.jl")
+include("experiments/utils.jl")
 
 function experiments_main(
     problem_name::String, 

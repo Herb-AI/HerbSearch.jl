@@ -16,29 +16,31 @@
     # k::Int, 
     # time_out::Int # in seconds
 
-srun --exclusive -N1 -n1 julia --project=HerbSearch experiments/experiment_is_it_better.jl strings 1 1 1800 &
-srun --exclusive -N1 -n1 julia --project=HerbSearch experiments/experiment_is_it_better.jl strings 2 1 1800 &
-srun --exclusive -N1 -n1 julia --project=HerbSearch experiments/experiment_is_it_better.jl strings 3 1 1800 &
-srun --exclusive -N1 -n1 julia --project=HerbSearch experiments/experiment_is_it_better.jl strings 4 1 1800 &
-srun --exclusive -N1 -n1 julia --project=HerbSearch experiments/experiment_is_it_better.jl strings 5 1 1800 &
+srun --exclusive -N1 -n1 julia --project=HerbSearch experiments.jl stringss_baseline &
 
-srun --exclusive -N1 -n1 julia --project=HerbSearch experiments/experiment_is_it_better.jl strings 1 2 1800 &
-srun --exclusive -N1 -n1 julia --project=HerbSearch experiments/experiment_is_it_better.jl strings 2 2 1800 &
-srun --exclusive -N1 -n1 julia --project=HerbSearch experiments/experiment_is_it_better.jl strings 3 2 1800 &
-srun --exclusive -N1 -n1 julia --project=HerbSearch experiments/experiment_is_it_better.jl strings 4 2 1800 &
-srun --exclusive -N1 -n1 julia --project=HerbSearch experiments/experiment_is_it_better.jl strings 5 2 1800 &
+srun --exclusive -N1 -n1 julia --project=HerbSearch experiments.jl strings 1 1 1800 &
+srun --exclusive -N1 -n1 julia --project=HerbSearch experiments.jl strings 2 1 1800 &
+srun --exclusive -N1 -n1 julia --project=HerbSearch experiments.jl strings 3 1 1800 &
+srun --exclusive -N1 -n1 julia --project=HerbSearch experiments.jl strings 4 1 1800 &
+srun --exclusive -N1 -n1 julia --project=HerbSearch experiments.jl strings 5 1 1800 &
 
-srun --exclusive -N1 -n1 julia --project=HerbSearch experiments/experiment_is_it_better.jl strings 1 4 1800 &
-srun --exclusive -N1 -n1 julia --project=HerbSearch experiments/experiment_is_it_better.jl strings 2 4 1800 &
-srun --exclusive -N1 -n1 julia --project=HerbSearch experiments/experiment_is_it_better.jl strings 3 4 1800 &
-srun --exclusive -N1 -n1 julia --project=HerbSearch experiments/experiment_is_it_better.jl strings 4 4 1800 &
-srun --exclusive -N1 -n1 julia --project=HerbSearch experiments/experiment_is_it_better.jl strings 5 4 1800 &
+srun --exclusive -N1 -n1 julia --project=HerbSearch experiments.jl strings 1 2 1800 &
+srun --exclusive -N1 -n1 julia --project=HerbSearch experiments.jl strings 2 2 1800 &
+srun --exclusive -N1 -n1 julia --project=HerbSearch experiments.jl strings 3 2 1800 &
+srun --exclusive -N1 -n1 julia --project=HerbSearch experiments.jl strings 4 2 1800 &
+srun --exclusive -N1 -n1 julia --project=HerbSearch experiments.jl strings 5 2 1800 &
 
-srun --exclusive -N1 -n1 julia --project=HerbSearch experiments/experiment_is_it_better.jl strings 1 8 1800 &
-srun --exclusive -N1 -n1 julia --project=HerbSearch experiments/experiment_is_it_better.jl strings 2 8 1800 &
-srun --exclusive -N1 -n1 julia --project=HerbSearch experiments/experiment_is_it_better.jl strings 3 8 1800 &
-srun --exclusive -N1 -n1 julia --project=HerbSearch experiments/experiment_is_it_better.jl strings 4 8 1800 &
-srun --exclusive -N1 -n1 julia --project=HerbSearch experiments/experiment_is_it_better.jl strings 5 8 1800 &
+srun --exclusive -N1 -n1 julia --project=HerbSearch experiments.jl strings 1 4 1800 &
+srun --exclusive -N1 -n1 julia --project=HerbSearch experiments.jl strings 2 4 1800 &
+srun --exclusive -N1 -n1 julia --project=HerbSearch experiments.jl strings 3 4 1800 &
+srun --exclusive -N1 -n1 julia --project=HerbSearch experiments.jl strings 4 4 1800 &
+srun --exclusive -N1 -n1 julia --project=HerbSearch experiments.jl strings 5 4 1800 &
+
+srun --exclusive -N1 -n1 julia --project=HerbSearch experiments.jl strings 1 8 1800 &
+srun --exclusive -N1 -n1 julia --project=HerbSearch experiments.jl strings 2 8 1800 &
+srun --exclusive -N1 -n1 julia --project=HerbSearch experiments.jl strings 3 8 1800 &
+srun --exclusive -N1 -n1 julia --project=HerbSearch experiments.jl strings 4 8 1800 &
+srun --exclusive -N1 -n1 julia --project=HerbSearch experiments.jl strings 5 8 1800 &
 
 
 wait

@@ -16,29 +16,31 @@
     # k::Int, 
     # time_out::Int # in seconds
 
-srun --exclusive -N1 -n1 julia --project=HerbSearch experiments/experiment_is_it_better.jl pixels 1 1 1800 &
-srun --exclusive -N1 -n1 julia --project=HerbSearch experiments/experiment_is_it_better.jl pixels 2 1 1800 &
-srun --exclusive -N1 -n1 julia --project=HerbSearch experiments/experiment_is_it_better.jl pixels 3 1 1800 &
-srun --exclusive -N1 -n1 julia --project=HerbSearch experiments/experiment_is_it_better.jl pixels 4 1 1800 &
-srun --exclusive -N1 -n1 julia --project=HerbSearch experiments/experiment_is_it_better.jl pixels 5 1 1800 &
+srun --exclusive -N1 -n1 julia --project=HerbSearch experiments.jl pixels_baseline &
 
-srun --exclusive -N1 -n1 julia --project=HerbSearch experiments/experiment_is_it_better.jl pixels 1 2 1800 &
-srun --exclusive -N1 -n1 julia --project=HerbSearch experiments/experiment_is_it_better.jl pixels 2 2 1800 &
-srun --exclusive -N1 -n1 julia --project=HerbSearch experiments/experiment_is_it_better.jl pixels 3 2 1800 &
-srun --exclusive -N1 -n1 julia --project=HerbSearch experiments/experiment_is_it_better.jl pixels 4 2 1800 &
-srun --exclusive -N1 -n1 julia --project=HerbSearch experiments/experiment_is_it_better.jl pixels 5 2 1800 &
+srun --exclusive -N1 -n1 julia --project=HerbSearch experiments.jl pixels 1 1 1800 &
+srun --exclusive -N1 -n1 julia --project=HerbSearch experiments.jl pixels 2 1 1800 &
+srun --exclusive -N1 -n1 julia --project=HerbSearch experiments.jl pixels 3 1 1800 &
+srun --exclusive -N1 -n1 julia --project=HerbSearch experiments.jl pixels 4 1 1800 &
+srun --exclusive -N1 -n1 julia --project=HerbSearch experiments.jl pixels 5 1 1800 &
 
-srun --exclusive -N1 -n1 julia --project=HerbSearch experiments/experiment_is_it_better.jl pixels 1 4 1800 &
-srun --exclusive -N1 -n1 julia --project=HerbSearch experiments/experiment_is_it_better.jl pixels 2 4 1800 &
-srun --exclusive -N1 -n1 julia --project=HerbSearch experiments/experiment_is_it_better.jl pixels 3 4 1800 &
-srun --exclusive -N1 -n1 julia --project=HerbSearch experiments/experiment_is_it_better.jl pixels 4 4 1800 &
-srun --exclusive -N1 -n1 julia --project=HerbSearch experiments/experiment_is_it_better.jl pixels 5 4 1800 &
+srun --exclusive -N1 -n1 julia --project=HerbSearch experiments.jl pixels 1 2 1800 &
+srun --exclusive -N1 -n1 julia --project=HerbSearch experiments.jl pixels 2 2 1800 &
+srun --exclusive -N1 -n1 julia --project=HerbSearch experiments.jl pixels 3 2 1800 &
+srun --exclusive -N1 -n1 julia --project=HerbSearch experiments.jl pixels 4 2 1800 &
+srun --exclusive -N1 -n1 julia --project=HerbSearch experiments.jl pixels 5 2 1800 &
 
-srun --exclusive -N1 -n1 julia --project=HerbSearch experiments/experiment_is_it_better.jl pixels 1 8 1800 &
-srun --exclusive -N1 -n1 julia --project=HerbSearch experiments/experiment_is_it_better.jl pixels 2 8 1800 &
-srun --exclusive -N1 -n1 julia --project=HerbSearch experiments/experiment_is_it_better.jl pixels 3 8 1800 &
-srun --exclusive -N1 -n1 julia --project=HerbSearch experiments/experiment_is_it_better.jl pixels 4 8 1800 &
-srun --exclusive -N1 -n1 julia --project=HerbSearch experiments/experiment_is_it_better.jl pixels 5 8 1800 &
+srun --exclusive -N1 -n1 julia --project=HerbSearch experiments.jl pixels 1 4 1800 &
+srun --exclusive -N1 -n1 julia --project=HerbSearch experiments.jl pixels 2 4 1800 &
+srun --exclusive -N1 -n1 julia --project=HerbSearch experiments.jl pixels 3 4 1800 &
+srun --exclusive -N1 -n1 julia --project=HerbSearch experiments.jl pixels 4 4 1800 &
+srun --exclusive -N1 -n1 julia --project=HerbSearch experiments.jl pixels 5 4 1800 &
+
+srun --exclusive -N1 -n1 julia --project=HerbSearch experiments.jl pixels 1 8 1800 &
+srun --exclusive -N1 -n1 julia --project=HerbSearch experiments.jl pixels 2 8 1800 &
+srun --exclusive -N1 -n1 julia --project=HerbSearch experiments.jl pixels 3 8 1800 &
+srun --exclusive -N1 -n1 julia --project=HerbSearch experiments.jl pixels 4 8 1800 &
+srun --exclusive -N1 -n1 julia --project=HerbSearch experiments.jl pixels 5 8 1800 &
 
 
 wait
