@@ -113,7 +113,7 @@ for (benchmark, entries) in data
         end
     end
 
-    savefig(plt, "plots/$(benchmark)_results_plot.png")
+    savefig(plt, "experiments/plots/comp/$(benchmark)_results_plot.png")
     display(plt)
 end
 
