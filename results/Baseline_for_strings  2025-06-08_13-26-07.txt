@@ -1,0 +1,17 @@
+Baseline for problem set: strings
+
+problem: 1, solved: true, iterations: 22, tree_size: 11, program: 1{2{5{11{statehole[{26}],,2{4{statehole[{10}],}},2{4{statehole[{7}],}}}}}}
+problem: 10, solved: false, iterations: 66300, tree_size: 0, program: Nothing
+problem: 100, solved: false, iterations: 66300, tree_size: 0, program: Nothing
+problem: 101, solved: true, iterations: 1, tree_size: 4, program: 1{2{4{statehole[{6}],}}}
+problem: 102, solved: true, iterations: 568, tree_size: 10, program: 1{3{4{statehole[{10}],},3{4{statehole[{10}],},2{4{statehole[{10}],}}}}}
+problem: 103, solved: false, iterations: 66300, tree_size: 0, program: Nothing
+problem: 104, solved: false, iterations: 66300, tree_size: 0, program: Nothing
+problem: 105, solved: false, iterations: 66300, tree_size: 0, program: Nothing
+problem: 106, solved: false, iterations: 66300, tree_size: 0, program: Nothing
+problem: 107, solved: false, iterations: 66300, tree_size: 0, program: Nothing
+Total time (ms) 161
+num of iterations:
+22 66300 66300 1 568 66300 66300 66300 66300 66300
+tree_sizes:
+11 0 0 4 10 0 0 0 0 0
