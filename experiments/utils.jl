@@ -53,6 +53,7 @@ function synth_program(problems::Vector,
                     break
                 end
             catch BoundsError
+                solved = false
                 break
             end           
         end
