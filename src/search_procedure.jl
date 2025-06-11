@@ -46,11 +46,15 @@ function synth(
     best_program = nothing
     result = suboptimal_program
 
-    muc_tech = MUCTechnique()
+    muc_tech = MUC()
 
     for (i, candidate_program) ∈ enumerate(iterator)
         # Create expression from rulenode representation of AST
         expr = rulenode2expr(candidate_program, grammar)
+
+        if i % 100 == 0
+            println(i)
+        end
 
         # Evaluate the expression
         score = evaluate(problem, expr, symboltable, shortcircuit=shortcircuit, allow_evaluation_errors=allow_evaluation_errors)
@@ -72,7 +76,7 @@ function synth(
                 faulty_spec = problem.spec[floor(Int16, score * length(problem.spec) + 1)]
 
                 jobs = [
-                    ConflictJob(muc_tech, MUCInput(candidate_program, grammar, problem, faulty_spec))
+                    ConflictJob(muc_tech, MUCInput(candidate_program, grammar, faulty_spec))
                 ]
                 constraints = run_conflict_pipeline(jobs)
 
@@ -83,6 +87,7 @@ function synth(
 
                 if length(herb_cons) > 0
                     add_constraints!(iterator, herb_cons)
+                    # println(herb_cons[1])
                 end
             end
         end
