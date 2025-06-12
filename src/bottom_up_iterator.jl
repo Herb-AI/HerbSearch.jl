@@ -178,7 +178,6 @@ function combine(iter::BottomUpIterator, state)
         nonterminals = .~terminals
         non_terminal_shapes = UniformHole.(partition(Hole(nonterminals), grammar), ([],))
 
-        # @show max_in_bank, state[:max_combination_depth]
         # if we have exceeded the maximum number of programs to generate
         if max_in_bank >= state[:max_combination_depth]
                 return nothing, nothing
