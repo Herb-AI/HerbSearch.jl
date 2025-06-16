@@ -93,15 +93,15 @@ function get_constrained_string_grammar()
 end
 
 
-benchmark = HerbBenchmarks.String_transformations_2020
-problem_grammar_pairs = get_all_problem_grammar_pairs(benchmark)
-grammar_1 = deepcopy(problem_grammar_pairs[1].grammar)
+# benchmark = HerbBenchmarks.String_transformations_2020
+# problem_grammar_pairs = get_all_problem_grammar_pairs(benchmark)
+# grammar_1 = deepcopy(problem_grammar_pairs[1].grammar)
 
-iterator_1 = HerbSearch.DFSIterator(grammar_1, :Sequence, max_depth=6)
-size_1 = length(iterator_1)
-println("Length before: $size_1")
+# iterator_1 = HerbSearch.DFSIterator(grammar_1, :Sequence, max_depth=6)
+# size_1 = length(iterator_1)
+# println("Length before: $size_1")
 
-grammar_2 = get_constrained_string_grammar()
-iterator_2 = HerbSearch.DFSIterator(grammar_2, :Sequence, max_depth=6)
-size_2 = length(iterator_2)
-println("Length after: $size_2")
+# grammar_2 = get_constrained_string_grammar()
+# iterator_2 = HerbSearch.DFSIterator(grammar_2, :Sequence, max_depth=6)
+# size_2 = length(iterator_2)
+# println("Length after: $size_2")

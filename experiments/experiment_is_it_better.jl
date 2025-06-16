@@ -1,6 +1,6 @@
-using Pkg
-Pkg.activate(@__DIR__)
-Pkg.instantiate()
+# using Pkg
+# Pkg.activate(@__DIR__)
+# Pkg.instantiate()
 
 using Markdown
 using InteractiveUtils
@@ -81,15 +81,15 @@ timestamp = Dates.format(now(), "yyyy-mm-dd_HH-MM-SS")
             println("Baseline for problem set: $(problem_name)\n")
             # get mth fraction of the problems
             benchmark = get_benchmark(problem_name)
-            problem_grammar_pairs = get_all_problem_grammar_pairs(benchmark)
+            problem_grammar_pairs = first(get_all_problem_grammar_pairs(benchmark), 1)
             grammar = problem_grammar_pairs[1].grammar
             synthesize_and_time(problem_grammar_pairs, grammar, benchmark, problem_name)
         end
     end
 end
 
-# println("strings")
-# baseline_run("strings")
+println("strings")
+baseline_run("strings")
 # experiment_speedup_main("strings", 1, 3, 10) 
 # println("pixels")
 # baseline_run("pixels")

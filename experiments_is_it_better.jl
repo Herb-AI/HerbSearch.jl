@@ -11,6 +11,9 @@ using .RefactorExt
 include("src/HerbSearch.jl")
 using HerbCore, HerbGrammar, .HerbSearch, HerbSpecification, HerbBenchmarks
 include("experiments/utils.jl")
+include("experiments/grammar_constraints.jl")
+include("experiments/synthesize.jl")
+include("experiments/heuristics.jl")
 
 function experiment_speedup_main(
     problem_name::String, 
@@ -34,7 +37,7 @@ function experiment_speedup_main(
             problem_grammar_pairs = get_all_problem_grammar_pairs(benchmark)
             # compress, rest = split_problems(problem_grammar_pairs, using_mth)
             compress_set, rest = take_mth_fraction(problem_grammar_pairs, 5, using_mth)
-            grammar = problem_grammar_pairs[1].grammar
+            grammar = get_constrained_string_grammar()
             optimiszed_grammar = synth_and_compress(
                 [p.problem for p in compress_set], grammar, 
                 benchmark, problem_name, k, time_out)
@@ -55,20 +58,19 @@ function synthesize_and_time(problems::Vector{<:ProblemGrammarPair},
         problem = pg.problem
         spec = problem.spec
         gr_key = :Start # starting from "start" here because we don't need to refactor now
-        iterator = HerbSearch.DFSIterator(grammar, gr_key, max_depth=7) 
-        solved, program, iter_count = synth_program(spec, grammar, iterator, benchmark, problem_name)
+        solved, program, iter_count = synth_program(spec, grammar, benchmark, gr_key, problem_name)
         tree_size = if solved get_size_of_a_tree(program) else 0 end
         push!(tree_sizes, tree_size)
         push!(iter_counts, iter_count)
         println("problem: $(pg.identifier), solved: $solved, iterations: $(iter_count), tree_size: $(tree_size), program: $(program)")
     end
-    println("Total time (ms) $(Millisecond(Time(now())).value-time_all)")
-    println("num of iterations:\n$(join(iter_counts, " "))")
-    println("tree_sizes:\n$(join(tree_sizes, " "))")
+    println("\nTotal time (ms) $(Millisecond(Time(now())).value-time_all)")
+    println("\nnum of iterations:\n$(join(iter_counts, " "))")
+    println("\ntree_sizes:\n$(join(tree_sizes, " "))")
 end
 
 function baseline_run(problem_name::String)
-    timestamp = Dates.format(now(), "yyyy-mm-dd_HH-MM-SS")
+timestamp = Dates.format(now(), "yyyy-mm-dd_HH-MM-SS")
     dir_path = dirname(@__FILE__)
     res_path = joinpath(dir_path, "results")
     mkpath(res_path)
@@ -81,31 +83,16 @@ function baseline_run(problem_name::String)
             println("Baseline for problem set: $(problem_name)\n")
             # get mth fraction of the problems
             benchmark = get_benchmark(problem_name)
-            problem_grammar_pairs = first(get_all_problem_grammar_pairs(benchmark), 10)
+            problem_grammar_pairs = get_all_problem_grammar_pairs(benchmark)
             grammar = problem_grammar_pairs[1].grammar
             synthesize_and_time(problem_grammar_pairs, grammar, benchmark, problem_name)
         end
     end
 end
 
-# if ARGS[1] == "string_baseline"
-#     baseline_run("strings")
-# elseif ARGS[1] == "robots_baseline"
-#     baseline_run("robots")
-# elseif ARGS[1] == "pixels_baseline"
-#     baseline_run("pixels")
-# else
-#     experiment_speedup_main(ARGS[1], parse(Int, ARGS[2]), parse(Int, ARGS[3]), parse(Int, ARGS[4]))
-# end 
 
-# println("strings")
-# baseline_run("strings")
-# experiment_speedup_main("strings", 1, 3, 10) 
-
-# println("robots")
-# baseline_run("robots")
-# experiment_speedup_main("strings", 1, 3, 10) 
-
-# println("pixels")
-# baseline_run("pixels")
-# experiment_speedup_main("pixels", 1, 3, 10) 
+if ARGS[1] == "strings_baseline"
+    baseline_run("strings")
+else
+    experiment_speedup_main(ARGS[0], parse(Int, ARGS[2]), parse(Int, ARGS[3]), parse(Int, ARGS[4]))
+end

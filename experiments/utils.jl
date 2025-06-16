@@ -20,51 +20,6 @@ function get_benchmark(problem_name::String)
     end
 end
 
-
-function synth_program(problems::Vector,
-    grammar::ContextSensitiveGrammar,
-    iterator::HerbSearch.ProgramIterator,
-    benchmark, name::String)
-    objective_states = [problem.out for problem in problems]
-    # a bitvectos have a different way of comparing results
-    vecs = false
-    if name == "bitvectors"
-        vecs = true
-    end
-    count = 0
-    for program ∈ iterator
-        count += 1
-        # there shpuld only be one value
-        println(program)
-        states = [collect(values(problem.in))[1] for problem in problems]
-        grammartags = Dict{Int,Symbol}()
-        if !vecs
-            grammartags = benchmark.get_relevant_tags(grammar)
-        end
-        solved = false
-        for (objective_state, state) in zip(objective_states, states)
-            try
-                if !vecs
-                    final_state = benchmark.interpret(program, grammartags, state)
-                else
-                    final_state = state
-                end
-                if objective_state != final_state
-                    solved = false
-                    break
-                end
-            catch BoundsError
-                solved = false
-                break
-            end           
-        end
-        if solved
-            return solved, program, count
-        end
-    end
-    return false, Nothing, count
-end
-
 """
 problems - vector of differnet types of programs
 for each type, split them into sets of 20/80% and return them as vector
@@ -112,8 +67,7 @@ function synth_and_compress(compress_set::Vector{<:Problem},
         else
             gr_key = :Sequence
         end
-        iterator = HerbSearch.DFSIterator(grammar, gr_key, max_depth=7) 
-        program, _ = synth_program(problem, grammar, iterator, benchmark, problem_name)
+        program, _ = synth_program(problem, grammar, benchmark, problem_name)
 
         if !isnothing(program)
             push!(solutions, program)
