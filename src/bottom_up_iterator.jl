@@ -1,24 +1,31 @@
 """
-    mutable struct BottomUpIterator <: ProgramIterator
+   abstract type BottomUpIterator <: ProgramIterator
 
-Enumerates programs from a context-free grammar starting at [`Symbol`](@ref) `sym` with respect to the grammar up to a given depth and a given size.
-The exploration is done by maintaining a bank of (executable) programs and ieratively exploring larger programs by combinig the ones in the bank  .
+Enumerates programs from a context-free grammar starting at `Symbol` `sym` with respect to the grammar up to a given depth and a given size.
+The exploration is done by maintaining a bank of (executable) programs and ieratively exploring larger programs by combining the ones in the bank.
 Concrete iterators may overload the following methods:
-- create_bank
-- get_bank
-- populate_bank! -> puts the simplest program in the bank and returns the addresses of the programs put in there
-- combine
-- add_to_bank! -> rename to push!
-- retrieve -> given a bank and an address, retrieve the program at a given address
+- [`get_bank`](@ref): get the iterator's bank
+- [`populate_bank!`](@ref): put the simplest program(s) in the bank and return the [`AccessAddress`](@ref)es of the new programs
+- [`combine`](@ref): combine the existing programs in the bank into new, more complex programs via [`CombineAddress`](@ref)es
+- [`add_to_bank!`](@ref): possibly add a program created by the [`combine`](@ref) step to the bank
+- [`retrieve`](@ref): retrieve the program from the bank given an [`AbstractAddress`](@ref)
 """
 abstract type BottomUpIterator <: ProgramIterator end
 
-function create_bank! end
-function get_bank end
-function populate_bank! end
-function combine end
-function add_to_bank! end
-function retrieve end
+@programiterator SizeBasedBottomUpIterator(bank=DefaultDict{Int,DefaultDict}(() -> (DefaultDict{Symbol,AbstractVector{AbstractRuleNode}}(() -> AbstractRuleNode[]))),
+        max_combination_depth=5
+) <: BottomUpIterator
+
+function get_max_combination_depth(iter::SizeBasedBottomUpIterator)
+        return iter.max_combination_depth
+end
+
+@doc """
+        SizeBasedBottomUpIterator
+
+A basic bottom-up iterator with a bank based on program size.
+"""
+SizeBasedBottomUpIterator
 
 """
 A simple type for different addresses to allow multiple dispatch
@@ -42,23 +49,11 @@ end
 
 CombineAddress(op, addrs::AbstractVector{AccessAddress}) = CombineAddress(op, Tuple(addrs))
 
-
-#TODO: PointerAbstract: iterators.product solves this?
-"""
-Int = 1
-int = 2
-Int = Int + Int
-
-1(2): 1,2
-2(6): 1+1, 1+2, 2+1, 2+2
-3(14): 1+1+1, 1+1+2, 1+2+1,1+2+2, 2+1+1, 2+1+2, 2+2+1, 2+2+2
-4
-"""
-
 """
     function Base.collect(iter::BottomUpIterator)
 
-Return an array of all programs in the BottomUpIterator. 
+Return an array of all programs in the BottomUpIterator.
+
 !!! warning
     This requires deepcopying programs from type StateHole to type RuleNode.
     If it is not needed to save all programs, iterate over the iterator manually.
@@ -73,14 +68,14 @@ function Base.collect(iter::BottomUpIterator)
 end
 
 """
-mutable struct BottomUpState
+        mutable struct BottomUpState
 
 State that helps us keep track where we are while iterating through program space.
 More precisely, it help to keep track and switch between the program combinations of the same compelxity and the next level of compelxity.
 
 the following methods need to be implemented:
 
-remaining_combinations(BottomUpState): returns an iterable of progrma combiantions that need to be explored
+remaining_combinations(BottomUpState): returns an iterable of program combiantions that need to be explored
 
 state_tracker(state:BottomUpState): returns the state tracker for the `combine` method
 
@@ -113,10 +108,13 @@ mutable struct GenericBUState <: BottomUpState
 end
 
 remaining_combinations(state::GenericBUState) = state.combinations
+
 state_tracker(state::GenericBUState) = state.combine_stage_tracker
+
 function new_combinations!(state::GenericBUState, new_combs::AbstractVector)
         state.combinations = new_combs
 end
+
 function new_state_tracker!(state::GenericBUState, new_tracker)
         state.combine_stage_tracker = new_tracker
 end
@@ -126,18 +124,18 @@ The following functions define the interface for bottom up iterators
 """
 
 """
-  create_bank!(iter::BottomUpIterator)::Any
+        create_bank!(iter::BottomUpIterator)
 
 Initialises a data structure representing a bank of the iterator.
 It should modify the iterator itself.
 TODO: add bank getters to the interface
 """
-function create_bank!(iter::BottomUpIterator)
-        iter.bank = DefaultDict{Int,DefaultDict}(() -> (DefaultDict{Symbol,AbstractVector{AbstractRuleNode}}(() -> AbstractRuleNode[])))
-end
+# function create_bank!(iter::BottomUpIterator)
+# iter.bank = DefaultDict{Int,DefaultDict}(() -> (DefaultDict{Symbol,AbstractVector{AbstractRuleNode}}(() -> AbstractRuleNode[])))
+# end
 
 """
-  populate_bank!(iter::BottomUpIterator)::AbstractVector{AccessAddress}
+        populate_bank!(iter::BottomUpIterator)::AbstractVector{AccessAddress}
 
 Fills the bank with the initial, simplest, programs.
 It should return the addresses of the programs just inserted in the bank
@@ -158,14 +156,14 @@ function populate_bank!(iter::BottomUpIterator)::AbstractVector{AccessAddress}
 end
 
 """
-    get_bank(iter::BottomUpIterator)
+        get_bank(iter::BottomUpIterator)
 
 Get the problem bank from the `BottomUpIterator`, `iter`.
 """
 get_bank(iter::BottomUpIterator) = iter.bank
 
 """
-  combine(iter::BottomUpIterator, state)::Tuple{AbstractVector{AbstractAddress},Any}
+        combine(iter::BottomUpIterator, state)::Tuple{AbstractVector{AbstractAddress},Any}
 
 Returns a vector of [`AbstractAddress`](@ref) each address representing a program to construct, and a `state` used to keep track of the iterations (in the style of Julia iterators).
 If the iteration should stop, the next state should be `nothing`.
@@ -179,7 +177,7 @@ function combine(iter::BottomUpIterator, state)
         non_terminal_shapes = UniformHole.(partition(Hole(nonterminals), grammar), ([],))
 
         # if we have exceeded the maximum number of programs to generate
-        if max_in_bank >= state[:max_combination_depth]
+        if max_in_bank >= get_max_combination_depth(iter)
                 return nothing, nothing
         end
 
@@ -229,18 +227,18 @@ function add_to_bank!(iter::BottomUpIterator, program_combination::AbstractAddre
 end
 
 """
-  new_address(iter::BottomUpIterator, parent_address::AbstractAddress)::AbstractAddress
+        new_address(::BottomUpIterator, program_combination::CombineAddress, program_type::Symbol, idx)
 
-Returns an [`AbstractAddress`](@ref) of the program to be added to the bank, derived from the `parent_address`
+Create an [`AccessAddress`](@ref) derived from the `program_combination` [`CombineAddress`](@ref) and `program_type`.
 """
-function new_address(iter::BottomUpIterator, program_combination::AbstractAddress, program_type::Symbol, idx)::AbstractAddress
+function new_address(::BottomUpIterator, program_combination::CombineAddress, program_type::Symbol, idx)::AccessAddress
         return AccessAddress((1 + maximum([x.addr[1] for x in program_combination.addrs]), program_type, idx))
 end
 
 """
-  retrieve(iter::BottomUpIterator, address::AccessAddress)::AbstractRuleNode
+        retrieve(iter::BottomUpIterator, address::AccessAddress)::AbstractRuleNode
 
-Retrieves a program from the bank indexed by the [`AccessAddress`](@ref)
+Retrieve a program from the bank indexed by the [`AccessAddress`](@ref)
 """
 function retrieve(iter::BottomUpIterator, address::AccessAddress)::AbstractRuleNode
         get_bank(iter)[address.addr[1]][address.addr[2]][address.addr[3]]
@@ -251,28 +249,33 @@ end
 
 Returns the initial state for the first `combine` call
 """
-function init_combine_structure end
-
-
-"""
-    _construct_program(iter::BottomUpIterator, addresses::CombineAddress)::AbstractRuleNode
-
-Constructs a program by combining programs specified by `address`.
-Ideally this is impelmented only once.
-"""
-function _construct_program(iter::BottomUpIterator, address::CombineAddress)::AbstractRuleNode
-        return UniformHole(address.op.domain, [retrieve(iter, x) for x in address.addrs])
+function init_combine_structure(::BottomUpIterator)
+        return Dict()
 end
 
 
 """
-    _get_next_program(iter::BottomUpIterator, state::GenericBUState)::Tuple{AbstractRuleNode,BottomUpState}
+    construct_program(iter::BottomUpIterator, addresses::CombineAddress)::UniformHole
+
+Construct a program by combining programs specified by `address`.
+"""
+function construct_program(iter::BottomUpIterator, address::CombineAddress)::UniformHole
+        return UniformHole(address.op.domain, [retrieve(iter, x) for x in address.addrs])
+end
+
+function construct_program(iter::BottomUpIterator, address::AccessAddress)
+        return retrieve(iter, address)
+end
+
+
+"""
+    get_next_program(iter::BottomUpIterator, state::GenericBUState)::Tuple{AbstractRuleNode,BottomUpState}
 
 Returns the next program to explore and the updated BottomUpState:
 - if there are still remaining programs from the current BU iteration to explore (`remaining_combinations(state)`), it pops the next one
 - otherwise, it calls the the `combine(iter, state)` function again, and processes the first returned program
 """
-function _get_next_program(iter::BottomUpIterator, state::GenericBUState)
+function get_next_program(iter::BottomUpIterator, state::GenericBUState)
         if has_remaining_iterations(state) # && !empty(first_(state))
                 return popfirst!(remaining_combinations(state)), state
         elseif !isnothing(state_tracker(state))
@@ -300,13 +303,12 @@ end
     Base.iterate(iter::BottomUpIterator)
 
 Initial call of the bottom-up iterator.
-It creates the bank and populates it with initial programs.
+It populates the bank with initial programs.
 It returns the first program and a state-tracking [`GenericBUState`](@ref) containing the remaining initial programs and the initialstate for the `combine` function
 """
 function Base.iterate(iter::BottomUpIterator)
         solver = iter.solver
         starting_node = deepcopy(get_tree(solver))
-        create_bank!(iter)
         addresses = populate_bank!(iter)
 
         return Base.iterate(iter, GenericBUState(addresses, init_combine_structure(iter), nothing, starting_node))
@@ -318,11 +320,11 @@ get_type(grammar, uh::UniformHole) = grammar.types[findfirst(uh.domain)]
 """
     Base.iterate(iter::BottomUpIterator, state::GenericBUState)::Tuple{AbstractRuleNode,GenericBUState}
 
-The second call to iterate uses [`_get_next_program`](@ref) to retrive the next program from the [`GenericBUState`](@ref) and
+The second call to iterate uses [`get_next_program`](@ref) to retrive the next program from the [`GenericBUState`](@ref) and
     - if it is `nothing`, then it returns nothing; we stop
     - if it is indexed by [`AccessAddress`](@ref) then it has the program that is already in the bank; just return
     - if it is indexed by [`CombineAddress`](@ref) then it
-        - it calls `_construct_program` to construct the program
+        - it calls `construct_program` to construct the program
         - call the `add_to_bank!` function to add it to the bank
         - if it is added to the bank, then it return the program and the new state
         - if it is not added to the bank, e.g., because of observational equivalence, then it calls itself again with the new state
@@ -341,14 +343,14 @@ function Base.iterate(iter::BottomUpIterator, state::GenericBUState)
         end
 
         solver = iter.solver
-        program_combination, new_state = _get_next_program(iter, state)
+        program_combination, new_state = get_next_program(iter, state)
 
         while !isnothing(program_combination)
                 keep = true
                 if typeof(program_combination) == AccessAddress
                         program = retrieve(iter, program_combination)
                 else
-                        program = _construct_program(iter, program_combination)
+                        program = construct_program(iter, program_combination)
                         program_type = get_type(get_grammar(solver), program)
                         keep = add_to_bank!(iter, program_combination, program, program_type)
                 end
@@ -367,7 +369,7 @@ function Base.iterate(iter::BottomUpIterator, state::GenericBUState)
                         end
                 end
 
-                program_combination, new_state = _get_next_program(iter, new_state)
+                program_combination, new_state = get_next_program(iter, new_state)
         end
 
         return nothing
