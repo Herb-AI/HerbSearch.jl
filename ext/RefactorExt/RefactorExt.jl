@@ -63,7 +63,7 @@ function HerbSearch.refactor_grammar(
         end
     end
 
-    # println("Cost is $(best_cost)\tIs optimal: $optimal")
+    println("Cost is $(best_cost)\tIs optimal: $optimal")
 
     return new_grammar
 end

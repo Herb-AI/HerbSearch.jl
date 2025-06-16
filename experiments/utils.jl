@@ -35,12 +35,13 @@ function synth_program(problems::Vector,
     for program ∈ iterator
         count += 1
         # there shpuld only be one value
+        println(program)
         states = [collect(values(problem.in))[1] for problem in problems]
         grammartags = Dict{Int,Symbol}()
         if !vecs
             grammartags = benchmark.get_relevant_tags(grammar)
         end
-        solved = true
+        solved = false
         for (objective_state, state) in zip(objective_states, states)
             try
                 if !vecs

@@ -28,8 +28,8 @@ function experiments_main(
     res_file_path = joinpath(res_path, res_file_name)
 
     # open results file and redirect STDIO
-    open(res_file_path, "w") do io
-        redirect_stdout(io) do
+    #open(res_file_path, "w") do io
+        #redirect_stdout(io) do
             println("Problem set: $(problem_name)\nUsing $(using_mth) fraction\nK = $(k)\tTimeout: $(time_out)\n")
             # get mth fraction of the problems
             benchmark = get_benchmark(problem_name)
@@ -38,8 +38,12 @@ function experiments_main(
             grammar = problem_grammar_pairs[1].grammar
             problems, _ = take_mth_fraction(problem_grammar_pairs, 5, using_mth)
             solutions = Vector{RuleNode}([])
+            problems = first(problems, 0)
+            println(length(problems))
+            println(length(HerbSearch.DFSIterator(grammar, :Sequence, max_depth=7)))
+            t = time()
             # solve prolems
-            for (_, pg) in enumerate(problems)
+            for (i, pg) in enumerate(problems)
                 problem = pg.problem.spec
                 if problem_name == "bitvectors"
                     gr_key = :Start
@@ -47,25 +51,33 @@ function experiments_main(
                     gr_key = :Sequence
                 end
                 iterator = HerbSearch.DFSIterator(grammar, gr_key, max_depth=7) 
-                program, _ = synth_program(problem, grammar, iterator, benchmark, problem_name)
+                solved, program, _ = synth_program(problem, grammar, iterator, benchmark, problem_name)
 
-                if !isnothing(program)
+                if solved
                     push!(solutions, program)
                 end
             end
+            t = time() - t
+            println("Time elapsed: $t")
+            number_of_solved = length(solutions)
+            number_of_problems = length(problems)
             # refactor_solutions
-            optimiszed_grammar = RefactorExt.HerbSearch.refactor_grammar(
-                solutions, grammar, k, k*15, time_out)
-            println("\nGrammar:\n$(optimiszed_grammar)")
-        end
-    end
+            println("Solved $number_of_solved out of $number_of_problems")
+
+            if number_of_solved > 0
+                optimiszed_grammar = RefactorExt.HerbSearch.refactor_grammar(
+                    solutions, grammar, k, k*15, time_out)
+                println("\nGrammar:\n$(optimiszed_grammar)")
+            end
+        #end
+    #end
 end
 
-# println("strings")
-# experiments_main("strings", 1, 3, 10)
+println("strings")
+experiments_main("strings", 1, 3, 60)
 # println("robots")
 # experiments_main("robots", 1, 3, 10)
 # println("pixels")
 # experiments_main("pixels", 1, 3, 10)
 
-experiments_main(ARGS[1], parse(Int, ARGS[2]), parse(Int, ARGS[3]), parse(Int, ARGS[4]))
+# experiments_main(ARGS[1], parse(Int, ARGS[2]), parse(Int, ARGS[3]), parse(Int, ARGS[4]))

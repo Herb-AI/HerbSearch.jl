@@ -88,8 +88,8 @@ timestamp = Dates.format(now(), "yyyy-mm-dd_HH-MM-SS")
     end
 end
 
-println("strings")
-baseline_run("strings")
+# println("strings")
+# baseline_run("strings")
 # experiment_speedup_main("strings", 1, 3, 10) 
 # println("pixels")
 # baseline_run("pixels")
