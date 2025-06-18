@@ -215,7 +215,9 @@ Adds the `program` to the bank of the [`BottomUpIterator`](@ref) at the given `a
 Returns `True` if the program is added to the bank, and `False` otherwise.
 For example, the function returns false if the `program` is observationally equivalent to another program already in the bank; hence, it will not be added.
 """
-function add_to_bank!(iter::BottomUpIterator, program_combination::AbstractAddress, program::AbstractRuleNode, program_type::Symbol)::Bool
+function add_to_bank!(iter::BottomUpIterator, program_combination::CombineAddress, program::AbstractRuleNode)
+        program_type = get_type(get_grammar(iter.solver), program)
+
         bank = get_bank(iter)
         prog_cost = 1 + maximum([x.addr[1] for x in program_combination.addrs])
         n_in_bank = length(bank[prog_cost][program_type])
@@ -223,6 +225,15 @@ function add_to_bank!(iter::BottomUpIterator, program_combination::AbstractAddre
 
         push!(get_bank(iter)[address.addr[1]][address.addr[2]], program)
 
+        return true
+end
+
+"""
+        add_to_bank!(::BottomUpIterator, ::AccessAddress)
+
+Always return `false` as [`AccessAddress`](@ref)es are already in the bank.
+"""
+function add_to_bank!(::BottomUpIterator, ::AccessAddress, ::AbstractRuleNode)
         return true
 end
 
@@ -245,6 +256,15 @@ function retrieve(iter::BottomUpIterator, address::AccessAddress)::AbstractRuleN
 end
 
 """
+    construct_program(iter::BottomUpIterator, addresses::CombineAddress)::UniformHole
+
+Construct a program by combining programs specified by `address`.
+"""
+function retrieve(iter::BottomUpIterator, address::CombineAddress)::UniformHole
+        return UniformHole(address.op.domain, [retrieve(iter, x) for x in address.addrs])
+end
+
+"""
     init_combine_structure(iter::BottomUpIterator)
 
 Returns the initial state for the first `combine` call
@@ -252,21 +272,6 @@ Returns the initial state for the first `combine` call
 function init_combine_structure(::BottomUpIterator)
         return Dict()
 end
-
-
-"""
-    construct_program(iter::BottomUpIterator, addresses::CombineAddress)::UniformHole
-
-Construct a program by combining programs specified by `address`.
-"""
-function construct_program(iter::BottomUpIterator, address::CombineAddress)::UniformHole
-        return UniformHole(address.op.domain, [retrieve(iter, x) for x in address.addrs])
-end
-
-function construct_program(iter::BottomUpIterator, address::AccessAddress)
-        return retrieve(iter, address)
-end
-
 
 """
     get_next_program(iter::BottomUpIterator, state::GenericBUState)::Tuple{AbstractRuleNode,BottomUpState}
@@ -276,7 +281,7 @@ Returns the next program to explore and the updated BottomUpState:
 - otherwise, it calls the the `combine(iter, state)` function again, and processes the first returned program
 """
 function get_next_program(iter::BottomUpIterator, state::GenericBUState)
-        if has_remaining_iterations(state) # && !empty(first_(state))
+        if has_remaining_iterations(state) # && !isempty(first_(state))
                 return popfirst!(remaining_combinations(state)), state
         elseif !isnothing(state_tracker(state))
                 new_program_combinations, new_state = combine(iter, state_tracker(state))
@@ -343,17 +348,11 @@ function Base.iterate(iter::BottomUpIterator, state::GenericBUState)
         end
 
         solver = iter.solver
-        program_combination, new_state = get_next_program(iter, state)
+        next_program_address, new_state = get_next_program(iter, state)
 
-        while !isnothing(program_combination)
-                keep = true
-                if typeof(program_combination) == AccessAddress
-                        program = retrieve(iter, program_combination)
-                else
-                        program = construct_program(iter, program_combination)
-                        program_type = get_type(get_grammar(solver), program)
-                        keep = add_to_bank!(iter, program_combination, program, program_type)
-                end
+        while !isnothing(next_program_address)
+                program = retrieve(iter, next_program_address)
+                keep = add_to_bank!(iter, next_program_address, program)
 
                 if keep && is_subdomain(program, state.starting_node)
                         # take the program (uniform tree) convert to UniformIterator, and add to state
@@ -369,7 +368,7 @@ function Base.iterate(iter::BottomUpIterator, state::GenericBUState)
                         end
                 end
 
-                program_combination, new_state = get_next_program(iter, new_state)
+                next_program_address, new_state = get_next_program(iter, new_state)
         end
 
         return nothing
