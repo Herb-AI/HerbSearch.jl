@@ -103,46 +103,44 @@ The algorithm that constructs the iterator of StochasticSearchIterator. It has t
 5. return the new next_program
 """
 function Base.iterate(iter::StochasticSearchIterator, iterator_state::IteratorState)
-    grammar, solver = get_grammar(iter.solver), iter.solver
-    current_program = get_tree(solver)#iterator_state.current_program
-    
-    current_cost = calculate_cost(iter, current_program)
-    new_temperature = temperature(iter, iterator_state.current_temperature)
+        grammar, solver = get_grammar(iter.solver), iter.solver
+        current_program = get_tree(solver)#iterator_state.current_program
 
-    # get the neighbour node location 
-    neighbourhood_node_location, dict = neighbourhood(iter, current_program)
+        current_cost = calculate_cost(iter, current_program)
+        new_temperature = temperature(iter, iterator_state.current_temperature)
 
-    # get the subprogram pointed by node-location
-    subprogram = get(current_program, neighbourhood_node_location)
+        # get the neighbour node location 
+        neighbourhood_node_location, dict = neighbourhood(iter, current_program)
 
-    original_state = save_state!(solver)
+        # get the subprogram pointed by node-location
+        subprogram = get(current_program, neighbourhood_node_location)
 
-    @info "Start: $(rulenode2expr(current_program, grammar)), subexpr: $(rulenode2expr(subprogram, grammar)), cost: $current_cost
-            temp $new_temperature"
+        original_state = save_state!(solver)
 
-    # remove the rule node by substituting it with a hole of the same symbol
-    original_node = get(current_program, neighbourhood_node_location)
-    path = get_path(current_program, original_node)
+        @info "Start: $(rulenode2expr(current_program, grammar)), subexpr: $(rulenode2expr(subprogram, grammar)), cost: $current_cost
+                temp $new_temperature"
 
-    remove_node!(solver, path)
-    
-    # `propose`` new concret eprograms to consider. They are programs to put in the place of the nodelocation
-    possible_programs = propose(iter, path, dict)
-    
-    # try to improve the program using any of the possible replacements
-    improved_program = try_improve_program!(iter, possible_programs, new_temperature, current_cost)
-    
-    if isnothing(improved_program)
-        load_state!(solver, original_state)
-    else 
-        new_state!(solver, improved_program)
-    end
+        # remove the rule node by substituting it with a hole of the same symbol
+        original_node = get(current_program, neighbourhood_node_location)
+        path = get_path(current_program, original_node)
 
-    @assert isfeasible(solver)
-    @assert !contains_hole(get_tree(solver))
-    
-    next_state = IteratorState(get_tree(solver), new_temperature,iterator_state.dmap)
-    return (get_tree(solver), next_state)
+        # `propose`` new concret eprograms to consider. They are programs to put in the place of the nodelocation
+        possible_programs = propose(iter, path, dict)
+
+        # try to improve the program using any of the possible replacements
+        improved_program = try_improve_program!(iter, possible_programs, new_temperature, current_cost)
+
+        if isnothing(improved_program)
+                load_state!(solver, original_state)
+        else
+                new_state!(solver, improved_program)
+        end
+
+        @assert isfeasible(solver)
+        @assert !contains_hole(get_tree(solver))
+
+        next_state = IteratorState(get_tree(solver), new_temperature, iterator_state.dmap)
+        return (get_tree(solver), next_state)
 end
 
 

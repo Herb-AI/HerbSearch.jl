@@ -35,27 +35,30 @@ Samples a random shape/uniform tree for the hole at `hole_path` to propose progr
 Returns an iterator over the uniform tree.
 """
 function propose_shape(iter::StochasticSearchIterator, grammar::AbstractGrammar, hole_path::Vector{Int}; shape_depth=3)
-    # Get AbstractRuleNode from path and check whether its a hole
-    solver = iter.solver
-    current_program = get_tree(solver)
+        # Get AbstractRuleNode from path and check whether its a hole
+        solver = iter.solver
+        current_program = get_tree(solver)
 
-    hole = get_node_at_location(current_program, hole_path)
-    @assert hole isa AbstractHole
+        node = get_node_at_location(current_program, hole_path)
 
+        # Ugly, see https://github.com/Herb-AI/HerbCore.jl/issues/50
+        if node isa AbstractHole
+                type = grammar.types[findfirst(node.domain)]
+        else
+                type = grammar.types[get_rule(node)]
+        end
 
-    type = grammar.types[findfirst(hole.domain)]
-    
-    # Sample shape from type
-    max_depth = get_max_depth(iter.solver) - length(hole_path)
-    @assert max_depth > 0
-    shape = rand(UniformHole, grammar, type, min(shape_depth, max_depth))
-    
-    # Substitute shape into the hole
-    substitute!(solver, hole_path, shape)
+        # Sample shape from type
+        max_depth = get_max_depth(iter.solver) - length(hole_path)
+        @assert max_depth > 0
+        shape = rand(UniformHole, grammar, type, min(shape_depth, max_depth))
 
-    # Create a uniform solver over the new shape
-    uniform_solver = UniformSolver(grammar, get_tree(solver), with_statistics=solver.statistics)
-    uniform_iterator = UniformIterator(uniform_solver, iter)
+        # Substitute shape into the hole
+        substitute!(solver, hole_path, shape)
 
-    return uniform_iterator
+        # Create a uniform solver over the new shape
+        uniform_solver = UniformSolver(grammar, get_tree(solver), with_statistics=solver.statistics)
+        uniform_iterator = UniformIterator(uniform_solver, iter)
+
+        return uniform_iterator
 end
