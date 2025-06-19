@@ -1,4 +1,4 @@
-@testset verbose=true "Search procedure" begin
+@testset verbose=true "Search procedure synth" begin
     g₁ = @csgrammar begin
         Number = |(1:2)
         Number = x
@@ -74,7 +74,8 @@
         iterator = BFSIterator(g₃, :Index, max_depth=2)
         solution, flag = synth(problem, iterator, allow_evaluation_errors=true) 
 
-        @test solution == RuleNode(3, [RuleNode(2), RuleNode(1)])
+        @test solution == @rulenode 3{2,1}
         @test flag == suboptimal_program
     end
 end
+
