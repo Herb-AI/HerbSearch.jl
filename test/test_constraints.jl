@@ -1,7 +1,4 @@
-using HerbCore, HerbGrammar, HerbConstraints
-
 @testset verbose=true "Constraints" begin
-
     function new_grammar()
         grammar = @csgrammar begin
             Int = 1

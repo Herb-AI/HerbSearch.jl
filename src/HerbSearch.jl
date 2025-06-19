@@ -66,6 +66,7 @@ export
 	misclassification,
 	validate_iterator,
 	sample,
+	sample_shape,
 	rand,
 	divide_and_conquer,
 	EvaluationError

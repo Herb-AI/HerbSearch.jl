@@ -1,5 +1,3 @@
-using HerbCore, HerbGrammar, HerbConstraints
-
 @testset verbose=true "Ordered" begin
 
     @testset "Number of candidate programs" begin
