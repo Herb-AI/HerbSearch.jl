@@ -24,13 +24,13 @@ function string_evaluation(grammar, program, problem)
 end
 
 function synth_program(problems::Vector, grammar::ContextSensitiveGrammar, benchmark, gr_key, name::String, max_iterations::Int)
-    # iterator = HerbSearch.MHSearchIterator(grammar, gr_key, problems, string_distance, max_depth=20, evaluation_function=string_evaluation)
-    iterator = HerbSearch.VLSNSearchIterator(grammar, gr_key, problems, string_distance,
-        max_depth = 20,
-        vlsn_neighbourhood_depth = 3, 
-        initial_temperature = 3,
-        evaluation_function=string_evaluation
-    ) 
+    iterator = HerbSearch.MHSearchIterator(grammar, gr_key, problems, string_distance, max_depth=20, evaluation_function=string_evaluation)
+    # iterator = HerbSearch.VLSNSearchIterator(grammar, gr_key, problems, string_distance,
+    #     max_depth = 20,
+    #     vlsn_neighbourhood_depth = 3, 
+    #     initial_temperature = 3,
+    #     evaluation_function=string_evaluation
+    # ) 
     # iterator = HerbSearch.SASearchIterator(grammar, gr_key, problems, string_distance, max_depth=10, initial_temperature=1, temperature_decreasing_factor=0.99, evaluation_function=string_evaluation) 
 
     count = 0

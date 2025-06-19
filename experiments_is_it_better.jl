@@ -69,12 +69,10 @@ function synthesize_and_time(problems::Vector{<:ProblemGrammarPair},
         global iter_count = -1
         
         try
-            @timeout 1 begin
-                s, p, i = synth_program(spec, gram, bench, key, bench_name, 1000000)
-                global solved = s
-                global program = p
-                global iter_count = i
-            end
+            s, p, i = synth_program(spec, gram, bench, key, bench_name, 1000000)
+            global solved = s
+            global program = p
+            global iter_count = i
         catch e
             if isa(e, InterruptException)
                 println("problem: $(pg.identifier), solved: false")
@@ -110,7 +108,7 @@ timestamp = Dates.format(now(), "yyyy-mm-dd_HH-MM-SS")
             println("Baseline for problem set: $(problem_name)\n")
             # get mth fraction of the problems
             benchmark = get_benchmark(problem_name)
-            problem_grammar_pairs = first(get_all_problem_grammar_pairs(benchmark), 50)
+            problem_grammar_pairs = last(first(get_all_problem_grammar_pairs(benchmark), 50), 1)
             grammar = get_constrained_string_grammar()
             synthesize_and_time(problem_grammar_pairs, grammar, benchmark, problem_name, max_iterations)
     #     end

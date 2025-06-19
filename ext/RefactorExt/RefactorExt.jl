@@ -5,8 +5,7 @@ using HerbCore, HerbGrammar, HerbSearch, Clingo_jll
 include("parsing_JSON.jl")
 include("compressions_postprocessing.jl")
 
-
-function HerbSearch.refactor_grammar(
+function refactor_grammar(
     programs::AbstractVector{RuleNode}, 
     grammar::AbstractGrammar, 
     k::Int = 1,
