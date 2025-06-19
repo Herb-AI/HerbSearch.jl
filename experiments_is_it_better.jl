@@ -44,32 +44,59 @@ function experiment_speedup_main(
             synthesize_and_time(rest,
              optimiszed_grammar,
              benchmark,
-             problem_name)
+             problem_name,
+             max_iterations)
         end
     end
 end
 
 function synthesize_and_time(problems::Vector{<:ProblemGrammarPair},
     grammar::ContextSensitiveGrammar,
-    benchmark::Module, problem_name::String)
+    benchmark::Module, problem_name::String,
+    max_iterations
+)
     time_all = Millisecond(Time(now())).value
     tree_sizes, iter_counts = [], []
     for pg in problems
         problem = pg.problem
-        spec = problem.spec
-        gr_key = :Start # starting from "start" here because we don't need to refactor now
-        solved, program, iter_count = synth_program(spec, grammar, benchmark, gr_key, problem_name)
-        tree_size = if solved get_size_of_a_tree(program) else 0 end
-        push!(tree_sizes, tree_size)
-        push!(iter_counts, iter_count)
-        println("problem: $(pg.identifier), solved: $solved, iterations: $(iter_count), tree_size: $(tree_size), program: $(program)")
+        global spec = problem.spec
+        global gram = grammar
+        global bench = benchmark
+        global key = :Start
+        global bench_name = problem_name
+        global solved = false
+        global program = nothing
+        global iter_count = -1
+        
+        try
+            @timeout 1 begin
+                s, p, i = synth_program(spec, gram, bench, key, bench_name, 1000000)
+                global solved = s
+                global program = p
+                global iter_count = i
+            end
+        catch e
+            if isa(e, InterruptException)
+                println("problem: $(pg.identifier), solved: false")
+            else
+                rethrow(e)
+            end
+        end
+
+
+        if solved 
+            tree_size = get_size_of_a_tree(program)
+            push!(tree_sizes, tree_size)
+            push!(iter_counts, iter_count)
+            println("problem: $(pg.identifier), solved: $solved, iterations: $(iter_count), tree_size: $(tree_size), program: $(program)")
+        end
     end
     println("\nTotal time (ms) $(Millisecond(Time(now())).value-time_all)")
     println("\nnum of iterations:\n$(join(iter_counts, " "))")
     println("\ntree_sizes:\n$(join(tree_sizes, " "))")
 end
 
-function baseline_run(problem_name::String)
+function baseline_run(problem_name::String, max_iterations::Int)
 timestamp = Dates.format(now(), "yyyy-mm-dd_HH-MM-SS")
     dir_path = dirname(@__FILE__)
     res_path = joinpath(dir_path, "results")
@@ -78,21 +105,21 @@ timestamp = Dates.format(now(), "yyyy-mm-dd_HH-MM-SS")
     res_file_path = joinpath(res_path, res_file_name)
 
     # open results file and redirect STDIO
-    open(res_file_path, "w") do io
-        redirect_stdout(io) do
+    # open(res_file_path, "w") do io
+    #     redirect_stdout(io) do
             println("Baseline for problem set: $(problem_name)\n")
             # get mth fraction of the problems
             benchmark = get_benchmark(problem_name)
-            problem_grammar_pairs = get_all_problem_grammar_pairs(benchmark)
-            grammar = problem_grammar_pairs[1].grammar
-            synthesize_and_time(problem_grammar_pairs, grammar, benchmark, problem_name)
-        end
-    end
+            problem_grammar_pairs = first(get_all_problem_grammar_pairs(benchmark), 50)
+            grammar = get_constrained_string_grammar()
+            synthesize_and_time(problem_grammar_pairs, grammar, benchmark, problem_name, max_iterations)
+    #     end
+    # end
 end
 
-
-if ARGS[1] == "strings_baseline"
-    baseline_run("strings")
-else
-    experiment_speedup_main(ARGS[0], parse(Int, ARGS[2]), parse(Int, ARGS[3]), parse(Int, ARGS[4]))
-end
+baseline_run("strings", 50)
+# if ARGS[1] == "strings_baseline"
+#     baseline_run("strings", parse(Int, ARGS[2]))
+# else
+#     experiment_speedup_main(ARGS[1], parse(Int, ARGS[2]), parse(Int, ARGS[3]), parse(Int, ARGS[4]))
+# end

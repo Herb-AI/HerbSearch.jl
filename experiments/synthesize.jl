@@ -1,94 +1,75 @@
-# abstract type AbstractBestFirstIterator <: HerbSearch.TopDownIterator end
-# @HerbSearch.programiterator BestFirstIterator() <: AbstractBestFirstIterator
+function string_distance(expected_found)
+    distance = 0
 
-global program_distances = nothing
-global current_states = nothing
-global current_objective_states = nothing
-global current_benchmark = nothing
-global current_benchmark_name = nothing
+    for (expected, found) in expected_found
+        if found == 0
+            return Inf
+        end
+        distance += levenshtein!(found.str, expected.str)     
+    end
 
-function HerbSearch.priority_function(
-    ::HerbSearch.BFSIterator,
-    grammar::AbstractGrammar, 
-    current_program::AbstractRuleNode, 
-    parent_value::Union{Real, Tuple{Vararg{Real}}},
-    isrequeued::Bool
-)
+    return distance / length(expected_found)
+end
+
+function string_evaluation(grammar, program, problem)    
     try
-        distance = get_distance(current_states, current_objective_states, current_benchmark, current_benchmark_name, grammar, current_program)
-        program_distances[hash(current_program)] = distance
-        return distance
+        return HerbBenchmarks.String_transformations_2020.interpret(program, grammar, problem)
     catch e
-        if isa(e, AssertionError)
-            return 0.1
+        if isa(e, BoundsError)
+            return 0
         else
             rethrow(e)
         end
     end
 end
 
-
-
-function synth_program(problems::Vector, grammar::ContextSensitiveGrammar, benchmark, gr_key, name::String)
-    iterator = HerbSearch.BFSIterator(grammar, gr_key, max_depth=8) 
-    objective_states = [problem.out for problem in problems]
-
-    global program_distances = Dict()
-    global current_states = [collect(values(problem.in))[1] for problem in problems]
-    global current_objective_states = objective_states
-    global current_benchmark = benchmark
-    global current_benchmark_name = name
+function synth_program(problems::Vector, grammar::ContextSensitiveGrammar, benchmark, gr_key, name::String, max_iterations::Int)
+    # iterator = HerbSearch.MHSearchIterator(grammar, gr_key, problems, string_distance, max_depth=20, evaluation_function=string_evaluation)
+    iterator = HerbSearch.VLSNSearchIterator(grammar, gr_key, problems, string_distance,
+        max_depth = 20,
+        vlsn_neighbourhood_depth = 3, 
+        initial_temperature = 3,
+        evaluation_function=string_evaluation
+    ) 
+    # iterator = HerbSearch.SASearchIterator(grammar, gr_key, problems, string_distance, max_depth=10, initial_temperature=1, temperature_decreasing_factor=0.99, evaluation_function=string_evaluation) 
 
     count = 0
 
     for program ∈ iterator
         count += 1
+        println("Iteration $count, program $program")
 
-        distance = program_distances[hash(program)]
-        delete!(program_distances, hash(program))
+        solved = true
+
         
-        if distance == 0
+            for problem in problems
+                try
+                    actual_state = benchmark.interpret(program, grammar, problem)
+                    objective_state = problem.out
+
+                    if actual_state != objective_state
+                        solved = false
+                        break
+                    end
+                catch e
+                    if isa(e, BoundsError)
+                        solved = false
+                        break
+                    else
+                        rethrow(e)
+                    end
+                end
+            end
+
+        if solved == true
             return true, program, count
         end
 
-        if count == 100000
-            break
+        if count == max_iterations
+            return
         end
     end
+
     return false, Nothing, count
 end
 
-function get_distance(states, objective_states, benchmark, name, grammar, program)
-    grammartags = Dict{Int,Symbol}()
-    if name != "bitvectors"
-        grammartags = benchmark.get_relevant_tags(grammar)
-    end
-    
-    distance = 0
-
-    for (objective_state, state) in zip(objective_states, states)
-        try
-            if name != "bitvectors"
-                final_state = benchmark.interpret(program, grammartags, state)
-            else
-                final_state = state
-            end
-            
-            if name == "strings"
-                del_cost = 1
-                insr_cost = 1
-                subst_cost = 1
-                distance += levenshtein!(final_state.str, objective_state.str, del_cost, insr_cost, subst_cost)
-            end
-
-        catch e
-            if isa(e, BoundsError)
-                return Inf
-            else
-                rethrow(e)
-            end
-        end           
-    end
-
-    return distance
-end

@@ -1,15 +1,15 @@
 function levenshtein!(
     source::AbstractString,
     target::AbstractString,
-    deletion_cost::R,
-    insertion_cost::S,
-    substitution_cost::T,
-    costs::Matrix=Array{promote_type(R, S, T)}(undef, 2, length(target) + 1)
-) where {R<:Real,S<:Real,T<:Real}
-    cost_type = promote_type(R, S, T)
+    deletion_cost::R = 1,
+    insertion_cost::S = Inf,
+    substitution_cost::T = Inf,
+    case_cost::U = 1,
+    costs::Matrix=Array{promote_type(R, S, T, U)}(undef, 2, length(target) + 1)
+) where {R <: Real, S <: Real, T <: Real, U <: Real}
     if length(source) < length(target)
         # Space complexity of function = O(length(target))
-        return levenshtein!(target, source, insertion_cost, deletion_cost, substitution_cost, costs)
+        return levenshtein!(target, source, insertion_cost, deletion_cost, substitution_cost, case_cost, costs)
     else
         if length(target) == 0
             return length(source) * deletion_cost
@@ -37,7 +37,11 @@ function levenshtein!(
                     insertion = costs[new_cost_index, j] + insertion_cost
                     substitution = costs[old_cost_index, j]
                     if r != c
-                        substitution += substitution_cost
+                        if uppercase(r) == uppercase(c)
+                            substitution += case_cost
+                        else
+                            substitution += substitution_cost
+                        end
                     end
 
                     costs[new_cost_index, j+1] = min(deletion, insertion, substitution)

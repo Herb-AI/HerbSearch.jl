@@ -58,7 +58,8 @@ function synth_and_compress(compress_set::Vector{<:Problem},
     benchmark::Module,
     problem_name::String,
     k::Int64, 
-    time_out::Int64)
+    time_out::Int64,
+    max_iterations::Int)
     solutions = Vector{RuleNode}([])
     for p in compress_set
         problem = p.spec
@@ -67,7 +68,7 @@ function synth_and_compress(compress_set::Vector{<:Problem},
         else
             gr_key = :Sequence
         end
-        program, _ = synth_program(problem, grammar, benchmark, problem_name)
+        program, _ = synth_program(problem, grammar, benchmark, problem_name, max_iterations)
 
         if !isnothing(program)
             push!(solutions, program)
@@ -77,4 +78,48 @@ function synth_and_compress(compress_set::Vector{<:Problem},
     optimiszed_grammar = RefactorExt.HerbSearch.refactor_grammar(
         solutions, grammar, k, k*15, time_out)
     return optimiszed_grammar
+end
+
+macro timeout(seconds, expr)
+    quote
+        local result = nothing
+        local err = nothing
+
+        # Spawn a task to run the expression
+        local tsk = @task try
+            result = $(esc(expr))
+        catch e
+            err = e
+        end
+
+        schedule(tsk)
+
+        # Create a Timer that interrupts the task after `seconds`
+        local tm = Timer($seconds) do _
+            if !istaskdone(tsk)
+                try
+                    Base.throwto(tsk, InterruptException())
+                catch e
+                    # task might already be done or dead
+                end
+            end
+        end
+
+        # Wait for the task to finish
+        try
+            wait(tsk)
+        catch e
+            err = e
+        end
+
+        # Clean up the timer
+        close(tm)
+
+        # Rethrow any captured error
+        if err !== nothing
+            throw(err)
+        end
+
+        result
+    end
 end
