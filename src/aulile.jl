@@ -104,8 +104,10 @@ function aulile(
     println("Initial Distance: $(best_score)")
     init_grammar_size = length(grammar.rules)
     # Main loop
+    new_rules_decoding = Dict{Int, AbstractRuleNode}()
+    old_grammar_size = length(grammar.rules)
     for i in 1:max_iterations
-        result = synth_with_aux(problem, iter, grammar, aux, best_score,
+        result = synth_with_aux(problem, iter, grammar, aux, new_rules_decoding, best_score,
             interpret=interpret, allow_evaluation_errors=allow_evaluation_errors,
             max_enumerations=max_enumerations)
         if result isa Nothing
@@ -122,7 +124,13 @@ function aulile(
             if best_score <= aux.best_value
                 return program, optimal_program
             else
-                add_rule!(grammar, program)
+                program_expr = rulenode2expr(program, grammar)                
+                add_rule!(grammar, :(Operation = $program_expr))
+
+                if length(grammar.rules) > old_grammar_size
+                    old_grammar_size = length(grammar.rules)
+                    new_rules_decoding[old_grammar_size] = deepcopy(program)
+                end
                 iter = iter_t(grammar, start_symbol, max_depth=max_depth)
             end
             println("Grammar after step $(i):")
@@ -158,6 +166,7 @@ function synth_with_aux(
     iterator::ProgramIterator,
     grammar::AbstractGrammar,
     aux::AuxFunction,
+    new_rules_decoding::Dict{Int, AbstractRuleNode},
     best_score::Int;
     interpret::Function=default_interpreter,
     allow_evaluation_errors::Bool=false,
@@ -168,8 +177,9 @@ function synth_with_aux(
     best_program = nothing
     for (i, candidate_program) ∈ enumerate(iterator)
         # Evaluate the program
-        score = evaluate_with_aux(problem, candidate_program, grammar,
-            aux, interpret=interpret, allow_evaluation_errors=allow_evaluation_errors)
+        score = evaluate_with_aux(problem, candidate_program, grammar, aux, 
+            new_rules_decoding, interpret=interpret, 
+            allow_evaluation_errors=allow_evaluation_errors)
         # Update score if better
         if score == aux.best_value
             candidate_program = freeze_state(candidate_program)
@@ -210,11 +220,13 @@ Evaluates a candidate program (given as an expression) over all examples in a pr
 
 Returns the total distance score. If evaluation errors are disallowed and one occurs, an `EvaluationError` is thrown.
 """
+
 function evaluate_with_aux(
     problem::Problem{<:AbstractVector{<:IOExample}},
     program::Any,
     grammar::AbstractGrammar,
-    aux::AuxFunction;
+    aux::AuxFunction, 
+    new_rules_decoding::Dict{Int, AbstractRuleNode};
     interpret::Function=default_interpreter,
     allow_evaluation_errors::Bool=false
 )::Number
@@ -223,7 +235,7 @@ function evaluate_with_aux(
     for example ∈ problem.spec
         try
             # Use the interpreter to get the output
-            output = interpret(program, grammar, example)
+            output = interpret(program, grammar, example, new_rules_decoding)
             distance_in_examples += aux(example, output)
         catch e
             # You could also decide to handle less severe errors (such as index out of range) differently,
