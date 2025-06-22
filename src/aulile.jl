@@ -20,7 +20,8 @@ function (af::AuxFunction)(example::IOExample, output)
 end
 
 """
-    default_interpreter(program::Any, grammar::AbstractGrammar, example::IOExample)
+    default_interpreter(program::Any, grammar::AbstractGrammar, example::IOExample, 
+    decoder:Dict{Int,AbstractRuleNode})
 
 Default interpreter implementation that follows the execute_on_input pattern.
 This is used when no custom interpreter is provided to synth_with_aux.
@@ -66,8 +67,9 @@ function print_new_grammar_rules(grammar::AbstractGrammar, init_grammar_size::In
 end
 
 """
-	aulile(problem::Problem, iter_t::Type{<:ProgramIterator}, grammar::AbstractGrammar, start_symbol::Symbol, aux::AuxFunction;
-        interpret=default_interpreter, max_iterations=5, max_depth=5, max_enumerations=100000) -> Union{Tuple{RuleNode, SynthResult}, Nothing}
+    aulile(problem::Problem, iter_t::Type{<:ProgramIterator}, grammar::AbstractGrammar, start_symbol::Symbol, 
+        new_rules_symbol::Symbol, aux::AuxFunction; interpret=default_interpreter, allow_evaluation_errors=false,
+        max_iterations=10000, max_depth=10, max_enumerations=100000) -> Union{Tuple{RuleNode, SynthResult}, Nothing}
 
 Performs iterative library learning (Aulile) by enumerating programs using a grammar and synthesizing programs that 
     minimize the auxiliary scoring function across `IOExample`s.
@@ -76,9 +78,10 @@ Performs iterative library learning (Aulile) by enumerating programs using a gra
 - `iter_t`: Type of program iterator to use (must be constructible with grammar and symbol).
 - `grammar`: The grammar used to generate candidate programs.
 - `start_symbol`: The non-terminal symbol representing the start of the grammar.
+- `new_rules_symbol`: A symbol used to add new rules to the grammar as library learning.
 - `aux`: An `AuxFunction` that defines the evaluation metric and desired score.
-- `interpret`: An interpret function for the grammar
-- `allow_evaluation_errors`: Whether to allow evaluation errors (such as in the grammar)
+- `interpret`: An interpret function for the grammar.
+- `allow_evaluation_errors`: Whether to allow evaluation errors (such as in the grammar).
 - `max_iterations`: Maximum number of learning iterations to perform.
 - `max_depth`: Maximum depth for program enumeration.
 - `max_enumerations`: Maximum number of candidate programs to try per iteration.
@@ -143,24 +146,27 @@ function aulile(
 end
 
 """
-	synth_with_aux(problem::Problem, iterator::ProgramIterator, grammar::AbstractGrammar, aux::AuxFunction, 
-        best_score::Int; interpret=default_interpreter, allow_evaluation_errors=false, 
-        max_time=typemax(Int), max_enumerations=typemax(Int)) -> Union{Tuple{RuleNode, Int}, Nothing}
+    synth_with_aux(problem::Problem, iterator::ProgramIterator, grammar::AbstractGrammar, 
+        aux::AuxFunction, new_rules_decoding::Dict{Int, AbstractRuleNode}, best_score::Int;
+        interpret=default_interpreter, allow_evaluation_errors=false, max_time=typemax(Int), 
+        max_enumerations=typemax(Int)) -> Union{Tuple{RuleNode, Int}, Nothing}
 
 Searches for the best program that minimizes the score defined by the auxiliary function.
 
 - `problem`: The problem definition with IO examples.
 - `iterator`: Program enumeration iterator.
 - `grammar`: Grammar used to generate and interpret programs.
-- `aux`: An `AuxFunction` used to compute score between program output and expected output.
+- `aux`: An `AuxFunction` used to compute the score between program output and expected output.
+- `new_rules_decoding`: A dictionary mapping rule indices to their original `RuleNode`s, 
+    used when interpreting newly added grammar rules.
 - `best_score`: Current best score to beat.
-- `interpret`: Interpreter function for the grammar (defaults to `default_interpreter`)
+- `interpret`: Interpreter function for the grammar (defaults to `default_interpreter`).
 - `allow_evaluation_errors`: Whether to tolerate runtime exceptions during evaluation.
 - `max_time`: Maximum allowed runtime for the synthesis loop.
 - `max_enumerations`: Maximum number of candidate programs to try.
 
-Returns a tuple `(program, score)` of the best discovered program and its score. Returns `nothing` if no better 
-    program was found.
+Returns a tuple `(program, score)` of the best discovered program and its score. 
+    Returns `nothing` if no better program was found.
 """
 function synth_with_aux(
     problem::Problem{<:AbstractVector{<:IOExample}},
@@ -206,17 +212,18 @@ function synth_with_aux(
 end
 
 """
-	evaluate_with_aux(problem::Problem, program::Any, grammar::AbstractGrammar, aux::AuxFunction;
-        interpret=default_interpreter, allow_evaluation_errors=false) -> Number
+    evaluate_with_aux(problem::Problem, program::Any, grammar::AbstractGrammar, aux::AuxFunction,
+        new_rules_decoding::Dict{Int, AbstractRuleNode}; interpret=default_interpreter, 
+        allow_evaluation_errors=false) -> Number
 
-Evaluates a candidate program (given as an expression) over all examples in a problem using the auxiliary evaluation 
-    function.
+Evaluates a candidate program over all examples in a problem using the auxiliary evaluation function.
 
 - `problem`: The problem definition with IO examples.
 - `program`: The candidate program to evaluate.
 - `grammar`: Grammar used to generate and interpret programs.
 - `aux`: An `AuxFunction` used to compute the score between expected and actual output.
-- `interpret`: Interpreter function for program evaluation (defaults to `default_interpreter`)
+- `new_rules_decoding`: A dictionary mapping grammar rule indices to `RuleNode`s for decoding during interpretation.
+- `interpret`: Interpreter function for program evaluation (defaults to `default_interpreter`).
 - `allow_evaluation_errors`: Whether evaluation errors should be tolerated or raise an exception.
 
 Returns the total distance score. If evaluation errors are disallowed and one occurs, an `EvaluationError` is thrown.
