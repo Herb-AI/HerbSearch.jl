@@ -134,7 +134,7 @@ function run_benchmark(title::AbstractString, init_grammar::AbstractGrammar, pro
         end
 
         aulile_start_time = print_time_test_start("\n\tAulile Results:\n", print_separating_dashes=false)
-        aulile_result = aulile(problem, BFSIterator, grammar, :Start, aux, interpret=interpret,
+        aulile_result = aulile(problem, BFSIterator, grammar, :Start, :Operation, aux, interpret=interpret,
             allow_evaluation_errors=allow_evaluation_errors,
             max_iterations=max_iterations, max_depth=max_depth,
             max_enumerations=(max_enumerations / max_iterations))

@@ -31,7 +31,7 @@ end
         IOExample(Dict(:x => "2"), "2."),
         IOExample(Dict(:x => "3"), "3.")
     ])
-    test_result = aulile(problem, BFSIterator, simple_grammar, :String, levenshtein_aux)
+    test_result = aulile(problem, BFSIterator, simple_grammar, :String, :String, levenshtein_aux)
     @test !(test_result isa Nothing)
     solution, flag = test_result
     @test !(solution isa Nothing)
@@ -48,7 +48,7 @@ end
         IOExample(Dict(:x => "2."), "2"),
         IOExample(Dict(:x => "3."), "3")
     ])
-    test_result = aulile(problem, BFSIterator, simple_grammar, :String, levenshtein_aux)
+    test_result = aulile(problem, BFSIterator, simple_grammar, :String, :String, levenshtein_aux)
     @test !(test_result isa Nothing)
     solution, flag = test_result
     program = rulenode2expr(solution, simple_grammar)
@@ -64,7 +64,7 @@ end
         IOExample(Dict(:x => "<978> 654-0299"), "9786540299"),
         IOExample(Dict(:x => "978.654.0299"), "9786540299")
     ])
-    test_result = aulile(problem, BFSIterator, simple_grammar, :String, levenshtein_aux, max_depth=2)
+    test_result = aulile(problem, BFSIterator, simple_grammar, :String, :String, levenshtein_aux, max_depth=2)
     @test !(test_result isa Nothing)
     solution, flag = test_result
     program = rulenode2expr(solution, simple_grammar)

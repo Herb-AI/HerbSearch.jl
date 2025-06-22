@@ -25,7 +25,8 @@ end
 Default interpreter implementation that follows the execute_on_input pattern.
 This is used when no custom interpreter is provided to synth_with_aux.
 """
-function default_interpreter(program::Any, grammar::AbstractGrammar, example::IOExample)
+function default_interpreter(program::Any, grammar::AbstractGrammar, example::IOExample, 
+    decoder::Dict{Int,AbstractRuleNode})
     # Convert the program to an expression if it's a RuleNode
     expr = program isa AbstractRuleNode ? rulenode2expr(program, grammar) : program
     symboltable = grammar2symboltable(grammar)
@@ -90,6 +91,7 @@ function aulile(
     iter_t::Type{<:ProgramIterator},
     grammar::AbstractGrammar,
     start_symbol::Symbol,
+    new_rules_symbol::Symbol,
     aux::AuxFunction;
     interpret::Function=default_interpreter,
     allow_evaluation_errors::Bool=false,
@@ -104,7 +106,7 @@ function aulile(
     println("Initial Distance: $(best_score)")
     init_grammar_size = length(grammar.rules)
     # Main loop
-    new_rules_decoding = Dict{Int, AbstractRuleNode}()
+    new_rules_decoding = Dict{Int,AbstractRuleNode}()
     old_grammar_size = length(grammar.rules)
     for i in 1:max_iterations
         result = synth_with_aux(problem, iter, grammar, aux, new_rules_decoding, best_score,
@@ -124,9 +126,8 @@ function aulile(
             if best_score <= aux.best_value
                 return program, optimal_program
             else
-                program_expr = rulenode2expr(program, grammar)                
-                add_rule!(grammar, :(Operation = $program_expr))
-
+                program_expr = rulenode2expr(program, grammar)
+                add_rule!(grammar, :($new_rules_symbol = $program_expr))
                 if length(grammar.rules) > old_grammar_size
                     old_grammar_size = length(grammar.rules)
                     new_rules_decoding[old_grammar_size] = deepcopy(program)
@@ -166,7 +167,7 @@ function synth_with_aux(
     iterator::ProgramIterator,
     grammar::AbstractGrammar,
     aux::AuxFunction,
-    new_rules_decoding::Dict{Int, AbstractRuleNode},
+    new_rules_decoding::Dict{Int,AbstractRuleNode},
     best_score::Int;
     interpret::Function=default_interpreter,
     allow_evaluation_errors::Bool=false,
@@ -177,8 +178,8 @@ function synth_with_aux(
     best_program = nothing
     for (i, candidate_program) ∈ enumerate(iterator)
         # Evaluate the program
-        score = evaluate_with_aux(problem, candidate_program, grammar, aux, 
-            new_rules_decoding, interpret=interpret, 
+        score = evaluate_with_aux(problem, candidate_program, grammar, aux,
+            new_rules_decoding, interpret=interpret,
             allow_evaluation_errors=allow_evaluation_errors)
         # Update score if better
         if score == aux.best_value
@@ -220,13 +221,12 @@ Evaluates a candidate program (given as an expression) over all examples in a pr
 
 Returns the total distance score. If evaluation errors are disallowed and one occurs, an `EvaluationError` is thrown.
 """
-
 function evaluate_with_aux(
     problem::Problem{<:AbstractVector{<:IOExample}},
     program::Any,
     grammar::AbstractGrammar,
-    aux::AuxFunction, 
-    new_rules_decoding::Dict{Int, AbstractRuleNode};
+    aux::AuxFunction,
+    new_rules_decoding::Dict{Int,AbstractRuleNode};
     interpret::Function=default_interpreter,
     allow_evaluation_errors::Bool=false
 )::Number
