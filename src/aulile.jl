@@ -20,14 +20,12 @@ function (af::AuxFunction)(example::IOExample, output)
 end
 
 """
-    default_interpreter(program::Any, grammar::AbstractGrammar, example::IOExample, 
-    decoder:Dict{Int,AbstractRuleNode})
+    default_interpreter(program::Any, grammar::AbstractGrammar, example::IOExample, _)
 
 Default interpreter implementation that follows the execute_on_input pattern.
 This is used when no custom interpreter is provided to synth_with_aux.
 """
-function default_interpreter(program::Any, grammar::AbstractGrammar, example::IOExample, 
-    decoder::Dict{Int,AbstractRuleNode})
+function default_interpreter(program::Any, grammar::AbstractGrammar, example::IOExample, _)
     # Convert the program to an expression if it's a RuleNode
     expr = program isa AbstractRuleNode ? rulenode2expr(program, grammar) : program
     symboltable = grammar2symboltable(grammar)
