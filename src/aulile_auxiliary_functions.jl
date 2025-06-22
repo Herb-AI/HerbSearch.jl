@@ -53,6 +53,8 @@ function levenshtein!(
     end
 end
 
+using HerbBenchmarks
+
 del_cost = 1
 insr_cost = 1
 subst_cost = 1
