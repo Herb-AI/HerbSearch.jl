@@ -16,6 +16,11 @@
 #  k::Int, 
 #  time_out::Int # in seconds
 
-srun --exclusive -N1 -n1 julia --project=HerbSearch experiments_is_it_better.jl &
+# srun --exclusive -N1 -n1 julia --project=HerbSearch experiments_is_it_better.jl 1 7200 &
+srun --exclusive -N1 -n1 julia --project=HerbSearch experiments_is_it_better.jl 2 7200 &
+# srun --exclusive -N1 -n1 julia --project=HerbSearch experiments_is_it_better.jl 4 7200 &
+# srun --exclusive -N1 -n1 julia --project=HerbSearch experiments_is_it_better.jl 8 7200 &
+
+# srun --exclusive -N1 -n1 julia --project=HerbSearch experiments_is_it_better.jl &
 
 wait

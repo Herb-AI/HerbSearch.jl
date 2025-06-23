@@ -32,12 +32,12 @@ function experiment_speedup_main(
     res_file_path = joinpath(res_path, res_file_name)
 
     # open results file and redirect STDIO
-    # open(res_file_path, "w") do io
-    #     redirect_stdout(io) do
+    open(res_file_path, "w") do io
+        redirect_stdout(io) do
             println("Problem set: $(problem_name)\nK = $(k)\tTimeout: $(time_out)\n")
             # get mth fraction of the problems
             benchmark = get_benchmark(problem_name)
-            problem_grammar_pairs = first(get_all_problem_grammar_pairs(benchmark), 50)
+            problem_grammar_pairs = get_all_problem_grammar_pairs(benchmark)
             grammar = get_constrained_string_grammar()
             optimiszed_grammar, best_compressions = synth_and_compress(
                 problem_grammar_pairs, grammar, 
@@ -46,8 +46,8 @@ function experiment_speedup_main(
              optimiszed_grammar,
              benchmark,
              problem_name, -1, best_compressions)
-    #     end
-    # end
+        end
+    end
 end
 
 function synthesize_and_time(problems::Vector{<:ProblemGrammarPair},
@@ -102,7 +102,7 @@ timestamp = Dates.format(now(), "yyyy-mm-dd_HH-MM-SS")
 end
 
 # baseline_run("strings", 1)
-experiment_speedup_main("strings", 1, 1*60)
+experiment_speedup_main("strings", parse(Int, ARGS[1]), parse(Int, ARGS[2]))
 
 # if ARGS[1] == "strings_baseline"
 #     baseline_run("strings", parse(Int, ARGS[2]))

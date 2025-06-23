@@ -86,25 +86,33 @@ function sub_new_rules(prog::AbstractRuleNode, new_rules_decoding::Dict)
     rule_node = get_rule(prog)
 
     if rule_node in keys(new_rules_decoding)
-        # println("Sub $prog")
-        @assert length(prog.children) == 1
-        prog = sub_hole(deepcopy(new_rules_decoding[rule_node]), prog.children[1])
-        # println("Res $prog")
+        # if length(prog.children) > 1
+            # @warn "Sub $prog"
+            # @warn "Adding $(prog.children) in $(new_rules_decoding[rule_node])"
+        # end
+        prog = sub_holes(deepcopy(new_rules_decoding[rule_node]), prog.children)
+        # if length(prog.children) > 1
+            # @warn "Res $prog"
+        # end
     end
 
     return prog
 end
 
-function sub_hole(prog::AbstractRuleNode, hole::AbstractRuleNode)
+function sub_holes(prog::AbstractRuleNode, holes)
     if prog isa Hole
-        return hole
+        if isempty(holes)
+            return Hole(BitVector([]))
+        else
+            return popfirst!(holes)
+        end
     end
 
     if length(prog.children) == 0
         return prog
     end
 
-    prog.children = [sub_hole(c, hole) for c in prog.children]
+    prog.children = [sub_holes(c, holes) for c in prog.children]
 
     return prog
 end
@@ -115,7 +123,7 @@ function synth_program(problems::Vector, grammar::ContextSensitiveGrammar, bench
     if length(grammar.rules) > string_grammar_size
         i = 1
         while string_grammar_size + i <= length(grammar.rules)
-            new_rules_decoding[string_grammar_size + 1] = deepcopy(extra_rules[i])
+            new_rules_decoding[string_grammar_size + i] = deepcopy(extra_rules[i])
             i += 1
         end
     end
@@ -183,7 +191,7 @@ function synth_program(problems::Vector, grammar::ContextSensitiveGrammar, bench
             break
         end
 
-        if count == 1000
+        if count == 10000
             # string_cost(program, true)
             break
         end

@@ -70,7 +70,7 @@ function synth_and_compress(problems::Vector{<:ProblemGrammarPair},
         solved, program, cost, iter_count, t = synth_program(pg.problem.spec, grammar, benchmark, gr_key, [])
         tree_size = if solved get_size_of_a_tree(program) else -1 end
         duration = round(t, digits=2)
-        println("problem: $(pg.identifier), solved: $solved, duration: $duration, iterations: $(iter_count), tree_size: $(tree_size), cost: $cost, program: $(program)")
+        @warn "problem: $(pg.identifier), solved: $solved, duration: $duration, iterations: $(iter_count), tree_size: $(tree_size), cost: $cost, program: $(program)"
 
         if solved
             amount_solved += 1
