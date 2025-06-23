@@ -164,7 +164,6 @@ function aulile(
             end
         end
     end
-
     return SearchStats(best_program, best_score, max_iterations, total_enumerations)
 end
 
@@ -207,27 +206,25 @@ function synth_with_aux(
     start_time = time()
     best_program = nothing
     loop_enumerations = 0
-    for (i, candidate_program) ∈ enumerate(iterator)
-        candidate_program = freeze_state(candidate_program)
-        loop_enumerations = i
+    for (loop_enumerations, candidate_program) ∈ enumerate(iterator)
         # Evaluate the program
         score = evaluate_with_aux(problem, candidate_program, grammar, aux,
             new_rules_decoding, interpret=interpret,
             allow_evaluation_errors=allow_evaluation_errors)
         # Update score if better
         if score == aux.best_value
-            # candidate_program = freeze_state(candidate_program)
+            candidate_program = freeze_state(candidate_program)
             if print_debug
                 println("Found an optimal program!")
             end
             return SearchStats(candidate_program, aux.best_value, 1, loop_enumerations)
         elseif score < best_score
             best_score = score
-            # candidate_program = freeze_state(candidate_program)
+            candidate_program = freeze_state(candidate_program)
             best_program = candidate_program
         end
         # Check stopping criteria
-        if i > max_enumerations || time() - start_time > max_time
+        if loop_enumerations >= max_enumerations || time() - start_time > max_time
             break
         end
     end

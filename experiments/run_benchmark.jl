@@ -13,9 +13,9 @@ function print_stats(stats::SearchStats, best_value::Int)
     return passed
 end
 
-function run_benchmark_comparison(init_grammar::AbstractGrammar, problems::Vector{Problem}, 
-        aux::AuxFunction, interpret::Function; 
-        max_depth::Int, max_iterations::Int, max_enumerations::Int, allow_evaluation_errors=false)
+function run_benchmark_comparison(init_grammar::AbstractGrammar, problems::Vector{Problem},
+    aux::AuxFunction, interpret::Function, new_rule_symbol::Symbol;
+    max_depth::Int, max_iterations::Int, max_enumerations::Int)
 
     regular_passed_tests = 0
     aulile_passed_tests = 0
@@ -26,19 +26,18 @@ function run_benchmark_comparison(init_grammar::AbstractGrammar, problems::Vecto
         print("Problem ", i, ": ")
         grammar = deepcopy(init_grammar)
 
-        stats = synth_with_aux(problem, 
-            BFSIterator(grammar, :Start, max_depth=max_depth), grammar, default_aux, 
-            Dict{Int64, AbstractRuleNode}(), typemax(Int),
-            interpret=interpret,
-            allow_evaluation_errors=allow_evaluation_errors, max_enumerations=max_enumerations)
+        stats = synth_with_aux(problem,
+            BFSIterator(grammar, :Start, max_depth=max_depth), grammar, default_aux,
+            Dict{Int64,AbstractRuleNode}(), typemax(Int), interpret=interpret,
+            allow_evaluation_errors=true, max_enumerations=max_enumerations)
 
         if print_stats(stats, aux.best_value)
             regular_passed_tests += 1
         end
         print("; ")
 
-        stats = aulile(problem, BFSIterator, grammar, :Start, 
-            :Operation, aux, interpret=interpret, allow_evaluation_errors=allow_evaluation_errors,
+        stats = aulile(problem, BFSIterator, grammar, :Start, new_rule_symbol,
+            aux, interpret=interpret, allow_evaluation_errors=true,
             max_iterations=max_iterations, max_depth=max_depth,
             max_enumerations=(max_enumerations / max_iterations))
 
@@ -48,15 +47,14 @@ function run_benchmark_comparison(init_grammar::AbstractGrammar, problems::Vecto
         println()
     end
     println()
-    
     @assert regular_passed_tests <= length(problems)
     @assert aulile_passed_tests <= length(problems)
 
     return regular_passed_tests, aulile_passed_tests
 end
 
-function experiment_main(problem_name::AbstractString, 
-        max_depth::Int, max_iterations::Int, max_enumerations::Int)    
+function experiment_main(problem_name::AbstractString,
+    max_depth::Int, max_iterations::Int, max_enumerations::Int)
     timestamp = Dates.format(now(), "yyyy-mm-dd_HH-MM-SS")
     dir_path = dirname(@__FILE__)
     res_path = joinpath(dir_path, "compairson_results")
@@ -68,15 +66,16 @@ function experiment_main(problem_name::AbstractString,
     open(res_file_path, "w") do io
         redirect_stdout(io) do
             benchmark = get_benchmark(problem_name)
+            new_rule_symbol = get_start_symbol(problem_name)
             problems = get_all_problems(benchmark)
             init_grammar = get_default_grammar(benchmark)
             aux = get_aux_function(problem_name)
-            regular_passed_tests, aulile_passed_tests = run_benchmark_comparison(init_grammar, 
-                problems, aux, benchmark.interpret, 
+            regular_passed_tests, aulile_passed_tests = run_benchmark_comparison(init_grammar,
+                problems, aux, benchmark.interpret, new_rule_symbol,
                 max_depth=max_depth, max_iterations=max_iterations, max_enumerations=max_enumerations)
 
             println("Regular,Aulile")
-            println(round(regular_passed_tests / length(problems); digits=2), ",", 
+            println(round(regular_passed_tests / length(problems); digits=2), ",",
                 round(aulile_passed_tests / length(problems); digits=2))
         end
     end
@@ -92,8 +91,20 @@ function get_benchmark(problem_name::String)
         return HerbBenchmarks.Pixels_2020
     elseif problem_name == "bitvectors"
         return HerbBenchmarks.PBE_BV_Track_2018
+    elseif problem_name == "karel"
+        return HerbBenchmarks.Karel_2018
     else
         return HerbBenchmarks.String_transformations_2020
+    end
+end
+
+function get_start_symbol(problem_name::String)
+    if problem_name == "karel"
+        return :Action
+    elseif problem_name == "bitvectors"
+        return :Start
+    else
+        return :Operation
     end
 end
 
