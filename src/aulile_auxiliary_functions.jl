@@ -1,3 +1,9 @@
+#
+# File has to be manually included because HerbBenchmarks is not a dependency of HerbSearch.
+# Therefore, this file is not included in HerbSearch.jl
+#
+
+
 # Function added from levenstein library: [https://github.com/rawrgrr/Levenshtein.jl/blob/master/src/Levenshtein.jl]
 function levenshtein!(
     source::AbstractString,

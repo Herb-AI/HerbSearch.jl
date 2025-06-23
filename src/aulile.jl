@@ -98,13 +98,16 @@ function aulile(
     allow_evaluation_errors::Bool=false,
     max_iterations=10000,
     max_depth=10,
-    max_enumerations=100000
+    max_enumerations=100000, 
+    print_debug=false,
 )::Union{Tuple{RuleNode,SynthResult},Nothing}
     iter = iter_t(grammar, start_symbol, max_depth=max_depth)
     program = nothing
     # Get initial distance of input and output
     best_score = aux.initial_score(problem)
-    println("Initial Distance: $(best_score)")
+    if print_debug
+        println("Initial Distance: $(best_score)")
+    end
     init_grammar_size = length(grammar.rules)
     # Main loop
     new_rules_decoding = Dict{Int,AbstractRuleNode}()
@@ -112,7 +115,7 @@ function aulile(
     for i in 1:max_iterations
         result = synth_with_aux(problem, iter, grammar, aux, new_rules_decoding, best_score,
             interpret=interpret, allow_evaluation_errors=allow_evaluation_errors,
-            max_enumerations=max_enumerations)
+            max_enumerations=max_enumerations, print_debug=print_debug)
         if result isa Nothing
             return nothing
         else
@@ -135,8 +138,10 @@ function aulile(
                 end
                 iter = iter_t(grammar, start_symbol, max_depth=max_depth)
             end
-            println("Grammar after step $(i):")
-            print_new_grammar_rules(grammar, max(init_grammar_size, length(grammar.rules) - 3))
+            if print_debug
+                println("Grammar after step $(i):")
+                print_new_grammar_rules(grammar, max(init_grammar_size, length(grammar.rules) - 3))
+            end
         end
     end
 
@@ -176,7 +181,8 @@ function synth_with_aux(
     interpret::Function=default_interpreter,
     allow_evaluation_errors::Bool=false,
     max_time=typemax(Int),
-    max_enumerations=typemax(Int)
+    max_enumerations=typemax(Int), 
+    print_debug=false
 )::Union{Tuple{RuleNode,Int},Nothing}
     start_time = time()
     best_program = nothing
@@ -188,7 +194,9 @@ function synth_with_aux(
         # Update score if better
         if score == aux.best_value
             candidate_program = freeze_state(candidate_program)
-            println("Found an optimal program!")
+            if print_debug
+                println("Found an optimal program!")
+            end
             return (candidate_program, aux.best_value)
         elseif score < best_score
             best_score = score
@@ -201,10 +209,14 @@ function synth_with_aux(
         end
     end
     if isnothing(best_program)
-        println("Did not find a better program")
+        if print_debug
+            println("Did not find a better program")
+        end
         return nothing
     end
-    println("Found a suboptimal program with distance: $(best_score)")
+    if print_debug
+        println("Found a suboptimal program with distance: $(best_score)")
+    end
     # The enumeration exhausted, but an optimal problem was not found
     return (best_program, best_score)
 end
