@@ -14,6 +14,22 @@ struct AuxFunction
     best_value::Number # NOTE: Aulile tries to *minimize* to this value
 end
 
+"""
+    SearchStats
+
+Holds statistics about a search process.
+
+# Fields
+- `is_optimal::SynthResult`: Indicates whether the search found an optimal result.
+- `iterations::Int`: The number of iterations performed during the search.
+- `enumerations::Int`: The number of enumerations performed during the search.
+"""
+struct SearchStats
+    is_optimal::SynthResult
+    iterations::Int
+    enumerations::Int
+end
+
 # Make `AuxFunction` behave like a regular callable function.
 function (af::AuxFunction)(example::IOExample, output)
     return af.func(example, output)
@@ -84,7 +100,8 @@ Performs iterative library learning (Aulile) by enumerating programs using a gra
 - `max_depth`: Maximum depth for program enumeration.
 - `max_enumerations`: Maximum number of candidate programs to try per iteration.
 
-Returns a tuple of the best discovered program and a `SynthResult` (either `optimal_program` or `suboptimal_program`), 
+Returns a tuple of the best discovered program and a `SynthResult` (either `optimal_program` or `suboptimal_program`)
+        and the number of evaluations needed, 
     or `nothing` if no program was found.
 """
 function aulile(
@@ -100,7 +117,7 @@ function aulile(
     max_depth=10,
     max_enumerations=100000, 
     print_debug=false,
-)::Union{Tuple{RuleNode,SynthResult},Nothing}
+)::Tuple{Union{RuleNode, Nothing}, SynthResult, Int}
     iter = iter_t(grammar, start_symbol, max_depth=max_depth)
     program = nothing
     # Get initial distance of input and output
@@ -112,23 +129,26 @@ function aulile(
     # Main loop
     new_rules_decoding = Dict{Int,AbstractRuleNode}()
     old_grammar_size = length(grammar.rules)
+    total_enumerations = 0 
     for i in 1:max_iterations
-        result = synth_with_aux(problem, iter, grammar, aux, new_rules_decoding, best_score,
+        program, new_score, curr_enumerations = synth_with_aux(problem, iter, grammar, aux, 
+            new_rules_decoding, best_score,
             interpret=interpret, allow_evaluation_errors=allow_evaluation_errors,
             max_enumerations=max_enumerations, print_debug=print_debug)
-        if result isa Nothing
-            return nothing
+        total_enumerations += curr_enumerations
+        if program isa Nothing
+            return (nothing, suboptimal_program, total_enumerations)
         else
-            program, new_score = result
             if best_score > 0
                 @assert new_score < best_score
             else
                 # In the case where the distance is optimal from the start
                 @assert new_score <= best_score
             end
+            
             best_score = new_score
             if best_score <= aux.best_value
-                return program, optimal_program
+                return program, optimal_program, total_enumerations
             else
                 program_expr = rulenode2expr(program, grammar)
                 add_rule!(grammar, :($new_rules_symbol = $program_expr))
@@ -145,7 +165,7 @@ function aulile(
         end
     end
 
-    return program, suboptimal_program
+    return program, suboptimal_program, total_enumerations
 end
 
 """
@@ -168,7 +188,8 @@ Searches for the best program that minimizes the score defined by the auxiliary 
 - `max_time`: Maximum allowed runtime for the synthesis loop.
 - `max_enumerations`: Maximum number of candidate programs to try.
 
-Returns a tuple `(program, score)` of the best discovered program and its score. 
+Returns a tuple `(program, score, num_enumerations)` of the best discovered program, its score, 
+        and number of enumerations. 
     Returns `nothing` if no better program was found.
 """
 function synth_with_aux(
@@ -183,10 +204,12 @@ function synth_with_aux(
     max_time=typemax(Int),
     max_enumerations=typemax(Int), 
     print_debug=false
-)::Union{Tuple{RuleNode,Int},Nothing}
+)::Tuple{Union{RuleNode, Nothing}, Int, Int}
     start_time = time()
     best_program = nothing
+    loop_enumerations = 0
     for (i, candidate_program) ∈ enumerate(iterator)
+        loop_enumerations = i
         # Evaluate the program
         score = evaluate_with_aux(problem, candidate_program, grammar, aux,
             new_rules_decoding, interpret=interpret,
@@ -197,7 +220,7 @@ function synth_with_aux(
             if print_debug
                 println("Found an optimal program!")
             end
-            return (candidate_program, aux.best_value)
+            return (candidate_program, aux.best_value, loop_enumerations)
         elseif score < best_score
             best_score = score
             candidate_program = freeze_state(candidate_program)
@@ -208,17 +231,13 @@ function synth_with_aux(
             break
         end
     end
-    if isnothing(best_program)
-        if print_debug
-            println("Did not find a better program")
-        end
-        return nothing
-    end
-    if print_debug
+    if isnothing(best_program) && print_debug
+        println("Did not find a better program")
+    elseif print_debug
         println("Found a suboptimal program with distance: $(best_score)")
     end
     # The enumeration exhausted, but an optimal problem was not found
-    return (best_program, best_score)
+    return (best_program, best_score, loop_enumerations)
 end
 
 """

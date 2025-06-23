@@ -14,27 +14,39 @@ function run_benchmark_comparison(init_grammar::AbstractGrammar, problems::Vecto
 
     regular_passed_tests = 0
     aulile_passed_tests = 0
-    for (_, problem) in enumerate(problems)
+
+    println("Problem: Reg_solved_flag, Reg_enums; Aulile_solved_flag, Aulile_enums")
+    for (i, problem) in enumerate(problems)
+        print("Problem ", i, ": ")
         grammar = deepcopy(init_grammar)
 
-        regular_synth_result = synth_with_aux(problem, BFSIterator(grammar, :Start, max_depth=max_depth),
-            grammar, default_aux, Dict{Int64, AbstractRuleNode}(), typemax(Int),
+        program, new_score, enumerations = synth_with_aux(problem, 
+            BFSIterator(grammar, :Start, max_depth=max_depth), grammar, default_aux, 
+            Dict{Int64, AbstractRuleNode}(), typemax(Int),
             interpret=interpret,
             allow_evaluation_errors=allow_evaluation_errors, max_enumerations=max_enumerations)
 
-        if !isnothing(regular_synth_result) && regular_synth_result[2] <= 0 # Optimal assumed 0
+        passed = !isnothing(program) && new_score <= 0  # Optimum assumed 0
+        print(Int(passed), ", ") 
+        print(enumerations, "; ")
+        if passed
             regular_passed_tests += 1
         end
 
-        aulile_result = aulile(problem, BFSIterator, grammar, :Start, :Operation, aux, interpret=interpret,
-            allow_evaluation_errors=allow_evaluation_errors,
+        program, program_optimality, enumerations = aulile(problem, BFSIterator, grammar, :Start, 
+            :Operation, aux, interpret=interpret, allow_evaluation_errors=allow_evaluation_errors,
             max_iterations=max_iterations, max_depth=max_depth,
             max_enumerations=(max_enumerations / max_iterations))
 
-        if !isnothing(aulile_result) && aulile_result[2] == optimal_program 
+        passed = !isnothing(program) && program_optimality == optimal_program
+        print(Int(passed), ", ") 
+        print(enumerations)
+        if passed
             aulile_passed_tests += 1
         end
+        println()
     end
+    println()
     
     @assert regular_passed_tests <= length(problems)
     @assert aulile_passed_tests <= length(problems)
