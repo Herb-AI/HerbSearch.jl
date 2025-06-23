@@ -16,7 +16,12 @@ function parse_programs(programs::Vector{RuleNode})::String
 end
 
 function parse_rulenode(rulenode::Union{AbstractRuleNode, AbstractUniformHole}, node_index::Int)::Tuple{String, Int}
-    rule = get_rule(rulenode)
+    if rulenode isa Hole
+        rule = -1
+        return "\nnode($node_index, $rule).", node_index
+    else
+        rule = get_rule(rulenode)
+    end
     parent_node_index = node_index
     result = "\nnode($parent_node_index, $rule)."
     parsed_rulenode, node_index = parse_rulenodes(rulenode.children, node_index)

@@ -10,7 +10,7 @@ function refactor_grammar(
     grammar::AbstractGrammar, 
     k::Int = 1,
     max_compression_nodes::Int = 10, 
-    time_limit_sec::Int = 60)::AbstractGrammar
+    time_limit_sec::Int = 60)
 
     # Parse programs into model
     model = parse_programs(programs)
@@ -64,7 +64,7 @@ function refactor_grammar(
 
     println("Cost is $(best_cost)\tIs optimal: $optimal")
 
-    return new_grammar
+    return new_grammar, best_compressions
 end
 
 function get_max_children(gramamr::AbstractGrammar)

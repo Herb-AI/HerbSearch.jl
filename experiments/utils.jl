@@ -53,31 +53,38 @@ function get_size_of_a_tree(rule::RuleNode)
     return res
 end
 
-function synth_and_compress(compress_set::Vector{<:Problem},
+function synth_and_compress(problems::Vector{<:ProblemGrammarPair},
     grammar::AbstractGrammar,
     benchmark::Module,
     problem_name::String,
     k::Int64, 
-    time_out::Int64,
-    max_iterations::Int)
+    time_out::Int64)
     solutions = Vector{RuleNode}([])
-    for p in compress_set
-        problem = p.spec
+    amount_solved = 0
+    for pg in problems
         if problem_name == "bitvectors"
             gr_key = :Start
         else
             gr_key = :Sequence
         end
-        solveed, program, _, _, _ = synth_program(problem, grammar, benchmark, gr_key)
+        solved, program, cost, iter_count, t = synth_program(pg.problem.spec, grammar, benchmark, gr_key, [])
+        tree_size = if solved get_size_of_a_tree(program) else -1 end
+        duration = round(t, digits=2)
+        println("problem: $(pg.identifier), solved: $solved, duration: $duration, iterations: $(iter_count), tree_size: $(tree_size), cost: $cost, program: $(program)")
 
         if solved
+            amount_solved += 1
             push!(solutions, program)
         end
     end
     # refactor_solutions
-    optimiszed_grammar = RefactorExt.HerbSearch.refactor_grammar(
+    println("Solved $amount_solved of $(length(problems)) problems")
+    optimiszed_grammar, best_compressions = RefactorExt.refactor_grammar(
         solutions, grammar, k, k*15, time_out)
-    return optimiszed_grammar
+
+    println("New grammar")
+    println(optimiszed_grammar)
+    return optimiszed_grammar, best_compressions
 end
 
 

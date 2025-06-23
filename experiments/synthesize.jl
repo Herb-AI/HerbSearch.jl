@@ -1,28 +1,28 @@
-function string_interpret(prog::AbstractRuleNode, grammar::ContextSensitiveGrammar, example::IOExample)
+function string_interpret(prog::AbstractRuleNode, grammar::ContextSensitiveGrammar, example::IOExample, new_rules_decoding::Dict)
     tags = HerbBenchmarks.String_transformations_2020.get_relevant_tags(grammar)
-    string_interpret(prog, tags, example.in[:_arg_1])
+    string_interpret(prog, tags, example.in[:_arg_1], new_rules_decoding)
 end
 
-function string_interpret_if(prog::AbstractRuleNode, grammartags::Dict{Int,Symbol}, state::HerbBenchmarks.String_transformations_2020.StringState)
-    if prog.children[1].ind == -1
+function string_interpret_if(prog::AbstractRuleNode, grammartags::Dict{Int,Symbol}, state::HerbBenchmarks.String_transformations_2020.StringState, d::Dict)
+    if prog.children[1] isa Hole
         return state
     else
-        string_interpret(prog.children[1], grammartags, state) ? string_interpret(prog.children[2], grammartags, state) : string_interpret(prog.children[3], grammartags, state)
+        string_interpret(prog.children[1], grammartags, state, d) ? string_interpret(prog.children[2], grammartags, state, d) : string_interpret(prog.children[3], grammartags, state, d)
     end
 end
 
-function string_interpret_while(prog::AbstractRuleNode, grammartags::Dict{Int,Symbol}, state::HerbBenchmarks.String_transformations_2020.StringState)
-    if prog.children[1].ind == -1
+function string_interpret_while(prog::AbstractRuleNode, grammartags::Dict{Int,Symbol}, state::HerbBenchmarks.String_transformations_2020.StringState, d::Dict)
+    if prog.children[1] isa Hole
         return state
     else
-        string_command_while(prog.children[1], prog.children[2], grammartags, state)
+        string_command_while(prog.children[1], prog.children[2], grammartags, state, d)
     end
 end
 
-function string_command_while(condition::AbstractRuleNode, body::AbstractRuleNode, grammartags::Dict{Int,Symbol}, state::HerbBenchmarks.String_transformations_2020.StringState, max_steps::Int=1000)
+function string_command_while(condition::AbstractRuleNode, body::AbstractRuleNode, grammartags::Dict{Int,Symbol}, state::HerbBenchmarks.String_transformations_2020.StringState, d::Dict, max_steps::Int=1000)
     counter = 5 * length(state.str)
-    while string_interpret(condition, grammartags, state) && counter > 0
-        new_state = string_interpret(body, grammartags, state)
+    while string_interpret(condition, grammartags, state, d) && counter > 0
+        new_state = string_interpret(body, grammartags, state, d)
 
         if new_state == state
             break
@@ -34,23 +34,35 @@ function string_command_while(condition::AbstractRuleNode, body::AbstractRuleNod
     state
 end
 
-function string_interpret(prog::AbstractRuleNode, grammartags::Dict{Int,Symbol}, state::HerbBenchmarks.String_transformations_2020.StringState)
-    if prog.ind == -1
+function string_interpret(prog::AbstractRuleNode, grammartags::Dict{Int,Symbol}, state::HerbBenchmarks.String_transformations_2020.StringState, new_rules_decoding::Dict)
+    if prog isa Hole
         return state
     end
     
     ss = HerbBenchmarks.String_transformations_2020.StringState
+    d = new_rules_decoding
+
+    prog = sub_new_rules(prog, d)
+    
     rule_node = get_rule(prog)
+    # if rule_node in keys(d)
+    #     println("$prog")
+    #     println(d[rule_node])
+    #     println("Apply 27 on $(state.str)")
+    #     res = string_interpret(d[rule_node], grammartags, state, d)
+    #     println("Result $(res.str) \n")
+    #     return res
+    # end
 
     @match grammartags[rule_node] begin
-        :OpSeq => string_interpret(prog.children[2], grammartags, string_interpret(prog.children[1], grammartags, state)) # (Operation ; Sequence)
+        :OpSeq => string_interpret(prog.children[2], grammartags, string_interpret(prog.children[1], grammartags, state, d), d) # (Operation ; Sequence)
         :moveRight => ss(state.str, min(state.pointer + 1, length(state.str))) # moveRight
         :moveLeft => ss(state.str, max(state.pointer - 1, 1))   # moveLeft
         :makeUppercase => ss(state.str[1:state.pointer-1] * uppercase(state.str[state.pointer]) * state.str[state.pointer+1:end], state.pointer) #MakeUppercase
         :makeLowercase => ss(state.str[1:state.pointer-1] * lowercase(state.str[state.pointer]) * state.str[state.pointer+1:end], state.pointer) #makeLowercase
         :drop => state.pointer < length(state.str) ? ss(state.str[1:state.pointer-1] * state.str[state.pointer+1:end], state.pointer) : ss(state.str[1:state.pointer-1] * state.str[state.pointer+1:end], state.pointer - 1) #drop
-        :IF => string_interpret_if(prog, grammartags, state) # if statement
-        :WHILE => string_interpret_while(prog, grammartags, state) # while statement
+        :IF => string_interpret_if(prog, grammartags, state, d) # if statement
+        :WHILE => string_interpret_while(prog, grammartags, state, d) # while statement
         :atEnd => state.pointer == length(state.str) # atEnd
         :notAtEnd => state.pointer != length(state.str) # notAtEnd
         :atStart => state.pointer == 1 # atStart
@@ -65,12 +77,49 @@ function string_interpret(prog::AbstractRuleNode, grammartags::Dict{Int,Symbol},
         :isNotNumber => state.pointer > length(state.str) || !isdigit(state.str[state.pointer]) # isNotNumber
         :isSpace => state.pointer <= length(state.str) && isspace(state.str[state.pointer]) # isSpace
         :isNotSpace => state.pointer > length(state.str) || !isspace(state.str[state.pointer]) # isNotSpace
-        _ => string_interpret(prog.children[1], grammartags, state)
+        _ => string_interpret(prog.children[1], grammartags, state, d)
     end
 
 end
 
-function synth_program(problems::Vector, grammar::ContextSensitiveGrammar, benchmark, gr_key)
+function sub_new_rules(prog::AbstractRuleNode, new_rules_decoding::Dict)
+    rule_node = get_rule(prog)
+
+    if rule_node in keys(new_rules_decoding)
+        # println("Sub $prog")
+        @assert length(prog.children) == 1
+        prog = sub_hole(new_rules_decoding[rule_node], prog.children[1])
+        # println("Res $res")
+    end
+
+    return prog
+end
+
+function sub_hole(prog::AbstractRuleNode, hole::AbstractRuleNode)
+    if prog isa Hole
+        return hole
+    end
+
+    if length(prog.children) == 0
+        return prog
+    end
+
+    prog.children = [sub_hole(c, hole) for c in prog.children]
+
+    return prog
+end
+
+function synth_program(problems::Vector, grammar::ContextSensitiveGrammar, benchmark, gr_key, extra_rules)
+    string_grammar_size = 26
+    new_rules_decoding = Dict()
+    if length(grammar.rules) > string_grammar_size
+        i = 1
+        while string_grammar_size + i <= length(grammar.rules)
+            new_rules_decoding[string_grammar_size + 1] = deepcopy(extra_rules[i])
+            i += 1
+        end
+    end
+
     problems = first(problems, 5)
 
     function string_cost(program, print=false)
@@ -80,7 +129,7 @@ function synth_program(problems::Vector, grammar::ContextSensitiveGrammar, bench
 
         for problem in problems
             try
-                res = string_interpret(program, grammar, problem)
+                res = string_interpret(program, grammar, problem, new_rules_decoding)
                 push!(sources, res.str)
                 push!(pointers, res.pointer)
             catch e
@@ -92,10 +141,12 @@ function synth_program(problems::Vector, grammar::ContextSensitiveGrammar, bench
             end
         end
 
-        if print
+        if print || false
+            println("\n")
+            println(program)
+            println([problem.in[:_arg_1].str for problem in problems])
             println(sources)
             println(targets)
-            println(pointers)
         end
 
         cost = string_heuristic!(sources, targets, pointers)
@@ -115,7 +166,7 @@ function synth_program(problems::Vector, grammar::ContextSensitiveGrammar, bench
     for (program, cost) ∈ iterator
         yield()
 
-        # if count % 100 == 0
+        # if count % 1 == 0
         #     println("Iteration: $count, cost: $cost, program: $program")
         # end
 
@@ -132,7 +183,7 @@ function synth_program(problems::Vector, grammar::ContextSensitiveGrammar, bench
             break
         end
 
-        if count == 100000
+        if count == 1000
             # string_cost(program, true)
             break
         end

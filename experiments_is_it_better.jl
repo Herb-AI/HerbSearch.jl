@@ -28,40 +28,40 @@ function experiment_speedup_main(
     dir_path = dirname(@__FILE__)
     res_path = joinpath(dir_path, "results")
     mkpath(res_path)
-    res_file_name = "Testing_improvement_$(problem_name)_Frac_$(using_mth)_K-$(k)_t_$(time_out)_$(timestamp).txt"
+    res_file_name = "Testing_improvement_$(problem_name)_K-$(k)_t_$(time_out)_$(timestamp).txt"
     res_file_path = joinpath(res_path, res_file_name)
 
     # open results file and redirect STDIO
-    open(res_file_path, "w") do io
-        redirect_stdout(io) do
-            println("Problem set: $(problem_name)\nUsing $(using_mth) fraction\nK = $(k)\tTimeout: $(time_out)\n")
+    # open(res_file_path, "w") do io
+    #     redirect_stdout(io) do
+            println("Problem set: $(problem_name)\nK = $(k)\tTimeout: $(time_out)\n")
             # get mth fraction of the problems
             benchmark = get_benchmark(problem_name)
-            problem_grammar_pairs = first(get_all_problem_grammar_pairs(benchmark), 10)
+            problem_grammar_pairs = first(get_all_problem_grammar_pairs(benchmark), 50)
             grammar = get_constrained_string_grammar()
-            optimiszed_grammar = synth_and_compress(
-                [p.problem for p in compress_set], grammar, 
+            optimiszed_grammar, best_compressions = synth_and_compress(
+                problem_grammar_pairs, grammar, 
                 benchmark, problem_name, k, time_out)
-            synthesize_and_time(rest,
+            synthesize_and_time(problem_grammar_pairs,
              optimiszed_grammar,
              benchmark,
-             problem_name,
-             max_iterations)
-        end
-    end
+             problem_name, -1, best_compressions)
+    #     end
+    # end
 end
 
 function synthesize_and_time(problems::Vector{<:ProblemGrammarPair},
     grammar::ContextSensitiveGrammar,
     benchmark::Module, problem_name::String,
-    max_iterations
+    max_iterations,
+    extra_rules = [],
 )
     global_logger(SimpleLogger(stderr, Logging.Warn))
     start_time = time()
     tree_sizes, iter_counts, durations = [], [], []
     amount_solved = 0
     for pg in problems
-        solved, program, cost, iter_count, t = synth_program(pg.problem.spec, grammar, benchmark, :Start) 
+        solved, program, cost, iter_count, t = synth_program(pg.problem.spec, grammar, benchmark, :Start, extra_rules) 
 
         tree_size = if solved get_size_of_a_tree(program) else -1 end
         amount_solved = if solved amount_solved + 1 else amount_solved end
@@ -70,6 +70,7 @@ function synthesize_and_time(problems::Vector{<:ProblemGrammarPair},
         push!(iter_counts, iter_count)
         push!(durations, duration)
         println("problem: $(pg.identifier), solved: $solved, duration: $duration, iterations: $(iter_count), tree_size: $(tree_size), cost: $cost, program: $(program)")
+        @warn "problem: $(pg.identifier), solved: $solved, duration: $duration, iterations: $(iter_count), tree_size: $(tree_size), cost: $cost, program: $(program)"
     end
     time_elapsed = round(time() - start_time, digits=0)
     println("\nTotal time (s) $time_elapsed")
@@ -101,7 +102,7 @@ timestamp = Dates.format(now(), "yyyy-mm-dd_HH-MM-SS")
 end
 
 # baseline_run("strings", 1)
-experiment_speedup_main("strings", 1, 30*60)
+experiment_speedup_main("strings", 1, 1*60)
 
 # if ARGS[1] == "strings_baseline"
 #     baseline_run("strings", parse(Int, ARGS[2]))

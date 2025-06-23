@@ -13,9 +13,9 @@ function Base.iterate(iter::BestFirstIterator)
     queue = PriorityQueue()
 
     # enqueue initial trees for start_type
-    for rid in grammar.bytype[iter.start_symbol]
+    for rid in reverse(grammar.bytype[iter.start_symbol])
         # children = [Hole(BitVector[]) for _ in grammar.childtypes[rid]]  # placeholder children
-        children = [RuleNode(-1) for _ in grammar.childtypes[rid]]  # placeholder children
+        children = [Hole(BitVector([])) for _ in grammar.childtypes[rid]]  # placeholder children
 
         node = RuleNode(rid, children)
 
@@ -46,9 +46,9 @@ function Base.iterate(iter::BestFirstIterator, queue::DataStructures.PriorityQue
         idx = path[end]
         type_needed = iter.grammar.childtypes[parent.ind][idx]
 
-        for rid in iter.grammar.bytype[type_needed]
+        for rid in reverse(iter.grammar.bytype[type_needed])
             # sub_children = [Hole(BitVector[]) for _ in iter.grammar.childtypes[rid]]
-            sub_children = [RuleNode(-1) for _ in iter.grammar.childtypes[rid]]
+            sub_children = [Hole(BitVector([])) for _ in iter.grammar.childtypes[rid]]
 
             replacement = RuleNode(rid, sub_children)
 
@@ -67,7 +67,7 @@ end
 
 # Return path to first unfinished node as a vector of indices
 function find_leftmost_unfinished(node::AbstractRuleNode, path=Int[])
-    if node.ind == -1
+    if node isa Hole
         return path
     end
     for (i, child) in enumerate(node.children)
