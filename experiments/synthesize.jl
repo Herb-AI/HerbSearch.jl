@@ -88,8 +88,8 @@ function sub_new_rules(prog::AbstractRuleNode, new_rules_decoding::Dict)
     if rule_node in keys(new_rules_decoding)
         # println("Sub $prog")
         @assert length(prog.children) == 1
-        prog = sub_hole(new_rules_decoding[rule_node], prog.children[1])
-        # println("Res $res")
+        prog = sub_hole(deepcopy(new_rules_decoding[rule_node]), prog.children[1])
+        # println("Res $prog")
     end
 
     return prog
