@@ -25,7 +25,7 @@ Holds statistics about a search process.
 - `enumerations::Int`: The number of enumerations performed during the search.
 """
 struct SearchStats
-    program::Union{RuleNode, Nothing}
+    program::Union{RuleNode,Nothing}
     score::Int
     iterations::Int
     enumerations::Int
@@ -84,7 +84,7 @@ end
 """
     aulile(problem::Problem, iter_t::Type{<:ProgramIterator}, grammar::AbstractGrammar, start_symbol::Symbol, 
         new_rules_symbol::Symbol, aux::AuxFunction; interpret=default_interpreter, allow_evaluation_errors=false,
-        max_iterations=10000, max_depth=10, max_enumerations=100000) -> Union{Tuple{RuleNode, SynthResult}, Nothing}
+        max_iterations=10000, max_depth=10, max_enumerations=100000, print_debug=false) -> Union{Tuple{RuleNode, SynthResult}, Nothing}
 
 Performs iterative library learning (Aulile) by enumerating programs using a grammar and synthesizing programs that 
     minimize the auxiliary scoring function across `IOExample`s.
@@ -100,10 +100,9 @@ Performs iterative library learning (Aulile) by enumerating programs using a gra
 - `max_iterations`: Maximum number of learning iterations to perform.
 - `max_depth`: Maximum depth for program enumeration.
 - `max_enumerations`: Maximum number of candidate programs to try per iteration.
+- `print_debug`: Whether to print debug info.
 
-Returns a tuple of the best discovered program and a `SynthResult` (either `optimal_program` or `suboptimal_program`)
-        and the number of evaluations needed, 
-    or `nothing` if no program was found.
+Returns a `SearchStats` struct with the best program found, its score, number of iterations and enumerations.
 """
 function aulile(
     problem::Problem{<:AbstractVector{<:IOExample}},
@@ -116,7 +115,7 @@ function aulile(
     allow_evaluation_errors::Bool=false,
     max_iterations=10000,
     max_depth=10,
-    max_enumerations=100000, 
+    max_enumerations=100000,
     print_debug=false,
 )::SearchStats
     iter = iter_t(grammar, start_symbol, max_depth=max_depth)
@@ -130,9 +129,9 @@ function aulile(
     # Main loop
     new_rules_decoding = Dict{Int,AbstractRuleNode}()
     old_grammar_size = length(grammar.rules)
-    total_enumerations = 0 
+    total_enumerations = 0
     for i in 1:max_iterations
-        stats = synth_with_aux(problem, iter, grammar, aux, 
+        stats = synth_with_aux(problem, iter, grammar, aux,
             new_rules_decoding, best_score,
             interpret=interpret, allow_evaluation_errors=allow_evaluation_errors,
             max_enumerations=max_enumerations, print_debug=print_debug)
@@ -146,7 +145,6 @@ function aulile(
                 # In the case where the distance is optimal from the start
                 @assert stats.score <= best_score
             end
-            
             best_program = stats.program
             best_score = stats.score
             if best_score <= aux.best_value
@@ -174,7 +172,7 @@ end
     synth_with_aux(problem::Problem, iterator::ProgramIterator, grammar::AbstractGrammar, 
         aux::AuxFunction, new_rules_decoding::Dict{Int, AbstractRuleNode}, best_score::Int;
         interpret=default_interpreter, allow_evaluation_errors=false, max_time=typemax(Int), 
-        max_enumerations=typemax(Int)) -> Union{Tuple{RuleNode, Int}, Nothing}
+        max_enumerations=typemax(Int), print_debug=false) -> Union{Tuple{RuleNode, Int}, Nothing}
 
 Searches for the best program that minimizes the score defined by the auxiliary function.
 
@@ -189,10 +187,9 @@ Searches for the best program that minimizes the score defined by the auxiliary 
 - `allow_evaluation_errors`: Whether to tolerate runtime exceptions during evaluation.
 - `max_time`: Maximum allowed runtime for the synthesis loop.
 - `max_enumerations`: Maximum number of candidate programs to try.
+- `print_debug`: If true, print debug output.
 
-Returns a tuple `(program, score, num_enumerations)` of the best discovered program, its score, 
-        and number of enumerations. 
-    Returns `nothing` if no better program was found.
+Returns a `SearchStats` object with the best program found (if any), its score, number of iterations and enumerations.
 """
 function synth_with_aux(
     problem::Problem{<:AbstractVector{<:IOExample}},
@@ -204,13 +201,14 @@ function synth_with_aux(
     interpret::Function=default_interpreter,
     allow_evaluation_errors::Bool=false,
     max_time=typemax(Int),
-    max_enumerations=typemax(Int), 
+    max_enumerations=typemax(Int),
     print_debug=false
 )::SearchStats
     start_time = time()
     best_program = nothing
     loop_enumerations = 0
     for (i, candidate_program) ∈ enumerate(iterator)
+        candidate_program = freeze_state(candidate_program)
         loop_enumerations = i
         # Evaluate the program
         score = evaluate_with_aux(problem, candidate_program, grammar, aux,
@@ -218,14 +216,14 @@ function synth_with_aux(
             allow_evaluation_errors=allow_evaluation_errors)
         # Update score if better
         if score == aux.best_value
-            candidate_program = freeze_state(candidate_program)
+            # candidate_program = freeze_state(candidate_program)
             if print_debug
                 println("Found an optimal program!")
             end
             return SearchStats(candidate_program, aux.best_value, 1, loop_enumerations)
         elseif score < best_score
             best_score = score
-            candidate_program = freeze_state(candidate_program)
+            # candidate_program = freeze_state(candidate_program)
             best_program = candidate_program
         end
         # Check stopping criteria
