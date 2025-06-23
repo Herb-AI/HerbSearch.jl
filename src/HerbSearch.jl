@@ -88,6 +88,7 @@ export
   aulile,
   synth_with_aux,
   AuxFunction,
+  SearchStats,
   default_aux
 
   """

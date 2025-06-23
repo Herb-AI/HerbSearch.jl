@@ -20,12 +20,13 @@ end
 Holds statistics about a search process.
 
 # Fields
-- `is_optimal::SynthResult`: Indicates whether the search found an optimal result.
+- `score`::Int: The score of the best program attained.
 - `iterations::Int`: The number of iterations performed during the search.
 - `enumerations::Int`: The number of enumerations performed during the search.
 """
 struct SearchStats
-    is_optimal::SynthResult
+    program::Union{RuleNode, Nothing}
+    score::Int
     iterations::Int
     enumerations::Int
 end
@@ -117,9 +118,9 @@ function aulile(
     max_depth=10,
     max_enumerations=100000, 
     print_debug=false,
-)::Tuple{Union{RuleNode, Nothing}, SynthResult, Int}
+)::SearchStats
     iter = iter_t(grammar, start_symbol, max_depth=max_depth)
-    program = nothing
+    best_program = nothing
     # Get initial distance of input and output
     best_score = aux.initial_score(problem)
     if print_debug
@@ -131,30 +132,31 @@ function aulile(
     old_grammar_size = length(grammar.rules)
     total_enumerations = 0 
     for i in 1:max_iterations
-        program, new_score, curr_enumerations = synth_with_aux(problem, iter, grammar, aux, 
+        stats = synth_with_aux(problem, iter, grammar, aux, 
             new_rules_decoding, best_score,
             interpret=interpret, allow_evaluation_errors=allow_evaluation_errors,
             max_enumerations=max_enumerations, print_debug=print_debug)
-        total_enumerations += curr_enumerations
-        if program isa Nothing
-            return (nothing, suboptimal_program, total_enumerations)
+        total_enumerations += stats.enumerations
+        if stats.program isa Nothing
+            return SearchStats(nothing, stats.score, i, total_enumerations)
         else
             if best_score > 0
-                @assert new_score < best_score
+                @assert stats.score < best_score
             else
                 # In the case where the distance is optimal from the start
-                @assert new_score <= best_score
+                @assert stats.score <= best_score
             end
             
-            best_score = new_score
+            best_program = stats.program
+            best_score = stats.score
             if best_score <= aux.best_value
-                return program, optimal_program, total_enumerations
+                return SearchStats(stats.program, stats.score, i, total_enumerations)
             else
-                program_expr = rulenode2expr(program, grammar)
+                program_expr = rulenode2expr(stats.program, grammar)
                 add_rule!(grammar, :($new_rules_symbol = $program_expr))
                 if length(grammar.rules) > old_grammar_size
                     old_grammar_size = length(grammar.rules)
-                    new_rules_decoding[old_grammar_size] = deepcopy(program)
+                    new_rules_decoding[old_grammar_size] = deepcopy(stats.program)
                 end
                 iter = iter_t(grammar, start_symbol, max_depth=max_depth)
             end
@@ -165,7 +167,7 @@ function aulile(
         end
     end
 
-    return program, suboptimal_program, total_enumerations
+    return SearchStats(best_program, best_score, max_iterations, total_enumerations)
 end
 
 """
@@ -204,7 +206,7 @@ function synth_with_aux(
     max_time=typemax(Int),
     max_enumerations=typemax(Int), 
     print_debug=false
-)::Tuple{Union{RuleNode, Nothing}, Int, Int}
+)::SearchStats
     start_time = time()
     best_program = nothing
     loop_enumerations = 0
@@ -220,7 +222,7 @@ function synth_with_aux(
             if print_debug
                 println("Found an optimal program!")
             end
-            return (candidate_program, aux.best_value, loop_enumerations)
+            return SearchStats(candidate_program, aux.best_value, 1, loop_enumerations)
         elseif score < best_score
             best_score = score
             candidate_program = freeze_state(candidate_program)
@@ -237,7 +239,7 @@ function synth_with_aux(
         println("Found a suboptimal program with distance: $(best_score)")
     end
     # The enumeration exhausted, but an optimal problem was not found
-    return (best_program, best_score, loop_enumerations)
+    return SearchStats(best_program, best_score, 1, loop_enumerations)
 end
 
 """

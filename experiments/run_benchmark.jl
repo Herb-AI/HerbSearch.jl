@@ -7,6 +7,11 @@ using Dates
 using HerbCore, HerbGrammar, HerbSearch, HerbSpecification, HerbBenchmarks
 include("../src/aulile_auxiliary_functions.jl")
 
+function print_stats(stats::SearchStats, best_value::Int)
+    passed = !isnothing(stats.program) && stats.score <= best_value
+    print(Int(passed), ", ", stats.iterations, ", ", stats.enumerations)
+    return passed
+end
 
 function run_benchmark_comparison(init_grammar::AbstractGrammar, problems::Vector{Problem}, 
         aux::AuxFunction, interpret::Function; 
@@ -15,33 +20,29 @@ function run_benchmark_comparison(init_grammar::AbstractGrammar, problems::Vecto
     regular_passed_tests = 0
     aulile_passed_tests = 0
 
-    println("Problem: Reg_solved_flag, Reg_enums; Aulile_solved_flag, Aulile_enums")
+    println("Problem: Reg_solved_flag, Reg_iter(Always 1), Reg_enums;",
+        "Aulile_solved_flag, Aulile_iters, Aulile_enums")
     for (i, problem) in enumerate(problems)
         print("Problem ", i, ": ")
         grammar = deepcopy(init_grammar)
 
-        program, new_score, enumerations = synth_with_aux(problem, 
+        stats = synth_with_aux(problem, 
             BFSIterator(grammar, :Start, max_depth=max_depth), grammar, default_aux, 
             Dict{Int64, AbstractRuleNode}(), typemax(Int),
             interpret=interpret,
             allow_evaluation_errors=allow_evaluation_errors, max_enumerations=max_enumerations)
 
-        passed = !isnothing(program) && new_score <= 0  # Optimum assumed 0
-        print(Int(passed), ", ") 
-        print(enumerations, "; ")
-        if passed
+        if print_stats(stats, aux.best_value)
             regular_passed_tests += 1
         end
+        print("; ")
 
-        program, program_optimality, enumerations = aulile(problem, BFSIterator, grammar, :Start, 
+        stats = aulile(problem, BFSIterator, grammar, :Start, 
             :Operation, aux, interpret=interpret, allow_evaluation_errors=allow_evaluation_errors,
             max_iterations=max_iterations, max_depth=max_depth,
             max_enumerations=(max_enumerations / max_iterations))
 
-        passed = !isnothing(program) && program_optimality == optimal_program
-        print(Int(passed), ", ") 
-        print(enumerations)
-        if passed
+        if print_stats(stats, aux.best_value)
             aulile_passed_tests += 1
         end
         println()
