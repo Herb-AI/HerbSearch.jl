@@ -6,18 +6,21 @@ using Markdown
 using InteractiveUtils
 using Random
 using Dates
+using Distributed
+using Match
 include("ext/RefactorExt/RefactorExt.jl")
 using .RefactorExt
 include("src/HerbSearch.jl")
 using HerbCore, HerbGrammar, .HerbSearch, HerbSpecification, HerbBenchmarks
+using Logging
 include("experiments/utils.jl")
 include("experiments/grammar_constraints.jl")
 include("experiments/synthesize.jl")
 include("experiments/heuristics.jl")
+include("experiments/best_first_iterator.jl")
 
 function experiment_speedup_main(
     problem_name::String, 
-    using_mth::Int,
     k::Int, 
     time_out::Int # in seconds
 )    
@@ -34,9 +37,7 @@ function experiment_speedup_main(
             println("Problem set: $(problem_name)\nUsing $(using_mth) fraction\nK = $(k)\tTimeout: $(time_out)\n")
             # get mth fraction of the problems
             benchmark = get_benchmark(problem_name)
-            problem_grammar_pairs = get_all_problem_grammar_pairs(benchmark)
-            # compress, rest = split_problems(problem_grammar_pairs, using_mth)
-            compress_set, rest = take_mth_fraction(problem_grammar_pairs, 5, using_mth)
+            problem_grammar_pairs = first(get_all_problem_grammar_pairs(benchmark), 10)
             grammar = get_constrained_string_grammar()
             optimiszed_grammar = synth_and_compress(
                 [p.problem for p in compress_set], grammar, 
@@ -55,41 +56,25 @@ function synthesize_and_time(problems::Vector{<:ProblemGrammarPair},
     benchmark::Module, problem_name::String,
     max_iterations
 )
-    time_all = Millisecond(Time(now())).value
-    tree_sizes, iter_counts = [], []
+    global_logger(SimpleLogger(stderr, Logging.Warn))
+    start_time = time()
+    tree_sizes, iter_counts, durations = [], [], []
+    amount_solved = 0
     for pg in problems
-        problem = pg.problem
-        global spec = problem.spec
-        global gram = grammar
-        global bench = benchmark
-        global key = :Start
-        global bench_name = problem_name
-        global solved = false
-        global program = nothing
-        global iter_count = -1
-        
-        try
-            s, p, i = synth_program(spec, gram, bench, key, bench_name, 1000000)
-            global solved = s
-            global program = p
-            global iter_count = i
-        catch e
-            if isa(e, InterruptException)
-                println("problem: $(pg.identifier), solved: false")
-            else
-                rethrow(e)
-            end
-        end
+        solved, program, cost, iter_count, t = synth_program(pg.problem.spec, grammar, benchmark, :Start) 
 
-
-        if solved 
-            tree_size = get_size_of_a_tree(program)
-            push!(tree_sizes, tree_size)
-            push!(iter_counts, iter_count)
-            println("problem: $(pg.identifier), solved: $solved, iterations: $(iter_count), tree_size: $(tree_size), program: $(program)")
-        end
+        tree_size = if solved get_size_of_a_tree(program) else -1 end
+        amount_solved = if solved amount_solved + 1 else amount_solved end
+        duration = round(t, digits=2)
+        push!(tree_sizes, tree_size)
+        push!(iter_counts, iter_count)
+        push!(durations, duration)
+        println("problem: $(pg.identifier), solved: $solved, duration: $duration, iterations: $(iter_count), tree_size: $(tree_size), cost: $cost, program: $(program)")
     end
-    println("\nTotal time (ms) $(Millisecond(Time(now())).value-time_all)")
+    time_elapsed = round(time() - start_time, digits=0)
+    println("\nTotal time (s) $time_elapsed")
+    println("\nSolved: $amount_solved of the $(length(problems))")
+    println("\ndurations:\n$(join(durations, " "))")
     println("\nnum of iterations:\n$(join(iter_counts, " "))")
     println("\ntree_sizes:\n$(join(tree_sizes, " "))")
 end
@@ -103,19 +88,21 @@ timestamp = Dates.format(now(), "yyyy-mm-dd_HH-MM-SS")
     res_file_path = joinpath(res_path, res_file_name)
 
     # open results file and redirect STDIO
-    # open(res_file_path, "w") do io
-    #     redirect_stdout(io) do
+    open(res_file_path, "w") do io
+        redirect_stdout(io) do
             println("Baseline for problem set: $(problem_name)\n")
             # get mth fraction of the problems
             benchmark = get_benchmark(problem_name)
-            problem_grammar_pairs = last(first(get_all_problem_grammar_pairs(benchmark), 50), 1)
+            problem_grammar_pairs = get_all_problem_grammar_pairs(benchmark)
             grammar = get_constrained_string_grammar()
             synthesize_and_time(problem_grammar_pairs, grammar, benchmark, problem_name, max_iterations)
-    #     end
-    # end
+        end
+    end
 end
 
-baseline_run("strings", 50)
+# baseline_run("strings", 1)
+experiment_speedup_main("strings", 1, 30*60)
+
 # if ARGS[1] == "strings_baseline"
 #     baseline_run("strings", parse(Int, ARGS[2]))
 # else

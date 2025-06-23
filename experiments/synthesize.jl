@@ -1,75 +1,145 @@
-function string_distance(expected_found)
-    distance = 0
-
-    for (expected, found) in expected_found
-        if found == 0
-            return Inf
-        end
-        distance += levenshtein!(found.str, expected.str)     
-    end
-
-    return distance / length(expected_found)
+function string_interpret(prog::AbstractRuleNode, grammar::ContextSensitiveGrammar, example::IOExample)
+    tags = HerbBenchmarks.String_transformations_2020.get_relevant_tags(grammar)
+    string_interpret(prog, tags, example.in[:_arg_1])
 end
 
-function string_evaluation(grammar, program, problem)    
-    try
-        return HerbBenchmarks.String_transformations_2020.interpret(program, grammar, problem)
-    catch e
-        if isa(e, BoundsError)
-            return 0
-        else
-            rethrow(e)
-        end
+function string_interpret_if(prog::AbstractRuleNode, grammartags::Dict{Int,Symbol}, state::HerbBenchmarks.String_transformations_2020.StringState)
+    if prog.children[1].ind == -1
+        return state
+    else
+        string_interpret(prog.children[1], grammartags, state) ? string_interpret(prog.children[2], grammartags, state) : string_interpret(prog.children[3], grammartags, state)
     end
 end
 
-function synth_program(problems::Vector, grammar::ContextSensitiveGrammar, benchmark, gr_key, name::String, max_iterations::Int)
-    iterator = HerbSearch.MHSearchIterator(grammar, gr_key, problems, string_distance, max_depth=20, evaluation_function=string_evaluation)
-    # iterator = HerbSearch.VLSNSearchIterator(grammar, gr_key, problems, string_distance,
-    #     max_depth = 20,
-    #     vlsn_neighbourhood_depth = 3, 
-    #     initial_temperature = 3,
-    #     evaluation_function=string_evaluation
-    # ) 
-    # iterator = HerbSearch.SASearchIterator(grammar, gr_key, problems, string_distance, max_depth=10, initial_temperature=1, temperature_decreasing_factor=0.99, evaluation_function=string_evaluation) 
+function string_interpret_while(prog::AbstractRuleNode, grammartags::Dict{Int,Symbol}, state::HerbBenchmarks.String_transformations_2020.StringState)
+    if prog.children[1].ind == -1
+        return state
+    else
+        string_command_while(prog.children[1], prog.children[2], grammartags, state)
+    end
+end
 
-    count = 0
+function string_command_while(condition::AbstractRuleNode, body::AbstractRuleNode, grammartags::Dict{Int,Symbol}, state::HerbBenchmarks.String_transformations_2020.StringState, max_steps::Int=1000)
+    counter = 5 * length(state.str)
+    while string_interpret(condition, grammartags, state) && counter > 0
+        new_state = string_interpret(body, grammartags, state)
 
-    for program ∈ iterator
-        count += 1
-        println("Iteration $count, program $program")
+        if new_state == state
+            break
+        end
+        state = new_state
 
-        solved = true
+        counter -= 1
+    end
+    state
+end
 
-        
-            for problem in problems
-                try
-                    actual_state = benchmark.interpret(program, grammar, problem)
-                    objective_state = problem.out
+function string_interpret(prog::AbstractRuleNode, grammartags::Dict{Int,Symbol}, state::HerbBenchmarks.String_transformations_2020.StringState)
+    if prog.ind == -1
+        return state
+    end
+    
+    ss = HerbBenchmarks.String_transformations_2020.StringState
+    rule_node = get_rule(prog)
 
-                    if actual_state != objective_state
-                        solved = false
-                        break
-                    end
-                catch e
-                    if isa(e, BoundsError)
-                        solved = false
-                        break
-                    else
-                        rethrow(e)
-                    end
+    @match grammartags[rule_node] begin
+        :OpSeq => string_interpret(prog.children[2], grammartags, string_interpret(prog.children[1], grammartags, state)) # (Operation ; Sequence)
+        :moveRight => ss(state.str, min(state.pointer + 1, length(state.str))) # moveRight
+        :moveLeft => ss(state.str, max(state.pointer - 1, 1))   # moveLeft
+        :makeUppercase => ss(state.str[1:state.pointer-1] * uppercase(state.str[state.pointer]) * state.str[state.pointer+1:end], state.pointer) #MakeUppercase
+        :makeLowercase => ss(state.str[1:state.pointer-1] * lowercase(state.str[state.pointer]) * state.str[state.pointer+1:end], state.pointer) #makeLowercase
+        :drop => state.pointer < length(state.str) ? ss(state.str[1:state.pointer-1] * state.str[state.pointer+1:end], state.pointer) : ss(state.str[1:state.pointer-1] * state.str[state.pointer+1:end], state.pointer - 1) #drop
+        :IF => string_interpret_if(prog, grammartags, state) # if statement
+        :WHILE => string_interpret_while(prog, grammartags, state) # while statement
+        :atEnd => state.pointer == length(state.str) # atEnd
+        :notAtEnd => state.pointer != length(state.str) # notAtEnd
+        :atStart => state.pointer == 1 # atStart
+        :notAtStart => state.pointer != 1 # notAtStart
+        :isLetter => state.pointer <= length(state.str) && isletter(state.str[state.pointer]) # isLetter
+        :isNotLetter => state.pointer > length(state.str) || !isletter(state.str[state.pointer]) # isNotLetter
+        :isUppercase => state.pointer <= length(state.str) && isuppercase(state.str[state.pointer]) # isUpperCase 
+        :isNotUppercase => state.pointer > length(state.str) || !isuppercase(state.str[state.pointer]) # isNotUppercase
+        :isLowercase => state.pointer <= length(state.str) && islowercase(state.str[state.pointer]) # isLowercase
+        :isNotLowercase => state.pointer > length(state.str) || !islowercase(state.str[state.pointer]) # isNotLowercase
+        :isNumber => state.pointer <= length(state.str) && isdigit(state.str[state.pointer]) # isNumber
+        :isNotNumber => state.pointer > length(state.str) || !isdigit(state.str[state.pointer]) # isNotNumber
+        :isSpace => state.pointer <= length(state.str) && isspace(state.str[state.pointer]) # isSpace
+        :isNotSpace => state.pointer > length(state.str) || !isspace(state.str[state.pointer]) # isNotSpace
+        _ => string_interpret(prog.children[1], grammartags, state)
+    end
+
+end
+
+function synth_program(problems::Vector, grammar::ContextSensitiveGrammar, benchmark, gr_key)
+    problems = first(problems, 5)
+
+    function string_cost(program, print=false)
+        sources = []
+        targets = [problem.out.str for problem in problems]
+        pointers = []
+
+        for problem in problems
+            try
+                res = string_interpret(program, grammar, problem)
+                push!(sources, res.str)
+                push!(pointers, res.pointer)
+            catch e
+                if isa(e, BoundsError)
+                    return Inf
+                else
+                    rethrow(e)
                 end
             end
-
-        if solved == true
-            return true, program, count
         end
 
-        if count == max_iterations
-            return
+        if print
+            println(sources)
+            println(targets)
+            println(pointers)
+        end
+
+        cost = string_heuristic!(sources, targets, pointers)
+
+        return cost
+    end
+
+    iterator = BestFirstIterator(grammar, gr_key, string_cost)
+
+
+    count = 0
+    start_time = time()
+
+    solved = false
+    last_program = nothing
+    last_cost = -1
+    for (program, cost) ∈ iterator
+        yield()
+
+        # if count % 100 == 0
+        #     println("Iteration: $count, cost: $cost, program: $program")
+        # end
+
+        count += 1
+        last_program = program
+        last_cost = cost
+
+
+        if cost == 0
+            solved = true
+            # last_program = program
+            # last_cost = cost
+            # println(string_cost(program, true))
+            break
+        end
+
+        if count == 100000
+            # string_cost(program, true)
+            break
         end
     end
 
-    return false, Nothing, count
+    return solved, last_program, last_cost, count, time() - start_time
 end
 
+# 100 problems, 5 examples per problem, 1000 iterations
+# Levensthein   depth       11 / 100

@@ -68,9 +68,9 @@ function synth_and_compress(compress_set::Vector{<:Problem},
         else
             gr_key = :Sequence
         end
-        program, _ = synth_program(problem, grammar, benchmark, problem_name, max_iterations)
+        solveed, program, _, _, _ = synth_program(problem, grammar, benchmark, gr_key)
 
-        if !isnothing(program)
+        if solved
             push!(solutions, program)
         end
     end
@@ -80,46 +80,23 @@ function synth_and_compress(compress_set::Vector{<:Problem},
     return optimiszed_grammar
 end
 
-macro timeout(seconds, expr)
+
+macro timeout(seconds, expr_to_run, expr_when_fails)
     quote
-        local result = nothing
-        local err = nothing
-
-        # Spawn a task to run the expression
-        local tsk = @task try
-            result = $(esc(expr))
-        catch e
-            err = e
-        end
-
+        tsk = @task $(esc(expr_to_run))
         schedule(tsk)
-
-        # Create a Timer that interrupts the task after `seconds`
-        local tm = Timer($seconds) do _
-            if !istaskdone(tsk)
-                try
-                    Base.throwto(tsk, InterruptException())
-                catch e
-                    # task might already be done or dead
-                end
+        Timer($(esc(seconds))) do timer
+            istaskdone(tsk) || Base.throwto(tsk, InterruptException())
+        end
+        try
+            fetch(tsk)
+        catch e
+            if isa(e.task.exception, InterruptException)
+                $(esc(expr_when_fails))
+            else
+                rethrow(e)
             end
         end
-
-        # Wait for the task to finish
-        try
-            wait(tsk)
-        catch e
-            err = e
-        end
-
-        # Clean up the timer
-        close(tm)
-
-        # Rethrow any captured error
-        if err !== nothing
-            throw(err)
-        end
-
-        result
     end
 end
+
