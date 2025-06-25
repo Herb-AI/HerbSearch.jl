@@ -1,4 +1,5 @@
 #Branching constraint, the `StateHole` hole must be filled with rule_index `Int`.
+
 Branch = Tuple{StateHole, Int}
 
 #Shared reference to an empty vector to reduce memory allocations.
@@ -77,6 +78,7 @@ function generate_branches(iter::UniformIterator)::Vector{Branch}
             if isnothing(iter.outeriter)
                 return [(hole, rule) for rule ∈ hole.domain]
             end
+            
             #reversing is needed because we pop and consider the rightmost branch first
             return reverse!([(hole, rule) for rule ∈ derivation_heuristic(iter.outeriter, findall(hole.domain))])
         end

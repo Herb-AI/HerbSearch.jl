@@ -112,6 +112,8 @@ abstract type AbstractDFSIterator <: TopDownIterator end
     priority_function(::AbstractDFSIterator, g::AbstractGrammar, tree::AbstractRuleNode, parent_value::Union{Real, Tuple{Vararg{Real}}}, isrequeued::Bool)
 
 Assigns priority such that the search tree is traversed like in a DFS manner. 
+This will run a DFS over shapes, and exhaust each a shape before hopping to the next one.
+If you want a more "traditional" DFS behavior, set the return value to `parent_value` for requeued items, i.e. uniform iterators.
 """
 function priority_function(
     ::AbstractDFSIterator, 
@@ -121,7 +123,7 @@ function priority_function(
     isrequeued::Bool
 )
     if isrequeued
-        return parent_value;
+        return parent_value - 1;
     end
     return parent_value - 1;
 end
@@ -192,7 +194,7 @@ Return an array of all programs in the TopDownIterator.
     If it is not needed to save all programs, iterate over the iterator manually.
 """
 function Base.collect(iter::TopDownIterator)
-    @warn "Collecting all programs of a TopDownIterator requires freeze_state"
+    @warn "Collecting all programs of a TopDownIterator requires to deep copy all states. This make take significantly longer."
     programs = Vector{RuleNode}()
     for program ∈ iter
         push!(programs, freeze_state(program))
@@ -206,7 +208,7 @@ end
 Describes the iteration for a given [`TopDownIterator`](@ref) over the grammar. The iteration constructs a [`PriorityQueue`](@ref) first and then prunes it propagating the active constraints. Recursively returns the result for the priority queue.
 """
 function Base.iterate(iter::TopDownIterator)
-    # Priority queue with `SolverState`s (for variable shaped trees) and `UniformIterator`s (for fixed shaped trees)
+    # Priority queue with `SolverState`s (for variable shaped trees) and `UniformIterator`s (for uniform trees)
     pq :: PriorityQueue{Union{SolverState, UniformIterator}, Union{Real, Tuple{Vararg{Real}}}} = PriorityQueue()
 
     solver = iter.solver
@@ -222,17 +224,6 @@ end
 
 Describes the iteration for a given [`TopDownIterator`](@ref) and a [`PriorityQueue`](@ref) over the grammar without enqueueing new items to the priority queue. Recursively returns the result for the priority queue.
 """
-function Base.iterate(iter::TopDownIterator, tup::Tuple{Vector{<:AbstractRuleNode}, DataStructures.PriorityQueue})
-    @timeit_debug iter.solver.statistics "#CompleteTrees (by FixedShapedIterator)" begin end
-    # iterating over fixed shaped trees using the FixedShapedIterator
-    if !isempty(tup[1])
-        return (pop!(tup[1]), tup)
-    end
-
-    return _find_next_complete_tree(iter.solver, tup[2], iter)
-end
-
-
 function Base.iterate(iter::TopDownIterator, pq::DataStructures.PriorityQueue)
     @timeit_debug iter.solver.statistics "#CompleteTrees (by UniformSolver)" begin end
     return _find_next_complete_tree(iter.solver, pq, iter)
