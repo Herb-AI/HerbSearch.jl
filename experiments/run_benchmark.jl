@@ -57,7 +57,7 @@ function experiment_main(problem_name::AbstractString,
     max_depth::Int, max_iterations::Int, max_enumerations::Int)
     timestamp = Dates.format(now(), "yyyy-mm-dd_HH-MM-SS")
     dir_path = dirname(@__FILE__)
-    res_path = joinpath(dir_path, "compairson_results")
+    res_path = joinpath(dir_path, "comparison_results")
     mkpath(res_path)
     res_file_name = "$(problem_name)_$(max_depth)_$(max_iterations)_$(max_enumerations)_$(timestamp).txt"
     res_file_path = joinpath(res_path, res_file_name)
@@ -67,8 +67,13 @@ function experiment_main(problem_name::AbstractString,
         redirect_stdout(io) do
             benchmark = get_benchmark(problem_name)
             new_rule_symbol = get_start_symbol(problem_name)
-            problems = get_all_problems(benchmark)
-            init_grammar = get_default_grammar(benchmark)
+            if problem_name == "karel"
+                problems = HerbBenchmarks.Karel_2018.get_all_problems()
+                init_grammar = HerbBenchmarks.Karel_2018.grammar_karel
+            else
+                problems = get_all_problems(benchmark)
+                init_grammar = get_default_grammar(benchmark)
+            end
             aux = get_aux_function(problem_name)
             regular_passed_tests, aulile_passed_tests = run_benchmark_comparison(init_grammar,
                 problems, aux, benchmark.interpret, new_rule_symbol,

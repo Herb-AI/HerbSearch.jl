@@ -137,7 +137,7 @@ function aulile(
             max_enumerations=max_enumerations, print_debug=print_debug)
         total_enumerations += stats.enumerations
         if stats.program isa Nothing
-            return SearchStats(nothing, stats.score, i, total_enumerations)
+            return SearchStats(best_program, stats.score, i, total_enumerations)
         else
             if best_score > 0
                 @assert stats.score < best_score

@@ -189,6 +189,8 @@ function get_aux_function(problem_name::AbstractString)::AuxFunction
         return robot_benchmark_aux
     elseif problem_name == "pixels"
         return pixel_benchmark_aux
+    elseif problem_name == "karel"
+        return karel_benchmark_aux
     elseif problem_name == "bitvectors"
         throw("unimplemented")
     else
