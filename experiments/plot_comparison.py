@@ -99,11 +99,10 @@ def plot_experiment(
             modes = None
             percentages = None
             with open(filepath, "r") as f:
-                for line in f:
-                    lines = [line.strip() for line in f if line.strip()]
-                    modes = lines[-2].split(",")
-                    percentages = [float(p) for p in lines[-1].split(",")]
-                    assert len(modes) == len(percentages)
+                lines = [line.strip() for line in f if line.strip()]
+                modes = lines[-2].split(",")
+                percentages = [float(p) for p in lines[-1].split(",")]
+                assert len(modes) == len(percentages)
 
             key = (benchmark, depth, iters, enum)
             for i, mode in enumerate(modes):
