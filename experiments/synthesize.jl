@@ -79,7 +79,34 @@ function string_interpret(prog::AbstractRuleNode, grammartags::Dict{Int,Symbol},
         :isNotSpace => state.pointer > length(state.str) || !isspace(state.str[state.pointer]) # isNotSpace
         _ => string_interpret(prog.children[1], grammartags, state, d)
     end
+end
 
+
+function bitvector_interpret(prog::AbstractRuleNode, state, d::Dict)
+    if prog isa Hole
+        return UInt(0)
+    end
+    
+    prog = sub_new_rules(prog, d)
+    rule_node = get_rule(prog)
+
+    n = [bitvector_interpret(c, state, d) for c in prog.children]
+
+    @match rule_node begin
+        1 => UInt(0)
+        2 => UInt(1)
+        3 => state
+        4 => ~n[1]
+        5 => n[1] << UInt(1)
+        6 => n[1] >>> UInt(1)
+        7 => n[1] >>> UInt(4)
+        8 => n[1] >>> UInt(16)
+        9 => n[1] & n[2]
+        10 => n[1] | n[2]
+        11 => n[1] ⊻ n[2]
+        12 => n[1] + n[2]
+        13 => n[1] == UInt(1) ? n[2] : n[3]
+    end
 end
 
 function sub_new_rules(prog::AbstractRuleNode, new_rules_decoding::Dict)
@@ -117,13 +144,17 @@ function sub_holes(prog::AbstractRuleNode, holes)
     return prog
 end
 
-function synth_program(problems::Vector, grammar::ContextSensitiveGrammar, benchmark, gr_key, extra_rules)
-    string_grammar_size = 26
+function synth_program(problems::Vector, grammar::ContextSensitiveGrammar, benchmark, gr_key, extra_rules, problem_name)
+    if problem_name == "strings"
+        grammar_size = 26
+    elseif problem_name == "bitvectors"
+        grammar_size = 13
+    end
     new_rules_decoding = Dict()
-    if length(grammar.rules) > string_grammar_size
+    if length(grammar.rules) > grammar_size
         i = 1
-        while string_grammar_size + i <= length(grammar.rules)
-            new_rules_decoding[string_grammar_size + i] = deepcopy(extra_rules[i])
+        while grammar_size + i <= length(grammar.rules)
+            new_rules_decoding[grammar_size + i] = deepcopy(extra_rules[i])
             i += 1
         end
     end
@@ -162,7 +193,36 @@ function synth_program(problems::Vector, grammar::ContextSensitiveGrammar, bench
         return cost
     end
 
-    iterator = BestFirstIterator(grammar, gr_key, string_cost)
+    function bitvector_cost(program, print=false)
+        cost = 0
+        sources = []
+        targets = [problem.out for problem in problems]
+
+        for problem in problems
+            origin = problem.in[:_arg_1]
+            res = bitvector_interpret(program, origin, new_rules_decoding)
+            push!(sources, res)
+            cost += bitvector_heuristic(res, problem.out)
+        end
+
+        if print || false
+            println("\n")
+            println(program)
+            println([problem.in[:_arg_1] for problem in problems])
+            println(sources)
+            println(targets)
+        end
+
+        return cost
+    end
+
+    cost_function = nothing
+    if problem_name == "strings"
+        cost_function = string_cost
+    elseif problem_name == "bitvectors"
+        cost_function = bitvector_cost
+    end
+    iterator = BestFirstIterator(grammar, gr_key, cost_function)
 
 
     count = 0

@@ -18,7 +18,8 @@ end
 function parse_rulenode(rulenode::Union{AbstractRuleNode, AbstractUniformHole}, node_index::Int)::Tuple{String, Int}
     if rulenode isa Hole
         rule = -1
-        return "\nnode($node_index, $rule).", node_index
+        # return "\nnode($node_index, $rule).", node_index
+        return "", node_index
     else
         rule = get_rule(rulenode)
     end

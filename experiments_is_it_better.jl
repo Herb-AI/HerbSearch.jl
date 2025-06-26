@@ -38,7 +38,9 @@ function experiment_speedup_main(
             # get mth fraction of the problems
             benchmark = get_benchmark(problem_name)
             problem_grammar_pairs = get_all_problem_grammar_pairs(benchmark)
-            grammar = get_constrained_string_grammar()
+
+            grammar = problem_grammar_pairs[1].grammar
+
             optimiszed_grammar, best_compressions = synth_and_compress(
                 problem_grammar_pairs, grammar, 
                 benchmark, problem_name, k, time_out)
@@ -61,7 +63,7 @@ function synthesize_and_time(problems::Vector{<:ProblemGrammarPair},
     tree_sizes, iter_counts, durations = [], [], []
     amount_solved = 0
     for pg in problems
-        solved, program, cost, iter_count, t = synth_program(pg.problem.spec, grammar, benchmark, :Start, extra_rules) 
+        solved, program, cost, iter_count, t = synth_program(pg.problem.spec, grammar, benchmark, :Start, extra_rules, problem_name) 
 
         tree_size = if solved get_size_of_a_tree(program) else -1 end
         amount_solved = if solved amount_solved + 1 else amount_solved end
@@ -95,14 +97,17 @@ timestamp = Dates.format(now(), "yyyy-mm-dd_HH-MM-SS")
             # get mth fraction of the problems
             benchmark = get_benchmark(problem_name)
             problem_grammar_pairs = get_all_problem_grammar_pairs(benchmark)
-            grammar = get_constrained_string_grammar()
+            grammar = problem_grammar_pairs[1].grammar
             synthesize_and_time(problem_grammar_pairs, grammar, benchmark, problem_name, max_iterations)
         end
     end
 end
 
 # baseline_run("strings", 1)
-experiment_speedup_main("strings", parse(Int, ARGS[1]), parse(Int, ARGS[2]))
+# experiment_speedup_main("strings", parse(Int, ARGS[1]), parse(Int, ARGS[2]))
+
+# baseline_run("bitvectors", 1)
+experiment_speedup_main("bitvectors", parse(Int, ARGS[1]), parse(Int, ARGS[2]))
 
 # if ARGS[1] == "strings_baseline"
 #     baseline_run("strings", parse(Int, ARGS[2]))

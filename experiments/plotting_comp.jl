@@ -1,9 +1,9 @@
-using Glob
 using Plots
 using Statistics
+using Glob
 
 # File matching pattern
-path_to_folder = "results/"
+path_to_folder = "comp_results/"
 files = glob(joinpath(path_to_folder, "P_*_Frac_*_K-*_t_*.txt"))
 
 # Data structure: Dict{String, Vector{Tuple{Int, Int, Int, Int, Bool}}}
@@ -72,8 +72,8 @@ existing_points = Set()
 
 # Plotting
 for (benchmark, entries) in data
-    plt = plot(xlabel="Timeout (s)", ylabel="Result (Cost)",
-               title="Results for $benchmark", xscale=:log10, legend=:outertopright)
+    plt = plot(xlabel="Timeout (s)", ylabel="Amount of assignments)",
+               title="Amount of assignments over time for $benchmark", xscale=:log10, legend=:outertopright)
 
     for k in ks
         timeout_groups = Dict{Int, Vector{Int}}()

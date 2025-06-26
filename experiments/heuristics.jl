@@ -171,3 +171,7 @@ function string_heuristic!(sources, targets, pointers)
 
     return heuristic / length(sources)
 end
+
+function bitvector_heuristic(source, target)
+    return count_ones(source ⊻ target)
+end

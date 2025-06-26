@@ -27,7 +27,7 @@ function refactor_grammar(
     model *= "\n#const max_compression_nodes = $max_compression_nodes.\n"
 
 
-    # println(model)
+    println(model)
 
     # Run model
     dir_path = dirname(@__FILE__)
@@ -45,6 +45,8 @@ function refactor_grammar(
     if isnothing(best_values)
         return grammar
     end
+
+    println(best_values)
 
     node_assignments::Vector{String} = best_values
     (comp_trees, node2rule) = parse_compressed_subtrees(node_assignments)
