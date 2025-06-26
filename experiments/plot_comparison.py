@@ -3,6 +3,9 @@ import re
 import matplotlib.pyplot as plt
 from matplotlib.ticker import FuncFormatter
 from collections import defaultdict
+from typing import Optional, List, Pattern
+import random
+import colorsys
 
 
 def bar_chart(
@@ -18,26 +21,46 @@ def bar_chart(
     ax.yaxis.set_major_formatter(FuncFormatter(to_percent))
 
 
-def line_chart(
-    labels: list[str], regular_scores: list[float], aulile_scores: list[float]
-):
-    x = range(len(labels))
+def get_random_bluish_color(mode: str, seed_base=42):
+    random.seed(seed_base)  # ensure consistent color -> may add mode
+    # Hue near blue (~0.55–0.65), full saturation, high value for visibility
+    hue = random.uniform(0.48, 0.57)
+    saturation = random.uniform(0.7, 1.0)
+    value = random.uniform(0.7, 1.0)
+    r, g, b = colorsys.hsv_to_rgb(hue, saturation, value)
+    return (r, g, b)  # matplotlib accepts RGB tuples in 0–1 range
 
+
+def line_chart(labels: list[str], mode_scores: dict[str, list[float]]):
+    x = range(len(labels))
     _, ax = plt.subplots(figsize=(10, 6))
-    (reg_line,) = ax.plot(
-        x,
-        regular_scores,
-        marker="s",
-        ms=10,
-        label="Regular",
-        linestyle=":",
-        color="red",
-    )
-    reg_line.set_dashes([1, 3])
-    (aulile_line,) = ax.plot(
-        x, aulile_scores, marker="o", ms=10, label="Aulile", linestyle=":", color="blue"
-    )
-    aulile_line.set_dashes([1, 4])
+
+    # Define markers/colors for common modes
+    mode_styles = {
+        "regular": {"marker": "s", "color": "red", "dash": [1, 3], "ms":13, "alpha":0.6},
+        "aulile": {"marker": "o", "color": "blue", "dash": [1, 4], "ms":13, "alpha":0.8},
+    }
+
+    for mode, scores in mode_scores.items():
+        if mode in mode_styles.keys():
+            style = mode_styles.get(mode)
+        else:
+
+            style = {"marker": "o", "color": get_random_bluish_color(mode), "dash": [1, 6],
+                     "ms":8, "alpha":0.8}
+        
+        (line,) = ax.plot(
+            x,
+            scores,
+            marker=style["marker"],
+            label=mode.capitalize(),
+            ms=style["ms"],
+            alpha=style["alpha"],
+            linestyle=":",
+            color=style["color"],
+        )
+        line.set_dashes(style["dash"])
+
     plt.xticks(x, labels)
     ax.yaxis.set_major_formatter(FuncFormatter(to_percent))
 
@@ -49,55 +72,69 @@ def to_percent(y, _):
 def plot_experiment(
     experiments_folder: os.PathLike,
     save_dir: os.PathLike | None,
-    file_pattern=r"(\w+?)_(\d+)_(\d+)_(\d+)_.*\.txt",
+    file_patterns: List[Pattern] = [re.compile(r"(\w+?)_(\d+)_(\d+)_(\d+)_.*\.txt")],
 ):
-    pattern = re.compile(file_pattern)
-    grouped_data = defaultdict(list)
+    # Structure: {(benchmark, depth, iters, enum): {mode: score}}
+    grouped_data = defaultdict(lambda: {})
 
+    benchmark_name = None
     for filename in sorted(os.listdir(experiments_folder), reverse=True):
-        match = pattern.match(filename)
-        if not match:
-            continue
+        for pattern in file_patterns:
+            match = pattern.match(filename)
+            if not match:
+                continue
 
-        benchmark, depth, iters, enum = match.groups()
-        depth, iters, enum = map(int, (depth, iters, enum))
-        label = f"{enum}"
-        filepath = os.path.join(experiments_folder, filename)
+            benchmark, depth, iters, enum = match.groups()
 
-        reg_solved = 0
-        aulile_solved = 0
-        total_problems = 0
+            # Assert the benchmark is the same everywhere
+            if benchmark_name == None:
+                benchmark_name = benchmark
+            elif benchmark_name != benchmark:
+                continue
+                
+            depth, iters, enum = map(int, (depth, iters, enum))
+            label = f"{enum}"
+            filepath = os.path.join(experiments_folder, filename)
 
-        with open(filepath, "r") as f:
-            for line in f:
-                line = line.strip()
-                if not line or ";" not in line or "Reg_iter" in line:
-                    continue
-                reg_part, aulile_part = line.split(";")
-                reg_part = reg_part.split(":")[1].strip()
-                reg_flag = int(reg_part.strip().split(",")[0])
-                aulile_flag = int(aulile_part.strip().split(",")[0])
-                reg_solved += reg_flag
-                aulile_solved += aulile_flag
-                total_problems += 1
+            modes = None
+            percentages = None
+            with open(filepath, "r") as f:
+                for line in f:
+                    lines = [line.strip() for line in f if line.strip()]
+                    modes = lines[-2].split(",")
+                    percentages = [float(p) for p in lines[-1].split(",")]
+                    assert len(modes) == len(percentages)
 
-        if total_problems == 0:
-            continue
+            key = (benchmark, depth, iters, enum)
+            for i, mode in enumerate(modes):
+                grouped_data[key][mode] = percentages[i]
 
-        reg_score = reg_solved / total_problems
-        aulile_score = aulile_solved / total_problems
-        key = (benchmark, depth, iters)
-        grouped_data[key].append((enum, label, reg_score, aulile_score))
+    # Reorganize the grouped data: group by (benchmark, depth, iters)
+    merged_data = defaultdict(list)
+    for (benchmark, depth, iters, enum), scores_by_mode in grouped_data.items():
+        merged_data[(benchmark, depth, iters)].append((enum, scores_by_mode))
 
-    for (benchmark, depth, iters), data_points in grouped_data.items():
+    for (benchmark, depth, iters), data_points in merged_data.items():
         data_points.sort(key=lambda x: x[0])  # sort by enum
 
-        labels = [x[1] for x in data_points]
-        reg_scores = [x[2] for x in data_points]
-        aulile_scores = [x[3] for x in data_points]
+        labels = [str(enum) for enum, _ in data_points]
+        
+        # Collect scores per mode
+        all_modes = set()
+        for _, scores in data_points:
+            all_modes.update(scores.keys())
+
+        # Sort modes for consistent ordering
+        all_modes = sorted(all_modes)
+        
+        mode_scores = {mode: [] for mode in all_modes}
+        for _, scores in data_points:
+            for mode in all_modes:
+                mode_scores[mode].append(scores.get(mode, 0.0))  # default to 0.0 if missing
+
         enum_range = f"{data_points[0][0]}–{data_points[-1][0]}"
 
-        line_chart(labels, reg_scores, aulile_scores)
+        line_chart(labels, mode_scores)
 
         plt.xlabel("Maximum Enumerations")
         plt.ylabel("Percent of Benchmark Problems Solved")
