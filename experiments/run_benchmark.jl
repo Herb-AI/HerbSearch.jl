@@ -13,105 +13,145 @@ function print_stats(stats::SearchStats, best_value::Int)
     return passed
 end
 
-function run_benchmark_comparison(init_grammar::AbstractGrammar, problems::Vector{Problem},
-    aux::AuxFunction, interpret::Function, new_rule_symbol::Symbol;
-    max_depth::Int, max_iterations::Int, max_enumerations::Int)
+const AUX_FUNCTIONS = Dict(
+    "aulile" => get_default_aux,
+    "aulile_variant1" => get_aux_variant_1,
+)
 
-    regular_passed_tests = 0
-    aulile_passed_tests = 0
+function run_benchmark_comparison(
+    benchmark_name,
+    init_grammar::AbstractGrammar, problems::Vector{Problem},
+    interpret::Function, new_rule_symbol::Symbol;
+    max_depth::Int, max_iterations::Int, max_enumerations::Int, modes::Vector{AbstractString})
 
-    println("Problem: Reg_solved_flag, Reg_iter(Always 1), Reg_enums;",
-        "Aulile_solved_flag, Aulile_iters, Aulile_enums")
+    passed_tests = fill(0, length(modes))
+
+    print("Problem: ")
+    for mode in modes
+        print(mode, "_solved_flag, ", mode, "_iter, ", mode, "_enums; ")
+    end
+    println()
     for (i, problem) in enumerate(problems)
         print("Problem ", i, ": ")
         grammar = deepcopy(init_grammar)
 
-        stats = synth_with_aux(problem,
-            BFSIterator(grammar, :Start, max_depth=max_depth), grammar, default_aux,
-            Dict{Int64,AbstractRuleNode}(), typemax(Int), interpret=interpret,
-            allow_evaluation_errors=true, max_enumerations=max_enumerations)
-
-        if print_stats(stats, aux.best_value)
-            regular_passed_tests += 1
-        end
-        print("; ")
-
-        stats = aulile(problem, BFSIterator, grammar, :Start, new_rule_symbol,
-            aux, interpret=interpret, allow_evaluation_errors=true,
-            max_iterations=max_iterations, max_depth=max_depth,
-            max_enumerations=(max_enumerations / max_iterations))
-
-        if print_stats(stats, aux.best_value)
-            aulile_passed_tests += 1
+        for (mode_idx, mode) in enumerate(modes)
+            if mode == "regular"
+                stats = synth_with_aux(problem,
+                    BFSIterator(grammar, :Start, max_depth=max_depth), grammar, default_aux,
+                    Dict{Int64,AbstractRuleNode}(), typemax(Int), interpret=interpret,
+                    allow_evaluation_errors=true, max_enumerations=max_enumerations)
+                best_value = 0
+            else
+                aux = AUX_FUNCTIONS[mode](benchmark_name)
+                stats = aulile(problem, BFSIterator, grammar, :Start, new_rule_symbol,
+                    aux, interpret=interpret, allow_evaluation_errors=true,
+                    max_iterations=max_iterations, max_depth=max_depth,
+                    max_enumerations=(max_enumerations / max_iterations))
+                best_value = aux.best_value
+                
+            end
+            if print_stats(stats, best_value)
+                passed_tests[mode_idx] += 1
+            end
+            print("; ")
         end
         println()
     end
     println()
-    @assert regular_passed_tests <= length(problems)
-    @assert aulile_passed_tests <= length(problems)
 
-    return regular_passed_tests, aulile_passed_tests
+    for passed in passed_tests
+        @assert 0 <= passed <= length(problems)
+    end
+
+    return passed_tests
 end
 
-function experiment_main(problem_name::AbstractString,
-    max_depth::Int, max_iterations::Int, max_enumerations::Int)
+function experiment_main(benchmark_name::AbstractString,
+    max_depth::Int, max_iterations::Int, max_enumerations::Int; 
+    what_to_run::AbstractString = "regular+aulile")
+
+    modes = parse_and_check_modes(what_to_run, benchmark_name)
     timestamp = Dates.format(now(), "yyyy-mm-dd_HH-MM-SS")
     dir_path = dirname(@__FILE__)
     res_path = joinpath(dir_path, "comparison_results")
     mkpath(res_path)
-    res_file_name = "$(problem_name)_$(max_depth)_$(max_iterations)_$(max_enumerations)_$(timestamp).txt"
+    res_file_name = "$(benchmark_name)_$(max_depth)_$(max_iterations)_$(max_enumerations)_$(timestamp).txt"
     res_file_path = joinpath(res_path, res_file_name)
 
     # open results file and redirect STDIO
     open(res_file_path, "w") do io
         redirect_stdout(io) do
-            benchmark = get_benchmark(problem_name)
-            new_rule_symbol = get_start_symbol(problem_name)
-            if problem_name == "karel"
+            benchmark = get_benchmark(benchmark_name)
+            new_rule_symbol = get_start_symbol(benchmark_name)
+            if benchmark_name == "karel"
                 problems = HerbBenchmarks.Karel_2018.get_all_problems()
                 init_grammar = HerbBenchmarks.Karel_2018.grammar_karel
             else
                 problems = get_all_problems(benchmark)
                 init_grammar = get_default_grammar(benchmark)
             end
-            aux = get_aux_function(problem_name)
-            regular_passed_tests, aulile_passed_tests = run_benchmark_comparison(init_grammar,
-                problems, aux, benchmark.interpret, new_rule_symbol,
-                max_depth=max_depth, max_iterations=max_iterations, max_enumerations=max_enumerations)
+            passed_tests_per_mode = run_benchmark_comparison(benchmark_name, init_grammar,
+                problems, benchmark.interpret, new_rule_symbol,
+                max_depth=max_depth, max_iterations=max_iterations, max_enumerations=max_enumerations, 
+                modes=modes)
 
-            println("Regular,Aulile")
-            println(round(regular_passed_tests / length(problems); digits=2), ",",
-                round(aulile_passed_tests / length(problems); digits=2))
+            println(join(modes, ","))
+            for (mode_idx, passed_tests) in enumerate(passed_tests_per_mode)
+                print(round(passed_tests / length(problems); digits=2))
+                if mode_idx ≠ length(modes)
+                    print(",")
+                end
+            end
+            println()
         end
     end
 end
 
 
-function get_benchmark(problem_name::String)
-    if problem_name == "strings"
+function get_benchmark(benchmark_name::String)
+    if benchmark_name == "strings"
         return HerbBenchmarks.String_transformations_2020
-    elseif problem_name == "robots"
+    elseif benchmark_name == "robots"
         return Robots_2020
-    elseif problem_name == "pixels"
+    elseif benchmark_name == "pixels"
         return HerbBenchmarks.Pixels_2020
-    elseif problem_name == "bitvectors"
+    elseif benchmark_name == "bitvectors"
         return HerbBenchmarks.PBE_BV_Track_2018
-    elseif problem_name == "karel"
+    elseif benchmark_name == "karel"
         return HerbBenchmarks.Karel_2018
     else
         return HerbBenchmarks.String_transformations_2020
     end
 end
 
-function get_start_symbol(problem_name::String)
-    if problem_name == "karel"
+function get_start_symbol(benchmark_name::String)
+    if benchmark_name == "karel"
         return :Action
-    elseif problem_name == "bitvectors"
+    elseif benchmark_name == "bitvectors"
         return :Start
     else
         return :Operation
     end
 end
 
+function parse_and_check_modes(what_to_run::AbstractString, benchmark_name::AbstractString)::Vector{AbstractString}
+    modes = split(lowercase(what_to_run), "+")
+    for mode in modes
+        if mode == "regular" || mode == "aulile"
+            continue
+        end
+        if benchmark_name == "robots" && mode == "aulile_variant1"
+            continue
+        end
+        throw("Unsuported Mode " + mode + " for benchmark " + benchmark_name)
+    end
+    return modes
+end
 
-experiment_main(ARGS[1], parse(Int, ARGS[2]), parse(Int, ARGS[3]), parse(Int, ARGS[4]))
+if length(ARGS) >= 5
+    experiment_main(ARGS[1], parse(Int, ARGS[2]), parse(Int, ARGS[3]), parse(Int, ARGS[4]), 
+        what_to_run=ARGS[5])
+else
+    experiment_main(ARGS[1], parse(Int, ARGS[2]), parse(Int, ARGS[3]), parse(Int, ARGS[4]))
+end

@@ -206,7 +206,8 @@ function synth_with_aux(
     start_time = time()
     best_program = nothing
     loop_enumerations = 0
-    for (loop_enumerations, candidate_program) ∈ enumerate(iterator)
+    for (i, candidate_program) ∈ enumerate(iterator)
+        loop_enumerations = i
         # Evaluate the program
         score = evaluate_with_aux(problem, candidate_program, grammar, aux,
             new_rules_decoding, interpret=interpret,
@@ -217,14 +218,14 @@ function synth_with_aux(
             if print_debug
                 println("Found an optimal program!")
             end
-            return SearchStats(candidate_program, aux.best_value, 1, loop_enumerations)
+            return SearchStats(candidate_program, aux.best_value, 1, i)
         elseif score < best_score
             best_score = score
             candidate_program = freeze_state(candidate_program)
             best_program = candidate_program
         end
         # Check stopping criteria
-        if loop_enumerations >= max_enumerations || time() - start_time > max_time
+        if i >= max_enumerations || time() - start_time > max_time
             break
         end
     end

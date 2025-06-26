@@ -64,7 +64,7 @@ using HerbBenchmarks
 del_cost = 1
 insr_cost = 1
 subst_cost = 1
-levenshtein_benchmark_aux = AuxFunction(
+const levenshtein_benchmark_aux = AuxFunction(
     (expected::IOExample{<:Any,<:HerbBenchmarks.String_transformations_2020.StringState},
         actual::HerbBenchmarks.String_transformations_2020.StringState) ->
         levenshtein!(expected.out.str, actual.str, del_cost, insr_cost, subst_cost),
@@ -78,7 +78,7 @@ levenshtein_benchmark_aux = AuxFunction(
     0
 )
 
-function karel_dist(expected::HerbBenchmarks.Karel_2018.KarelState, 
+function karel_default_dist(expected::HerbBenchmarks.Karel_2018.KarelState, 
         actual::HerbBenchmarks.Karel_2018.KarelState)
     dist = sum(abs.(expected.hero.position .- actual.hero.position))
     dist += min(mod(Int(expected.hero.direction) - Int(actual.hero.direction), 4), 
@@ -93,20 +93,6 @@ function karel_dist(expected::HerbBenchmarks.Karel_2018.KarelState,
     return dist
 end
 
-karel_benchmark_aux = AuxFunction(
-    (expected::IOExample{<:Any,<:HerbBenchmarks.Karel_2018.KarelState},
-        actual::HerbBenchmarks.Karel_2018.KarelState) ->
-        karel_dist(expected.out, actual),
-    problem::Problem -> begin
-        score = 0
-        for example ∈ problem.spec
-            score += karel_dist(example.out, only(values(example.in)))
-        end
-        return score
-    end,
-    0
-)
-
 function Base.:(==)(a::HerbBenchmarks.Robots_2020.RobotState, b::HerbBenchmarks.Robots_2020.RobotState)
     return a.holds_ball == b.holds_ball &&
            a.robot_x == b.robot_x &&
@@ -116,7 +102,7 @@ function Base.:(==)(a::HerbBenchmarks.Robots_2020.RobotState, b::HerbBenchmarks.
            a.size == b.size
 end
 
-function robot_dist(expected::HerbBenchmarks.Robots_2020.RobotState, 
+function robot_default_dist(expected::HerbBenchmarks.Robots_2020.RobotState, 
         actual::HerbBenchmarks.Robots_2020.RobotState)
     dist = 0
 
@@ -146,21 +132,18 @@ function robot_dist(expected::HerbBenchmarks.Robots_2020.RobotState,
     return dist
 end
 
-robot_benchmark_aux = AuxFunction(
-    (expected::IOExample{<:Any,<:HerbBenchmarks.Robots_2020.RobotState},
-        actual::HerbBenchmarks.Robots_2020.RobotState) ->
-        robot_dist(expected.out, actual),
-    problem::Problem -> begin
-        score = 0
-        for example ∈ problem.spec
-            score += robot_dist(example.out, only(values(example.in)))
-        end
-        return score
-    end,
-    0
-)
+function robot_variant1_dist(expected::HerbBenchmarks.Robots_2020.RobotState, 
+        actual::HerbBenchmarks.Robots_2020.RobotState)
+    dist = 0
+    dist += abs(expected.robot_x - actual.robot_x)
+    dist += abs(expected.robot_y - actual.robot_y)
+    dist += abs(expected.ball_x - actual.ball_x)
+    dist += abs(expected.ball_y - actual.ball_y)
+    dist += abs(expected.holds_ball - actual.holds_ball)
+    return dist
+end
 
-function pixel_dist(expected::HerbBenchmarks.Pixels_2020.PixelState, 
+function pixel_default_dist(expected::HerbBenchmarks.Pixels_2020.PixelState, 
         actual::HerbBenchmarks.Pixels_2020.PixelState)
     if size(expected.matrix) != size(actual.matrix)
         error("Matrix sizes do not match.")
@@ -168,32 +151,69 @@ function pixel_dist(expected::HerbBenchmarks.Pixels_2020.PixelState,
     return count(expected.matrix .!= actual.matrix)
 end
 
-pixel_benchmark_aux = AuxFunction(
-    (expected::IOExample{<:Any,<:HerbBenchmarks.Pixels_2020.PixelState},
-        actual::HerbBenchmarks.Pixels_2020.PixelState) ->
-        pixel_dist(expected.out, actual),
-    problem::Problem -> begin
-        score = 0
-        for example ∈ problem.spec
-            score += pixel_dist(example.out, only(values(example.in)))
-        end
-        return score
-    end,
-    0
-)
 
-function get_aux_function(problem_name::AbstractString)::AuxFunction
-    if problem_name == "strings"
-        return levenshtein_benchmark_aux
-    elseif problem_name == "robots"
-        return robot_benchmark_aux
-    elseif problem_name == "pixels"
-        return pixel_benchmark_aux
-    elseif problem_name == "karel"
-        return karel_benchmark_aux
-    elseif problem_name == "bitvectors"
+"""
+    construct_aux_function(dist_fn::Function, ::Type{OutputType}) where {OutputType}
+
+Constructs an `AuxFunction` object using the provided distance function `dist_fn` 
+    and the specified output type `OutputType`. Assumes optimal distance 0.
+
+# Arguments
+- `dist_fn::Function`: A function that computes the distance between two outputs.
+- `::Type{OutputType}`: The type of the output values to be compared.
+
+# Returns
+- `AuxFunction`: An object encapsulating:
+    - A function that computes the distance between the expected and actual outputs.
+    - A function that computes the total score over all examples in a problem specification.
+    - Optimal distance (assumes to be 0).
+
+# Example
+"""
+function construct_aux_function(
+    dist_fn::Function,
+    ::Type{OutputType}
+) where {OutputType}
+    AuxFunction(
+        (expected::IOExample{<:Any,<:OutputType}, actual::OutputType) ->
+            dist_fn(expected.out, actual),
+        problem::Problem -> begin
+            score = 0
+            for example in problem.spec
+                score += dist_fn(example.out, only(values(example.in)))
+            end
+            return score
+        end,
+        0
+    )
+end
+
+function get_default_aux(benchmark_name::AbstractString)::AuxFunction
+    if benchmark_name == "strings"
+        str_dist = (a, b) -> levenshtein!(a.str, b.str, 1, 1, 1)
+        return construct_aux_function(str_dist, 
+            HerbBenchmarks.String_transformations_2020.StringState)
+    elseif benchmark_name == "robots"
+        return construct_aux_function(robot_default_dist, 
+            HerbBenchmarks.Robots_2020.RobotState)
+    elseif benchmark_name == "pixels"
+        return construct_aux_function(pixel_default_dist, 
+            HerbBenchmarks.Pixels_2020.PixelState)
+    elseif benchmark_name == "karel"
+        return construct_aux_function(karel_default_dist, 
+            HerbBenchmarks.Karel_2018.KarelState)
+    elseif benchmark_name == "bitvectors"
         throw("unimplemented")
     else
-        return levenshtein_benchmark_aux
+        throw("Unsuported Benchmark")
+    end
+end
+
+function get_aux_variant_1(benchmark_name::AbstractString)::AuxFunction
+    if benchmark_name == "robots"
+        return construct_aux_function(robot_variant1_dist, 
+            HerbBenchmarks.Robots_2020.RobotState)
+    else
+        throw("Unsuported Benchmark")
     end
 end
