@@ -35,20 +35,26 @@ def line_chart(labels: list[str], mode_scores: dict[str, list[float]]):
     x = range(len(labels))
     _, ax = plt.subplots(figsize=(10, 6))
 
-    # Define markers/colors for common modes
-    mode_styles = {
-        "regular": {"marker": "s", "color": "red", "dash": [1, 3], "ms":13, "alpha":0.6},
-        "aulile": {"marker": "o", "color": "blue", "dash": [1, 4], "ms":13, "alpha":0.8},
-    }
+    non_regular_modes = {k: v for k, v in mode_scores.items() if k != "regular"}
+    best_mode = max(non_regular_modes.items(), key=lambda kv: kv[1][-1])[0]
 
     for mode, scores in mode_scores.items():
-        if mode in mode_styles.keys():
-            style = mode_styles.get(mode)
+        if mode == "regular":
+            style = {"marker": "s", "color": "red", "dash": [1, 3], "ms":13, "alpha":0.6}
         else:
 
             style = {"marker": "o", "color": get_random_bluish_color(mode), "dash": [1, 6],
                      "ms":8, "alpha":0.8}
         
+        # Highlight best non-regular mode
+        if mode == best_mode:
+            assert mode != "regular"
+            style["color"] = "blue"    # Special highlight color
+            style["marker"] = "D"      # Diamond marker
+            style["dash"] = [1, 4]
+            style["ms"] = 13
+            style["alpha"] = 0.8
+
         (line,) = ax.plot(
             x,
             scores,

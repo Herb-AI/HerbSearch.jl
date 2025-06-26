@@ -59,26 +59,69 @@ function levenshtein!(
     end
 end
 
+
+function levenshtein_with_uppercase!(
+    source::AbstractString,
+    target::AbstractString,
+    deletion_cost::R = 1,
+    insertion_cost::S = Inf,
+    substitution_cost::T = Inf,
+    case_cost::U = 1,
+    costs::Matrix=Array{promote_type(R, S, T, U)}(undef, 2, length(target) + 1)
+) where {R <: Real, S <: Real, T <: Real, U <: Real}
+    if length(source) < length(target)
+        # Space complexity of function = O(length(target))
+        return levenshtein_with_uppercase!(target, source, insertion_cost, deletion_cost, substitution_cost, case_cost, costs)
+    else
+        if length(target) == 0
+            return length(source) * deletion_cost
+        else
+            old_cost_index = 1
+            new_cost_index = 2
+
+            costs[old_cost_index, 1] = 0
+            for i in 1:length(target)
+                costs[old_cost_index, i+1] = i * insertion_cost
+            end
+
+            i = 0
+            for r in source
+                i += 1
+
+                # Delete i characters from source to get empty target
+                costs[new_cost_index, 1] = i * deletion_cost
+
+                j = 0
+                for c in target
+                    j += 1
+
+                    deletion = costs[old_cost_index, j+1] + deletion_cost
+                    insertion = costs[new_cost_index, j] + insertion_cost
+                    substitution = costs[old_cost_index, j]
+                    if r != c
+                        if uppercase(r) == uppercase(c)
+                            substitution += case_cost
+                        else
+                            substitution += substitution_cost
+                        end
+                    end
+
+                    costs[new_cost_index, j+1] = min(deletion, insertion, substitution)
+                end
+
+                old_cost_index, new_cost_index = new_cost_index, old_cost_index
+            end
+
+            new_cost_index = old_cost_index
+            return costs[new_cost_index, length(target)+1]
+        end
+    end
+end
+
+
 using HerbBenchmarks
 
-del_cost = 1
-insr_cost = 1
-subst_cost = 1
-const levenshtein_benchmark_aux = AuxFunction(
-    (expected::IOExample{<:Any,<:HerbBenchmarks.String_transformations_2020.StringState},
-        actual::HerbBenchmarks.String_transformations_2020.StringState) ->
-        levenshtein!(expected.out.str, actual.str, del_cost, insr_cost, subst_cost),
-    problem::Problem -> begin
-        score = 0
-        for example ∈ problem.spec
-            score += levenshtein!(example.out.str, only(values(example.in)).str, del_cost, insr_cost, subst_cost)
-        end
-        return score
-    end,
-    0
-)
-
-function karel_default_dist(expected::HerbBenchmarks.Karel_2018.KarelState, 
+function karel_edit_dist(expected::HerbBenchmarks.Karel_2018.KarelState, 
         actual::HerbBenchmarks.Karel_2018.KarelState)
     dist = sum(abs.(expected.hero.position .- actual.hero.position))
     dist += min(mod(Int(expected.hero.direction) - Int(actual.hero.direction), 4), 
@@ -102,7 +145,7 @@ function Base.:(==)(a::HerbBenchmarks.Robots_2020.RobotState, b::HerbBenchmarks.
            a.size == b.size
 end
 
-function robot_default_dist(expected::HerbBenchmarks.Robots_2020.RobotState, 
+function robot_all_steps_dist(expected::HerbBenchmarks.Robots_2020.RobotState, 
         actual::HerbBenchmarks.Robots_2020.RobotState)
     dist = 0
 
@@ -132,7 +175,7 @@ function robot_default_dist(expected::HerbBenchmarks.Robots_2020.RobotState,
     return dist
 end
 
-function robot_variant1_dist(expected::HerbBenchmarks.Robots_2020.RobotState, 
+function robot_simple_dist(expected::HerbBenchmarks.Robots_2020.RobotState, 
         actual::HerbBenchmarks.Robots_2020.RobotState)
     dist = 0
     dist += abs(expected.robot_x - actual.robot_x)
@@ -143,7 +186,7 @@ function robot_variant1_dist(expected::HerbBenchmarks.Robots_2020.RobotState,
     return dist
 end
 
-function pixel_default_dist(expected::HerbBenchmarks.Pixels_2020.PixelState, 
+function pixel_edit_dist(expected::HerbBenchmarks.Pixels_2020.PixelState, 
         actual::HerbBenchmarks.Pixels_2020.PixelState)
     if size(expected.matrix) != size(actual.matrix)
         error("Matrix sizes do not match.")
@@ -188,32 +231,31 @@ function construct_aux_function(
     )
 end
 
-function get_default_aux(benchmark_name::AbstractString)::AuxFunction
-    if benchmark_name == "strings"
-        str_dist = (a, b) -> levenshtein!(a.str, b.str, 1, 1, 1)
-        return construct_aux_function(str_dist, 
-            HerbBenchmarks.String_transformations_2020.StringState)
-    elseif benchmark_name == "robots"
-        return construct_aux_function(robot_default_dist, 
-            HerbBenchmarks.Robots_2020.RobotState)
-    elseif benchmark_name == "pixels"
-        return construct_aux_function(pixel_default_dist, 
-            HerbBenchmarks.Pixels_2020.PixelState)
-    elseif benchmark_name == "karel"
-        return construct_aux_function(karel_default_dist, 
-            HerbBenchmarks.Karel_2018.KarelState)
-    elseif benchmark_name == "bitvectors"
-        throw("unimplemented")
-    else
-        throw("Unsuported Benchmark")
-    end
-end
+const AUX_FUNCTIONS = Dict(
+    "strings" => Dict(
+        "aulile_edit_distance"       => construct_aux_function((a, b) -> 
+            levenshtein!(a.str, b.str, 1, 1, 1), 
+            HerbBenchmarks.String_transformations_2020.StringState),
+        "aulile_penalize_deleting"   => construct_aux_function((a, b) -> 
+            levenshtein_with_uppercase!(a.str, b.str), 
+            HerbBenchmarks.String_transformations_2020.StringState),
+    ),
 
-function get_aux_variant_1(benchmark_name::AbstractString)::AuxFunction
-    if benchmark_name == "robots"
-        return construct_aux_function(robot_variant1_dist, 
+    "robots" => Dict(
+        "aulile_all_steps_manhattan" => construct_aux_function(robot_all_steps_dist, 
+            HerbBenchmarks.Robots_2020.RobotState),
+        "aulile_simple_manhattan"    => construct_aux_function(robot_simple_dist, 
             HerbBenchmarks.Robots_2020.RobotState)
-    else
-        throw("Unsuported Benchmark")
-    end
-end
+        
+    ),
+
+    "pixels" => Dict(
+        "aulile_edit_distance"       => construct_aux_function(pixel_edit_dist, 
+            HerbBenchmarks.Pixels_2020.PixelState)
+    ),
+    
+    "karel" => Dict(
+        "aulile_edit_distance"       => construct_aux_function(karel_edit_dist, 
+            HerbBenchmarks.Karel_2018.KarelState)
+    ),
+)

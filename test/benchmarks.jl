@@ -9,7 +9,7 @@ using HerbBenchmarks.String_transformations_2020
     max_iterations = 3
     max_enumerations = 1_000
 
-    aux = get_default_aux("strings")
+    aux = AUX_FUNCTIONS["strings"]["aulile_edit_distance"]
     run_benchmark("String 2020 Benchmark", get_default_grammar(String_transformations_2020),
         first(get_all_problems(String_transformations_2020), 10), get_all_identifiers(String_transformations_2020),
         aux, :Operation, HerbBenchmarks.String_transformations_2020.interpret,
@@ -24,7 +24,7 @@ using HerbBenchmarks.Karel_2018
     max_iterations = 3
     max_enumerations = 1_000
 
-    aux = get_default_aux("karel")
+    aux = AUX_FUNCTIONS["karel"]["aulile_edit_distance"]
     run_benchmark("Karel 2018 Benchmark", Karel_2018.grammar_karel,
         first(Karel_2018.get_all_problems(), 10), Vector{String}(),
         aux, :Action, HerbBenchmarks.Karel_2018.interpret,
@@ -39,7 +39,7 @@ using HerbBenchmarks.Robots_2020
     max_iterations = 3
     max_enumerations = 1_000
 
-    aux = get_default_aux("robots")
+    aux = AUX_FUNCTIONS["robots"]["aulile_all_steps_manhattan"]
     run_benchmark("Robots 2020 Benchmark", get_default_grammar(Robots_2020),
         first(get_all_problems(Robots_2020), 10), get_all_identifiers(Robots_2020),
         aux, :Operation, HerbBenchmarks.Robots_2020.interpret,
@@ -54,7 +54,7 @@ using HerbBenchmarks.Pixels_2020
     max_iterations = 3
     max_enumerations = 1_000
 
-    aux = get_default_aux("pixels")
+    aux = AUX_FUNCTIONS["pixels"]["aulile_edit_distance"]
     run_benchmark("Pixels 2020 Benchmark", get_default_grammar(Pixels_2020),
         first(get_all_problems(Pixels_2020), 10), get_all_identifiers(Pixels_2020),
         aux, :Operation, HerbBenchmarks.Pixels_2020.interpret,

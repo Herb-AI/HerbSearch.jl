@@ -13,11 +13,6 @@ function print_stats(stats::SearchStats, best_value::Int)
     return passed
 end
 
-const AUX_FUNCTIONS = Dict(
-    "aulile" => get_default_aux,
-    "aulile_variant1" => get_aux_variant_1,
-)
-
 function run_benchmark_comparison(
     benchmark_name,
     init_grammar::AbstractGrammar, problems::Vector{Problem},
@@ -43,7 +38,7 @@ function run_benchmark_comparison(
                     allow_evaluation_errors=true, max_enumerations=max_enumerations)
                 best_value = 0
             else
-                aux = AUX_FUNCTIONS[mode](benchmark_name)
+                aux = AUX_FUNCTIONS[benchmark_name][mode]
                 stats = aulile(problem, BFSIterator, grammar, :Start, new_rule_symbol,
                     aux, interpret=interpret, allow_evaluation_errors=true,
                     max_iterations=max_iterations, max_depth=max_depth,
@@ -137,15 +132,23 @@ end
 
 function parse_and_check_modes(what_to_run::AbstractString, benchmark_name::AbstractString)::Vector{AbstractString}
     modes = split(lowercase(what_to_run), "+")
-    for mode in modes
-        if mode == "regular" || mode == "aulile"
-            continue
-        end
-        if benchmark_name == "robots" && mode == "aulile_variant1"
-            continue
-        end
-        throw("Unsuported Mode " + mode + " for benchmark " + benchmark_name)
+
+    if !haskey(AUX_FUNCTIONS, benchmark_name)
+        available_benchmarks = join(keys(AUX_FUNCTIONS), ", ")
+        error("Unsupported benchmark '$benchmark_name'. Available benchmarks: $available_benchmarks")
     end
+
+    inner_dict = AUX_FUNCTIONS[benchmark_name]
+    for mode in modes
+        if mode == "regular"
+            continue
+        end
+        if !haskey(inner_dict, mode)
+            available_modes = join(keys(inner_dict), ", ")
+            error("Unknown aulile mode '$mode' for benchmark '$benchmark_name'. Available modes: $available_modes")
+        end
+    end
+
     return modes
 end
 

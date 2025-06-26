@@ -1,4 +1,5 @@
 include("../src/aulile_auxiliary_functions.jl")
+include("benchmark_helpers.jl")
 
 levenshtein_aux = AuxFunction(
     (expected::IOExample{<:Any,<:AbstractString}, actual::AbstractString) ->
