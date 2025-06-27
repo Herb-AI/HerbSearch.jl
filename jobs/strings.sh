@@ -1,5 +1,5 @@
 #!/bin/sh
-#SBATCH --partition=mempry         # Request partition. Select the best partition following the advice on  https://daic.tudelft.nl/docs/manual/job-submission/priorities/#priority-tiers
+#SBATCH --partition=memory         # Request partition. Select the best partition following the advice on  https://daic.tudelft.nl/docs/manual/job-submission/priorities/#priority-tiers
 #SBATCH --time=4:00:00              # Request run time (wall-clock). Default is 1 minute
 #SBATCH --ntasks=2                  # Request number of parallel tasks per job. Default is 1
 #SBATCH --cpus-per-task=1           # Request number of CPUs (threads) per task. Default is 1 (note: CPUs are always allocated to jobs per 2).
