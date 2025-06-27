@@ -26,7 +26,7 @@ Holds statistics about a search process.
 """
 struct SearchStats
     program::Union{RuleNode,Nothing}
-    score::Int
+    score::Number
     iterations::Int
     enumerations::Int
 end
@@ -169,7 +169,7 @@ end
 
 """
     synth_with_aux(problem::Problem, iterator::ProgramIterator, grammar::AbstractGrammar, 
-        aux::AuxFunction, new_rules_decoding::Dict{Int, AbstractRuleNode}, best_score::Int;
+        aux::AuxFunction, new_rules_decoding::Dict{Int, AbstractRuleNode}, best_score::Number;
         interpret=default_interpreter, allow_evaluation_errors=false, max_time=typemax(Int), 
         max_enumerations=typemax(Int), print_debug=false) -> Union{Tuple{RuleNode, Int}, Nothing}
 
@@ -196,7 +196,7 @@ function synth_with_aux(
     grammar::AbstractGrammar,
     aux::AuxFunction,
     new_rules_decoding::Dict{Int,AbstractRuleNode},
-    best_score::Int;
+    best_score::Number;
     interpret::Function=default_interpreter,
     allow_evaluation_errors::Bool=false,
     max_time=typemax(Int),

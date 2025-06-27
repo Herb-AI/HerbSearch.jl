@@ -34,7 +34,7 @@ end
     Prints debugging information and returns whether the test passed
 """
 function is_test_passed_and_debug(test_res::SearchStats, grammar::AbstractGrammar,
-    optimal_score::Any, start_time::DateTime, end_time::DateTime=Dates.now())::Bool
+    optimal_score::Number, start_time::DateTime, end_time::DateTime=Dates.now())::Bool
     if !isnothing(test_res)
         passed = test_res.score <= optimal_score && !isa(test_res.program, Nothing)
         if passed

@@ -7,7 +7,7 @@ using Dates
 using HerbCore, HerbGrammar, HerbSearch, HerbSpecification, HerbBenchmarks
 include("../src/aulile_auxiliary_functions.jl")
 
-function print_stats(stats::SearchStats, best_value::Int)
+function print_stats(stats::SearchStats, best_value::Number)
     passed = !isnothing(stats.program) && stats.score <= best_value
     print(Int(passed), ", ", stats.iterations, ", ", stats.enumerations)
     return passed
