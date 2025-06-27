@@ -64,7 +64,7 @@ end
 
 function experiment_main(benchmark_name::AbstractString,
     max_depth::Int, max_iterations::Int, max_enumerations::Int; 
-    what_to_run::AbstractString = "regular+aulile")
+    what_to_run::AbstractString = "regular")
 
     modes = parse_and_check_modes(what_to_run, benchmark_name)
     timestamp = Dates.format(now(), "yyyy-mm-dd_HH-MM-SS")

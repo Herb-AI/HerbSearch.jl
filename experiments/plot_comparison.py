@@ -112,7 +112,6 @@ def plot_experiment(
     for (benchmark, depth, iters, enum), scores_by_mode in grouped_data.items():
         merged_data[(benchmark, depth, iters)].append((enum, scores_by_mode))
 
-    print(merged_data)
     for (benchmark, depth, iters), data_points in merged_data.items():
         data_points.sort(key=lambda x: x[0])  # sort by enum
 
