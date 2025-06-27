@@ -21,45 +21,68 @@ def bar_chart(
     ax.yaxis.set_major_formatter(FuncFormatter(to_percent))
 
 
-def get_random_bluish_color(mode: str, seed_base=42):
-    random.seed(seed_base)  # ensure consistent color -> may add mode
-    # Hue near blue (~0.55–0.65), full saturation, high value for visibility
-    hue = random.uniform(0.48, 0.57)
-    saturation = random.uniform(0.7, 1.0)
-    value = random.uniform(0.7, 1.0)
-    r, g, b = colorsys.hsv_to_rgb(hue, saturation, value)
-    return (r, g, b)  # matplotlib accepts RGB tuples in 0–1 range
-
-
-def line_chart(labels: list[str], mode_scores: dict[str, list[float]]):
+def line_chart(
+    labels: list[str], mode_scores: dict[str, list[float]], benchmark_name: str
+):
     x = range(len(labels))
     _, ax = plt.subplots(figsize=(10, 6))
 
     non_regular_modes = {k: v for k, v in mode_scores.items() if k != "regular"}
     best_mode = max(non_regular_modes.items(), key=lambda kv: kv[1][-1])[0]
 
+    baseline_color = (1.0, 0.0, 0.0)  # red
+    best_color = (0.0, 0.0, 1.0)  # blue
+    regular_final = mode_scores["regular"][-1]
+    best_final = mode_scores[best_mode][-1]
+
+    CUSTOM_LABELS = {
+        "strings": {
+            "regular": "Regular",
+            "aulile_edit_distance": "Aulile_edit_distance",
+            "aulile_penalize_deleting": "Aulile_case-sensitive_distance (D=1, I=inf, S=inf)",
+            "aulile_penalize_deleting2": "Aulile_case-sensitive_distance (D=Inf, I=1, S=1)",
+        }
+    }
+
+    variant_modes = [m for m in non_regular_modes if m != best_mode]
+    n_variants = len(variant_modes)
+    variant_colors = [
+        colorsys.hsv_to_rgb(0.6, 0.6, 0.5 + 0.5 * i / max(1, n_variants - 1))
+        for i in range(n_variants)
+    ]
+    variant_color_map = dict(zip(variant_modes, variant_colors))
+
     for mode, scores in mode_scores.items():
         if mode == "regular":
-            style = {"marker": "s", "color": "red", "dash": [1, 3], "ms":13, "alpha":0.6}
+            style = {
+                "marker": "s",
+                "color": baseline_color,
+                "dash": [1, 3],
+                "ms": 13,
+                "alpha": 0.6,
+            }
+        elif mode == best_mode:
+            style = {
+                "marker": "D",
+                "color": best_color,
+                "dash": [1, 4],
+                "ms": 13,
+                "alpha": 0.8,
+            }
         else:
-
-            style = {"marker": "o", "color": get_random_bluish_color(mode), "dash": [1, 6],
-                     "ms":8, "alpha":0.8}
-        
-        # Highlight best non-regular mode
-        if mode == best_mode:
-            assert mode != "regular"
-            style["color"] = "blue"    # Special highlight color
-            style["marker"] = "D"      # Diamond marker
-            style["dash"] = [1, 4]
-            style["ms"] = 13
-            style["alpha"] = 0.8
+            style = {
+                "marker": "o",
+                "color": variant_color_map[mode],
+                "dash": [1, 6],
+                "ms": 8,
+                "alpha": 0.8,
+            }
 
         (line,) = ax.plot(
             x,
             scores,
             marker=style["marker"],
-            label=mode.capitalize(),
+            label=CUSTOM_LABELS.get(benchmark_name, {}).get(mode, mode.capitalize()),
             ms=style["ms"],
             alpha=style["alpha"],
             linestyle=":",
@@ -67,7 +90,8 @@ def line_chart(labels: list[str], mode_scores: dict[str, list[float]]):
         )
         line.set_dashes(style["dash"])
 
-    plt.xticks(x, labels)
+    plt.xticks(x, labels, fontsize=14, rotation=30)
+    plt.yticks(fontsize=14, rotation=30)
     ax.yaxis.set_major_formatter(FuncFormatter(to_percent))
 
 
@@ -88,13 +112,9 @@ def plot_experiment(
             match = pattern.match(filename)
             if not match:
                 continue
-
             benchmark, depth, iters, enum = match.groups()
-                
             depth, iters, enum = map(int, (depth, iters, enum))
-            label = f"{enum}"
             filepath = os.path.join(experiments_folder, filename)
-
             modes = None
             percentages = None
             with open(filepath, "r") as f:
@@ -116,7 +136,7 @@ def plot_experiment(
         data_points.sort(key=lambda x: x[0])  # sort by enum
 
         labels = [str(enum) for enum, _ in data_points]
-        
+
         # Collect scores per mode
         all_modes = set()
         for _, scores in data_points:
@@ -124,18 +144,20 @@ def plot_experiment(
 
         # Sort modes for consistent ordering
         all_modes = sorted(all_modes)
-        
+
         mode_scores = {mode: [] for mode in all_modes}
         for _, scores in data_points:
             for mode in all_modes:
-                mode_scores[mode].append(scores.get(mode, 0.0))  # default to 0.0 if missing
+                mode_scores[mode].append(
+                    scores.get(mode, 0.0)
+                )  # default to 0.0 if missing
 
         enum_range = f"{data_points[0][0]}–{data_points[-1][0]}"
 
-        line_chart(labels, mode_scores)
+        line_chart(labels, mode_scores, benchmark)
 
-        plt.xlabel("Maximum Enumerations")
-        plt.ylabel("Percent of Benchmark Problems Solved")
+        plt.xlabel("Number of maximum allowed evaluations", fontsize=14)
+        plt.ylabel("Percent of Benchmark Problems Solved", fontsize=14)
         plt.title(
             f"{benchmark.capitalize()} (Depth={depth}, Iter={iters}, Enums={enum_range})"
         )
