@@ -44,7 +44,6 @@ function run_benchmark_comparison(
                     max_iterations=max_iterations, max_depth=max_depth,
                     max_enumerations=(max_enumerations / max_iterations))
                 best_value = aux.best_value
-                
             end
             if print_stats(stats, best_value)
                 passed_tests[mode_idx] += 1
@@ -63,8 +62,8 @@ function run_benchmark_comparison(
 end
 
 function experiment_main(benchmark_name::AbstractString,
-    max_depth::Int, max_iterations::Int, max_enumerations::Int; 
-    what_to_run::AbstractString = "regular")
+    max_depth::Int, max_iterations::Int, max_enumerations::Int;
+    what_to_run::AbstractString="regular")
 
     modes = parse_and_check_modes(what_to_run, benchmark_name)
     timestamp = Dates.format(now(), "yyyy-mm-dd_HH-MM-SS")
@@ -88,7 +87,7 @@ function experiment_main(benchmark_name::AbstractString,
             end
             passed_tests_per_mode = run_benchmark_comparison(benchmark_name, init_grammar,
                 problems, benchmark.interpret, new_rule_symbol,
-                max_depth=max_depth, max_iterations=max_iterations, max_enumerations=max_enumerations, 
+                max_depth=max_depth, max_iterations=max_iterations, max_enumerations=max_enumerations,
                 modes=modes)
 
             println(join(modes, ","))
@@ -153,7 +152,7 @@ function parse_and_check_modes(what_to_run::AbstractString, benchmark_name::Abst
 end
 
 if length(ARGS) >= 5
-    experiment_main(ARGS[1], parse(Int, ARGS[2]), parse(Int, ARGS[3]), parse(Int, ARGS[4]), 
+    experiment_main(ARGS[1], parse(Int, ARGS[2]), parse(Int, ARGS[3]), parse(Int, ARGS[4]),
         what_to_run=ARGS[5])
 else
     experiment_main(ARGS[1], parse(Int, ARGS[2]), parse(Int, ARGS[3]), parse(Int, ARGS[4]))

@@ -156,6 +156,6 @@ def plot_experiment(
 if __name__ == "__main__":
     script_dir = os.path.dirname(os.path.abspath(__file__))
     plot_experiment(
-        os.path.join(script_dir, "results"),
+        os.path.join(script_dir, "comparison_results"),
         os.path.join(script_dir, "comparison_plots"),
     )

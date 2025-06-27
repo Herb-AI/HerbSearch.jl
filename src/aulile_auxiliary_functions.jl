@@ -63,12 +63,12 @@ end
 function levenshtein_with_uppercase!(
     source::AbstractString,
     target::AbstractString,
-    deletion_cost::R = 1,
-    insertion_cost::S = Inf,
-    substitution_cost::T = Inf,
-    case_cost::U = 1,
+    deletion_cost::R=1,
+    insertion_cost::S=Inf,
+    substitution_cost::T=Inf,
+    case_cost::U=1,
     costs::Matrix=Array{promote_type(R, S, T, U)}(undef, 2, length(target) + 1)
-) where {R <: Real, S <: Real, T <: Real, U <: Real}
+) where {R<:Real,S<:Real,T<:Real,U<:Real}
     if length(source) < length(target)
         # Space complexity of function = O(length(target))
         return levenshtein_with_uppercase!(target, source, insertion_cost, deletion_cost, substitution_cost, case_cost, costs)
@@ -121,10 +121,10 @@ end
 
 using HerbBenchmarks
 
-function karel_edit_dist(expected::HerbBenchmarks.Karel_2018.KarelState, 
-        actual::HerbBenchmarks.Karel_2018.KarelState)
+function karel_edit_dist(expected::HerbBenchmarks.Karel_2018.KarelState,
+    actual::HerbBenchmarks.Karel_2018.KarelState)
     dist = sum(abs.(expected.hero.position .- actual.hero.position))
-    dist += min(mod(Int(expected.hero.direction) - Int(actual.hero.direction), 4), 
+    dist += min(mod(Int(expected.hero.direction) - Int(actual.hero.direction), 4),
         mod(Int(expected.hero.direction) + Int(actual.hero.direction), 4))
 
     all_positions = union(keys(expected.markers), keys(actual.markers))
@@ -145,8 +145,8 @@ function Base.:(==)(a::HerbBenchmarks.Robots_2020.RobotState, b::HerbBenchmarks.
            a.size == b.size
 end
 
-function robot_all_steps_dist(expected::HerbBenchmarks.Robots_2020.RobotState, 
-        actual::HerbBenchmarks.Robots_2020.RobotState)
+function robot_all_steps_dist(expected::HerbBenchmarks.Robots_2020.RobotState,
+    actual::HerbBenchmarks.Robots_2020.RobotState)
     dist = 0
 
     if actual.ball_x == expected.ball_x && actual.ball_y == expected.ball_y &&
@@ -175,8 +175,8 @@ function robot_all_steps_dist(expected::HerbBenchmarks.Robots_2020.RobotState,
     return dist
 end
 
-function robot_simple_dist(expected::HerbBenchmarks.Robots_2020.RobotState, 
-        actual::HerbBenchmarks.Robots_2020.RobotState)
+function robot_simple_dist(expected::HerbBenchmarks.Robots_2020.RobotState,
+    actual::HerbBenchmarks.Robots_2020.RobotState)
     dist = 0
     dist += abs(expected.robot_x - actual.robot_x)
     dist += abs(expected.robot_y - actual.robot_y)
@@ -186,8 +186,8 @@ function robot_simple_dist(expected::HerbBenchmarks.Robots_2020.RobotState,
     return dist
 end
 
-function pixel_edit_dist(expected::HerbBenchmarks.Pixels_2020.PixelState, 
-        actual::HerbBenchmarks.Pixels_2020.PixelState)
+function pixel_edit_dist(expected::HerbBenchmarks.Pixels_2020.PixelState,
+    actual::HerbBenchmarks.Pixels_2020.PixelState)
     if size(expected.matrix) != size(actual.matrix)
         error("Matrix sizes do not match.")
     end
@@ -233,29 +233,22 @@ end
 
 const AUX_FUNCTIONS = Dict(
     "strings" => Dict(
-        "aulile_edit_distance"       => construct_aux_function((a, b) -> 
-            levenshtein!(a.str, b.str, 1, 1, 1), 
+        "aulile_edit_distance" => construct_aux_function((a, b) ->
+                levenshtein!(a.str, b.str, 1, 1, 1),
             HerbBenchmarks.String_transformations_2020.StringState),
-        "aulile_penalize_deleting"   => construct_aux_function((a, b) -> 
-            levenshtein_with_uppercase!(a.str, b.str), 
+        "aulile_penalize_deleting" => construct_aux_function((a, b) ->
+                levenshtein_with_uppercase!(a.str, b.str),
             HerbBenchmarks.String_transformations_2020.StringState),
-    ),
-
-    "robots" => Dict(
-        "aulile_all_steps_manhattan" => construct_aux_function(robot_all_steps_dist, 
+    ), "robots" => Dict(
+        "aulile_all_steps_manhattan" => construct_aux_function(robot_all_steps_dist,
             HerbBenchmarks.Robots_2020.RobotState),
-        "aulile_simple_manhattan"    => construct_aux_function(robot_simple_dist, 
+        "aulile_simple_manhattan" => construct_aux_function(robot_simple_dist,
             HerbBenchmarks.Robots_2020.RobotState)
-        
-    ),
-
-    "pixels" => Dict(
-        "aulile_edit_distance"       => construct_aux_function(pixel_edit_dist, 
+    ), "pixels" => Dict(
+        "aulile_edit_distance" => construct_aux_function(pixel_edit_dist,
             HerbBenchmarks.Pixels_2020.PixelState)
-    ),
-    
-    "karel" => Dict(
-        "aulile_edit_distance"       => construct_aux_function(karel_edit_dist, 
+    ), "karel" => Dict(
+        "aulile_edit_distance" => construct_aux_function(karel_edit_dist,
             HerbBenchmarks.Karel_2018.KarelState)
     ),
 )
