@@ -239,6 +239,9 @@ const AUX_FUNCTIONS = Dict(
         "aulile_penalize_deleting" => construct_aux_function((a, b) ->
                 levenshtein_with_uppercase!(a.str, b.str),
             HerbBenchmarks.String_transformations_2020.StringState),
+        "aulile_penalize_deleting_2" => construct_aux_function((a, b) ->
+                levenshtein_with_uppercase!(a.str, b.str, Inf, 1, 1),
+            HerbBenchmarks.String_transformations_2020.StringState)
     ), "robots" => Dict(
         "aulile_all_steps_manhattan" => construct_aux_function(robot_all_steps_dist,
             HerbBenchmarks.Robots_2020.RobotState),
