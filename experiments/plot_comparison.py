@@ -40,7 +40,7 @@ def line_chart(
             "regular": "Regular",
             "aulile_edit_distance": "Aulile_edit_distance",
             "aulile_penalize_deleting": "Aulile_case-sensitive_distance (D=1, I=inf, S=inf)",
-            "aulile_penalize_deleting2": "Aulile_case-sensitive_distance (D=Inf, I=1, S=1)",
+            "aulile_penalize_deleting_2": "Aulile_case-sensitive_distance (D=Inf, I=1, S=1)",
         }
     }
 
