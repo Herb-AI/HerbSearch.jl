@@ -83,7 +83,6 @@ def plot_experiment(
     # Structure: {(benchmark, depth, iters, enum): {mode: score}}
     grouped_data = defaultdict(lambda: {})
 
-    benchmark_name = None
     for filename in sorted(os.listdir(experiments_folder), reverse=True):
         for pattern in file_patterns:
             match = pattern.match(filename)
@@ -91,12 +90,6 @@ def plot_experiment(
                 continue
 
             benchmark, depth, iters, enum = match.groups()
-
-            # Assert the benchmark is the same everywhere
-            if benchmark_name == None:
-                benchmark_name = benchmark
-            elif benchmark_name != benchmark:
-                continue
                 
             depth, iters, enum = map(int, (depth, iters, enum))
             label = f"{enum}"
@@ -106,7 +99,7 @@ def plot_experiment(
             percentages = None
             with open(filepath, "r") as f:
                 lines = [line.strip() for line in f if line.strip()]
-                modes = lines[-2].split(",")
+                modes = [f.lower() for f in lines[-2].split(",")]
                 percentages = [float(p) for p in lines[-1].split(",")]
                 assert len(modes) == len(percentages)
 
@@ -119,6 +112,7 @@ def plot_experiment(
     for (benchmark, depth, iters, enum), scores_by_mode in grouped_data.items():
         merged_data[(benchmark, depth, iters)].append((enum, scores_by_mode))
 
+    print(merged_data)
     for (benchmark, depth, iters), data_points in merged_data.items():
         data_points.sort(key=lambda x: x[0])  # sort by enum
 
@@ -163,6 +157,6 @@ def plot_experiment(
 if __name__ == "__main__":
     script_dir = os.path.dirname(os.path.abspath(__file__))
     plot_experiment(
-        os.path.join(script_dir, "comparison_results"),
+        os.path.join(script_dir, "results"),
         os.path.join(script_dir, "comparison_plots"),
     )
