@@ -16,19 +16,19 @@
 #  k::Int,
 #  time_out::Int # in seconds
 
-srun --exclusive -N1 -n1 julia --project=HerbSearch run_benchmark.jl robots 15 10 100 aulile_variant1 &
-srun --exclusive -N1 -n1 julia --project=HerbSearch run_benchmark.jl robots 15 10 250 aulile_variant1 &
-srun --exclusive -N1 -n1 julia --project=HerbSearch run_benchmark.jl robots 15 10 500 aulile_variant1 &
-srun --exclusive -N1 -n1 julia --project=HerbSearch run_benchmark.jl robots 15 10 1000 aulile_variant1 &
-srun --exclusive -N1 -n1 julia --project=HerbSearch run_benchmark.jl robots 15 10 2000 aulile_variant1 &
-srun --exclusive -N1 -n1 julia --project=HerbSearch run_benchmark.jl robots 15 10 4000 aulile_variant1 &
-srun --exclusive -N1 -n1 julia --project=HerbSearch run_benchmark.jl robots 15 10 8000 aulile_variant1 &
-srun --exclusive -N1 -n1 julia --project=HerbSearch run_benchmark.jl robots 15 10 16000 aulile_variant1 &
-srun --exclusive -N1 -n1 julia --project=HerbSearch run_benchmark.jl robots 15 10 32000 aulile_variant1 &
-srun --exclusive -N1 -n1 julia --project=HerbSearch run_benchmark.jl robots 15 10 64000 aulile_variant1 &
-srun --exclusive -N1 -n1 julia --project=HerbSearch run_benchmark.jl robots 15 10 128000 aulile_variant1 &
-srun --exclusive -N1 -n1 julia --project=HerbSearch run_benchmark.jl robots 15 10 256000 aulile_variant1 &
-srun --exclusive -N1 -n1 julia --project=HerbSearch run_benchmark.jl robots 15 10 512000 aulile_variant1 &
-srun --exclusive -N1 -n1 julia --project=HerbSearch run_benchmark.jl robots 15 10 1024000 aulile_variant1 &
+srun --exclusive -N1 -n1 julia --project=HerbSearch run_benchmark.jl robots 15 10 100 aulile_simple_manhattan &
+srun --exclusive -N1 -n1 julia --project=HerbSearch run_benchmark.jl robots 15 10 250 aulile_simple_manhattan &
+srun --exclusive -N1 -n1 julia --project=HerbSearch run_benchmark.jl robots 15 10 500 aulile_simple_manhattan &
+srun --exclusive -N1 -n1 julia --project=HerbSearch run_benchmark.jl robots 15 10 1000 aulile_simple_manhattan &
+srun --exclusive -N1 -n1 julia --project=HerbSearch run_benchmark.jl robots 15 10 2000 aulile_simple_manhattan &
+srun --exclusive -N1 -n1 julia --project=HerbSearch run_benchmark.jl robots 15 10 4000 aulile_simple_manhattan &
+srun --exclusive -N1 -n1 julia --project=HerbSearch run_benchmark.jl robots 15 10 8000 aulile_simple_manhattan &
+srun --exclusive -N1 -n1 julia --project=HerbSearch run_benchmark.jl robots 15 10 16000 aulile_simple_manhattan &
+srun --exclusive -N1 -n1 julia --project=HerbSearch run_benchmark.jl robots 15 10 32000 aulile_simple_manhattan &
+srun --exclusive -N1 -n1 julia --project=HerbSearch run_benchmark.jl robots 15 10 64000 aulile_simple_manhattan &
+srun --exclusive -N1 -n1 julia --project=HerbSearch run_benchmark.jl robots 15 10 128000 aulile_simple_manhattan &
+srun --exclusive -N1 -n1 julia --project=HerbSearch run_benchmark.jl robots 15 10 256000 aulile_simple_manhattan &
+srun --exclusive -N1 -n1 julia --project=HerbSearch run_benchmark.jl robots 15 10 512000 aulile_simple_manhattan &
+srun --exclusive -N1 -n1 julia --project=HerbSearch run_benchmark.jl robots 15 10 1024000 aulile_simple_manhattan &
 
 wait

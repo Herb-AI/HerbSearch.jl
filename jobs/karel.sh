@@ -16,19 +16,19 @@
 #  k::Int,
 #  time_out::Int # in seconds
 
-srun --exclusive -N1 -n1 julia --project=HerbSearch run_benchmark.jl karel 15 10 100 &
-srun --exclusive -N1 -n1 julia --project=HerbSearch run_benchmark.jl karel 15 10 250 &
-srun --exclusive -N1 -n1 julia --project=HerbSearch run_benchmark.jl karel 15 10 500 &
-srun --exclusive -N1 -n1 julia --project=HerbSearch run_benchmark.jl karel 15 10 1000 &
-srun --exclusive -N1 -n1 julia --project=HerbSearch run_benchmark.jl karel 15 10 2000 &
-srun --exclusive -N1 -n1 julia --project=HerbSearch run_benchmark.jl karel 15 10 4000 &
-srun --exclusive -N1 -n1 julia --project=HerbSearch run_benchmark.jl karel 15 10 8000 &
-srun --exclusive -N1 -n1 julia --project=HerbSearch run_benchmark.jl karel 15 10 16000 &
-srun --exclusive -N1 -n1 julia --project=HerbSearch run_benchmark.jl karel 15 10 32000 &
-srun --exclusive -N1 -n1 julia --project=HerbSearch run_benchmark.jl karel 15 10 64000 &
-srun --exclusive -N1 -n1 julia --project=HerbSearch run_benchmark.jl karel 15 10 128000 &
-srun --exclusive -N1 -n1 julia --project=HerbSearch run_benchmark.jl karel 15 10 256000 &
-srun --exclusive -N1 -n1 julia --project=HerbSearch run_benchmark.jl karel 15 10 512000 &
-srun --exclusive -N1 -n1 julia --project=HerbSearch run_benchmark.jl karel 15 10 1024000 &
+srun --exclusive -N1 -n1 julia --project=HerbSearch run_benchmark.jl karel 15 10 100 regular+aulile_edit_distance &
+srun --exclusive -N1 -n1 julia --project=HerbSearch run_benchmark.jl karel 15 10 250 regular+aulile_edit_distance &
+srun --exclusive -N1 -n1 julia --project=HerbSearch run_benchmark.jl karel 15 10 500 regular+aulile_edit_distance &
+srun --exclusive -N1 -n1 julia --project=HerbSearch run_benchmark.jl karel 15 10 1000 regular+aulile_edit_distance &
+srun --exclusive -N1 -n1 julia --project=HerbSearch run_benchmark.jl karel 15 10 2000 regular+aulile_edit_distance &
+srun --exclusive -N1 -n1 julia --project=HerbSearch run_benchmark.jl karel 15 10 4000 regular+aulile_edit_distance &
+srun --exclusive -N1 -n1 julia --project=HerbSearch run_benchmark.jl karel 15 10 8000 regular+aulile_edit_distance &
+srun --exclusive -N1 -n1 julia --project=HerbSearch run_benchmark.jl karel 15 10 16000 regular+aulile_edit_distance &
+srun --exclusive -N1 -n1 julia --project=HerbSearch run_benchmark.jl karel 15 10 32000 regular+aulile_edit_distance &
+srun --exclusive -N1 -n1 julia --project=HerbSearch run_benchmark.jl karel 15 10 64000 regular+aulile_edit_distance &
+srun --exclusive -N1 -n1 julia --project=HerbSearch run_benchmark.jl karel 15 10 128000 regular+aulile_edit_distance &
+srun --exclusive -N1 -n1 julia --project=HerbSearch run_benchmark.jl karel 15 10 256000 regular+aulile_edit_distance &
+srun --exclusive -N1 -n1 julia --project=HerbSearch run_benchmark.jl karel 15 10 512000 regular+aulile_edit_distance &
+srun --exclusive -N1 -n1 julia --project=HerbSearch run_benchmark.jl karel 15 10 1024000 regular+aulile_edit_distance &
 
 wait
