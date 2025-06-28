@@ -25,6 +25,7 @@ include("bottom_up_iterators/bottom_up_depth_iterator.jl")
 include("bottom_up_iterators/bounded_iterator.jl")
 include("bottom_up_iterators/depth_bounded_iterator.jl")
 include("bottom_up_iterators/size_bounded_iterator.jl")
+include("bottom_up_iterators/probe_iterator.jl")
 
 include("top_down_iterator.jl")
 
@@ -79,6 +80,7 @@ export
   Bounded_BU_Iterator,
   DepthBoundedIterator,
   SizeBoundedIterator,
+  ProbeIterator,
 
   MHSearchIterator,
   VLSNSearchIterator,

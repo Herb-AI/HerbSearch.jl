@@ -44,6 +44,8 @@ mutable struct BUBoundedData{T <: AbstractRuleNode} <: BottomUpData{T}
     current_bound::Int64
     unused_rules::Queue{T}
     obs_checker::Union{Nothing, ObservationalEquivalenceChecker{T}}
+
+    unused_terminals::Queue{Tuple{Int64, T}}
 end
 
 BottomUpData{T}(iter::BUBoundedIterator{T}) where T = BUBoundedData{T}(iter)
@@ -54,15 +56,17 @@ function BUBoundedData{T}(
     initial_bound = 1
     @assert !hasfield(typeof(iter), :max_bound) || initial_bound <= iter.max_bound "The initial bound shouldn't be larger than the indicated max bound."
 
-    unused_rules = _create_unused_rules(iter, true)  # Start with terminal rules
+    unused_terminals = _create_unused_terminals(iter)
+    unused_rules = _create_unused_rules(iter, unused_terminals, false, initial_bound)
     
     obs_checker::Union{Nothing, ObservationalEquivalenceChecker{T}} = nothing
     if hasfield(typeof(iter), :obs_equivalence) && iter.obs_equivalence
         @assert hasfield(typeof(iter), :spec) && !isnothing(iter.spec) "If `obs_equivalence` is true, `spec` must not be `nothing`."
         obs_checker = ObservationalEquivalenceChecker{T}()
     end
+
  
-    return BUBoundedData{T}(initial_bound, unused_rules, obs_checker)
+    return BUBoundedData{T}(initial_bound, unused_rules, obs_checker, unused_terminals)
 end
 
 function combine!(
@@ -84,7 +88,7 @@ function combine!(
             end
 
             # Add all nonterminals to the `unused_rules` queue.
-            data.unused_rules = _create_unused_rules(iter, false)
+            data.unused_rules = _create_unused_rules(iter, data.unused_terminals, true, data.current_bound)
             continue
         end
  
@@ -170,24 +174,66 @@ function _get_first_rule_index(
     return findfirst(node.domain)
 end
 
+function _create_unused_terminals(
+    iter::BUBoundedIterator{RuleNode}
+)::Queue{Tuple{Int64, RuleNode}}
+    grammar = get_grammar(iter.solver)
+    terminals = [rule for (rule, is_terminal) in enumerate(grammar.isterminal) if is_terminal]
+
+    unused_terminals_list = Vector{Tuple{Int64, RuleNode}}()
+    for rule in terminals
+        program = RuleNode(rule)
+        push!(unused_terminals_list, (bound_function(iter, program), program))
+    end
+    sort!(unused_terminals_list)
+
+    unused_terminals = Queue{Tuple{Int64, RuleNode}}()
+    for t in unused_terminals_list
+        enqueue!(unused_terminals, t)
+    end
+    return unused_terminals
+end
+
 function _create_unused_rules(
     iter::BUBoundedIterator{RuleNode},
-    terminals::Bool
+    unused_terminals::Queue{Tuple{Int64, RuleNode}},
+    allow_nonterminals::Bool,
+    bound::Int64
 )::Queue{RuleNode}
     grammar = get_grammar(iter.solver)
     unused_rules = Queue{RuleNode}()
 
-    for (rule, is_terminal) in enumerate(grammar.isterminal)
-        if is_terminal == terminals
-            enqueue!(unused_rules, RuleNode(rule))
+    # Check if there are any terminals we can iterate through now.
+    while !isempty(unused_terminals)
+        (cost, rule) = first(unused_terminals)
+        if cost <= bound
+            dequeue!(unused_terminals)
+            enqueue!(unused_rules, rule)
+        else
+            break
         end
     end
+
+    # Handle nonterminals
+    if allow_nonterminals
+        for (rule, is_terminal) in enumerate(grammar.isterminal)
+            if !is_terminal
+                enqueue!(unused_rules, RuleNode(rule))
+            end
+        end
+    end
+
     return unused_rules
 end
 
+# function _create_unused_terminals(
+#     iter::BUBoundedIterator{UniformHole}
+# )::Queue{Tuple{Int64, UniformHole}}
+    
+# end
+
 function _create_unused_rules(
     iter::BUBoundedIterator{UniformHole},
-    terminals::Bool
 )::Queue{UniformHole}
     grammar = get_grammar(iter.solver)
 
