@@ -1,4 +1,3 @@
-
 @testset verbose=true "Search procedure synth" begin
     g₁ = @csgrammar begin
         Number = |(1:2)

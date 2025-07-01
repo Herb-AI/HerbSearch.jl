@@ -15,7 +15,7 @@ The dictionary is nothing.
 - `current_program::RuleNode`: the current program.
 - `grammar::AbstractGrammar`: the grammar.
 """
-function constructNeighbourhood(current_program::RuleNode, grammar::AbstractGrammar)
+function constructNeighbourhood(current_program::AbstractRuleNode, grammar::AbstractGrammar)
     # get a random position in the tree (parent,child index)
     node_location::NodeLoc = sample(NodeLoc, current_program)
     return node_location, nothing
