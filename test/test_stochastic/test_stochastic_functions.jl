@@ -99,5 +99,24 @@ end
 end
 
 @testset "Propose functions" begin
-    
+    grammar = @cfgrammar begin
+        Number = x | 1
+        Number = Number + Number
+        Number = Number - Number
+    end
+    base_iter = BFSIterator(grammar, :Number, max_depth=2)
+
+    num_programs = length(base_iter)
+
+    problem = Problem([IOExample(Dict{Symbol,Any}(), x) for x ∈ 1:5])
+
+    cost_function = () -> 1
+
+    iter_SA = SASearchIterator(grammar, :Number, problem.spec, cost_function, max_depth=2)
+    iter_VLSN = VLSNSearchIterator(grammar, :Number, problem, max_depth=2)
+    iter_MH = MHSearchIterator(grammar, :Number, problem, max_depth=2)
+
+    @test 1 == collect(propose(iter_SA, Int[]))
+    @test num_programs == collect(propose(iter_VLSN, []))
+    @test num_programs == collect(propose(iter_MH, []))
 end

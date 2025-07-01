@@ -3,16 +3,15 @@ The propose functions return the fully constructed proposed programs given a pat
 """
 
 """
-    random_fill_propose(solver::Solver, path::Vector{Int}, dict::Union{Nothing,Dict{String,Any}}, nr_random=5)
+    random_fill_propose(solver::Solver, path::Vector{Int}, nr_random=5)
 
 Returns a list with only one proposed, completely random, subprogram.
 # Arguments
 - `solver::solver`: solver
 - `path::Vector{Int}`: path to the location to be filled.
-- `dict::Dict{String, Any}`: the dictionary with additional arguments; not used.
 - `nr_random`=1 : the number of random subprograms to be generated.
 """
-function random_fill_propose(solver::Solver, path::Vector{Int}, dict::Union{Nothing,Dict{String,Any}}, nr_random=1)
+function random_fill_propose(solver::Solver, path::Vector{Int}, nr_random=1)
     return Iterators.take(RandomSearchIterator(solver, path), nr_random)
 end 
 
@@ -22,7 +21,7 @@ end
 Takes a program with a hole. Returns a `BFSIterator` jumpstarted with that program. 
 """
 function enumerate_neighbours_propose(enumeration_depth::Int=5)
-    return (solver::Solver, path::Vector{Int}, dict::Union{Nothing,Dict{String,Any}}) -> begin
+    return (solver::Solver, path::Vector{Int}) -> begin
         return BFSIterator(solver)
     end
 end

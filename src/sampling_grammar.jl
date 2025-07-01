@@ -176,6 +176,7 @@ function _sample(::Type{NodeLoc}, node::RuleNode, type::Symbol, grammar::Abstrac
 end
 
 Base.rand(::Type{UniformHole}, grammar::AbstractGrammar, type::Symbol, dmap::AbstractVector{Int}, max_depth::Int=10) = sample_shape(grammar, type, dmap; max_depth=max_depth)
+
     
 function sample_shape(grammar::AbstractGrammar, root_type::Symbol; max_depth=10, max_size=5)
     dmap = mindepth_map(grammar)
