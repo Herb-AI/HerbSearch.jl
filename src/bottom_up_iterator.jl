@@ -69,23 +69,20 @@ $(FIELDS)
 
 # Examples
 
-Suppose we have a very simple grammar:
+Given the simple grammar `g`, the following example retrieves the lone initial program
+(actually a [`UniformHole`](@ref) representing all terminals in the grammar `g`) from the
+bank.
 
-```julia
-@csgrammar begin
+```jldoctest; setup = :(using HerbCore, HerbGrammar)
+julia> g = @csgrammar begin
         Int = Int + Int
         Int = 1 | 2 | 3
 end
-```
-
-The following retrieves the second program (`@rulenode 3`) from a bank with 3 programs of
-size 1 and of type `Int`
-
-```jldoctest; setup = :(using HerbCore)
-julia> bank = Dict([1 => Dict([:Int => [RuleNode(2), RuleNode(3), RuleNode(4)]])]);
-julia> acc = AccessAddress([1, :Int, 2]);
-julia> retrieve(bank, acc)
-3
+julia> iter = SizeBasedBottomUpIterator(g, :Int);
+julia> populate_bank!(iter)
+julia> acc = AccessAddress([1, :Int, 1]);
+julia> retrieve(iter, acc)
+UniformHole[Bool[0, 1, 1, 1]]
 ```
 """
 struct AccessAddress <: AbstractAddress
@@ -103,27 +100,23 @@ $(FIELDS)
 
 # Examples
 
-Suppose we have a very simple grammar:
+Given the grammar `g`, the following example retrieves a new program from the bank. The new
+program is a [`UniformHole`](@ref) that represents all programs of the form `□ + □` where
+`□` is any of the `Int` terminals in the grammar.
 
-```julia
-@csgrammar begin
+```jldoctest; setup = :(using HerbCore, HerbGrammar)
+julia> g = @csgrammar begin
         Int = Int + Int
         Int = 1 | 2 | 3
 end
-```
-
-The following example retrieves a program like `@rulenode 1{2,3}` from a bank with 3
-programs of size 1 and of type `Int`. Since we are working with [`UniformHole`](@ref)s, the
-result is not `1{2,3}`, but the equivalent `UniformHole[Bool[1, 0, 0, 0]]{2,3}`.
-
-```jldoctest; setup = :(using HerbCore)
-julia> bank = Dict([1 => Dict([:Int => [RuleNode(2), RuleNode(3), RuleNode(4)]])]);
+julia> iter = SizeBasedBottomUpIterator(g, :Int);
+julia> populate_bank!(iter)
 julia> acc = CombineAddress(
         UniformHole([1, 0, 0, 0]),
-        [AccessAddress([1, :Int, 1]), AccessAddress([1, :Int, 2])]
+        [AccessAddress([1, :Int, 1]), AccessAddress([1, :Int, 1])]
 );
 julia> retrieve(bank, acc)
-UniformHole[Bool[1, 0, 0, 0]]{2,3}
+UniformHole[Bool[1, 0, 0, 0]]{UniformHole[Bool[0, 1, 1, 1]],UniformHole[Bool[0, 1, 1, 1]]}
 ```
 """
 struct CombineAddress{N} <: AbstractAddress
