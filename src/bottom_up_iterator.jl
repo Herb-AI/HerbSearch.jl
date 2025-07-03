@@ -291,7 +291,7 @@ return false if the `program` is observationally equivalent to another program a
 the bank.
 """
 function add_to_bank!(iter::BottomUpIterator, program_combination::CombineAddress, program::AbstractRuleNode)
-        program_type = get_type(get_grammar(iter.solver), program)
+        program_type = return_type(get_grammar(iter.solver), program)
 
         bank = get_bank(iter)
         prog_cost = 1 + maximum([x.addr[1] for x in program_combination.addrs])
@@ -416,8 +416,6 @@ function Base.iterate(iter::BottomUpIterator)
         )
 end
 
-get_type(grammar, rn::RuleNode) = grammar.types[get_rule(rn)]
-get_type(grammar, uh::UniformHole) = grammar.types[findfirst(uh.domain)]
 
 """
     Base.iterate(iter::BottomUpIterator, state::GenericBUState)::Tuple{AbstractRuleNode,GenericBUState}
