@@ -326,27 +326,17 @@ end
 
 Retrieve a program located at `address` from the `iter`'s bank.
 """
-function retrieve(iter::BottomUpIterator, address::AbstractAddress)::AbstractRuleNode
-        bank = get_bank(iter)
-        return retrieve(bank, address)
+function retrieve(iter::BottomUpIterator, address::AccessAddress)::AbstractRuleNode
+        get_bank(iter)[address.addr[1]][address.addr[2]][address.addr[3]]
 end
 
 """
         $(TYPEDSIGNATURES)
 
-Retrieve a program located at `address` from the `bank`.
+Construct a program using the [`CombineAddress`](@ref) `address` and the `iter`'s bank.
 """
-function retrieve(bank, address::AccessAddress)::AbstractRuleNode
-        bank[address.addr[1]][address.addr[2]][address.addr[3]]
-end
-
-"""
-        $(TYPEDSIGNATURES)
-
-Construct a program using the [`CombineAddress`](@ref) `address` and the `bank`.
-"""
-function retrieve(bank, address::CombineAddress)::UniformHole
-        return UniformHole(address.op.domain, [retrieve(bank, a) for a in address.addrs])
+function retrieve(iter::BottomUpIterator, address::CombineAddress)::UniformHole
+        return UniformHole(address.op.domain, [retrieve(iter, a) for a in address.addrs])
 end
 
 """
