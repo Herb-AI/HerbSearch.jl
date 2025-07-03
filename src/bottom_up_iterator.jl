@@ -1,18 +1,42 @@
 """
    abstract type BottomUpIterator <: ProgramIterator
 
-Enumerates programs from a context-free grammar starting at `Symbol` `sym` with respect to the grammar up to a given depth and a given size.
-The exploration is done by maintaining a bank of (executable) programs and ieratively exploring larger programs by combining the ones in the bank.
-Concrete iterators may overload the following methods:
+A type of iterator that maintains a bank of (executable) programs and iteratively explores
+larger programs by combining the ones in the bank.
+
+Like other [`ProgramIterator`](@ref)s, `BottomUpIterator`s enumerate programs from a
+context-free grammar starting at `Symbol` `sym` with respect to the grammar up to a given
+depth and a given size.
+
+The central concept behind this interface is an _address_ ([`AbstractAddress`](@doc)).
+Addresses are simply pointers into the bank. Since the bank is often a nested container (ex:
+`Dict{Key,Dict{Key,...}}`), the addresses usually have multiple components. The first
+components indexes the top-most level of the bank, the second indexes, the next level, etc.
+Program combinations can be expressed as a special address ([`CombineAddress`](@ref)) that
+contains one or more programs and an operator. For example: combining the programs `1 + x`
+and `x * x` with the `+` operator results in the program `(1 + x) + (x * x)`.
+
+The interface for bottom-up iteration is defined as follows.
+
 - [`get_bank`](@ref): get the iterator's bank
-- [`populate_bank!`](@ref): put the simplest program(s) in the bank and return the [`AccessAddress`](@ref)es of the new programs
-- [`combine`](@ref): combine the existing programs in the bank into new, more complex programs via [`CombineAddress`](@ref)es
-- [`add_to_bank!`](@ref): possibly add a program created by the [`combine`](@ref) step to the bank
+- [`populate_bank!`](@ref): initialize the bank with the terminals from the grammar
+  and return the resulting [`AccessAddress`](@ref)es
+- [`combine`](@ref): combine the existing programs in the bank into new, more complex
+  programs via [`CombineAddress`](@ref)es
+- [`add_to_bank!`](@ref): possibly add a program created by the [`combine`](@ref) step to
+  the bank
 - [`retrieve`](@ref): retrieve the program from the bank given an [`AbstractAddress`](@ref)
+
+A generic implementation ([`SizeBasedBottomUpIterator`](@ref)) is given with a bank that is
+indexed based on the program size, meaning that each level of the bank has programs
+represented by the same number of nodes. Because the implementation works using an arbitrary
+grammar, the bank also must be indexed on the type of the programs to allow the
+[`combine`](@ref) step to avoid constructing programs that do not adhere to the grammar.
 """
 abstract type BottomUpIterator <: ProgramIterator end
 
-@programiterator SizeBasedBottomUpIterator(bank=DefaultDict{Int,DefaultDict}(() -> (DefaultDict{Symbol,AbstractVector{AbstractRuleNode}}(() -> AbstractRuleNode[]))),
+@programiterator SizeBasedBottomUpIterator(
+        bank=DefaultDict{Int,DefaultDict}(() -> (DefaultDict{Symbol,AbstractVector{AbstractRuleNode}}(() -> AbstractRuleNode[]))),
         max_combination_depth=5
 ) <: BottomUpIterator
 
@@ -21,30 +45,92 @@ function get_max_combination_depth(iter::SizeBasedBottomUpIterator)
 end
 
 @doc """
-        SizeBasedBottomUpIterator
+         SizeBasedBottomUpIterator
 
-A basic bottom-up iterator with a bank based on program size.
-"""
+ A basic bottom-up iterator with a bank based on program size.
+ """
 SizeBasedBottomUpIterator
 
 """
-A simple type for different addresses to allow multiple dispatch
+        AbstractAddress
+
+Abstract type for addresses. Addresses point to (combinations of) programs in the bank.
 """
 abstract type AbstractAddress end
 
 """
-Indicates that a single program needs to be retrieved from the bank
+        $(TYPEDEF)
+
+Address pointing to a single program in a bank.
+
+# Fields
+
+$(FIELDS)
+
+# Examples
+
+Suppose we have a very simple grammar:
+
+```julia
+@csgrammar begin
+        Int = Int + Int
+        Int = 1 | 2 | 3
+end
+```
+
+The following retrieves the second program (`@rulenode 3`) from a bank with 3 programs of
+size 1 and of type `Int`
+
+```jldoctest; setup = :(using HerbCore)
+julia> bank = Dict([1 => Dict([:Int => [RuleNode(2), RuleNode(3), RuleNode(4)]])]);
+julia> acc = AccessAddress([1, :Int, 2]);
+julia> retrieve(bank, acc)
+3
+```
 """
 struct AccessAddress <: AbstractAddress
         addr
 end
 
 """
-indicates that several programs need to be retrieved and combined
+        $(TYPEDEF)
+
+Address pointing to a combination of `N` programs from a bank to be combined using `op`.
+
+# Fields
+
+$(FIELDS)
+
+# Examples
+
+Suppose we have a very simple grammar:
+
+```julia
+@csgrammar begin
+        Int = Int + Int
+        Int = 1 | 2 | 3
+end
+```
+
+The following example retrieves a program like `@rulenode 1{2,3}` from a bank with 3
+programs of size 1 and of type `Int`. Since we are working with [`UniformHole`](@ref)s, the
+result is not `1{2,3}`, but the equivalent `UniformHole[Bool[1, 0, 0, 0]]{2,3}`.
+
+```jldoctest; setup = :(using HerbCore)
+julia> bank = Dict([1 => Dict([:Int => [RuleNode(2), RuleNode(3), RuleNode(4)]])]);
+julia> acc = CombineAddress(
+        UniformHole([1, 0, 0, 0]),
+        [AccessAddress([1, :Int, 1]), AccessAddress([1, :Int, 2])]
+);
+julia> retrieve(bank, acc)
+UniformHole[Bool[1, 0, 0, 0]]{2,3}
+```
 """
-struct CombineAddress <: AbstractAddress
+struct CombineAddress{N} <: AbstractAddress
+        "The root of the AST for the combined program"
         op
-        addrs::NTuple{N,AccessAddress} where N
+        "The addresses to combine to form the new program"
+        addrs::NTuple{N,AccessAddress}
 end
 
 CombineAddress(op, addrs::AbstractVector{AccessAddress}) = CombineAddress(op, Tuple(addrs))
