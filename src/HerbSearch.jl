@@ -83,7 +83,6 @@ export
         new_state_tracker!,
         has_remaining_iterations,
         GenericBUState,
-        create_bank!,
         populate_bank!,
         combine,
         add_to_bank!,

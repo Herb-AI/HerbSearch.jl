@@ -124,17 +124,6 @@ The following functions define the interface for bottom up iterators
 """
 
 """
-        create_bank!(iter::BottomUpIterator)
-
-Initialises a data structure representing a bank of the iterator.
-It should modify the iterator itself.
-TODO: add bank getters to the interface
-"""
-# function create_bank!(iter::BottomUpIterator)
-# iter.bank = DefaultDict{Int,DefaultDict}(() -> (DefaultDict{Symbol,AbstractVector{AbstractRuleNode}}(() -> AbstractRuleNode[])))
-# end
-
-"""
         populate_bank!(iter::BottomUpIterator)::AbstractVector{AccessAddress}
 
 Fills the bank with the initial, simplest, programs.
