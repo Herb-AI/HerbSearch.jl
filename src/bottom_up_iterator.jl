@@ -199,14 +199,11 @@ function new_state_tracker!(state::GenericBUState, new_tracker)
 end
 
 """
-The following functions define the interface for bottom up iterators
-"""
+        $(TYPEDSIGNATURES)
 
-"""
-        populate_bank!(iter::BottomUpIterator)::AbstractVector{AccessAddress}
+Fill the bank with the initial, smallest programs, likely just the terminals in most cases.
 
-Fills the bank with the initial, simplest, programs.
-It should return the addresses of the programs just inserted in the bank
+Return the [`AccessAddress`](@ref)es to the newly-added programs.
 """
 function populate_bank!(iter::BottomUpIterator)::AbstractVector{AccessAddress}
         grammar = get_grammar(iter.solver)
@@ -224,16 +221,22 @@ function populate_bank!(iter::BottomUpIterator)::AbstractVector{AccessAddress}
 end
 
 """
-        get_bank(iter::BottomUpIterator)
+        $(TYPEDSIGNATURES)
 
 Get the problem bank from the `BottomUpIterator`, `iter`.
 """
 get_bank(iter::BottomUpIterator) = iter.bank
 
 """
-        combine(iter::BottomUpIterator, state)::Tuple{AbstractVector{AbstractAddress},Any}
+        $(TYPEDSIGNATURES)
 
-Returns a vector of [`AbstractAddress`](@ref) each address representing a program to construct, and a `state` used to keep track of the iterations (in the style of Julia iterators).
+Combine the largest/most costly programs current in `iter`'s bank, using any parameters from
+`state`, to create a new set of programs.
+
+Return a vector of [`AbstractAddress`](@ref) where each address represents a program to
+construct, and a (possibly updated) `state` to keep track of any information that persists
+per-iteration.
+
 If the iteration should stop, the next state should be `nothing`.
 """
 function combine(iter::BottomUpIterator, state)
@@ -277,11 +280,15 @@ function combine(iter::BottomUpIterator, state)
 end
 
 """
-  add_to_bank!(iter::BottomUpIterator, program::AbstractRuleNode, address::AbstractAddress)::Bool
+        $(TYPEDSIGNATURES)
 
-Adds the `program` to the bank of the [`BottomUpIterator`](@ref) at the given `address`.
-Returns `True` if the program is added to the bank, and `False` otherwise.
-For example, the function returns false if the `program` is observationally equivalent to another program already in the bank; hence, it will not be added.
+Add the `program` (the result of combining `program_combination` to the bank of the `iter`.
+
+Return `true` if the `program` is added to the bank, and `false` otherwise.
+
+For example, to implement an iterator with observational equivalence, the function might
+return false if the `program` is observationally equivalent to another program already in
+the bank.
 """
 function add_to_bank!(iter::BottomUpIterator, program_combination::CombineAddress, program::AbstractRuleNode)
         program_type = get_type(get_grammar(iter.solver), program)
@@ -297,21 +304,32 @@ function add_to_bank!(iter::BottomUpIterator, program_combination::CombineAddres
 end
 
 """
-        add_to_bank!(::BottomUpIterator, ::AccessAddress)
+        $(TYPEDSIGNATURES)
 
-Always return `false` as [`AccessAddress`](@ref)es are already in the bank.
+Always return `true`. Adding an [`AccessAddress`](@ref) to the bank only happens in the
+first iteration with terminals.
 """
 function add_to_bank!(::BottomUpIterator, ::AccessAddress, ::AbstractRuleNode)
         return true
 end
 
 """
-        new_address(::BottomUpIterator, program_combination::CombineAddress, program_type::Symbol, idx)
+        $(TYPEDSIGNATURES)
 
-Create an [`AccessAddress`](@ref) derived from the `program_combination` [`CombineAddress`](@ref) and `program_type`.
+Create an [`AccessAddress`](@ref) derived from the `program_combination`
+[`CombineAddress`](@ref) and `program_type`.
 """
-function new_address(::BottomUpIterator, program_combination::CombineAddress, program_type::Symbol, idx)::AccessAddress
-        return AccessAddress((1 + maximum([x.addr[1] for x in program_combination.addrs]), program_type, idx))
+function new_address(
+        ::BottomUpIterator,
+        program_combination::CombineAddress,
+        program_type::Symbol,
+        idx
+)::AccessAddress
+        return AccessAddress((
+                1 + maximum([x.addr[1] for x in program_combination.addrs]),
+                program_type,
+                idx
+        ))
 end
 
 """
@@ -333,18 +351,18 @@ function retrieve(iter::BottomUpIterator, address::CombineAddress)::UniformHole
 end
 
 """
-    init_combine_structure(iter::BottomUpIterator)
+        $(TYPEDSIGNATURES)
 
-Returns the initial state for the first `combine` call
+Return the initial state for the first `combine` call
 """
 function init_combine_structure(::BottomUpIterator)
         return Dict()
 end
 
 """
-    get_next_program(iter::BottomUpIterator, state::GenericBUState)::Tuple{AbstractRuleNode,BottomUpState}
+        $(TYPEDSIGNATURES)
 
-Returns the next program to explore and the updated BottomUpState:
+Return the next program to explore and the updated [`BottomUpState`](@ref):
 - if there are still remaining programs from the current BU iteration to explore (`remaining_combinations(state)`), it pops the next one
 - otherwise, it calls the the `combine(iter, state)` function again, and processes the first returned program
 """
@@ -373,18 +391,29 @@ function derivation_heuristic(::BottomUpIterator, indices::Vector{<:Integer})
 end
 
 """
-    Base.iterate(iter::BottomUpIterator)
+        $(TYPEDSIGNATURES)
 
 Initial call of the bottom-up iterator.
-It populates the bank with initial programs.
-It returns the first program and a state-tracking [`GenericBUState`](@ref) containing the remaining initial programs and the initialstate for the `combine` function
+
+Populate the bank with initial programs.
+
+Return the first program and a state-tracking [`GenericBUState`](@ref) containing the
+remaining initial programs and the initialstate for the `combine` function
 """
 function Base.iterate(iter::BottomUpIterator)
         solver = iter.solver
         starting_node = deepcopy(get_tree(solver))
         addresses = populate_bank!(iter)
 
-        return Base.iterate(iter, GenericBUState(addresses, init_combine_structure(iter), nothing, starting_node))
+        return Base.iterate(
+                iter,
+                GenericBUState(
+                        addresses,
+                        init_combine_structure(iter),
+                        nothing,
+                        starting_node
+                )
+        )
 end
 
 get_type(grammar, rn::RuleNode) = grammar.types[get_rule(rn)]
