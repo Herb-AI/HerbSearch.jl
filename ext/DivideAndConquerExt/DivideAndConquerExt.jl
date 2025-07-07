@@ -13,7 +13,6 @@ include("divide.jl")
 include("decide.jl")
 include("conquer.jl")
 
-export divide_and_conquer
 
 """
 		$(TYPEDSIGNATURES)
@@ -35,7 +34,7 @@ Breaks down the problem into smaller subproblems and synthesizes solutions for e
 
 Returns the `RuleNode` representing the final program constructed from the solutions to the subproblems.
 """
-function divide_and_conquer(problem::Problem,
+function HerbSearch.divide_and_conquer(problem::Problem,
 	iterator::ProgramIterator,
 	sym_bool::Symbol,
 	sym_start::Symbol,
@@ -56,7 +55,11 @@ function divide_and_conquer(problem::Problem,
 	problems_to_solutions = Dict(p => Vector{Int}() for p in subproblems)
 	solutions = Vector{RuleNode}()
 	idx = 0
+
+  counter = 0
 	for (i, candidate_program) ∈ enumerate(iterator)
+    counter = i
+    @show counter
 		expr = rulenode2expr(candidate_program, grammar)
 		is_added = false
 		for prob in subproblems
@@ -93,7 +96,7 @@ function divide_and_conquer(problem::Problem,
 		symboltable,
 	)
 
-	return final_program
+  return (final_program, counter)
 end
 
 end # module
