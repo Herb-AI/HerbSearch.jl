@@ -22,7 +22,7 @@ The interface for bottom-up iteration is defined as follows.
 
 - [`get_bank`](@ref): get the iterator's bank
 - [`populate_bank!`](@ref): initialize the bank with the terminals from the grammar
-  and return the resulting [`AccessAddress`](@ref)es
+  and return the resulting [`TypedDepthAccessAddress`](@ref)es
 - [`combine`](@ref): combine the existing programs in the bank into new, more complex
   programs via [`CombineAddress`](@ref)es
 - [`add_to_bank!`](@ref): possibly add a program created by the [`combine`](@ref) step to
@@ -244,7 +244,7 @@ end
 
 Fill the bank with the initial, smallest programs, likely just the terminals in most cases.
 
-Return the [`AccessAddress`](@ref)es to the newly-added programs.
+Return the [`TypedDepthAccessAddress`](@ref)es to the newly-added programs.
 """
 function populate_bank!(iter::BottomUpIterator)::AbstractVector{TypedDepthAccessAddress}
     grammar = get_grammar(iter.solver)
@@ -348,7 +348,7 @@ end
 """
         $(TYPEDSIGNATURES)
 
-Always return `true`. Adding an [`AccessAddress`](@ref) to the bank only happens in the
+Always return `true`. Adding an [`TypedDepthAccessAddress`](@ref) to the bank only happens in the
 first iteration with terminals.
 """
 function add_to_bank!(::BottomUpIterator, ::TypedDepthAccessAddress, ::AbstractRuleNode)
@@ -358,7 +358,7 @@ end
 """
         $(TYPEDSIGNATURES)
 
-Create an [`AccessAddress`](@ref) derived from the `program_combination`
+Create an [`TypedDepthAccessAddress`](@ref) derived from the `program_combination`
 [`CombineAddress`](@ref) and `program_type`.
 """
 function new_address(
@@ -464,7 +464,7 @@ end
 
 The second call to iterate uses [`get_next_program`](@ref) to retrive the next program from the [`GenericBUState`](@ref) and
     - if it is `nothing`, then it returns nothing; we stop
-    - if it is indexed by [`AccessAddress`](@ref) then it has the program that is already in the bank; just return
+    - if it is indexed by [``](@ref) then it has the program that is already in the bank; just returnccessAddress
     - if it is indexed by [`CombineAddress`](@ref) then it
         - it calls `construct_program` to construct the program
         - call the `add_to_bank!` function to add it to the bank

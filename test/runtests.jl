@@ -1,12 +1,13 @@
+using Aqua
 using DecisionTree: Leaf, Node
+using HerbConstraints
 using HerbCore
-using HerbSearch
 using HerbGrammar
 using HerbInterpret
-using HerbConstraints
+using HerbSearch
 using HerbSpecification
 using Test
-using Aqua
+using Documenter
 
 include("test_helpers.jl")
 using Random
@@ -38,4 +39,5 @@ Random.seed!(1234)
                 include("test_divide_conquer.jl")
                 include("test_divide_conquer_example.jl")
         end
+    doctest(HerbSearch; manual=false)
 end
