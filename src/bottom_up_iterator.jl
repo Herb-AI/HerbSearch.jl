@@ -1,3 +1,5 @@
+using HerbCore: RuleNode, depth
+
 """
    abstract type BottomUpIterator <: ProgramIterator
 
@@ -36,12 +38,12 @@ grammar, the bank also must be indexed on the type of the programs to allow the
 abstract type BottomUpIterator <: ProgramIterator end
 
 @programiterator SizeBasedBottomUpIterator(
-        bank=DefaultDict{Int,DefaultDict}(() -> (DefaultDict{Symbol,AbstractVector{AbstractRuleNode}}(() -> AbstractRuleNode[]))),
-        max_combination_depth=5
+    bank=DefaultDict{Int,DefaultDict}(() -> (DefaultDict{Symbol,AbstractVector{AbstractRuleNode}}(() -> AbstractRuleNode[]))),
+    max_combination_depth=5
 ) <: BottomUpIterator
 
 function get_max_combination_depth(iter::SizeBasedBottomUpIterator)
-        return iter.max_combination_depth
+    return iter.max_combination_depth
 end
 
 @doc """
@@ -85,8 +87,39 @@ julia> retrieve(iter, acc)
 UniformHole[Bool[0, 1, 1, 1]]
 ```
 """
-struct AccessAddress <: AbstractAddress
-        addr
+struct TypedDepthAccessAddress{D<:Integer,I<:Integer} <: AbstractAddress
+    depth::D
+    type::Symbol
+    index::I
+end
+
+TypedDepthAccessAddress(t::Tuple) = TypedDepthAccessAddress(t...)
+
+"""
+    $(TYPEDSIGNATURES)
+
+Get the depth of address `a`.
+"""
+function HerbCore.depth(a::TypedDepthAccessAddress)
+    a.depth
+end
+
+"""
+    $(TYPEDSIGNATURES)
+
+Get the type of address `a`.
+"""
+function HerbGrammar.return_type(a::TypedDepthAccessAddress)
+    a.type
+end
+
+"""
+    $(TYPEDSIGNATURES)
+
+Get the index of address `a`.
+"""
+function index(a::TypedDepthAccessAddress)
+    a.index
 end
 
 """
@@ -120,13 +153,21 @@ UniformHole[Bool[1, 0, 0, 0]]{UniformHole[Bool[0, 1, 1, 1]],UniformHole[Bool[0, 
 ```
 """
 struct CombineAddress{N} <: AbstractAddress
-        "The root of the AST for the combined program"
-        op
-        "The addresses to combine to form the new program"
-        addrs::NTuple{N,AccessAddress}
+    "The root of the AST for the combined program"
+    op
+    "The addresses to combine to form the new program"
+    addrs::NTuple{N,TypedDepthAccessAddress}
 end
 
-CombineAddress(op, addrs::AbstractVector{AccessAddress}) = CombineAddress(op, Tuple(addrs))
+CombineAddress(op, addrs::AbstractVector{TypedDepthAccessAddress}) = CombineAddress(op, Tuple(addrs))
+
+function operator(c::CombineAddress)
+    return c.op
+end
+
+function children(c::CombineAddress)
+    c.addrs
+end
 
 """
     function Base.collect(iter::BottomUpIterator)
@@ -138,16 +179,16 @@ Return an array of all programs in the BottomUpIterator.
     If it is not needed to save all programs, iterate over the iterator manually.
 """
 function Base.collect(iter::BottomUpIterator)
-        @warn "Collecting all programs of a BottomUpIterator requires freeze_state"
-        programs = Vector{RuleNode}()
-        for program ∈ iter
-                push!(programs, freeze_state(program))
-        end
-        return programs
+    @warn "Collecting all programs of a BottomUpIterator requires freeze_state"
+    programs = Vector{RuleNode}()
+    for program ∈ iter
+        push!(programs, freeze_state(program))
+    end
+    return programs
 end
 
 """
-        mutable struct BottomUpState
+        abstract type BottomUpState
 
 State that helps us keep track where we are while iterating through program space.
 More precisely, it help to keep track and switch between the program combinations of the same compelxity and the next level of compelxity.
@@ -180,10 +221,10 @@ It contains two fields:
  - combine_stage_tracker: which maintains the state `combine` function manipulates
 """
 mutable struct GenericBUState <: BottomUpState
-        combinations::AbstractVector{AbstractAddress}
-        combine_stage_tracker
-        current_uniform_iterator::Union{UniformIterator,Nothing}
-        starting_node
+    combinations::AbstractVector{AbstractAddress}
+    combine_stage_tracker
+    current_uniform_iterator::Union{UniformIterator,Nothing}
+    starting_node
 end
 
 remaining_combinations(state::GenericBUState) = state.combinations
@@ -191,11 +232,11 @@ remaining_combinations(state::GenericBUState) = state.combinations
 state_tracker(state::GenericBUState) = state.combine_stage_tracker
 
 function new_combinations!(state::GenericBUState, new_combs::AbstractVector)
-        state.combinations = new_combs
+    state.combinations = new_combs
 end
 
 function new_state_tracker!(state::GenericBUState, new_tracker)
-        state.combine_stage_tracker = new_tracker
+    state.combine_stage_tracker = new_tracker
 end
 
 """
@@ -205,19 +246,19 @@ Fill the bank with the initial, smallest programs, likely just the terminals in 
 
 Return the [`AccessAddress`](@ref)es to the newly-added programs.
 """
-function populate_bank!(iter::BottomUpIterator)::AbstractVector{AccessAddress}
-        grammar = get_grammar(iter.solver)
+function populate_bank!(iter::BottomUpIterator)::AbstractVector{TypedDepthAccessAddress}
+    grammar = get_grammar(iter.solver)
 
-        # create the bank entry
-        for t in unique(grammar.types)
-                terminal_domain_for_type = grammar.isterminal .& grammar.domains[t]
-                if any(terminal_domain_for_type)
-                        terminal_programs = UniformHole(terminal_domain_for_type, [])
-                        push!(get_bank(iter)[1][t], terminal_programs)
-                end
+    # create the bank entry
+    for t in unique(grammar.types)
+        terminal_domain_for_type = grammar.isterminal .& grammar.domains[t]
+        if any(terminal_domain_for_type)
+            terminal_programs = UniformHole(terminal_domain_for_type, [])
+            push!(get_bank(iter)[1][t], terminal_programs)
         end
+    end
 
-        return [AccessAddress((1, t, x)) for t in unique(grammar.types) for x in 1:length(get_bank(iter)[1][t])]
+    return [TypedDepthAccessAddress(1, t, x) for t in unique(grammar.types) for x in 1:length(get_bank(iter)[1][t])]
 end
 
 """
@@ -230,8 +271,8 @@ get_bank(iter::BottomUpIterator) = iter.bank
 """
         $(TYPEDSIGNATURES)
 
-Combine the largest/most costly programs current in `iter`'s bank, using any parameters from
-`state`, to create a new set of programs.
+Combine the largest/most costly programs currently in `iter`'s bank, using any
+parameters from `state`, to create a new set of programs.
 
 Return a vector of [`AbstractAddress`](@ref) where each address represents a program to
 construct, and a (possibly updated) `state` to keep track of any information that persists
@@ -240,43 +281,43 @@ per-iteration.
 If the iteration should stop, the next state should be `nothing`.
 """
 function combine(iter::BottomUpIterator, state)
-        addresses = Vector{CombineAddress}()
-        max_in_bank = maximum(keys(get_bank(iter)))
-        grammar = get_grammar(iter.solver)
-        terminals = grammar.isterminal
-        nonterminals = .~terminals
-        non_terminal_shapes = UniformHole.(partition(Hole(nonterminals), grammar), ([],))
+    addresses = Vector{CombineAddress}()
+    max_in_bank = maximum(keys(get_bank(iter)))
+    grammar = get_grammar(iter.solver)
+    terminals = grammar.isterminal
+    nonterminals = .~terminals
+    non_terminal_shapes = UniformHole.(partition(Hole(nonterminals), grammar), ([],))
 
-        # if we have exceeded the maximum number of programs to generate
-        if max_in_bank >= get_max_combination_depth(iter)
-                return nothing, nothing
-        end
+    # if we have exceeded the maximum number of programs to generate
+    if max_in_bank >= get_max_combination_depth(iter)
+        return nothing, nothing
+    end
 
-        #check bound function
-        function check_bound(combination)
-                return 1 + maximum((x[1] for x in combination)) > max_in_bank
-        end
+    #check bound function
+    function check_bound(combination)
+        return 1 + maximum((x[1] for x in combination)) > max_in_bank
+    end
 
-        function appropriately_typed(child_types)
-                return combination -> child_types == [x[2] for x in combination]
-        end
+    function appropriately_typed(child_types)
+        return combination -> child_types == [x[2] for x in combination]
+    end
 
-        # loop over groups of rules with the same arity and child types
-        for shape in non_terminal_shapes
-                child_types = grammar.childtypes[findfirst(shape.domain)]
-                nchildren = length(child_types)
+    # loop over groups of rules with the same arity and child types
+    for shape in non_terminal_shapes
+        child_types = grammar.childtypes[findfirst(shape.domain)]
+        nchildren = length(child_types)
 
-                # *Lazily* collect addresses, their combinations, and then filter them based on `check_bound`
-                all_addresses = ((key, typename, idx) for key in keys(get_bank(iter)) for typename in keys(get_bank(iter)[key]) for idx in eachindex(get_bank(iter)[key][typename]))
-                all_combinations = Iterators.product(Iterators.repeated(all_addresses, nchildren)...)
-                bounded_combinations = Iterators.filter(check_bound, all_combinations)
-                bounded_and_typed_combinations = Iterators.filter(appropriately_typed(child_types), bounded_combinations)
+        # *Lazily* collect addresses, their combinations, and then filter them based on `check_bound`
+        all_addresses = ((key, typename, idx) for key in keys(get_bank(iter)) for typename in keys(get_bank(iter)[key]) for idx in eachindex(get_bank(iter)[key][typename]))
+        all_combinations = Iterators.product(Iterators.repeated(all_addresses, nchildren)...)
+        bounded_combinations = Iterators.filter(check_bound, all_combinations)
+        bounded_and_typed_combinations = Iterators.filter(appropriately_typed(child_types), bounded_combinations)
 
-                # Construct the `CombineAddress`s from the filtered combinations
-                append!(addresses, map(address_pair -> CombineAddress(shape, AccessAddress.(address_pair)), bounded_and_typed_combinations))
-        end
+        # Construct the `CombineAddress`s from the filtered combinations
+        append!(addresses, map(address_combo -> CombineAddress(shape, TypedDepthAccessAddress.(address_combo)), bounded_and_typed_combinations))
+    end
 
-        return addresses, state
+    return addresses, state
 end
 
 """
@@ -291,16 +332,17 @@ return false if the `program` is observationally equivalent to another program a
 the bank.
 """
 function add_to_bank!(iter::BottomUpIterator, program_combination::CombineAddress, program::AbstractRuleNode)
-        program_type = return_type(get_grammar(iter.solver), program)
+    program_type = return_type(get_grammar(iter.solver), program)
 
-        bank = get_bank(iter)
-        prog_cost = 1 + maximum([x.addr[1] for x in program_combination.addrs])
-        n_in_bank = length(bank[prog_cost][program_type])
-        address = new_address(iter, program_combination, program_type, n_in_bank + 1)
+    bank = get_bank(iter)
+    # prog_cost = 1 + maximum([x.addr[1] for x in program_combination.addrs])
+    prog_cost = 1 + maximum(depth.(children(program_combination)))
+    n_in_bank = length(bank[prog_cost][program_type])
+    address = new_address(iter, program_combination, program_type, n_in_bank + 1)
 
-        push!(get_bank(iter)[address.addr[1]][address.addr[2]], program)
+    push!(get_bank(iter)[depth(address)][return_type(address)], program)
 
-        return true
+    return true
 end
 
 """
@@ -309,8 +351,8 @@ end
 Always return `true`. Adding an [`AccessAddress`](@ref) to the bank only happens in the
 first iteration with terminals.
 """
-function add_to_bank!(::BottomUpIterator, ::AccessAddress, ::AbstractRuleNode)
-        return true
+function add_to_bank!(::BottomUpIterator, ::TypedDepthAccessAddress, ::AbstractRuleNode)
+    return true
 end
 
 """
@@ -320,16 +362,16 @@ Create an [`AccessAddress`](@ref) derived from the `program_combination`
 [`CombineAddress`](@ref) and `program_type`.
 """
 function new_address(
-        ::BottomUpIterator,
-        program_combination::CombineAddress,
-        program_type::Symbol,
+    ::BottomUpIterator,
+    program_combination::CombineAddress,
+    program_type::Symbol,
+    idx
+)::TypedDepthAccessAddress
+    return TypedDepthAccessAddress(
+        1 + maximum(depth.(children(program_combination))),
+        program_type,
         idx
-)::AccessAddress
-        return AccessAddress((
-                1 + maximum([x.addr[1] for x in program_combination.addrs]),
-                program_type,
-                idx
-        ))
+    )
 end
 
 """
@@ -337,8 +379,8 @@ end
 
 Retrieve a program located at `address` from the `iter`'s bank.
 """
-function retrieve(iter::BottomUpIterator, address::AccessAddress)::AbstractRuleNode
-        get_bank(iter)[address.addr[1]][address.addr[2]][address.addr[3]]
+function retrieve(iter::BottomUpIterator, address::TypedDepthAccessAddress)::AbstractRuleNode
+    get_bank(iter)[depth(address)][return_type(address)][index(address)]
 end
 
 """
@@ -347,7 +389,7 @@ end
 Construct a program using the [`CombineAddress`](@ref) `address` and the `iter`'s bank.
 """
 function retrieve(iter::BottomUpIterator, address::CombineAddress)::UniformHole
-        return UniformHole(address.op.domain, [retrieve(iter, a) for a in address.addrs])
+    return UniformHole(operator(address).domain, [retrieve(iter, a) for a in children(address)])
 end
 
 """
@@ -356,7 +398,7 @@ end
 Return the initial state for the first `combine` call
 """
 function init_combine_structure(::BottomUpIterator)
-        return Dict()
+    return Dict()
 end
 
 """
@@ -367,27 +409,27 @@ Return the next program to explore and the updated [`BottomUpState`](@ref):
 - otherwise, it calls the the `combine(iter, state)` function again, and processes the first returned program
 """
 function get_next_program(iter::BottomUpIterator, state::GenericBUState)
-        if has_remaining_iterations(state) # && !isempty(first_(state))
-                return popfirst!(remaining_combinations(state)), state
-        elseif !isnothing(state_tracker(state))
-                new_program_combinations, new_state = combine(iter, state_tracker(state))
+    if has_remaining_iterations(state) # && !isempty(first_(state))
+        return popfirst!(remaining_combinations(state)), state
+    elseif !isnothing(state_tracker(state))
+        new_program_combinations, new_state = combine(iter, state_tracker(state))
 
-                # Check if new_program_combinations is nothing
-                if isnothing(new_program_combinations) || isempty(new_program_combinations)
-                        # We've reached the end of the iteration
-                        return nothing, nothing
-                else
-                        new_combinations!(state, new_program_combinations)
-                        new_state_tracker!(state, new_state)
-                        return popfirst!(remaining_combinations(state)), state
-                end
+        # Check if new_program_combinations is nothing
+        if isnothing(new_program_combinations) || isempty(new_program_combinations)
+            # We've reached the end of the iteration
+            return nothing, nothing
         else
-                return nothing, nothing
+            new_combinations!(state, new_program_combinations)
+            new_state_tracker!(state, new_state)
+            return popfirst!(remaining_combinations(state)), state
         end
+    else
+        return nothing, nothing
+    end
 end
 
 function derivation_heuristic(::BottomUpIterator, indices::Vector{<:Integer})
-        return sort(indices)
+    return sort(indices)
 end
 
 """
@@ -401,19 +443,19 @@ Return the first program and a state-tracking [`GenericBUState`](@ref) containin
 remaining initial programs and the initialstate for the `combine` function
 """
 function Base.iterate(iter::BottomUpIterator)
-        solver = iter.solver
-        starting_node = deepcopy(get_tree(solver))
-        addresses = populate_bank!(iter)
+    solver = iter.solver
+    starting_node = deepcopy(get_tree(solver))
+    addresses = populate_bank!(iter)
 
-        return Base.iterate(
-                iter,
-                GenericBUState(
-                        addresses,
-                        init_combine_structure(iter),
-                        nothing,
-                        starting_node
-                )
+    return Base.iterate(
+        iter,
+        GenericBUState(
+            addresses,
+            init_combine_structure(iter),
+            nothing,
+            starting_node
         )
+    )
 end
 
 
@@ -430,41 +472,41 @@ The second call to iterate uses [`get_next_program`](@ref) to retrive the next p
         - if it is not added to the bank, e.g., because of observational equivalence, then it calls itself again with the new state
 """
 function Base.iterate(iter::BottomUpIterator, state::GenericBUState)
-        # does state contain a uniform iterator? 
-        # if not exhausted: return solution
-        # otherwise remove it from the state
-        if !isnothing(state.current_uniform_iterator)
-                next_solution = next_solution!(state.current_uniform_iterator)
-                if isnothing(next_solution) || depth(next_solution) > iter.solver.max_depth
-                        state.current_uniform_iterator = nothing
-                else
-                        return next_solution, state
-                end
+    # does state contain a uniform iterator? 
+    # if not exhausted: return solution
+    # otherwise remove it from the state
+    if !isnothing(state.current_uniform_iterator)
+        next_solution = next_solution!(state.current_uniform_iterator)
+        if isnothing(next_solution) || depth(next_solution) > iter.solver.max_depth
+            state.current_uniform_iterator = nothing
+        else
+            return next_solution, state
+        end
+    end
+
+    solver = iter.solver
+    next_program_address, new_state = get_next_program(iter, state)
+
+    while !isnothing(next_program_address)
+        program = retrieve(iter, next_program_address)
+        keep = add_to_bank!(iter, next_program_address, program)
+
+        if keep && is_subdomain(program, state.starting_node)
+            # take the program (uniform tree) convert to UniformIterator, and add to state
+            # return the first concrete tree from the UniformIterator in the state (and the updated state)
+            uniform_solver = UniformSolver(get_grammar(solver), program, with_statistics=solver.statistics)
+            new_state.current_uniform_iterator = UniformIterator(uniform_solver, iter)
+            next_solution = next_solution!(state.current_uniform_iterator)
+
+            if isnothing(next_solution) || depth(next_solution) > iter.solver.max_depth
+                new_state.current_uniform_iterator = nothing
+            else
+                return next_solution, new_state
+            end
         end
 
-        solver = iter.solver
-        next_program_address, new_state = get_next_program(iter, state)
+        next_program_address, new_state = get_next_program(iter, new_state)
+    end
 
-        while !isnothing(next_program_address)
-                program = retrieve(iter, next_program_address)
-                keep = add_to_bank!(iter, next_program_address, program)
-
-                if keep && is_subdomain(program, state.starting_node)
-                        # take the program (uniform tree) convert to UniformIterator, and add to state
-                        # return the first concrete tree from the UniformIterator in the state (and the updated state)
-                        uniform_solver = UniformSolver(get_grammar(solver), program, with_statistics=solver.statistics)
-                        new_state.current_uniform_iterator = UniformIterator(uniform_solver, iter)
-                        next_solution = next_solution!(state.current_uniform_iterator)
-
-                        if isnothing(next_solution) || depth(next_solution) > iter.solver.max_depth
-                                new_state.current_uniform_iterator = nothing
-                        else
-                                return next_solution, new_state
-                        end
-                end
-
-                next_program_address, new_state = get_next_program(iter, new_state)
-        end
-
-        return nothing
+    return nothing
 end
