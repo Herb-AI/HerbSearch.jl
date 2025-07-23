@@ -76,14 +76,17 @@ Given the simple grammar `g`, the following example retrieves the lone initial p
 bank.
 
 ```jldoctest; setup = :(using HerbCore, HerbGrammar)
-julia> g = @csgrammar begin
+g = @csgrammar begin
         Int = Int + Int
         Int = 1 | 2 | 3
 end
-julia> iter = SizeBasedBottomUpIterator(g, :Int);
-julia> populate_bank!(iter)
-julia> acc = AccessAddress([1, :Int, 1]);
-julia> retrieve(iter, acc)
+iter = SizeBasedBottomUpIterator(g, :Int)
+populate_bank!(iter)
+acc = TypedDepthAccessAddress(1, :Int, 1)
+retrieve(iter, acc)
+
+# output
+
 UniformHole[Bool[0, 1, 1, 1]]
 ```
 """
@@ -138,17 +141,20 @@ program is a [`UniformHole`](@ref) that represents all programs of the form `□
 `□` is any of the `Int` terminals in the grammar.
 
 ```jldoctest; setup = :(using HerbCore, HerbGrammar)
-julia> g = @csgrammar begin
+g = @csgrammar begin
         Int = Int + Int
         Int = 1 | 2 | 3
-end
-julia> iter = SizeBasedBottomUpIterator(g, :Int);
-julia> populate_bank!(iter)
-julia> acc = CombineAddress(
+end;
+iter = SizeBasedBottomUpIterator(g, :Int);
+populate_bank!(iter);
+acc = CombineAddress(
         UniformHole([1, 0, 0, 0]),
-        [AccessAddress([1, :Int, 1]), AccessAddress([1, :Int, 1])]
+        [TypedDepthAccessAddress(1, :Int, 1), TypedDepthAccessAddress(1, :Int, 1)]
 );
-julia> retrieve(bank, acc)
+retrieve(iter, acc)
+
+# output
+
 UniformHole[Bool[1, 0, 0, 0]]{UniformHole[Bool[0, 1, 1, 1]],UniformHole[Bool[0, 1, 1, 1]]}
 ```
 """
@@ -159,7 +165,7 @@ struct CombineAddress{N} <: AbstractAddress
     addrs::NTuple{N,TypedDepthAccessAddress}
 end
 
-CombineAddress(op, addrs::AbstractVector{TypedDepthAccessAddress}) = CombineAddress(op, Tuple(addrs))
+CombineAddress(op, addrs::AbstractVector{<:TypedDepthAccessAddress}) = CombineAddress(op, Tuple(addrs))
 
 function operator(c::CombineAddress)
     return c.op

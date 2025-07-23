@@ -87,5 +87,6 @@ export
     add_to_bank!,
     new_address,
     retrieve,
-    init_combine_structure
+    init_combine_structure,
+    get_bank
 end # module HerbSearch

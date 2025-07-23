@@ -9,6 +9,9 @@ using HerbSpecification
 using Test
 using Documenter
 
+DocMeta.setdocmeta!(HerbSearch, :DocTestSetup, :(using HerbSearch);
+    recursive=true)
+
 include("test_helpers.jl")
 using Random
 Random.seed!(1234)
