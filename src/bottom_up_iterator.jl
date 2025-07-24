@@ -38,21 +38,48 @@ grammar, the bank also must be indexed on the type of the programs to allow the
 """
 abstract type BottomUpIterator <: ProgramIterator end
 
+"""
+    struct MeasureHashedBank{M}
+
+A bank that hashes programs on some measure of type `M` (ex: program depth,
+size, etc.).
+"""
 struct MeasureHashedBank{M}
-    bank::DefaultDict{M,DefaultDict{Symbol}} #(() -> (DefaultDict{Symbol,Vector{AbstractRuleNode}}(() -> AbstractRuleNode[])))
+    bank::DefaultDict{M,DefaultDict{Symbol}}
 
     function MeasureHashedBank{M}() where M
-        return new{M}(DefaultDict{M,DefaultDict{Symbol}}(() -> (DefaultDict{Symbol,Vector{AbstractRuleNode}}(() -> AbstractRuleNode[]))))
+        return new{M}(DefaultDict{M,DefaultDict{Symbol}}(
+            () -> (DefaultDict{Symbol,Vector{AbstractRuleNode}}(
+                () -> AbstractRuleNode[]))
+        )
+        )
     end
 end
 
+"""
+    measures(mhb::MeasureHashedBank)
+
+Retrieve the measures present in the bank `mhb`.
+"""
 measures(mhb::MeasureHashedBank) = keys(mhb.bank)
+
+"""
+    types(mhb::MeasureHashedBank, measure)
+
+Retrieve the types of programs in bank `mhb` with a certain `measure`.
+"""
 types(mhb::MeasureHashedBank, measure) = keys(mhb.bank[measure])
-programs(mhb::MeasureHashedBank, measure, types) = mhb.bank[measure][types]
+
+"""
+    programs(mhb::MeasureHashedBank, measure, type)
+
+Retrieve the programs in bank `mhb` with a certain `measure` and `type`. 
+"""
+programs(mhb::MeasureHashedBank, measure, type) = mhb.bank[measure][type]
 retrieve(mhb::MeasureHashedBank, address) = programs(mhb, measure(address), return_type(address))[index(address)]
 
 @programiterator SizeBasedBottomUpIterator(
-    bank=MeasureHashedBank{Int}(), # (() -> (DefaultDict{Symbol,Vector{AbstractRuleNode}}(() -> AbstractRuleNode[]))),
+    bank=MeasureHashedBank{Int}(),
     max_combination_depth=5
 ) <: BottomUpIterator
 
@@ -75,7 +102,7 @@ Abstract type for addresses. Addresses point to (combinations of) programs in th
 abstract type AbstractAddress end
 
 """
-        $(TYPEDEF)
+    $(TYPEDEF)
 
 Address pointing to a single program in a bank.
 
@@ -115,7 +142,7 @@ AccessAddress(t::Tuple) = AccessAddress(t...)
 """
     $(TYPEDSIGNATURES)
 
-Get the depth of address `a`.
+Get the measure (depth, size, etc. depending on the bank) of address `a`.
 """
 function measure(a::AccessAddress)
     a.measure
@@ -140,7 +167,7 @@ function index(a::AccessAddress)
 end
 
 """
-        $(TYPEDEF)
+    $(TYPEDEF)
 
 Address pointing to a combination of `N` programs from a bank to be combined using `op`.
 
@@ -208,20 +235,21 @@ function Base.collect(iter::BottomUpIterator)
 end
 
 """
-        abstract type BottomUpState
+    abstract type BottomUpState
 
 State that helps us keep track where we are while iterating through program space.
-More precisely, it help to keep track and switch between the program combinations of the same compelxity and the next level of compelxity.
+More precisely, it help to keep track and switch between the program
+combinations of the same complexity and the next level of complexity.
 
-the following methods need to be implemented:
+The following methods must be implemented:
 
-remaining_combinations(BottomUpState): returns an iterable of program combiantions that need to be explored
+- [`remaining_combinations`](@ref): returns an iterable of program combiantions that need to be explored
 
-state_tracker(state:BottomUpState): returns the state tracker for the `combine` method
+- [`state_tracker`](@ref): returns the state tracker for the `combine` method
 
-new_combinations!(state::BottomUpState, new_combinations): assign new combinations to the state
+- [`new_combinations!`](@ref): assign new combinations to the state
 
-new_state_tracker!(state::BottomUpState, new_state): assign new state tracker to the sate
+- [`new_state_tracker!`](@ref): assign new state tracker to the sate
 """
 abstract type BottomUpState end
 
@@ -233,17 +261,22 @@ function new_state_tracker! end
 has_remaining_iterations(state::BottomUpState) = !isempty(remaining_combinations(state))
 
 """
-mutable struct GenericBUState
+    $(TYPEDEF)
 
-Generic Buttom up state tracker that is sufficient in most cases.
-It contains two fields:
- - combinations: which containts a vector of program combinations (addresses) used to construct new programs
- - combine_stage_tracker: which maintains the state `combine` function manipulates
+Generic bottom-up search state
+
+# Fields
+
+$(FIELDS)
 """
 mutable struct GenericBUState <: BottomUpState
+    "A vector of program combinations to construct new programs from"
     combinations::AbstractVector{AbstractAddress}
+    "The state that the [`combine`](@ref) function can manipulate."
     combine_stage_tracker
+    "The current uniform iterator that the bottom-up search is iterating through"
     current_uniform_iterator::Union{UniformIterator,Nothing}
+    "The starting node of the search"
     starting_node
 end
 
@@ -260,9 +293,10 @@ function new_state_tracker!(state::GenericBUState, new_tracker)
 end
 
 """
-        $(TYPEDSIGNATURES)
+    $(TYPEDSIGNATURES)
 
-Fill the bank with the initial, smallest programs, likely just the terminals in most cases.
+Fill the bank with the initial, smallest programs, likely just the terminals in
+most cases.
 
 Return the [`AccessAddress`](@ref)es to the newly-added programs.
 """
@@ -278,7 +312,11 @@ function populate_bank!(iter::BottomUpIterator)::AbstractVector{AccessAddress}
         end
     end
 
-    return [AccessAddress(1, t, x) for t in unique(grammar.types) for x in 1:length(programs(get_bank(iter), 1, t))]
+    return [
+        AccessAddress(1, t, x)
+        for t in unique(grammar.types)
+        for x in 1:length(programs(get_bank(iter), 1, t))
+    ]
 end
 
 """
@@ -416,7 +454,8 @@ end
 Construct a program using the [`CombineAddress`](@ref) `address` and the `iter`'s bank.
 """
 function retrieve(iter::BottomUpIterator, address::CombineAddress)::UniformHole
-    return UniformHole(operator(address).domain, [retrieve(iter, a) for a in children(address)])
+    return UniformHole(operator(address).domain, [retrieve(iter, a) for a in
+                                                  children(address)])
 end
 
 """
@@ -431,9 +470,11 @@ end
 """
         $(TYPEDSIGNATURES)
 
-Return the next program to explore and the updated [`BottomUpState`](@ref):
-- if there are still remaining programs from the current BU iteration to explore (`remaining_combinations(state)`), it pops the next one
-- otherwise, it calls the the `combine(iter, state)` function again, and processes the first returned program
+Return the next program to explore and the updated [`BottomUpState`](@ref).
+
+- If there are still remaining programs from the current bottom-up iteration to
+explore ([`remaining_combinations`](@ref)), it pops the next one
+- Otherwise, it calls the the [`combine`](@ref) function again, and processes the first returned program
 """
 function get_next_program(iter::BottomUpIterator, state::GenericBUState)
     if has_remaining_iterations(state) # && !isempty(first_(state))
