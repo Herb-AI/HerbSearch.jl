@@ -2,7 +2,7 @@ using HerbCore: RuleNode
 import HerbGrammar.return_type
 
 """
-   abstract type BottomUpIterator <: ProgramIterator
+    abstract type BottomUpIterator <: ProgramIterator
 
 A type of iterator that maintains a bank of (executable) programs and iteratively explores
 larger programs by combining the ones in the bank.
@@ -116,7 +116,7 @@ Given the simple grammar `g`, the following example retrieves the lone initial p
 (actually a [`UniformHole`](@ref) representing all terminals in the grammar `g`) from the
 bank.
 
-```jldoctest; setup = :(using HerbCore, HerbGrammar)
+```jldoctest; setup = :(using HerbCore, HerbGrammar, HerbSearch)
 g = @csgrammar begin
         Int = Int + Int
         Int = 1 | 2 | 3
@@ -181,7 +181,7 @@ Given the grammar `g`, the following example retrieves a new program from the ba
 program is a [`UniformHole`](@ref) that represents all programs of the form `□ + □` where
 `□` is any of the `Int` terminals in the grammar.
 
-```jldoctest; setup = :(using HerbCore, HerbGrammar)
+```jldoctest; setup = :(using HerbCore, HerbGrammar, HerbSearch)
 g = @csgrammar begin
         Int = Int + Int
         Int = 1 | 2 | 3
