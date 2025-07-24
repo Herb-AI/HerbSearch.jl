@@ -1,4 +1,5 @@
-using HerbCore: RuleNode, depth
+using HerbCore: RuleNode
+import HerbGrammar.return_type
 
 """
    abstract type BottomUpIterator <: ProgramIterator
@@ -22,7 +23,7 @@ The interface for bottom-up iteration is defined as follows.
 
 - [`get_bank`](@ref): get the iterator's bank
 - [`populate_bank!`](@ref): initialize the bank with the terminals from the grammar
-  and return the resulting [`TypedDepthAccessAddress`](@ref)es
+  and return the resulting [`AccessAddress`](@ref)es
 - [`combine`](@ref): combine the existing programs in the bank into new, more complex
   programs via [`CombineAddress`](@ref)es
 - [`add_to_bank!`](@ref): possibly add a program created by the [`combine`](@ref) step to
@@ -37,8 +38,21 @@ grammar, the bank also must be indexed on the type of the programs to allow the
 """
 abstract type BottomUpIterator <: ProgramIterator end
 
+struct MeasureHashedBank{M}
+    bank::DefaultDict{M,DefaultDict{Symbol}} #(() -> (DefaultDict{Symbol,Vector{AbstractRuleNode}}(() -> AbstractRuleNode[])))
+
+    function MeasureHashedBank{M}() where M
+        return new{M}(DefaultDict{M,DefaultDict{Symbol}}(() -> (DefaultDict{Symbol,Vector{AbstractRuleNode}}(() -> AbstractRuleNode[]))))
+    end
+end
+
+measures(mhb::MeasureHashedBank) = keys(mhb.bank)
+types(mhb::MeasureHashedBank, measure) = keys(mhb.bank[measure])
+programs(mhb::MeasureHashedBank, measure, types) = mhb.bank[measure][types]
+retrieve(mhb::MeasureHashedBank, address) = programs(mhb, measure(address), return_type(address))[index(address)]
+
 @programiterator SizeBasedBottomUpIterator(
-    bank=DefaultDict{Int,DefaultDict}(() -> (DefaultDict{Symbol,AbstractVector{AbstractRuleNode}}(() -> AbstractRuleNode[]))),
+    bank=MeasureHashedBank{Int}(), # (() -> (DefaultDict{Symbol,Vector{AbstractRuleNode}}(() -> AbstractRuleNode[]))),
     max_combination_depth=5
 ) <: BottomUpIterator
 
@@ -47,14 +61,14 @@ function get_max_combination_depth(iter::SizeBasedBottomUpIterator)
 end
 
 @doc """
-         SizeBasedBottomUpIterator
+     SizeBasedBottomUpIterator
 
- A basic bottom-up iterator with a bank based on program size.
- """
-SizeBasedBottomUpIterator
+A bottom-up iterator with a bank indexed by some measure of a program (ex:
+depth, size).
+""" SizeBasedBottomUpIterator
 
 """
-        AbstractAddress
+    AbstractAddress
 
 Abstract type for addresses. Addresses point to (combinations of) programs in the bank.
 """
@@ -82,7 +96,7 @@ g = @csgrammar begin
 end
 iter = SizeBasedBottomUpIterator(g, :Int)
 populate_bank!(iter)
-acc = TypedDepthAccessAddress(1, :Int, 1)
+acc = AccessAddress(1, :Int, 1)
 retrieve(iter, acc)
 
 # output
@@ -90,21 +104,21 @@ retrieve(iter, acc)
 UniformHole[Bool[0, 1, 1, 1]]
 ```
 """
-struct TypedDepthAccessAddress{D<:Integer,I<:Integer} <: AbstractAddress
-    depth::D
+struct AccessAddress{M,I<:Integer} <: AbstractAddress
+    measure::M
     type::Symbol
     index::I
 end
 
-TypedDepthAccessAddress(t::Tuple) = TypedDepthAccessAddress(t...)
+AccessAddress(t::Tuple) = AccessAddress(t...)
 
 """
     $(TYPEDSIGNATURES)
 
 Get the depth of address `a`.
 """
-function HerbCore.depth(a::TypedDepthAccessAddress)
-    a.depth
+function measure(a::AccessAddress)
+    a.measure
 end
 
 """
@@ -112,7 +126,7 @@ end
 
 Get the type of address `a`.
 """
-function HerbGrammar.return_type(a::TypedDepthAccessAddress)
+function return_type(a::AccessAddress)
     a.type
 end
 
@@ -121,7 +135,7 @@ end
 
 Get the index of address `a`.
 """
-function index(a::TypedDepthAccessAddress)
+function index(a::AccessAddress)
     a.index
 end
 
@@ -149,7 +163,7 @@ iter = SizeBasedBottomUpIterator(g, :Int);
 populate_bank!(iter);
 acc = CombineAddress(
         UniformHole([1, 0, 0, 0]),
-        [TypedDepthAccessAddress(1, :Int, 1), TypedDepthAccessAddress(1, :Int, 1)]
+        [AccessAddress(1, :Int, 1), AccessAddress(1, :Int, 1)]
 );
 retrieve(iter, acc)
 
@@ -162,10 +176,10 @@ struct CombineAddress{N} <: AbstractAddress
     "The root of the AST for the combined program"
     op
     "The addresses to combine to form the new program"
-    addrs::NTuple{N,TypedDepthAccessAddress}
+    addrs::NTuple{N,AccessAddress}
 end
 
-CombineAddress(op, addrs::AbstractVector{<:TypedDepthAccessAddress}) = CombineAddress(op, Tuple(addrs))
+CombineAddress(op, addrs::AbstractVector{<:AccessAddress}) = CombineAddress(op, Tuple(addrs))
 
 function operator(c::CombineAddress)
     return c.op
@@ -250,9 +264,9 @@ end
 
 Fill the bank with the initial, smallest programs, likely just the terminals in most cases.
 
-Return the [`TypedDepthAccessAddress`](@ref)es to the newly-added programs.
+Return the [`AccessAddress`](@ref)es to the newly-added programs.
 """
-function populate_bank!(iter::BottomUpIterator)::AbstractVector{TypedDepthAccessAddress}
+function populate_bank!(iter::BottomUpIterator)::AbstractVector{AccessAddress}
     grammar = get_grammar(iter.solver)
 
     # create the bank entry
@@ -260,11 +274,11 @@ function populate_bank!(iter::BottomUpIterator)::AbstractVector{TypedDepthAccess
         terminal_domain_for_type = grammar.isterminal .& grammar.domains[t]
         if any(terminal_domain_for_type)
             terminal_programs = UniformHole(terminal_domain_for_type, [])
-            push!(get_bank(iter)[1][t], terminal_programs)
+            push!(programs(get_bank(iter), 1, t), terminal_programs)
         end
     end
 
-    return [TypedDepthAccessAddress(1, t, x) for t in unique(grammar.types) for x in 1:length(get_bank(iter)[1][t])]
+    return [AccessAddress(1, t, x) for t in unique(grammar.types) for x in 1:length(programs(get_bank(iter), 1, t))]
 end
 
 """
@@ -288,7 +302,8 @@ If the iteration should stop, the next state should be `nothing`.
 """
 function combine(iter::BottomUpIterator, state)
     addresses = Vector{CombineAddress}()
-    max_in_bank = maximum(keys(get_bank(iter)))
+    bank = get_bank(iter)
+    max_in_bank = maximum(measures(bank))
     grammar = get_grammar(iter.solver)
     terminals = grammar.isterminal
     nonterminals = .~terminals
@@ -301,26 +316,31 @@ function combine(iter::BottomUpIterator, state)
 
     #check bound function
     function check_bound(combination)
-        return 1 + maximum((x[1] for x in combination)) > max_in_bank
+        return 1 + maximum((measure.(combination))) > max_in_bank
     end
 
     function appropriately_typed(child_types)
-        return combination -> child_types == [x[2] for x in combination]
+        return combination -> child_types == return_type.(combination)
     end
 
     # loop over groups of rules with the same arity and child types
     for shape in non_terminal_shapes
-        child_types = grammar.childtypes[findfirst(shape.domain)]
+        child_types = Tuple(grammar.childtypes[findfirst(shape.domain)])
         nchildren = length(child_types)
 
         # *Lazily* collect addresses, their combinations, and then filter them based on `check_bound`
-        all_addresses = ((key, typename, idx) for key in keys(get_bank(iter)) for typename in keys(get_bank(iter)[key]) for idx in eachindex(get_bank(iter)[key][typename]))
+        all_addresses = (
+            AccessAddress(measure, typename, idx)
+            for measure in measures(bank)
+            for typename in types(bank, measure)
+            for idx in eachindex(programs(bank, measure, typename))
+        )
         all_combinations = Iterators.product(Iterators.repeated(all_addresses, nchildren)...)
         bounded_combinations = Iterators.filter(check_bound, all_combinations)
         bounded_and_typed_combinations = Iterators.filter(appropriately_typed(child_types), bounded_combinations)
 
         # Construct the `CombineAddress`s from the filtered combinations
-        append!(addresses, map(address_combo -> CombineAddress(shape, TypedDepthAccessAddress.(address_combo)), bounded_and_typed_combinations))
+        append!(addresses, map(address_combo -> CombineAddress(shape, address_combo), bounded_and_typed_combinations))
     end
 
     return addresses, state
@@ -329,24 +349,25 @@ end
 """
         $(TYPEDSIGNATURES)
 
-Add the `program` (the result of combining `program_combination` to the bank of the `iter`.
+Add the `program` (the result of combining `program_combination` to the bank of
+the `iter`.
 
 Return `true` if the `program` is added to the bank, and `false` otherwise.
 
-For example, to implement an iterator with observational equivalence, the function might
-return false if the `program` is observationally equivalent to another program already in
-the bank.
+For example, to implement an iterator with observational equivalence, the
+function might return false if the `program` is observationally equivalent to
+another program already in the bank.
 """
-function add_to_bank!(iter::BottomUpIterator, program_combination::CombineAddress, program::AbstractRuleNode)
+function add_to_bank!(
+    iter::BottomUpIterator,
+    program_combination::CombineAddress,
+    program::AbstractRuleNode
+)
+    bank = get_bank(iter)
+    prog_cost = 1 + maximum(measure.(children(program_combination)))
     program_type = return_type(get_grammar(iter.solver), program)
 
-    bank = get_bank(iter)
-    # prog_cost = 1 + maximum([x.addr[1] for x in program_combination.addrs])
-    prog_cost = 1 + maximum(depth.(children(program_combination)))
-    n_in_bank = length(bank[prog_cost][program_type])
-    address = new_address(iter, program_combination, program_type, n_in_bank + 1)
-
-    push!(get_bank(iter)[depth(address)][return_type(address)], program)
+    push!(programs(bank, prog_cost, program_type), program)
 
     return true
 end
@@ -354,17 +375,17 @@ end
 """
         $(TYPEDSIGNATURES)
 
-Always return `true`. Adding an [`TypedDepthAccessAddress`](@ref) to the bank only happens in the
+Always return `true`. Adding an [`AccessAddress`](@ref) to the bank only happens in the
 first iteration with terminals.
 """
-function add_to_bank!(::BottomUpIterator, ::TypedDepthAccessAddress, ::AbstractRuleNode)
+function add_to_bank!(::BottomUpIterator, ::AccessAddress, ::AbstractRuleNode)
     return true
 end
 
 """
         $(TYPEDSIGNATURES)
 
-Create an [`TypedDepthAccessAddress`](@ref) derived from the `program_combination`
+Create an [`AccessAddress`](@ref) derived from the `program_combination`
 [`CombineAddress`](@ref) and `program_type`.
 """
 function new_address(
@@ -372,8 +393,8 @@ function new_address(
     program_combination::CombineAddress,
     program_type::Symbol,
     idx
-)::TypedDepthAccessAddress
-    return TypedDepthAccessAddress(
+)::AccessAddress
+    return AccessAddress(
         1 + maximum(depth.(children(program_combination))),
         program_type,
         idx
@@ -385,8 +406,8 @@ end
 
 Retrieve a program located at `address` from the `iter`'s bank.
 """
-function retrieve(iter::BottomUpIterator, address::TypedDepthAccessAddress)::AbstractRuleNode
-    get_bank(iter)[depth(address)][return_type(address)][index(address)]
+function retrieve(iter::BottomUpIterator, address::AccessAddress)::AbstractRuleNode
+    retrieve(get_bank(iter), address)
 end
 
 """

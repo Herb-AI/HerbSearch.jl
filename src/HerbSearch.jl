@@ -74,7 +74,7 @@ export
     BottomUpIterator,
     SizeBasedBottomUpIterator,
     AbstractAddress,
-    TypedDepthAccessAddress,
+    AccessAddress,
     CombineAddress,
     remaining_combinations,
     state_tracker,
