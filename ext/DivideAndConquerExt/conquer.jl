@@ -11,6 +11,8 @@ function Base.showerror(io::IO, e::ConditionalIfElseError)
 	)
 end
 
+input_rules(grammar::AbstractGrammar) = findall(rule -> occursin("_arg_", string(rule)), grammar.rules)
+
 """
 	$(TYPEDSIGNATURES)
 
@@ -45,11 +47,11 @@ function conquer(
 	solutions::Vector{RuleNode},
 	grammar::AbstractGrammar,
 	n_predicates::Int,
-	sym_bool::Symbol,
+  sym_bool::Union{Symbol, Expr},
 	sym_start::Symbol,
 	sym_constraint::Symbol,
 	symboltable::SymbolTable,
-)::RuleNode
+)::Union{RuleNode, Nothing}
 	# make sure grammar has if-else rulenode
 	idx_ifelse = findfirst(r -> r == :($sym_bool ? $sym_start : $sym_start), grammar.rules)
 	if isnothing(idx_ifelse)
@@ -65,15 +67,20 @@ function conquer(
 	ioexamples = [first(prob.spec) for prob in problems]
 	solutions_idx = collect(values(problems_to_solutions))
 
+  if any(isempty(e) for e in solutions_idx)
+      return nothing
+  end
+
 	labels = get_labels(solutions_idx)
-	predicates = get_predicates(grammar, sym_bool, sym_constraint, n_predicates)
+  rules = input_rules(grammar)
+  predicates = get_predicates(grammar, sym_bool, rules, n_predicates)
 	# Matrix of feature vectors. Feature vectors are created by evaluating an input from the IO examples on predicatess.
 	features = get_features(
 		ioexamples,
 		predicates,
 		grammar,
 		symboltable,
-		false,
+		true,
 	)
 	features = float.(features)
 	# Take labels and features to make DecisionTree
@@ -81,6 +88,7 @@ function conquer(
 	model = DecisionTreeClassifier()
 	fit!(model, features, labels)
 	final_program = construct_final_program(model.root.node, idx_ifelse, solutions, predicates)
+
 	return final_program
 end
 
@@ -93,20 +101,20 @@ end
 	- `sym_constraint`: `Symbol` used to further constrain the program space to exclude trivial predicates.
 """
 function get_predicates(grammar::AbstractGrammar,
-	sym_bool::Symbol,
-	sym_constraint::Symbol,
-	n_predicates::Number,
+    sym_bool::Union{Symbol, Expr},
+    sym_constraint::Symbol,
+    n_predicates::Number,
 )::Vector{RuleNode}
-	# We get the first grammar rule that has the specified `sym_constraint` and add constraint to grammar. 
-	# copy grammar before adding constraints
-	grammar_constraints = deepcopy(grammar)
-	clearconstraints!(grammar_constraints)
-	# Create DomainRuleNode that contains all rules of type sym_constraint and add constraint to grammar
-	rules = grammar_constraints.bytype[sym_constraint]
-	domain = HerbConstraints.DomainRuleNode(grammar_constraints, rules)
-	addconstraint!(grammar_constraints, ContainsSubtree(domain))
-	predicates = _iterate_predicates(grammar_constraints, sym_bool, n_predicates)
-	return predicates
+    # We get the first grammar rule that has the specified `sym_constraint` and add constraint to grammar. 
+	  # copy grammar before adding constraints
+	  grammar_constraints = deepcopy(grammar)
+	  clearconstraints!(grammar_constraints)
+	  # Create DomainRuleNode that contains all rules of type sym_constraint and add constraint to grammar
+	  # rules = grammar_constraints.bytype[sym_constraint]
+	  # domain = HerbConstraints.DomainRuleNode(grammar_constraints, rules)
+	  # addconstraint!(grammar_constraints, ContainsSubtree(domain))
+	  predicates = _iterate_predicates(grammar_constraints, sym_bool, n_predicates)
+	  return predicates
 end
 
 """
@@ -118,15 +126,18 @@ end
 	- `rules`: List of grammer rules used to further constrain the program space to exclude trivial predicates.
 """
 function get_predicates(grammar::AbstractGrammar,
-	sym_bool::Symbol,
+  sym_bool::Union{Symbol, Expr},
 	rules::Vector{Int},
 	n_predicates::Number,
 )::Vector{RuleNode}
 	grammar_constraints = deepcopy(grammar)
 	clearconstraints!(grammar_constraints)
 	# Create DomainRuleNode that contains all rules and add constraint to grammar
-	domain = HerbConstraints.DomainRuleNode(grammar_constraints, rules)
-	addconstraint!(grammar_constraints, ContainsSubtree(domain))
+  for rule in rules
+    # domain = HerbConstraints.DomainRuleNode(grammar_constraints, rules)
+    rn = RuleNode(rule)
+    addconstraint!(grammar_constraints, ContainsSubtree(rn))
+  end
 	predicates = _iterate_predicates(grammar_constraints, sym_bool, n_predicates)
 	return predicates
 end
@@ -134,7 +145,7 @@ end
 """
 	Shared functionality to iterate over predicates until stopping criteria (`n_predicates`) is reached.
 """
-function _iterate_predicates(grammar::AbstractGrammar, sym_bool::Symbol, n_predicates::Number)
+function _iterate_predicates(grammar::AbstractGrammar, sym_bool::Union{Symbol, Expr}, n_predicates::Number)
 	iterator = BFSIterator(grammar, sym_bool)
 	predicates = Vector{RuleNode}()
 	for (i, candidate_program) ∈ enumerate(iterator)

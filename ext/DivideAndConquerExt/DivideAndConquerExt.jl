@@ -36,7 +36,7 @@ Returns the `RuleNode` representing the final program constructed from the solut
 """
 function HerbSearch.divide_and_conquer(problem::Problem,
 	iterator::ProgramIterator,
-	sym_bool::Symbol,
+  sym_bool::Union{Symbol, Expr},
 	sym_start::Symbol,
 	sym_constraint::Symbol,
 	n_predicates::Int = 100,
@@ -59,7 +59,6 @@ function HerbSearch.divide_and_conquer(problem::Problem,
   counter = 0
 	for (i, candidate_program) ∈ enumerate(iterator)
     counter = i
-    @show counter
 		expr = rulenode2expr(candidate_program, grammar)
 		is_added = false
 		for prob in subproblems
