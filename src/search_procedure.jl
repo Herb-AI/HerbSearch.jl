@@ -41,29 +41,32 @@ function synth(
     grammar = get_grammar(solver)
     symboltable :: SymbolTable = grammar2symboltable(grammar, mod)
     counter = 0
-
+    cons_counter = 0
+    
     best_score = 0
     best_program = nothing
     result = suboptimal_program
-
+    
     muc_tech = MUC()
-
+    era_tech = ERA()
+    sean_tech = SeAn()
     for (i, candidate_program) ∈ enumerate(iterator)
         # Create expression from rulenode representation of AST
         expr = rulenode2expr(candidate_program, grammar)
 
-        if i % 100 == 0
+        if i % 1000 == 0
             println(i)
         end
 
         # Evaluate the expression
-        score = evaluate(problem, expr, symboltable, shortcircuit=shortcircuit, allow_evaluation_errors=allow_evaluation_errors)
+        (output, score) = evaluate(problem, expr, symboltable, shortcircuit=shortcircuit, allow_evaluation_errors=allow_evaluation_errors)
+
         counter = i
         if score == 1
             candidate_program = freeze_state(candidate_program)
             best_program = candidate_program
             result = optimal_program
-            break;
+            break
         else
             if score >= best_score
                 best_score = score
@@ -74,20 +77,26 @@ function synth(
             # Only apply conflict analysis if shortcircuit is true
             if conflict_analysis
                 faulty_spec = problem.spec[floor(Int16, score * length(problem.spec) + 1)]
+                muc_tech.input = MUCInput(candidate_program, grammar, faulty_spec)
+                era_tech.input = ERAInput(candidate_program, grammar, output)
+                sean_tech.input = SeAnInput(candidate_program, grammar, symboltable, faulty_spec)
 
-                jobs = [
-                    ConflictJob(muc_tech, MUCInput(candidate_program, grammar, faulty_spec))
-                ]
-                constraints = run_conflict_pipeline(jobs)
+                techs = Vector{AbstractConflictTechnique}()
+                push!(techs, muc_tech)
+                push!(techs, era_tech)
+                push!(techs, sean_tech)
+
+                constraints = run_conflict_pipeline(techs)
 
                 herb_cons = AbstractGrammarConstraint[]
+                
                 for c ∈ constraints
                     push!(herb_cons, c.cons)
+                    cons_counter += 1
                 end
-
+                
                 if length(herb_cons) > 0
                     add_constraints!(iterator, herb_cons)
-                    # println(herb_cons[1])
                 end
             end
         end
@@ -103,6 +112,7 @@ function synth(
     close_solver(muc_tech)
 
     println("Total number of enumerations: $counter")
+    println("Total number of constraints added: $cons_counter")
 
     # The enumeration exhausted, but an optimal problem was not found
     return (best_program, result)

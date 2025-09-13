@@ -251,6 +251,9 @@ function _find_next_complete_tree(
         if item isa UniformIterator
             #the item is a fixed shaped solver, we should get the next solution and re-enqueue it with a new priority value
             uniform_iterator = item
+            if hasproperty(iter, :uniform_solver_ref) && iter.uniform_solver_ref !== nothing
+                iter.uniform_solver_ref[] = uniform_iterator.solver
+            end
             solution = next_solution!(uniform_iterator)
             if !isnothing(solution)
                 enqueue!(pq, uniform_iterator, priority_function(iter, get_grammar(solver), solution, priority_value, true))
@@ -266,10 +269,10 @@ function _find_next_complete_tree(
                 track!(solver, "#FixedShapedTrees")
                 # Always use the Uniform Solver
                 uniform_solver = UniformSolver(get_grammar(solver), get_tree(solver), with_statistics=solver.statistics)
-                if hasproperty(iter, :uniform_solver_ref) && iter.uniform_solver_ref !== nothing
-                    iter.uniform_solver_ref[] = uniform_solver
-                end
                 uniform_iterator = UniformIterator(uniform_solver, iter)
+                if hasproperty(iter, :uniform_solver_ref) && iter.uniform_solver_ref !== nothing
+                    iter.uniform_solver_ref[] = uniform_iterator.solver
+                end
                 solution = next_solution!(uniform_iterator)
                 if !isnothing(solution)
                     enqueue!(pq, uniform_iterator, priority_function(iter, get_grammar(solver), solution, priority_value, true))

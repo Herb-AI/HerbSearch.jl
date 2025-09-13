@@ -24,8 +24,9 @@ function evaluate(
     symboltable::SymbolTable;
     shortcircuit::Bool=true,
     allow_evaluation_errors::Bool=false
-)::Number
+)::Tuple{Union{Any, Nothing}, Number}
     number_of_satisfied_examples = 0
+    output = nothing
 
     crashed = false
     for example ∈ problem.spec
@@ -34,7 +35,7 @@ function evaluate(
             if (output == example.out)
                 number_of_satisfied_examples += 1
             elseif (shortcircuit)
-                break;
+                break
             end
         catch e
             # You could also decide to handle less severe errors (such as index out of range) differently,
@@ -43,10 +44,10 @@ function evaluate(
             # Throw the error again if evaluation errors aren't allowed
             eval_error = EvaluationError(expr, example.in, e)
             allow_evaluation_errors || throw(eval_error)
-            break
+            return (nothing, number_of_satisfied_examples/length(problem.spec))
         end
     end
 
-    return number_of_satisfied_examples/length(problem.spec);
+    return (output, number_of_satisfied_examples/length(problem.spec))
 end
 
