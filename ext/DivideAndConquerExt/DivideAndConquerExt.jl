@@ -13,8 +13,6 @@ include("divide.jl")
 include("decide.jl")
 include("conquer.jl")
 
-export divide_and_conquer
-
 """
 		$(TYPEDSIGNATURES)
 Synthesizes a program using a divide and conquer strategy. 
@@ -35,7 +33,7 @@ Breaks down the problem into smaller subproblems and synthesizes solutions for e
 
 Returns the `RuleNode` representing the final program constructed from the solutions to the subproblems.
 """
-function divide_and_conquer(problem::Problem,
+function HerbSearch.divide_and_conquer(problem::Problem,
 	iterator::ProgramIterator,
 	sym_bool::Symbol,
 	sym_start::Symbol,
