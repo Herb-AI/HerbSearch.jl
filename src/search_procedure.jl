@@ -35,7 +35,7 @@ function synth(
     mod::Module=Main,
     conflict_analysis::Bool=true
     
-)::Union{Tuple{RuleNode, SynthResult}, Nothing}
+)::Union{Tuple{Union{RuleNode, Nothing}, SynthResult, Int64}, Nothing}
     start_time = time()
     solver = iterator.solver
     grammar = get_grammar(solver)
@@ -55,7 +55,7 @@ function synth(
         expr = rulenode2expr(candidate_program, grammar)
 
         if i % 1000 == 0
-            println(i)
+            # println(i)
         end
 
         # Evaluate the expression
@@ -86,7 +86,11 @@ function synth(
                 push!(techs, era_tech)
                 push!(techs, sean_tech)
 
-                constraints = run_conflict_pipeline(techs)
+                constraints, grammar_constraints = run_conflict_pipeline(techs)
+
+                for c ∈ grammar_constraints
+                    addconstraint!(grammar, c.cons)
+                end
 
                 herb_cons = AbstractGrammarConstraint[]
                 
@@ -94,7 +98,7 @@ function synth(
                     push!(herb_cons, c.cons)
                     cons_counter += 1
                 end
-                
+
                 if length(herb_cons) > 0
                     add_constraints!(iterator, herb_cons)
                 end
@@ -112,8 +116,8 @@ function synth(
     close_solver(muc_tech)
 
     println("Total number of enumerations: $counter")
-    println("Total number of constraints added: $cons_counter")
+    # println("Total number of constraints added: $cons_counter")
 
     # The enumeration exhausted, but an optimal problem was not found
-    return (best_program, result)
+    return (best_program, result, counter)
 end
