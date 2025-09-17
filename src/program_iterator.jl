@@ -212,3 +212,7 @@ processkwarg!(keywords::Vector{Expr}, ex::Union{Expr, Symbol}) = @match ex begin
     end
     _ => ex
 end
+
+get_solver(iter::ProgramIterator) = iter.solver
+get_max_depth(iter::ProgramIterator) = get_max_depth(get_solver(iter))
+get_max_size(iter::ProgramIterator) = get_max_size(get_solver(iter))
