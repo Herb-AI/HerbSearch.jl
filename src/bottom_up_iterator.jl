@@ -38,6 +38,8 @@ grammar, the bank also must be indexed on the type of the programs to allow the
 """
 abstract type BottomUpIterator <: ProgramIterator end
 
+function get_measure_limit end
+
 """
     struct MeasureHashedBank{M}
 
@@ -80,13 +82,8 @@ get_programs(mhb::MeasureHashedBank, measure, type) = mhb.bank[measure][type]
 retrieve(mhb::MeasureHashedBank, address) = get_programs(mhb, get_measure(address), get_return_type(address))[get_index(address)]
 
 @programiterator SizeBasedBottomUpIterator(
-    bank=MeasureHashedBank{Int}(),
-    max_combination_depth=5
+    bank=MeasureHashedBank{Int}()
 ) <: BottomUpIterator
-
-function get_max_combination_depth(iter::SizeBasedBottomUpIterator)
-    return iter.max_combination_depth
-end
 
 @doc """
      SizeBasedBottomUpIterator
@@ -94,6 +91,10 @@ end
 A bottom-up iterator with a bank indexed by some measure of a program (ex:
 depth, size).
 """ SizeBasedBottomUpIterator
+
+function get_measure_limit(iter::SizeBasedBottomUpIterator)
+    return get_max_size(iter)
+end
 
 """
     AbstractAddress
@@ -359,7 +360,7 @@ function combine(iter::BottomUpIterator, state)
     non_terminal_shapes = UniformHole.(partition(Hole(nonterminals), grammar), ([],))
 
     # if we have exceeded the maximum number of programs to generate
-    if max_in_bank >= get_max_combination_depth(iter)
+    if max_in_bank >= get_measure_limit(iter)
         return nothing, nothing
     end
 
