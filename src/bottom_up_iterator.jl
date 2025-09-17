@@ -41,8 +41,7 @@ abstract type BottomUpIterator <: ProgramIterator end
 """
     struct MeasureHashedBank{M}
 
-A bank that hashes programs on some measure of type `M` (ex: program depth,
-size, etc.).
+A bank that groups programs by a measure of type `M`` (e.g., depth, size, etc.) by hashing them.
 """
 struct MeasureHashedBank{M}
     bank::DefaultDict{M,DefaultDict{Symbol}}
@@ -57,26 +56,28 @@ struct MeasureHashedBank{M}
 end
 
 """
-    measures(mhb::MeasureHashedBank)
+    get_measures(mhb::MeasureHashedBank)
 
-Retrieve the measures present in the bank `mhb`.
+Retrieve all measures present in the bank `mhb`. For example, if the measure is depth, 
+this will return all possible depths of programs in the bank. 
 """
-measures(mhb::MeasureHashedBank) = keys(mhb.bank)
-
-"""
-    types(mhb::MeasureHashedBank, measure)
-
-Retrieve the types of programs in bank `mhb` with a certain `measure`.
-"""
-types(mhb::MeasureHashedBank, measure) = keys(mhb.bank[measure])
+get_measures(mhb::MeasureHashedBank) = keys(mhb.bank)
 
 """
-    programs(mhb::MeasureHashedBank, measure, type)
+    get_types(mhb::MeasureHashedBank, measure)
 
-Retrieve the programs in bank `mhb` with a certain `measure` and `type`. 
+Get all program types in the bank `mhb` that match a given measure.
+For example, this returns all root note types for programs of a certain depth or size.
 """
-programs(mhb::MeasureHashedBank, measure, type) = mhb.bank[measure][type]
-retrieve(mhb::MeasureHashedBank, address) = programs(mhb, measure(address), return_type(address))[index(address)]
+get_types(mhb::MeasureHashedBank, measure) = keys(mhb.bank[measure])
+
+"""
+    get_programs(mhb::MeasureHashedBank, measure, type)
+
+Retrieve a list of programs in bank `mhb` with a certain `measure` and `type`. 
+"""
+get_programs(mhb::MeasureHashedBank, measure, type) = mhb.bank[measure][type]
+retrieve(mhb::MeasureHashedBank, address) = get_programs(mhb, get_measure(address), get_return_type(address))[get_index(address)]
 
 @programiterator SizeBasedBottomUpIterator(
     bank=MeasureHashedBank{Int}(),
@@ -144,7 +145,7 @@ AccessAddress(t::Tuple) = AccessAddress(t...)
 
 Get the measure (depth, size, etc. depending on the bank) of address `a`.
 """
-function measure(a::AccessAddress)
+function get_measure(a::AccessAddress)
     a.measure
 end
 
@@ -153,7 +154,7 @@ end
 
 Get the type of address `a`.
 """
-function return_type(a::AccessAddress)
+function get_return_type(a::AccessAddress)
     a.type
 end
 
@@ -162,7 +163,7 @@ end
 
 Get the index of address `a`.
 """
-function index(a::AccessAddress)
+function get_index(a::AccessAddress)
     a.index
 end
 
@@ -208,11 +209,21 @@ end
 
 CombineAddress(op, addrs::AbstractVector{<:AccessAddress}) = CombineAddress(op, Tuple(addrs))
 
-function operator(c::CombineAddress)
+"""
+    $(TYPEDEF)
+
+Returns the operator (`op`) stored in the given `CombineAddress`.
+"""
+function get_operator(c::CombineAddress)
     return c.op
 end
 
-function children(c::CombineAddress)
+"""
+    $(TYPEDEF)
+
+Returns the addresses of the children stored in the given `CombineAddress`.
+"""
+function get_children(c::CombineAddress)
     c.addrs
 end
 
@@ -263,7 +274,7 @@ has_remaining_iterations(state::BottomUpState) = !isempty(remaining_combinations
 """
     $(TYPEDEF)
 
-Generic bottom-up search state
+Generic bottom-up search state. Tracks the current state of the search procedure.
 
 # Fields
 
@@ -298,7 +309,7 @@ end
 Fill the bank with the initial, smallest programs, likely just the terminals in
 most cases.
 
-Return the [`AccessAddress`](@ref)es to the newly-added programs.
+Returns the [`AccessAddress`](@ref)es to the newly-added programs.
 """
 function populate_bank!(iter::BottomUpIterator)::AbstractVector{AccessAddress}
     grammar = get_grammar(iter.solver)
@@ -308,14 +319,14 @@ function populate_bank!(iter::BottomUpIterator)::AbstractVector{AccessAddress}
         terminal_domain_for_type = grammar.isterminal .& grammar.domains[t]
         if any(terminal_domain_for_type)
             terminal_programs = UniformHole(terminal_domain_for_type, [])
-            push!(programs(get_bank(iter), 1, t), terminal_programs)
+            push!(get_programs(get_bank(iter), 1, t), terminal_programs)
         end
     end
 
     return [
         AccessAddress(1, t, x)
         for t in unique(grammar.types)
-        for x in 1:length(programs(get_bank(iter), 1, t))
+        for x in 1:length(get_programs(get_bank(iter), 1, t))
     ]
 end
 
@@ -341,7 +352,7 @@ If the iteration should stop, the next state should be `nothing`.
 function combine(iter::BottomUpIterator, state)
     addresses = Vector{CombineAddress}()
     bank = get_bank(iter)
-    max_in_bank = maximum(measures(bank))
+    max_in_bank = maximum(get_measures(bank))
     grammar = get_grammar(iter.solver)
     terminals = grammar.isterminal
     nonterminals = .~terminals
@@ -354,11 +365,11 @@ function combine(iter::BottomUpIterator, state)
 
     #check bound function
     function check_bound(combination)
-        return 1 + maximum((measure.(combination))) > max_in_bank
+        return 1 + maximum((get_measure.(combination))) > max_in_bank
     end
 
     function appropriately_typed(child_types)
-        return combination -> child_types == return_type.(combination)
+        return combination -> child_types == get_return_type.(combination)
     end
 
     # loop over groups of rules with the same arity and child types
@@ -369,9 +380,9 @@ function combine(iter::BottomUpIterator, state)
         # *Lazily* collect addresses, their combinations, and then filter them based on `check_bound`
         all_addresses = (
             AccessAddress(measure, typename, idx)
-            for measure in measures(bank)
-            for typename in types(bank, measure)
-            for idx in eachindex(programs(bank, measure, typename))
+            for measure in get_measures(bank)
+            for typename in get_types(bank, measure)
+            for idx in eachindex(get_programs(bank, measure, typename))
         )
         all_combinations = Iterators.product(Iterators.repeated(all_addresses, nchildren)...)
         bounded_combinations = Iterators.filter(check_bound, all_combinations)
@@ -402,10 +413,10 @@ function add_to_bank!(
     program::AbstractRuleNode
 )
     bank = get_bank(iter)
-    prog_cost = 1 + maximum(measure.(children(program_combination)))
+    prog_cost = 1 + maximum(get_measure.(get_children(program_combination)))
     program_type = return_type(get_grammar(iter.solver), program)
 
-    push!(programs(bank, prog_cost, program_type), program)
+    push!(get_programs(bank, prog_cost, program_type), program)
 
     return true
 end
@@ -433,7 +444,7 @@ function new_address(
     idx
 )::AccessAddress
     return AccessAddress(
-        1 + maximum(depth.(children(program_combination))),
+        1 + maximum(depth.(get_children(program_combination))),
         program_type,
         idx
     )
@@ -451,17 +462,17 @@ end
 """
         $(TYPEDSIGNATURES)
 
-Construct a program using the [`CombineAddress`](@ref) `address` and the `iter`'s bank.
+Construct a program using the [`CombineAddress`](@ref) `address` and the `iter`'s bank and return it.
 """
 function retrieve(iter::BottomUpIterator, address::CombineAddress)::UniformHole
-    return UniformHole(operator(address).domain, [retrieve(iter, a) for a in
-                                                  children(address)])
+    return UniformHole(get_operator(address).domain, [retrieve(iter, a) for a in 
+                                                    get_children(address)])
 end
 
 """
         $(TYPEDSIGNATURES)
 
-Return the initial state for the first `combine` call
+Return the initial state for the first `combine` call.
 """
 function init_combine_structure(::BottomUpIterator)
     return Dict()
@@ -474,7 +485,7 @@ Return the next program to explore and the updated [`BottomUpState`](@ref).
 
 - If there are still remaining programs from the current bottom-up iteration to
 explore ([`remaining_combinations`](@ref)), it pops the next one
-- Otherwise, it calls the the [`combine`](@ref) function again, and processes the first returned program
+- Otherwise, it calls the the [`combine`](@ref) function again, and processes the first returned program.
 """
 function get_next_program(iter::BottomUpIterator, state::GenericBUState)
     if has_remaining_iterations(state) # && !isempty(first_(state))
@@ -578,3 +589,5 @@ function Base.iterate(iter::BottomUpIterator, state::GenericBUState)
 
     return nothing
 end
+
+

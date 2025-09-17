@@ -83,7 +83,7 @@ using DataStructures: DefaultDict
         end
 
         @testset "duplicates not added to bank" begin
-            all_progs(bank) = (p for m in HerbSearch.measures(bank) for t in HerbSearch.types(bank, m) for p in HerbSearch.programs(bank, m, t))
+            all_progs(bank) = (p for m in HerbSearch.get_measures(bank) for t in HerbSearch.get_types(bank, m) for p in HerbSearch.get_programs(bank, m, t))
             test_with_grammars(grammars_to_test) do g
                 iter = SizeBasedBottomUpIterator(g, :Int; max_depth=3)
                 bank = get_bank(iter)
