@@ -61,18 +61,18 @@ struct MeasureHashedBank{M}
 end
 
 """
-    measures(mhb::MeasureHashedBank)
+    get_measures(mhb::MeasureHashedBank)
 
 Retrieve the measures present in the bank `mhb`.
 """
-measures(mhb::MeasureHashedBank) = keys(mhb.bank)
+get_measures(mhb::MeasureHashedBank) = keys(mhb.bank)
 
 """
-    types(mhb::MeasureHashedBank, measure)
+    get_types(mhb::MeasureHashedBank, measure)
 
 Retrieve the types of programs in bank `mhb` with a certain `measure`.
 """
-types(mhb::MeasureHashedBank, measure) = keys(mhb.bank[measure])
+get_types(mhb::MeasureHashedBank, measure) = keys(mhb.bank[measure])
 
 """
     programs(mhb::MeasureHashedBank, measure, type)
@@ -123,6 +123,8 @@ struct AccessAddress{M,I<:Integer} <: AbstractAddress
     measure::M
     type::Symbol
     index::I
+    depth::Int64
+    size::Int64
 end
 
 AccessAddress(t::Tuple) = AccessAddress(t...)
@@ -132,7 +134,7 @@ AccessAddress(t::Tuple) = AccessAddress(t...)
 
 Get the measure (depth, size, etc. depending on the bank) of address `a`.
 """
-function measure(a::AccessAddress)
+function get_measure(a::AccessAddress)
     a.measure
 end
 
@@ -141,7 +143,7 @@ end
 
 Get the type of address `a`.
 """
-function return_type(a::AccessAddress)
+function get_return_type(a::AccessAddress)
     a.type
 end
 
@@ -150,9 +152,29 @@ end
 
 Get the index of address `a`.
 """
-function index(a::AccessAddress)
+function get_index(a::AccessAddress)
     a.index
 end
+
+"""
+    $(TYPEDSIGNATURES)
+
+
+"""
+function HerbCore.depth(a::AccessAddress)
+    a.depth
+end
+
+
+"""
+    $(TYPEDSIGNATURES)
+
+
+"""
+function Base.size(a::AccessAddress)
+    a.size
+end
+
 
 """
     $(TYPEDEF)
@@ -196,11 +218,11 @@ end
 
 CombineAddress(op, addrs::AbstractVector{<:AccessAddress}) = CombineAddress(op, Tuple(addrs))
 
-function operator(c::CombineAddress)
+function get_operator(c::CombineAddress)
     return c.op
 end
 
-function children(c::CombineAddress)
+function get_children(c::CombineAddress)
     c.addrs
 end
 
@@ -301,7 +323,7 @@ function populate_bank!(iter::BottomUpIterator)::AbstractVector{AccessAddress}
     end
 
     return [
-        AccessAddress(cost, t, x)
+        AccessAddress(cost, t, x, 1, 1) # This assumes that every terminal has size and depth 1; thus also holds for program composites
         for cost in get_measures(get_bank(iter))
         for t in unique(grammar.types)
         for x in 1:length(get_programs(get_bank(iter), cost, t))
@@ -330,14 +352,14 @@ If the iteration should stop, the next state should be `nothing`.
 function combine(iter::BottomUpIterator, state)
     addresses = Vector{CombineAddress}()
     bank = get_bank(iter)
-    max_in_bank = maximum(measures(bank))
+    max_in_bank = maximum(get_measures(bank))
     grammar = get_grammar(iter.solver)
     terminals = grammar.isterminal
     nonterminals = .~terminals
     non_terminal_shapes = UniformHole.(partition(Hole(nonterminals), grammar), ([],))
 
     # if we have exceeded the maximum number of programs to generate
-    if max_in_bank >= get_max_combination_depth(iter)
+    if max_in_bank >= get_measure_limit(iter)
         return nothing, nothing
     end
 
@@ -346,8 +368,15 @@ function combine(iter::BottomUpIterator, state)
         return 1 + calc_measure(iter, combination) > max_in_bank
     end
 
+    function check_solver_feasibility(combination::Tuple{Vararg{AccessAddress}})
+        if maximum(depth.(combination)) < get_max_depth(iter)
+            @show depth.(combination), size.(combination)
+        end
+        return maximum(depth.(combination)) < get_max_depth(iter) && sum(size.(combination)) < get_max_size(iter)
+    end
+
     function appropriately_typed(child_types)
-        return combination -> child_types == return_type.(combination)
+        return combination -> child_types == get_return_type.(combination)
     end
 
     # loop over groups of rules with the same arity and child types
@@ -356,17 +385,24 @@ function combine(iter::BottomUpIterator, state)
         nchildren = length(child_types)
 
         # *Lazily* collect addresses, their combinations, and then filter them based on `check_bound`
-        all_addresses = (
-            AccessAddress(measure, typename, idx)
-            for measure in measures(bank)
-            for typename in types(bank, measure)
-            for idx in eachindex(programs(bank, measure, typename))
+        all_addresses = (begin
+                program = get_programs(bank, measure, typename)[idx]
+                program_depth = depth(program)
+                program_size = length(program)
+                return AccessAddress(measure, typename, idx, program_depth, program_size)
+            end
+            for measure in get_measures(bank)
+            for typename in get_types(bank, measure)
+            for idx in eachindex(get_programs(bank, measure, typename))
         )
+
         all_combinations = Iterators.product(Iterators.repeated(all_addresses, nchildren)...)
         bounded_combinations = Iterators.filter(check_bound, all_combinations)
+        bounded_combinations = Iterators.filter(check_solver_feasibility, all_combinations)
         bounded_and_typed_combinations = Iterators.filter(appropriately_typed(child_types), bounded_combinations)
         # Construct the `CombineAddress`s from the filtered combinations
         append!(addresses, map(address_combo -> CombineAddress(shape, address_combo), bounded_and_typed_combinations))
+        @show length(addresses)
     end
 
     return addresses, state
@@ -414,7 +450,6 @@ function add_to_bank!(::BottomUpIterator, ::AccessAddress, ::AbstractRuleNode)
     return true
 end
 
-2
 """
         $(TYPEDSIGNATURES)
 
@@ -449,8 +484,8 @@ end
 Construct a program using the [`CombineAddress`](@ref) `address` and the `iter`'s bank.
 """
 function retrieve(iter::BottomUpIterator, address::CombineAddress)::UniformHole
-    return UniformHole(operator(address).domain, [retrieve(iter, a) for a in
-                                                  children(address)])
+    return UniformHole(get_operator(address).domain, [retrieve(iter, a) for a in
+                                                  get_children(address)])
 end
 
 """
@@ -540,10 +575,8 @@ function Base.iterate(iter::BottomUpIterator, state::GenericBUState)
     # otherwise remove it from the state
     if !isnothing(state.current_uniform_iterator)
         next_solution = next_solution!(state.current_uniform_iterator)
-        if isnothing(next_solution) || 
-            depth(next_solution) > get_max_depth(get_solver(iter)) || 
-            length(next_solution) > get_max_size(get_solver(iter))
 
+        if isnothing(next_solution) 
             state.current_uniform_iterator = nothing
         else
             return next_solution, state
@@ -564,10 +597,7 @@ function Base.iterate(iter::BottomUpIterator, state::GenericBUState)
             new_state.current_uniform_iterator = UniformIterator(uniform_solver, iter)
             next_solution = next_solution!(state.current_uniform_iterator)
 
-            if isnothing(next_solution) || 
-                depth(next_solution) > get_max_depth(get_solver(iter)) || 
-                length(next_solution) > get_max_size(get_solver(iter))
-            println("Solution too large 2")
+            if isnothing(next_solution) 
                 new_state.current_uniform_iterator = nothing
             else
                 return next_solution, new_state
