@@ -24,6 +24,7 @@ The interface for bottom-up iteration is defined as follows.
 - [`get_bank`](@ref): get the iterator's bank
 - [`populate_bank!`](@ref): initialize the bank with the terminals from the grammar
   and return the resulting [`AccessAddress`](@ref)es
+- [`get_measure_limit`](@ref): describes the maximum limit with respect to the measure defined.
 - [`combine`](@ref): combine the existing programs in the bank into new, more complex
   programs via [`CombineAddress`](@ref)es
 - [`add_to_bank!`](@ref): possibly add a program created by the [`combine`](@ref) step to
@@ -37,6 +38,9 @@ grammar, the bank also must be indexed on the type of the programs to allow the
 [`combine`](@ref) step to avoid constructing programs that do not adhere to the grammar.
 """
 abstract type BottomUpIterator <: ProgramIterator end
+
+function get_measure_limit end
+function calc_measure end 
 
 """
     struct MeasureHashedBank{M}
@@ -75,24 +79,8 @@ types(mhb::MeasureHashedBank, measure) = keys(mhb.bank[measure])
 
 Retrieve the programs in bank `mhb` with a certain `measure` and `type`. 
 """
-programs(mhb::MeasureHashedBank, measure, type) = mhb.bank[measure][type]
-retrieve(mhb::MeasureHashedBank, address) = programs(mhb, measure(address), return_type(address))[index(address)]
-
-@programiterator SizeBasedBottomUpIterator(
-    bank=MeasureHashedBank{Int}(),
-    max_combination_depth=5
-) <: BottomUpIterator
-
-function get_max_combination_depth(iter::SizeBasedBottomUpIterator)
-    return iter.max_combination_depth
-end
-
-@doc """
-     SizeBasedBottomUpIterator
-
-A bottom-up iterator with a bank indexed by some measure of a program (ex:
-depth, size).
-""" SizeBasedBottomUpIterator
+get_programs(mhb::MeasureHashedBank, measure, type) = mhb.bank[measure][type]
+retrieve(mhb::MeasureHashedBank, address) = get_programs(mhb, get_measure(address), get_return_type(address))[get_index(address)]
 
 """
     AbstractAddress
@@ -308,14 +296,15 @@ function populate_bank!(iter::BottomUpIterator)::AbstractVector{AccessAddress}
         terminal_domain_for_type = grammar.isterminal .& grammar.domains[t]
         if any(terminal_domain_for_type)
             terminal_programs = UniformHole(terminal_domain_for_type, [])
-            push!(programs(get_bank(iter), 1, t), terminal_programs)
+            push!(get_programs(get_bank(iter), calc_measure(iter, terminal_programs), t), terminal_programs)
         end
     end
 
     return [
-        AccessAddress(1, t, x)
+        AccessAddress(cost, t, x)
+        for cost in get_measures(get_bank(iter))
         for t in unique(grammar.types)
-        for x in 1:length(programs(get_bank(iter), 1, t))
+        for x in 1:length(get_programs(get_bank(iter), cost, t))
     ]
 end
 
@@ -353,8 +342,8 @@ function combine(iter::BottomUpIterator, state)
     end
 
     #check bound function
-    function check_bound(combination)
-        return 1 + maximum((measure.(combination))) > max_in_bank
+    function check_bound(combination::Tuple{Vararg{AccessAddress}})
+        return 1 + calc_measure(iter, combination) > max_in_bank
     end
 
     function appropriately_typed(child_types)
@@ -376,7 +365,6 @@ function combine(iter::BottomUpIterator, state)
         all_combinations = Iterators.product(Iterators.repeated(all_addresses, nchildren)...)
         bounded_combinations = Iterators.filter(check_bound, all_combinations)
         bounded_and_typed_combinations = Iterators.filter(appropriately_typed(child_types), bounded_combinations)
-
         # Construct the `CombineAddress`s from the filtered combinations
         append!(addresses, map(address_combo -> CombineAddress(shape, address_combo), bounded_and_typed_combinations))
     end
@@ -387,7 +375,7 @@ end
 """
         $(TYPEDSIGNATURES)
 
-Add the `program` (the result of combining `program_combination` to the bank of
+Add the `program` (the result of combining `program_combination`) to the bank of
 the `iter`.
 
 Return `true` if the `program` is added to the bank, and `false` otherwise.
@@ -402,13 +390,19 @@ function add_to_bank!(
     program::AbstractRuleNode
 )
     bank = get_bank(iter)
-    prog_cost = 1 + maximum(measure.(children(program_combination)))
+    prog_measure = calc_measure(iter, program_combination)
+
+    # Omit programs that exceed the limit
+    # if prog_measure > get_measure_limit(iter) return false end
+
     program_type = return_type(get_grammar(iter.solver), program)
 
-    push!(programs(bank, prog_cost, program_type), program)
+    push!(get_programs(bank, prog_measure, program_type), program)
 
     return true
 end
+
+
 
 """
         $(TYPEDSIGNATURES)
@@ -420,6 +414,7 @@ function add_to_bank!(::BottomUpIterator, ::AccessAddress, ::AbstractRuleNode)
     return true
 end
 
+2
 """
         $(TYPEDSIGNATURES)
 
@@ -433,7 +428,7 @@ function new_address(
     idx
 )::AccessAddress
     return AccessAddress(
-        1 + maximum(depth.(children(program_combination))),
+        calc_measure(iter, program_combination),
         program_type,
         idx
     )
@@ -532,7 +527,7 @@ end
 
 The second call to iterate uses [`get_next_program`](@ref) to retrive the next program from the [`GenericBUState`](@ref) and
     - if it is `nothing`, then it returns nothing; we stop
-    - if it is indexed by [``](@ref) then it has the program that is already in the bank; just returnccessAddress
+    - if it is indexed by [``](@ref) then it has the program that is already in the bank; just return AccessAddress
     - if it is indexed by [`CombineAddress`](@ref) then it
         - it calls `construct_program` to construct the program
         - call the `add_to_bank!` function to add it to the bank
@@ -545,14 +540,17 @@ function Base.iterate(iter::BottomUpIterator, state::GenericBUState)
     # otherwise remove it from the state
     if !isnothing(state.current_uniform_iterator)
         next_solution = next_solution!(state.current_uniform_iterator)
-        if isnothing(next_solution) || depth(next_solution) > iter.solver.max_depth
+        if isnothing(next_solution) || 
+            depth(next_solution) > get_max_depth(get_solver(iter)) || 
+            length(next_solution) > get_max_size(get_solver(iter))
+
             state.current_uniform_iterator = nothing
         else
             return next_solution, state
         end
     end
 
-    solver = iter.solver
+    solver = get_solver(iter)
     next_program_address, new_state = get_next_program(iter, state)
 
     while !isnothing(next_program_address)
@@ -560,13 +558,16 @@ function Base.iterate(iter::BottomUpIterator, state::GenericBUState)
         keep = add_to_bank!(iter, next_program_address, program)
 
         if keep && is_subdomain(program, state.starting_node)
-            # take the program (uniform tree) convert to UniformIterator, and add to state
-            # return the first concrete tree from the UniformIterator in the state (and the updated state)
+            # Take the program (uniform tree) convert to UniformIterator, and add to state
+            # Return the first concrete tree from the UniformIterator in the state (and the updated state)
             uniform_solver = UniformSolver(get_grammar(solver), program, with_statistics=solver.statistics)
             new_state.current_uniform_iterator = UniformIterator(uniform_solver, iter)
             next_solution = next_solution!(state.current_uniform_iterator)
 
-            if isnothing(next_solution) || depth(next_solution) > iter.solver.max_depth
+            if isnothing(next_solution) || 
+                depth(next_solution) > get_max_depth(get_solver(iter)) || 
+                length(next_solution) > get_max_size(get_solver(iter))
+            println("Solution too large 2")
                 new_state.current_uniform_iterator = nothing
             else
                 return next_solution, new_state
@@ -577,4 +578,98 @@ function Base.iterate(iter::BottomUpIterator, state::GenericBUState)
     end
 
     return nothing
+end
+
+@programiterator SizeBasedBottomUpIterator(
+    bank=MeasureHashedBank{Int}()
+) <: BottomUpIterator
+
+@doc """
+     SizeBasedBottomUpIterator
+
+A bottom-up iterator with a bank indexed by the size of a program.
+""" SizeBasedBottomUpIterator
+
+
+"""
+    $(TYPEDEF)
+
+Sets the maximum value of a measure for program enumeration.
+For example, if the limit is 5 (using depth as the measure), all programs up to depth 5 are included.
+"""
+function get_measure_limit(iter::SizeBasedBottomUpIterator)
+    return get_max_size(iter)
+end 
+
+function calc_measure(iter::SizeBasedBottomUpIterator, program::AbstractRuleNode)
+    return length(program)
+end
+
+function calc_measure(iter::BottomUpIterator, program_combination::CombineAddress)
+    return 1 + calc_measure(iter, get_children(program_combination))
+end
+calc_measure(::SizeBasedBottomUpIterator, combination::Tuple{Vararg{AccessAddress}}) = sum(get_measure.(combination))
+
+
+@programiterator DepthBasedBottomUpIterator(
+    bank=MeasureHashedBank{Int}()
+) <: BottomUpIterator
+
+@doc """
+     DepthBasedBottomUpIterator
+
+A bottom-up iterator with a bank indexed by the size of a program.
+""" DepthBasedBottomUpIterator
+
+
+"""
+    $(TYPEDEF)
+
+Sets the maximum value of a measure for program enumeration.
+For example, if the limit is 5 (using depth as the measure), all programs up to depth 5 are included.
+"""
+function get_measure_limit(iter::DepthBasedBottomUpIterator)
+    return get_max_depth(iter)
+end 
+
+function calc_measure(iter::DepthBasedBottomUpIterator, program::AbstractRuleNode)
+    return depth(program)
+end
+
+calc_measure(::DepthBasedBottomUpIterator, combination::Tuple{Vararg{AccessAddress}}) = maximum(get_measure.(combination))
+
+
+@programiterator CostBasedBottomUpIterator(
+    bank=MeasureHashedBank{Int}(),
+    rule_costs = Array{Float64}(undef, 0),
+    max_cost = typemax(Float64)
+) <: BottomUpIterator
+
+@doc """
+    CostBasedBottomUpIterator
+
+A bottom-up iterator enumerating programs by increasing cost. 
+The cost of each rule in grammar `g` is defined by `g.log_probabilities`.
+""" CostBasedBottomUpIterator
+
+get_max_cost(iter::CostBasedBottomUpIterator) = iter.max_cost
+
+"""
+    $(TYPEDEF)
+  
+Defines the cost for a uniform hole as the minimum cost within that hole. 
+Later, the minimum is iterated and the second-smallest program is returned.
+"""
+function get_cost(grammar::AbstractGrammar, uhole::UniformHole) 
+    return get_cost(grammar.log_probabilities, uhole)
+end
+
+get_cost(costs::Vector{<:Number}, uhole::UniformHole) = minimum(costs[hole.domain]) 
+
+calc_measure(::CostBasedBottomUpIterator, uhole::UniformHole) = get_cost()
+
+get_measure_limit(iter::CostBasedBottomUpIterator) = get_max_cost(iter)
+
+function calc_measure(::CostBasedBottomUpIterator, program_combination::CombineAddress)
+    return get_cost(iter.rule_costs, get_operator(program_combination).domain) + sum(get_measure.(get_children(program_combination)))
 end

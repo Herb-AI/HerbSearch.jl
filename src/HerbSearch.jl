@@ -70,10 +70,14 @@ export
     sample,
     rand,
     EvaluationError,
+
+    # Bottom-up Searches
     BottomUpState,
     BottomUpIterator,
-    SizeBasedBottomUpIterator,
     AbstractAddress,
+    SizeBasedBottomUpIterator,
+    DepthBasedBottomUpIterator,
+    CostBasedBottomUpIterator,
     AccessAddress,
     CombineAddress,
     remaining_combinations,
