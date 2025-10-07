@@ -10,6 +10,7 @@ end
 struct BestFirstStringIterator
     heuristic::Function
     max_size::Int
+    omit_observational_equivalent::Bool
     explored_programs::Vector{Any}
     problem_id::Int
     example_ids::Vector{Int}
@@ -22,7 +23,7 @@ struct BestFirstStringIterator
     seen_statess
 end
 
-function BestFirstStringIterator(heuristic, max_size, problem_id, example_ids)
+function BestFirstStringIterator(heuristic, max_size, omit_observational_equivalent, problem_id, example_ids)
     string_grammar = @HerbGrammar.cfgrammar begin
                 # 1         # 2
         Program = Operation | (Program; Operation)
@@ -42,6 +43,7 @@ function BestFirstStringIterator(heuristic, max_size, problem_id, example_ids)
     return BestFirstStringIterator(
         heuristic,
         max_size,
+        omit_observational_equivalent,
         [],
         problem_id,
         example_ids,
@@ -82,17 +84,23 @@ function add_to_queue!(
 
         states = interpret_program(iter, program)
 
-        if isnothing(states) || states in iter.seen_statess
+        if isnothing(states)
             continue
         end
 
-        push!(iter.seen_statess, states)
+        if iter.omit_observational_equivalent && states in iter.seen_statess
+            continue
+        end
+
         cost = iter.heuristic(iter, program, states)
 
         if cost != Inf
             entry = ProgramEntry(program, cost, states, parent)
-            enqueue!(queue, entry, cost)
+            states_seen = states in iter.seen_statess
+            enqueue!(queue, (entry, states_seen), cost)
         end
+
+        push!(iter.seen_statess, states)
     end
 end
 
@@ -138,8 +146,11 @@ function Base.iterate(
     iter::BestFirstStringIterator, 
     queue,#::PriorityQueue{Any, Number}, 
 )
-    entry = dequeue!(queue)
-    expand!(iter, queue, entry)
+    (entry, states_seen) = dequeue!(queue)
+
+    if !states_seen
+        expand!(iter, queue, entry)
+    end
 
     if length(queue) == 0
         return nothing

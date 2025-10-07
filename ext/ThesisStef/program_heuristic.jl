@@ -86,6 +86,78 @@ function generate_triplets(;
     return triplets_apn
 end
 
+function generate_triplets_2(;
+    amount_of_programs,
+    max_size,
+    problem_id,
+    example_ids,
+)
+    function heuristic(_, program, _)
+        l = length(program)
+        return l < max_size ? l : Inf
+    end
+
+    iter = BestFirstStringIterator(heuristic, max_size, false, problem_id, example_ids)
+
+    @show [s.str for s in iter.start_states]
+    @show [s.str for s in iter.final_states]
+    println("\nGenerating triplets")
+
+    shortest_paths = Dict((iter.start_states, iter.start_states) => 0)
+
+
+    for (i, entry) in enumerate(iter)
+        # println()
+        # @show i
+        # @show entry.program
+        # @show entry.states[1]
+        # @show entry.parent.states[1]
+
+        # if not exists
+        if !haskey(shortest_paths, (entry.states, entry.states))
+            shortest_paths[(entry.states, entry.states)] = 0
+        end
+
+        for ((states_in, states_out), size) in shortest_paths
+            if states_out == entry.parent.states && !haskey(shortest_paths, (states_in, entry.states))
+                shortest_paths[(states_in, entry.states)] = size + 1
+            end
+        end
+
+        if i == amount_of_programs
+            break
+        end
+    end
+
+    triplets_anp = []
+    equal_inputs = 0
+    equal_outputs = 0
+
+    for ((state_in_1, state_out_1), size_1) in shortest_paths
+        for ((state_in_2, state_out_2), size_2) in shortest_paths
+            if size_1 < size_2
+                # Case 1: equal inputs
+                if state_in_1 == state_in_2
+                    push!(triplets_anp, (state_in_1, state_out_1, state_out_2))
+                    equal_inputs += 1
+                end
+
+                # Case 2: equal outputs
+                if state_out_1 == state_out_2
+                    push!(triplets_anp, (state_out_1, state_in_1, state_in_2))
+                    equal_outputs += 1
+                end
+            end
+        end
+    end
+
+    @show equal_inputs
+    @show equal_outputs
+    @show length(triplets_anp)
+
+    return triplets_anp
+end
+
 
 # -------------------
 # 2. Encoding
@@ -235,20 +307,22 @@ function show_ordering(model, output_string, input_strings)
 end
 
 function test_best_first_iterator(; model, use_levenshtein, max_iterations, max_size, problem_id, example_ids)
-    heuristic(iter, program, states) = use_levenshtein ? 
-        levenshtein_heuristic(states, iter.final_states) :
-        model_heuristic(model, states, iter.final_states)
+    # heuristic(iter, program, states) = use_levenshtein ? 
+    #     levenshtein_heuristic(states, iter.final_states) :
+    #     model_heuristic(model, states, iter.final_states)
+
+    heuristic(iter, program, states) = length(program) 
 
     function state_to_str(state)
         return "$(state.str) | $(state.pointer)"
     end
 
-    iter = BestFirstStringIterator(heuristic, max_size, problem_id, example_ids)
+    iter = BestFirstStringIterator(heuristic, max_size, true, problem_id, example_ids)
 
 
     for (i, entry) in enumerate(iter)
         # println()
-        # @show i
+        @show i
         # @show entry.program
         # @show state_to_str.(entry.states)
 
@@ -313,7 +387,7 @@ function execute_experiment(;
         iterations = []
         accuracy = 0
 
-        train_triplets = generate_triplets(
+        train_triplets = generate_triplets_2(
             amount_of_programs=amount_of_programs_exploration,
             max_size=max_size_exploration,
             problem_id=problem_id,
@@ -326,6 +400,8 @@ function execute_experiment(;
                 hidden_dim=hidden_dim,
                 learning_rate=learning_rate)
 
+            training_accuracy(m, train_triplets)
+
             i = test_best_first_iterator(
                 model=m,
                 use_levenshtein=false,
@@ -334,7 +410,9 @@ function execute_experiment(;
                 problem_id=problem_id, 
                 example_ids=example_ids)
 
-            if i < 150
+            println("Took $i iterations")
+
+            if i < amount_of_programs_explotation
                 accuracy += 1 / repetitions
                 push!(iterations, i)
             end
@@ -417,22 +495,32 @@ end
 # hidden_dim = parse(Int, ARGS[2])
 # filename = "embed_dim=$embed_dim,hidden_dim=$hidden_dim"
 
+# experiment_name = "playground"
+# filename = "testing_new_data_generation"
+
 # execute_experiment(;
-#     experiment_name = "model_size",
+#     experiment_name = experiment_name,
 #     filename = filename,
-#     repetitions = 1,#10,
-#     problem_ids = 1:8,#1:100,#2:6,#1:100,
+#     repetitions = 5,
+#     problem_ids = 102,
 #     example_ids = 1:5,
-#     amount_of_programs_exploration = 50,
-#     max_size_exploration = 7,
+#     amount_of_programs_exploration = 300,
+#     max_size_exploration = 10,
 #     learning_rate = 0.04,
 #     amount_of_programs_explotation = 150,
 #     max_size_explotation = 10,
 #     model = "Embed -> GRU",
-#     embed_dim = embed_dim,
-#     hidden_dim = hidden_dim,
+#     embed_dim = 4,
+#     hidden_dim = 4,
 # )
 
 # data = load_data("model_size", [filename])
 # display_results(data)
 
+i = test_best_first_iterator(
+                model=nothing,
+                use_levenshtein=true,
+                max_iterations=150,
+                max_size=10,
+                problem_id=102, 
+                example_ids=1:5)
