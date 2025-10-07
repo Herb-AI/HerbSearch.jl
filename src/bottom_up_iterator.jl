@@ -331,14 +331,14 @@ function populate_bank!(iter::BottomUpIterator)::AbstractVector{AccessAddress}
 end
 
 """
-        $(TYPEDSIGNATURES)
+    $(TYPEDSIGNATURES)
 
 Get the problem bank from the `BottomUpIterator`, `iter`.
 """
 get_bank(iter::BottomUpIterator) = iter.bank
 
 """
-        $(TYPEDSIGNATURES)
+    $(TYPEDSIGNATURES)
 
 Combine the largest/most costly programs currently in `iter`'s bank, using any
 parameters from `state`, to create a new set of programs.
@@ -369,9 +369,6 @@ function combine(iter::BottomUpIterator, state)
     end
 
     function check_solver_feasibility(combination::Tuple{Vararg{AccessAddress}})
-        if maximum(depth.(combination)) < get_max_depth(iter)
-            @show depth.(combination), size.(combination)
-        end
         return maximum(depth.(combination)) < get_max_depth(iter) && sum(size.(combination)) < get_max_size(iter)
     end
 

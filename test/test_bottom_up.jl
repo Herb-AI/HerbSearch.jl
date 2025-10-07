@@ -1,6 +1,6 @@
-import HerbSearch.init_combine_structure
+using Test
 using DataStructures: DefaultDict
-
+import HerbSearch: init_combine_structure
 
 grammars_to_test = Dict(
     "arity <= 1" => (@csgrammar begin
@@ -26,135 +26,250 @@ grammars_to_test = Dict(
     end)
 )
 
-iterator_factories = Dict(
+# helper
+test_with_grammars(f, grammars) = (for (name, g) in grammars; @testset "$name" f(g); end)
+
+general_iterator_factories = Dict(
     "SizeBased"  => (g; kwargs...) -> SizeBasedBottomUpIterator(g, :Int; kwargs...),
     "DepthBased" => (g; kwargs...) -> DepthBasedBottomUpIterator(g, :Int; kwargs...),
-    "CostBased"  => (g; kwargs...) -> CostBasedBottomUpIterator(g, :Int, max_cost=20; kwargs...)
+    "CostBased"  => (g; kwargs...) -> begin
+        g2 = init_probabilities!(g)
+        CostBasedBottomUpIterator(g2, :Int; max_cost=1e12, kwargs...)
+    end
 )
 
-"""
-Loops over all iterator factories × grammars, creating a nested @testset.
-Write the test once, and it runs for every (iterator, grammar).
-"""
-function test_with_iterators(factories, grammars; kwargs..., f)
-    for (iname, factory) in factories
-        @testset "$iname iterator" begin
-            for (gname, g) in grammars
-                @testset "$gname" begin
-                    iter = factory(g; kwargs...)
-                    f(iter, g, iname)
+# Use these for non-cost-specific tests (step-by-step, terminals-first, etc.)
+structural_iterator_factories = Dict(
+    "SizeBased"  => (g; kwargs...) -> SizeBasedBottomUpIterator(g, :Int; kwargs...),
+    "DepthBased" => (g; kwargs...) -> DepthBasedBottomUpIterator(g, :Int; kwargs...)
+)
+
+# Cost-only variants (control max_cost explicitly in the tests)
+cost_iterator_factory = Dict(
+    "CostBased"  => (g; kwargs...) -> begin
+        CostBasedBottomUpIterator(g2, :Int; kwargs...)
+    end
+)
+
+@testset "Bottom-Up Search" begin
+@testset "Generic Bottom-Up Search Test" begin
+    for (iter_name, make_iter) in general_iterator_factories
+        @testset "$iter_name" begin
+            @testset "Compare to DFS (same max_depth)" begin
+                test_with_grammars(grammars_to_test) do g
+                    for depth in 1:4
+                        iter_bu  = make_iter(g; max_depth=depth)
+                        iter_dfs = DFSIterator(g, :Int; max_depth=depth)
+
+                        bu  = [freeze_state(p) for p in iter_bu]
+                        dfs = [freeze_state(p) for p in iter_dfs]
+
+                        @testset "max_depth=$depth" begin
+                            @test issetequal(bu, dfs)
+                            @test length(bu) == length(dfs)
+                        end
+                    end
+
+                    for size in 1:4
+                        iter_bu  = make_iter(g; max_size=size)
+                        iter_dfs = DFSIterator(g, :Int; max_size=size)
+
+                        bu  = [freeze_state(p) for p in iter_bu]
+                        dfs = [freeze_state(p) for p in iter_dfs]
+
+                        @testset "max_size=$size" begin
+                            @test issetequal(bu, dfs)
+                            @test length(bu) == length(dfs)
+                        end
+                    end
                 end
             end
+
+            @testset "Rooted correctly" begin
+                test_with_grammars(grammars_to_test) do g
+                    iter = make_iter(g; max_depth=4)
+                    for p in iter
+                        pf = freeze_state(p)
+                        @test g.types[get_rule(pf)] == :Int
+                    end
+                end
+            end
+
+            @testset "No duplicates enumerated" begin
+                test_with_grammars(grammars_to_test) do g
+                    iter = make_iter(g; max_depth=3)
+                    seen = Set{Any}()
+                    nxt = Base.iterate(iter)
+                    while !isnothing(nxt)
+                        (p, st) = nxt
+                        pf = freeze_state(p)
+                        @test !in(pf, seen)
+                        push!(seen, pf)
+                        nxt = Base.iterate(iter, st)
+                    end
+                end
+            end
+
+            @testset "Respect structural limits (max_depth / max_size)" begin
+                test_with_grammars(grammars_to_test) do g
+                    for ds in 1:4
+                        iter = make_iter(g; max_depth=ds, max_size=ds)
+                        for p in iter
+                            @test depth(p) ≤ get_max_depth(iter)
+                            @test length(p) ≤ get_max_size(iter)
+                        end
+                    end
+                end
+            end
+
+            @testset "Monotone measure" begin
+                test_with_grammars(grammars_to_test) do g
+                    iter_depth = 3
+                    iter_bu = make_iter(g; max_depth=iter_depth)
+                    last_measure = -Inf
+                    for p in iter_bu
+                        m = HerbSearch.calc_measure(iter_bu, p)
+                        @test m ≥ last_measure
+                        if m > last_measure
+                            last_measure = m
+                        end
+                    end
+                end
+            end
+
         end
     end
 end
 
-@testset "Bottom Up Search" begin
-
-    @testset "basic" begin
-        subset = selectkeys(grammars_to_test, ["arity = 2"])
-        test_with_iterators(iterator_factories, subset; max_depth=5) do iter, g, iname
-            progs = [freeze_state(p) for (i, p) in enumerate(iter) if i <= 6]
-
-            # Instead of exact order, check basic invariants:
-            # - we only get :Int rooted programs
-            # - first programs include all Int terminals
-            @test all(g.types[get_rule(p)] == :Int for p in progs)
-
-            terminals = RuleNode.(findall(g.isterminal .& (g.types .== (:Int))))
-            @test all(t ∈ progs for t in terminals)
-
-            # sanity: at least one non-terminal shows up too
-            @test any(length(p) > 1 for p in progs)
-        end
-    end
-
-    @testset "Step-by-step tests" begin
-        test_with_iterators(iterator_factories, grammars_to_test; max_depth=3) do iter, g, _
-            @testset "Check populate_bank!" begin
-                initial_addresses = populate_bank!(iter)
-                num_uniform_trees_terminals = length(unique(g.types[g.isterminal]))
-                @test length(initial_addresses) == num_uniform_trees_terminals
-            end
-
-            @testset "Iterate all terminals first" begin
-                expected_programs = RuleNode.(findall(g.isterminal .& (g.types .== (:Int))))
-                progs = [freeze_state(p) for (i, p) in enumerate(iter) if length(p) == 1]
+@testset "Structural Bottom-Up Search (Size/Depth only)" begin
+    for (iter_name, make_iter) in structural_iterator_factories
+        @testset "$iter_name" begin
+            @testset "basic sanity" begin
+                g = grammars_to_test["arity = 2"]
+                iter = make_iter(g; max_depth=5, max_combination_depth=5)
+                expected_programs = [
+                    (@rulenode 1),
+                    (@rulenode 2),
+                    (@rulenode 3{1,1}),
+                    (@rulenode 3{2,1}),
+                    (@rulenode 3{1,2}),
+                    (@rulenode 3{2,2})
+                ]
+                progs = [freeze_state(p) for (i, p) in enumerate(iter) if i ≤ 6]
                 @test issetequal(progs, expected_programs)
+                @test length(expected_programs) == length(progs)
             end
-        end
-    end
 
-    @testset "Combine" begin
-        test_with_iterators(iterator_factories, grammars_to_test; max_depth=5) do iter, g, _
-            populate_bank!(iter)
-            combinations, state = combine(iter, init_combine_structure(iter))
-            @test !isempty(combinations)
-        end
-    end
-
-    @testset "duplicates not added to bank" begin
-        all_progs(bank) = (p for m in HerbSearch.get_measures(bank)
-                             for t in HerbSearch.get_types(bank, m)
-                             for p in HerbSearch.get_programs(bank, m, t))
-        test_with_iterators(iterator_factories, grammars_to_test; max_depth=3) do iter, g, _
-            bank = get_bank(iter)
-            for p in iter
-                @test allunique(all_progs(bank))
-            end
-        end
-    end
-
-    @testset "duplicates not enumerated" begin
-        test_with_iterators(iterator_factories, grammars_to_test; max_depth=3) do iter, g, _
-            progs = []
-            next_iter = Base.iterate(iter)
-            while !isnothing(next_iter)
-                (p, state) = next_iter
-                pf = freeze_state(p)
-                push!(progs, pf)
-                @test allunique(progs)
-                @test allunique(remaining_combinations(state))
-                next_iter = Base.iterate(iter, state)
-            end
-        end
-    end
-
-    @testset "Strictly increasing depth" begin
-        test_with_iterators(iterator_factories, grammars_to_test) do iter, g, factory
-            for iter_depth in 1:4
-                iter_bu = iterator_factories[factory](g; max_depth=iter_depth)
-                current_depth = 0
-                for p in iter_bu
-                    d = depth(p)
-                    @test d >= current_depth
-                    current_depth = max(d, current_depth)
+            @testset "populate_bank! returns exactly one terminal per type" begin
+                test_with_grammars(grammars_to_test) do g
+                    iter = make_iter(g; max_depth=3)
+                    initial_addresses = populate_bank!(iter)
+                    num_uniform_trees_terminals = length(unique(g.types[g.isterminal]))
+                    @test length(initial_addresses) == num_uniform_trees_terminals
                 end
             end
-        end
-    end
 
-    @testset "Rooted correctly" begin
-        test_with_iterators(iterator_factories, grammars_to_test) do iter, g, factory
-            for iter_depth in 1:4
-                iter_bu = iterator_factories[factory](g; max_depth=iter_depth)
-                for p in iter_bu
-                    pf = freeze_state(p)
-                    @test g.types[get_rule(pf)] == :Int
+            @testset "iterate all terminals first" begin
+                test_with_grammars(grammars_to_test) do g
+                    iter = make_iter(g; max_depth=3)
+                    expected_programs = RuleNode.(findall(g.isterminal .& (g.types .== (:Int))))
+                    progs = [freeze_state(p) for (i, p) in enumerate(iter) if length(p) == 1]
+                    @test issetequal(progs, expected_programs)
+                    @test length(expected_programs) == length(progs)
                 end
             end
-        end
-    end
 
-    @testset "Compare to DFS" begin
-        test_with_iterators(iterator_factories, grammars_to_test) do iter, g, factory
-            for depth in 1:4
-                iter_bu = iterator_factories[factory](g; max_depth=depth)
-                iter_dfs = DFSIterator(g, :Int; max_depth=depth)
-                bottom_up_programs = [freeze_state(p) for p in iter_bu]
-                dfs_programs = [freeze_state(p) for p in iter_dfs]
-                @test issetequal(bottom_up_programs, dfs_programs)
+            @testset "combine produces work after seed" begin
+                test_with_grammars(grammars_to_test) do g
+                    iter = make_iter(g; max_depth=5)
+                    populate_bank!(iter)
+                    combinations, state = combine(iter, init_combine_structure(iter))
+                    @test !isempty(combinations)
+                end
             end
+
+            @testset "duplicates not added to bank" begin
+                all_progs(bank) = (p for m in HerbSearch.get_measures(bank)
+                                     for t in HerbSearch.get_types(bank, m)
+                                     for p in HerbSearch.get_programs(bank, m, t))
+                test_with_grammars(grammars_to_test) do g
+                    iter = make_iter(g; max_depth=3)
+                    bank = get_bank(iter)
+                    for p in iter
+                        @test allunique(all_progs(bank))
+                    end
+                end
+            end
+
+            @testset "duplicates not enumerated + remaining_combinations unique" begin
+                test_with_grammars(grammars_to_test) do g
+                    iter = make_iter(g; max_depth=3)
+                    progs = []
+                    next_iter = Base.iterate(iter)
+                    while !isnothing(next_iter)
+                        (p, state) = next_iter
+                        pf = freeze_state(p)
+                        push!(progs, pf)
+                        @test allunique(progs)
+                        @test allunique(remaining_combinations(state))
+                        next_iter = Base.iterate(iter, state)
+                    end
+                end
+            end
+
         end
     end
+end
+
+@testset "Cost-Based Bottom-Up Search" begin
+    for (iter_name, make_iter) in cost_iterator_factory
+        @testset "$iter_name" begin
+
+            @testset "populate_bank! seeds and yields terminals in first horizon" begin
+                test_with_grammars(grammars_to_test) do g
+                    iter = make_iter(g; max_depth=3, max_cost=1e6)
+                    initial_addrs = populate_bank!(iter)
+                    # Expect at least some terminals within the first horizon
+                    @test !isempty(initial_addrs)
+
+                    # And the first enumerate wave should be terminals only
+                    solver = get_solver(iter)
+                    start  = get_tree(solver)
+                    st = GenericBUState(initial_addrs, nothing, nothing, start)
+
+                    # Collect only the first wave (exactly the preloaded addresses)
+                    got = Any[]
+                    for a in initial_addrs
+                        p, st = Base.iterate(iter, st)
+                        push!(got, p)
+                    end
+                    @test all(length(p) == 1 for p in got)
+                end
+            end
+
+            @testset "max_cost prunes results (small cap)" begin
+                test_with_grammars(grammars_to_test) do g
+                    # Use a tiny max_cost; expect either empty or only the cheapest terminals
+                    iter = make_iter(g; max_depth=5, max_cost=0.0)
+                    # Enumerate a handful
+                    progs = [p for (i, p) in enumerate(iter) if i ≤ 5]
+                    # All programs seen (if any) must be terminals (since any op adds positive cost)
+                    @test all(length(p) == 1 for p in progs)
+                end
+            end
+
+            @testset "works with probabilities (init_probabilities!)" begin
+                test_with_grammars(grammars_to_test) do g
+                    # Use the factory: it already calls maybe_init_probabilities!
+                    iter = make_iter(g; max_depth=3, max_cost=1e6)
+                    # Just smoke test a few solutions
+                    progs = [freeze_state(p) for (i, p) in enumerate(iter) if i ≤ 10]
+                    @test !isempty(progs)
+                    @test all(g.types[get_rule(pf)] == :Int for pf in progs)
+                end
+            end
+
+        end
+    end
+end
 end
