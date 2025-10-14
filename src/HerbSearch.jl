@@ -53,7 +53,9 @@ function divide_and_conquer end
 
 export
     ProgramIterator,
-    @programiterator, heuristic_leftmost,
+    @programiterator, 
+    get_solver,
+    heuristic_leftmost,
     heuristic_rightmost,
     heuristic_random,
     heuristic_smallest_domain, derivation_heuristic, synth,

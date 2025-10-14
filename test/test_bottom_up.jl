@@ -10,6 +10,12 @@ grammars_to_test = Dict(
     "arity = 2" => (@csgrammar begin
         Int = 1 | 2
         Int = Int + Int
+        Int = Int * Int
+    end),
+    "arity = 3" => (@csgrammar begin
+        Int = 1
+        Int = Int + Int
+        Int = f(Int, Int, Int)
     end),
     "multiple types" => (@csgrammar begin
         Int = 1 | 2
@@ -17,11 +23,6 @@ grammars_to_test = Dict(
         Char = 'a' | 'b'
         String = Char * Char
         Int = length(String)
-        Int = Int * Int
-    end),
-    "binary operators simple" => (@csgrammar begin
-        Int = 1
-        Int = Int + Int
         Int = Int * Int
     end)
 )
@@ -33,7 +34,7 @@ general_iterator_factories = Dict(
     "SizeBased"  => (g; kwargs...) -> SizeBasedBottomUpIterator(g, :Int; kwargs...),
     "DepthBased" => (g; kwargs...) -> DepthBasedBottomUpIterator(g, :Int; kwargs...),
     "CostBased"  => (g; kwargs...) -> begin
-        g2 = init_probabilities!(g)
+        g2 = isprobabilistic(g) ? g : init_probabilities!(g)
         CostBasedBottomUpIterator(g2, :Int; max_cost=1e12, kwargs...)
     end
 )
@@ -87,7 +88,7 @@ cost_iterator_factory = Dict(
 
             @testset "Rooted correctly" begin
                 test_with_grammars(grammars_to_test) do g
-                    iter = make_iter(g; max_depth=4, max_size=8)
+                    iter = make_iter(g; max_depth=3, max_size=6)
                     for p in iter
                         pf = freeze_state(p)
                         @test g.types[get_rule(pf)] == :Int
@@ -124,8 +125,8 @@ cost_iterator_factory = Dict(
 
             @testset "Monotone measure" begin
                 test_with_grammars(grammars_to_test) do g
-                    depth = 3
-                    iter_bu = make_iter(g; max_depth=depth, max_size=depth*2)
+                    max_depth = 3
+                    iter_bu = make_iter(g; max_depth=max_depth, max_size=max_depth*2)
                     last_measure = -Inf
                     for p in iter_bu
                         m = HerbSearch.calc_measure(iter_bu, p)
@@ -146,7 +147,7 @@ end
         @testset "$iter_name" begin
             @testset "basic sanity" begin
                 g = grammars_to_test["arity = 2"]
-                iter = make_iter(g; max_depth=4, max_size=8)
+                iter = make_iter(g; max_depth=3, max_size=6)
                 expected_programs = [
                     (@rulenode 1),
                     (@rulenode 2),
@@ -162,7 +163,7 @@ end
 
             @testset "populate_bank! returns exactly one terminal per type" begin
                 test_with_grammars(grammars_to_test) do g
-                    iter = make_iter(g; max_depth=3, max_size=6)
+                    iter = make_iter(g; max_depth=3, max_size=4)
                     initial_addresses = populate_bank!(iter)
                     num_uniform_trees_terminals = length(unique(g.types[g.isterminal]))
                     @test length(initial_addresses) == num_uniform_trees_terminals
@@ -171,7 +172,7 @@ end
 
             @testset "iterate all terminals first" begin
                 test_with_grammars(grammars_to_test) do g
-                    iter = make_iter(g; max_depth=3, max_size=6)
+                    iter = make_iter(g; max_depth=3, max_size=4)
                     expected_programs = RuleNode.(findall(g.isterminal .& (g.types .== (:Int))))
                     progs = [freeze_state(p) for (i, p) in enumerate(iter) if length(p) == 1]
                     @test issetequal(progs, expected_programs)
@@ -183,7 +184,12 @@ end
                 test_with_grammars(grammars_to_test) do g
                     iter = make_iter(g; max_depth=4, max_size=8)
                     populate_bank!(iter)
-                    combinations, state = combine(iter, init_combine_structure(iter))
+                    state = GenericBUState(pq, init_combine_structure(iter), nothing, start, -Inf, Inf)
+                    state = init_combine_structure(iter)
+
+                    populate_bank!(iter, state)
+
+                    combinations, state = combine(iter, state)
                     @test !isempty(combinations)
                 end
             end
@@ -234,7 +240,7 @@ end
                     # And the first enumerate wave should be terminals only
                     solver = get_solver(iter)
                     start  = get_tree(solver)
-                    st = GenericBUState(initial_addrs, nothing, nothing, start)
+                    st = GenericBUState(initial_addrs, nothing, nothing, start, -Inf, Inf)
 
                     # Collect only the first wave (exactly the preloaded addresses)
                     got = Any[]

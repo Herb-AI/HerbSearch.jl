@@ -122,7 +122,7 @@ Fields:
 - `next_id::Base.RefValue{Int}` : monotonically increasing ID source.
 - `last_horizon::Float64` : inclusive lower bound of the last emitted layer.
 - `new_horizon::Float64` : exclusive upper bound of the next layer, as computed by
-  `calculate_new_horizon`.
+  `compute_new_horizon`.
 """
 mutable struct CostBank
     uh_index::Dict{Int,UniformTreeEntry}
@@ -137,8 +137,6 @@ CostBank() = CostBank(
     Dict{Int,UniformTreeEntry}(),
     PriorityQueue{Tuple{Int,Int}, Float64}(),
     Ref(1),
-    -Inf,
-    0
 )
 
 
@@ -279,6 +277,41 @@ function add_to_bank!(iter::AbstractCostBasedBottomUpIterator, program::Abstract
     return uh_id
 end
 
+add_to_bank!(iter::AbstractCostBasedBottomUpIterator, address::AbstractAddress, program::AbstractRuleNode) = add_to_bank!(iter, program) 
+
+function seed_terminals!(iter::AbstractCostBasedBottomUpIterator)
+    grammar = get_grammar(iter.solver)
+    bank    = get_bank(iter)
+
+    for t in unique(grammar.types)
+        term_mask = grammar.isterminal .& grammar.domains[t]
+        if any(term_mask)
+            uh = UniformHole(term_mask, [])
+            _ = add_to_bank!(iter, uh)  # marks new_shape=true internally
+        end
+    end
+    return nothing
+end
+
+function collect_initial_window(iter::AbstractCostBasedBottomUpIterator)
+    bank  = get_bank(iter)
+    limit = get_measure_limit(iter)
+
+    out = CostAccessAddress[]
+    for (uh_id, ent) in bank.uh_index
+        for c in ent.sorted_costs
+            if c ≤ limit
+                idxs = indices_at_cost(iter, ent, c)
+                @inbounds for i in 1:length(idxs)
+                    push!(out, CostAccessAddress(uh_id, c, i))
+                end
+            end
+        end
+    end
+    return out
+end
+
+
 
 """
     $(TYPEDSIGNATURES)
@@ -287,7 +320,7 @@ Compute the **lowest possible total cost** of any *new parent shape* formed by c
 children where **at least one** child has `new_shape == true`. Returns `Inf` if no such
 combination exists or none are within `max_cost`.
 """
-function compute_new_horizon(iter::AbstractCostBasedBottomUpIterator, state::GenericBUState)
+function compute_new_horizon(iter::AbstractCostBasedBottomUpIterator)
     bank    = get_bank(iter)
     grammar = get_grammar(iter.solver)
     limit   = get_measure_limit(iter)
@@ -478,74 +511,26 @@ function combine(iter::AbstractCostBasedBottomUpIterator, state::GenericBUState)
         enqueue_entry_costs!(iter, uh_id)
     end
 
-    bank.last_horizon = bank.new_horizon
-    bank.new_horizon  = calculate_new_horizon(iter)
+    state.last_horizon = state.new_horizon
+    state.new_horizon  = compute_new_horizon(iter)
 
-    out   = CostAccessAddress[]
+    @show state.last_horizon, state.new_horizon
+
     limit = get_measure_limit(iter)
 
     for (key, cost) in bank.pq
-        if cost ≥ bank.last_horizon && cost < bank.new_horizon && cost ≤ limit
+        if cost ≥ state.last_horizon && cost < state.new_horizon && cost ≤ limit
             (uh_id, _idx_in_sorted) = key
             ent  = bank.uh_index[uh_id]
             idxs = indices_at_cost(iter, ent, cost)
             @inbounds for i in 1:length(idxs)
-                push!(out, CostAccessAddress(uh_id, cost, i))
+                enqueue!(state.combinations, CostAccessAddress(uh_id, cost, i), cost)
             end
         end
     end
 
-    sort!(out; by = a -> a.cost)
-    return out, state
+    return state.combinations, state
 end
-
-
-"""
-    $(TYPEDSIGNATURES)
-
-Initialize the bank with **terminal** uniform trees (one per grammar type with terminals),
-mark them as `new_shape=true`, enqueue their costs, compute the initial `new_horizon`,
-and **return all `CostAccessAddress` items with cost in `[last_horizon, new_horizon)`**.
-"""
-function populate_bank!(iter::AbstractCostBasedBottomUpIterator)
-    grammar = get_grammar(iter.solver)
-    bank    = get_bank(iter)
-
-    new_ids = Int[]
-    for t in unique(grammar.types)
-        term_mask = grammar.isterminal .& grammar.domains[t]
-        if any(term_mask)
-            uh = UniformHole(term_mask, [])
-            uh_id = add_to_bank!(iter, uh)
-            push!(new_ids, uh_id)
-        end
-    end
-
-    # Incrementally enqueue only the new seed entries
-    for uh_id in new_ids
-        enqueue_entry_costs!(iter, uh_id)
-    end
-
-    # Establish the very first horizon boundary
-    bank.new_horizon = calculate_new_horizon(iter)
-
-    # Collect all addresses within the initial window [last_horizon, new_horizon)
-    out   = CostAccessAddress[]
-    limit = get_measure_limit(iter)
-    for (key, cost) in bank.pq
-        if cost ≥ bank.last_horizon && cost < bank.new_horizon && cost ≤ limit
-            (uh_id, _idx) = key
-            ent  = bank.uh_index[uh_id]
-            idxs = indices_at_cost(iter, ent, cost)
-            @inbounds for i in 1:length(idxs)
-                push!(out, CostAccessAddress(uh_id, cost, i))
-            end
-        end
-    end
-    sort!(out; by = a -> a.cost)
-    return out
-end
-
 
 """
     $(TYPEDSIGNATURES)
@@ -554,16 +539,17 @@ Call `combine` when needed to fill the current wave window. Otherwise pop the ne
 `CostAccessAddress`, reconstruct its concrete program, and yield it.
 """
 function Base.iterate(iter::AbstractCostBasedBottomUpIterator, state::GenericBUState)
-    # Construct new combinations if empty
-    if isempty(state.combinations)
-        addrs, _ = combine(iter, state)
-        if isempty(addrs)
-            return nothing
+    next_program_address, new_state = get_next_program(iter, state)
+
+    while !isnothing(next_program_address)
+        program = retrieve(iter, next_program_address)
+
+        if is_subdomain(program, state.starting_node)
+            return program, state
         end
-        state.combinations = addrs
+
+        next_program_address, new_state = get_next_program(iter, new_state)
     end
 
-    addr = popfirst!(state.combinations)
-    prog = retrieve(iter, addr)
-    return prog, state
+    return nothing
 end

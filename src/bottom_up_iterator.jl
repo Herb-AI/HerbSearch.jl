@@ -329,32 +329,54 @@ function new_state_tracker!(state::GenericBUState, new_tracker)
     state.combine_stage_tracker = new_tracker
 end
 
+function collect_initial_window(iter::BottomUpIterator)
+    bank    = get_bank(iter)
+    grammar = get_grammar(iter.solver)
+    limit = get_measure_limit(iter)
+
+    out = AccessAddress[]
+    for measure in get_measures(bank)
+        if measure <= limit
+            for t in unique(grammar.types)
+                entries = get_entries(bank, measure, t)
+                isempty(entries) && continue
+                @inbounds for x in 1:length(entries)
+                    # initial terminals are new
+                    push!(out, AccessAddress(measure, t, x, 1, 1, true))
+                end
+            end
+        end
+    end
+    return out
+end
+
+function seed_terminals!(iter::BottomUpIterator)
+    grammar = get_grammar(iter.solver)
+    bank    = get_bank(iter)
+
+    for t in unique(grammar.types)
+        term_mask = grammar.isterminal .& grammar.domains[t]
+        if any(term_mask)
+            uh = UniformHole(term_mask, [])
+            push!(get_entries(bank, calc_measure(iter, uh), t), BankEntry(uh, true))
+        end
+    end
+end
+
+
 """
     $(TYPEDSIGNATURES)
 
 Fill the bank with the initial, smallest programs, likely just the terminals in
 most cases.
-
-Return the [`AccessAddress`](@ref)es to the newly-added programs.
+Return the [`AbstractAddress`](@ref)es to the newly-added programs.
 """
-function populate_bank!(iter::BottomUpIterator)::AbstractVector{AccessAddress}
-    grammar = get_grammar(iter.solver)
-    for t in unique(grammar.types)
-        terminal_domain_for_type = grammar.isterminal .& grammar.domains[t]
-        if any(terminal_domain_for_type)
-            terminal_programs = UniformHole(terminal_domain_for_type, [])
-            push!(get_entries(get_bank(iter), calc_measure(iter, terminal_programs), t),
-                  BankEntry(terminal_programs, true))
-        end
-    end
-    return [
-        AccessAddress(measure, t, x, 1, 1, true)  # initial terminals are new
-        for measure in get_measures(get_bank(iter))
-        for t in unique(grammar.types)
-        for x in 1:length(get_entries(get_bank(iter), cost, t))
-    ]
-end
+function populate_bank!(iter::BottomUpIterator)
+    seed_terminals!(iter)
 
+    addrs = collect_initial_window(iter)
+    return addrs
+end
 
 """
     $(TYPEDSIGNATURES)
@@ -386,7 +408,7 @@ Notes:
 - “Newness” is derived from the bank’s `is_new` flags on entries, **not** from horizons.
 - This function does **not** mutate the bank or the state (other than reading state).
 """
-function compute_new_horizon(iter::BottomUpIterator, state::GenericBUState)
+function compute_new_horizon(iter::BottomUpIterator)
     bank    = get_bank(iter)
     grammar = get_grammar(iter.solver)
 
@@ -418,13 +440,6 @@ function compute_new_horizon(iter::BottomUpIterator, state::GenericBUState)
         end
     end
 
-    # Determine the maximum arity among all shapes
-    max_arity = 0
-    for shape in nonterminal_shapes
-        child_types = Tuple(grammar.childtypes[findfirst(shape.domain)])
-        max_arity = max(max_arity, length(child_types))
-    end
-
     # Helper: make a lightweight AccessAddress to feed into calc_measure.
     # Only measure & type matter for measure computation here.
     make_synth = (M, T, is_new=false) -> AccessAddress(M, T, 0, 1, 1, is_new)
@@ -434,9 +449,6 @@ function compute_new_horizon(iter::BottomUpIterator, state::GenericBUState)
 
     for shape in nonterminal_shapes
         child_types = Tuple(grammar.childtypes[findfirst(shape.domain)])
-
-        # Only consider shapes with the maximum arity
-        length(child_types) == max_arity || continue
 
         # We need existing minima for all child types
         all(t -> haskey(min_measure_by_type, t), child_types) || continue
@@ -460,7 +472,7 @@ function compute_new_horizon(iter::BottomUpIterator, state::GenericBUState)
     end
 
     # If no candidate found, keep horizon unchanged (no expansion)
-    return (best_resulting_measure == typemax(Int)) ? state.last_horizon : best_resulting_measure
+    return best_resulting_measure
 end
 
 
@@ -489,7 +501,9 @@ function combine(iter::BottomUpIterator, state::GenericBUState)
     # 1) Recompute horizons
     # ---------------------------
     state.last_horizon = state.new_horizon
-    state.new_horizon  = min(compute_new_horizon(iter, state), get_measure_limit(iter))
+    new_horizon = compute_new_horizon(iter) 
+    state.new_horizon  = min(new_horizon == typemax(Int) ? state.last_horizon : new_horizon, get_measure_limit(iter))
+
 
     # If we exceeded global measure limit, stop early
     if state.last_horizon > get_measure_limit(iter)
@@ -678,16 +692,22 @@ function get_next_program(iter::BottomUpIterator, state::GenericBUState)
         end
     end 
 
+    if state.new_horizon == get_measure_limit(iter)
+        return nothing, nothing
+    end
+
     # If there are no elements in the queue within the current horizon window
     # Construct new solutions using combine once. If there are still no feasible solutions present, then exhaust the rest of the PQ by setting the horizon to get_measure_limit.
-    if !isnothing(state_tracker(state))
+    if !isnothing(state_tracker(state)) 
         old_window = (state.last_horizon, state.new_horizon)
         new_program_combinations, state = combine(iter, state)
 
-        window_changed = old_window != (state.last_horizon, state.new_horizon)
-        if isnothing(new_program_combinations)
+        if isnothing(new_program_combinations) 
             return nothing, nothing
-        elseif window_changed
+        end
+
+        window_changed = old_window != (state.last_horizon, state.new_horizon)
+        if window_changed
             return get_next_program(iter, state) # Recurse and call combine again
         elseif !isempty(new_program_combinations)
             top = peek(state.combinations).second
@@ -742,7 +762,7 @@ function Base.iterate(iter::BottomUpIterator)
             init_combine_structure(iter),
             nothing,
             starting_node,
-            0, # last_horizon
+            -Inf, # last_horizon
             0 # new_horizon
         )
     )
