@@ -42,6 +42,17 @@ abstract type BottomUpIterator <: ProgramIterator end
 function get_measure_limit end
 function calc_measure end 
 
+abstract type AbstractBankEntry end
+
+"""
+
+"""
+mutable struct BankEntry <: AbstractBankEntry
+    program::AbstractRuleNode
+    is_new::Bool
+end
+
+
 """
     struct MeasureHashedBank{M}
 
@@ -49,16 +60,16 @@ A bank that hashes programs on some measure of type `M` (ex: program depth,
 size, etc.).
 """
 struct MeasureHashedBank{M}
-    bank::DefaultDict{M,DefaultDict{Symbol}}
-
+    bank::DefaultDict{M,DefaultDict{Symbol,Vector{BankEntry}}}
     function MeasureHashedBank{M}() where M
-        return new{M}(DefaultDict{M,DefaultDict{Symbol}}(
-            () -> (DefaultDict{Symbol,Vector{AbstractRuleNode}}(
-                () -> AbstractRuleNode[]))
-        )
-        )
+        return new{M}(DefaultDict{M,DefaultDict{Symbol,Vector{BankEntry}}}(
+            () -> (DefaultDict{Symbol,Vector{BankEntry}}(
+                () -> BankEntry[]))
+        ))
     end
 end
+
+
 
 """
     get_measures(mhb::MeasureHashedBank)
@@ -75,11 +86,18 @@ Retrieve the types of programs in bank `mhb` with a certain `measure`.
 get_types(mhb::MeasureHashedBank, measure) = keys(mhb.bank[measure])
 
 """
+    get_entries(mhb::MeasureHashedBank, measure, type)
+
+Retrieve all bank entries in bank `mhb` with a certain `measure` and `type`. 
+"""
+get_entries(mhb::MeasureHashedBank, measure, type) = mhb.bank[measure][type]
+
+"""
     programs(mhb::MeasureHashedBank, measure, type)
 
 Retrieve the programs in bank `mhb` with a certain `measure` and `type`. 
 """
-get_programs(mhb::MeasureHashedBank, measure, type) = mhb.bank[measure][type]
+get_programs(mhb::MeasureHashedBank, measure, type) = (e.program for e in mhb.bank[measure][type]) |> collect
 retrieve(mhb::MeasureHashedBank, address) = get_programs(mhb, get_measure(address), get_return_type(address))[get_index(address)]
 
 """
@@ -125,9 +143,12 @@ struct AccessAddress{M,I<:Integer} <: AbstractAddress
     index::I
     depth::Int64
     size::Int64
+    new_shape::Bool
 end
 
 AccessAddress(t::Tuple) = AccessAddress(t...)
+
+is_new_shape(a::AccessAddress) = a.new_shape
 
 """
     $(TYPEDSIGNATURES)
@@ -281,19 +302,25 @@ $(FIELDS)
 """
 mutable struct GenericBUState <: BottomUpState
     "A vector of program combinations to construct new programs from"
-    combinations::AbstractVector{AbstractAddress}
+    combinations::PriorityQueue{AbstractAddress, Number}
     "The state that the [`combine`](@ref) function can manipulate."
     combine_stage_tracker
     "The current uniform iterator that the bottom-up search is iterating through"
     current_uniform_iterator::Union{UniformIterator,Nothing}
     "The starting node of the search"
     starting_node
+    "The last horizon that was considered. Gives a lower bound on solutions to enumerate."
+    last_horizon::Float64
+    "The current horizon, enumerating only programs with measure strictly smaller than the new horizon."
+    new_horizon::Float64
 end
+
 
 remaining_combinations(state::GenericBUState) = state.combinations
 
 state_tracker(state::GenericBUState) = state.combine_stage_tracker
 
+#@TODO Rewrite this function and use it
 function new_combinations!(state::GenericBUState, new_combs::AbstractVector)
     state.combinations = new_combs
 end
@@ -312,23 +339,22 @@ Return the [`AccessAddress`](@ref)es to the newly-added programs.
 """
 function populate_bank!(iter::BottomUpIterator)::AbstractVector{AccessAddress}
     grammar = get_grammar(iter.solver)
-
-    # create the bank entry
     for t in unique(grammar.types)
         terminal_domain_for_type = grammar.isterminal .& grammar.domains[t]
         if any(terminal_domain_for_type)
             terminal_programs = UniformHole(terminal_domain_for_type, [])
-            push!(get_programs(get_bank(iter), calc_measure(iter, terminal_programs), t), terminal_programs)
+            push!(get_entries(get_bank(iter), calc_measure(iter, terminal_programs), t),
+                  BankEntry(terminal_programs, true))
         end
     end
-
     return [
-        AccessAddress(cost, t, x, 1, 1) # This assumes that every terminal has size and depth 1; thus also holds for program composites
-        for cost in get_measures(get_bank(iter))
+        AccessAddress(measure, t, x, 1, 1, true)  # initial terminals are new
+        for measure in get_measures(get_bank(iter))
         for t in unique(grammar.types)
-        for x in 1:length(get_programs(get_bank(iter), cost, t))
+        for x in 1:length(get_entries(get_bank(iter), cost, t))
     ]
 end
+
 
 """
     $(TYPEDSIGNATURES)
@@ -336,6 +362,107 @@ end
 Get the problem bank from the `BottomUpIterator`, `iter`.
 """
 get_bank(iter::BottomUpIterator) = iter.bank
+
+
+"""
+    $(TYPEDSIGNATURES)
+
+Compute the **next horizon** (an exclusive upper bound on the result measure to enqueue)
+using the current contents of the bank.
+
+Definition:
+- Consider only **non-terminal shapes** (operators).
+- Find the **maximum arity** among those shapes.
+- For each shape with that arity, form the cheapest child tuple that uses
+  **at least one `new` child** (as marked by the bank’s `is_new` flags) and all other
+  children at their **cheapest existing** measures (per return type).
+- The next horizon is the minimum, over those shapes, of
+  `1 + calc_measure(children_tuple)`.
+
+If no such combination exists, the function returns `state.last_horizon` (i.e., no window
+expansion is possible).
+
+Notes:
+- “Newness” is derived from the bank’s `is_new` flags on entries, **not** from horizons.
+- This function does **not** mutate the bank or the state (other than reading state).
+"""
+function compute_new_horizon(iter::BottomUpIterator, state::GenericBUState)
+    bank    = get_bank(iter)
+    grammar = get_grammar(iter.solver)
+
+    # Enumerate all non-terminal “shapes” (operator schemas)
+    terminals_mask     = grammar.isterminal
+    nonterminals_mask  = .~terminals_mask
+    nonterminal_shapes = UniformHole.(partition(Hole(nonterminals_mask), grammar), ([],))
+
+    # Collect, per return type:
+    # - the minimum measure among ALL entries (existing minima)
+    # - the minimum measure among entries currently flagged as NEW
+    min_measure_by_type     = Dict{Symbol, Int}()
+    min_new_measure_by_type = Dict{Symbol, Int}()
+
+    for measure in get_measures(bank)
+        for ret_type in get_types(bank, measure)
+            entries = get_entries(bank, measure, ret_type)  # Vector{BankEntry}
+            isempty(entries) && continue
+
+            # Update "existing" min per type
+            current_min = get(min_measure_by_type, ret_type, typemax(Int))
+            min_measure_by_type[ret_type] = min(current_min, measure)
+
+            # Update "new" min per type if there is any new entry at this measure
+            if any(e -> e.is_new, entries)
+                current_new_min = get(min_new_measure_by_type, ret_type, typemax(Int))
+                min_new_measure_by_type[ret_type] = min(current_new_min, measure)
+            end
+        end
+    end
+
+    # Determine the maximum arity among all shapes
+    max_arity = 0
+    for shape in nonterminal_shapes
+        child_types = Tuple(grammar.childtypes[findfirst(shape.domain)])
+        max_arity = max(max_arity, length(child_types))
+    end
+
+    # Helper: make a lightweight AccessAddress to feed into calc_measure.
+    # Only measure & type matter for measure computation here.
+    make_synth = (M, T, is_new=false) -> AccessAddress(M, T, 0, 1, 1, is_new)
+
+    # Search for the cheapest result that uses ≥ 1 "new" child under any max-arity shape
+    best_resulting_measure = typemax(Int)
+
+    for shape in nonterminal_shapes
+        child_types = Tuple(grammar.childtypes[findfirst(shape.domain)])
+
+        # Only consider shapes with the maximum arity
+        length(child_types) == max_arity || continue
+
+        # We need existing minima for all child types
+        all(t -> haskey(min_measure_by_type, t), child_types) || continue
+        # ...and at least one type that has a "new" minimum available
+        any(t -> haskey(min_new_measure_by_type, t), child_types) || continue
+
+        # Try each position as the "new" child; others use existing minima
+        for new_pos in eachindex(child_types)
+            t_new = child_types[new_pos]
+            haskey(min_new_measure_by_type, t_new) || continue
+
+            children = ntuple(i ->
+                i == new_pos ?
+                    make_synth(min_new_measure_by_type[child_types[i]], child_types[i], true) :
+                    make_synth(min_measure_by_type[child_types[i]],     child_types[i], false),
+                length(child_types))
+
+            # Result measure = 1 + measure(children)
+            best_resulting_measure = min(best_resulting_measure, 1 + calc_measure(iter, children))
+        end
+    end
+
+    # If no candidate found, keep horizon unchanged (no expansion)
+    return (best_resulting_measure == typemax(Int)) ? state.last_horizon : best_resulting_measure
+end
+
 
 """
     $(TYPEDSIGNATURES)
@@ -349,60 +476,93 @@ per-iteration.
 
 If the iteration should stop, the next state should be `nothing`.
 """
-function combine(iter::BottomUpIterator, state)
-    addresses = Vector{CombineAddress}()
-    bank = get_bank(iter)
-    max_in_bank = maximum(get_measures(bank))
+function combine(iter::BottomUpIterator, state::GenericBUState)
+    bank    = get_bank(iter)
     grammar = get_grammar(iter.solver)
-    terminals = grammar.isterminal
-    nonterminals = .~terminals
-    non_terminal_shapes = UniformHole.(partition(Hole(nonterminals), grammar), ([],))
 
-    # if we have exceeded the maximum number of programs to generate
-    if max_in_bank >= get_measure_limit(iter)
+    # All “shapes”, i.e., rule schemas we can combine children with
+    terminals_mask     = grammar.isterminal
+    nonterminals_mask  = .~terminals_mask
+    nonterminal_shapes = UniformHole.(partition(Hole(nonterminals_mask), grammar), ([],))
+
+    # ---------------------------
+    # 1) Recompute horizons
+    # ---------------------------
+    state.last_horizon = state.new_horizon
+    state.new_horizon  = min(compute_new_horizon(iter, state), get_measure_limit(iter))
+
+    # If we exceeded global measure limit, stop early
+    if state.last_horizon > get_measure_limit(iter)
         return nothing, nothing
     end
 
-    #check bound function
-    function check_bound(combination::Tuple{Vararg{AccessAddress}})
-        return 1 + calc_measure(iter, combination) > max_in_bank
+    # -----------------------------------------
+    # 2) Build a lazy stream of AccessAddresses
+    # -----------------------------------------
+    # Tag each address with new_shape=true iff its BANK ENTRY is marked new.
+    address_stream = (begin
+            entry = get_entries(bank, measure, ret_type)[idx]   # BankEntry
+            prog  = entry.program
+            AccessAddress(
+                measure, ret_type, idx,
+                depth(prog), length(prog),
+                entry.is_new
+            )
+        end
+        for measure in get_measures(bank)
+        for ret_type in get_types(bank, measure)
+        for idx in eachindex(get_entries(bank, measure, ret_type))
+    )
+
+    # -----------------------------------------
+    # 3) Enqueue candidates into the PQ window
+    #     [last_horizon, new_horizon)
+    # -----------------------------------------
+
+    # Checking solver limits
+    is_feasible = function(children::Tuple{Vararg{AccessAddress}})
+        maximum(depth.(children)) < get_max_depth(iter) &&
+        sum(size.(children)) < get_max_size(iter)
+    end
+    is_well_typed = child_types -> (children -> child_types == get_return_type.(children))
+
+    # Iterate over possible shapes
+    for shape in nonterminal_shapes
+        child_types  = Tuple(grammar.childtypes[findfirst(shape.domain)])
+        arity        = length(child_types)
+        typed_filter = is_well_typed(child_types)
+
+        # All tuples of addresses for this arity
+        candidate_combinations = Iterators.product(Iterators.repeated(address_stream, arity)...)
+        candidate_combinations = Iterators.filter(typed_filter, candidate_combinations)
+        candidate_combinations = Iterators.filter(is_feasible, candidate_combinations)
+
+        # Windowed insertion into the priority queue
+        for child_tuple in candidate_combinations
+            any_new = any(a -> a.new_shape, child_tuple)
+            any_new || continue
+
+            resulting_measure = 1 + calc_measure(iter, child_tuple)
+
+            resulting_measure < state.last_horizon && continue  # below window
+            resulting_measure > get_measure_limit(iter) && continue # exceeds cap
+
+            enqueue!(state.combinations, CombineAddress(shape, child_tuple), resulting_measure)
+        end
     end
 
-    function check_solver_feasibility(combination::Tuple{Vararg{AccessAddress}})
-        return maximum(depth.(combination)) < get_max_depth(iter) && sum(size.(combination)) < get_max_size(iter)
-    end
-
-    function appropriately_typed(child_types)
-        return combination -> child_types == get_return_type.(combination)
-    end
-
-    # loop over groups of rules with the same arity and child types
-    for shape in non_terminal_shapes
-        child_types = Tuple(grammar.childtypes[findfirst(shape.domain)])
-        nchildren = length(child_types)
-
-        # *Lazily* collect addresses, their combinations, and then filter them based on `check_bound`
-        all_addresses = (begin
-                program = get_programs(bank, measure, typename)[idx]
-                program_depth = depth(program)
-                program_size = length(program)
-                return AccessAddress(measure, typename, idx, program_depth, program_size)
+    # After generating work for this round, flip all `is_new` flags in the bank to false
+    for measure in get_measures(bank)
+        for t in get_types(bank, measure)
+            for entry in get_entries(bank, measure, t)
+                entry.is_new = false
             end
-            for measure in get_measures(bank)
-            for typename in get_types(bank, measure)
-            for idx in eachindex(get_programs(bank, measure, typename))
-        )
-
-        all_combinations = Iterators.product(Iterators.repeated(all_addresses, nchildren)...)
-        bounded_combinations = Iterators.filter(check_bound, all_combinations)
-        bounded_combinations = Iterators.filter(check_solver_feasibility, all_combinations)
-        bounded_and_typed_combinations = Iterators.filter(appropriately_typed(child_types), bounded_combinations)
-        # Construct the `CombineAddress`s from the filtered combinations
-        append!(addresses, map(address_combo -> CombineAddress(shape, address_combo), bounded_and_typed_combinations))
+        end
     end
 
-    return addresses, state
+    return state.combinations, state
 end
+
 
 """
         $(TYPEDSIGNATURES)
@@ -424,16 +584,18 @@ function add_to_bank!(
     bank = get_bank(iter)
     prog_measure = calc_measure(iter, program_combination)
 
-    # Omit programs that exceed the limit
-    # if prog_measure > get_measure_limit(iter) return false end
+    # Omit programs that exceed the measure limit
+    # Do not add programs to the bank that are AT the shape limit, as the combination will exceed the limit.
+    if prog_measure > get_measure_limit(iter) ||
+       depth(program) >= get_max_depth(iter) ||
+       length(program) >= get_max_size(iter)
+        return false
+    end
 
     program_type = return_type(get_grammar(iter.solver), program)
-
-    push!(get_programs(bank, prog_measure, program_type), program)
-
+    push!(get_entries(bank, prog_measure, program_type), BankEntry(program, true))
     return true
 end
-
 
 
 """
@@ -501,28 +663,50 @@ end
 Return the next program to explore and the updated [`BottomUpState`](@ref).
 
 - If there are still remaining programs from the current bottom-up iteration to
-explore ([`remaining_combinations`](@ref)), it pops the next one
-- Otherwise, it calls the the [`combine`](@ref) function again, and processes the first returned program
+  explore ([`state.combinations`](@ref)), it pops the next one if in the current horizon window.
+    - If `last_horizon == new_horizon`, exhaust the PQ at that value before advancing.
+- Otherwise, it calls the [`combine`](@ref) function again, and processes the first returned program.
 """
 function get_next_program(iter::BottomUpIterator, state::GenericBUState)
-    if has_remaining_iterations(state) # && !isempty(first_(state))
-        return popfirst!(remaining_combinations(state)), state
-    elseif !isnothing(state_tracker(state))
-        new_program_combinations, new_state = combine(iter, state_tracker(state))
-
-        # Check if new_program_combinations is nothing
-        if isnothing(new_program_combinations) || isempty(new_program_combinations)
-            # We've reached the end of the iteration
-            return nothing, nothing
-        else
-            new_combinations!(state, new_program_combinations)
-            new_state_tracker!(state, new_state)
-            return popfirst!(remaining_combinations(state)), state
+    if !isempty(state.combinations)
+        top = peek(state.combinations).second
+        # Dequeue all elements from the new horizon if last and new horizon are equal
+        # OR dequeue if within horizon bounds.
+        if state.last_horizon == top == state.new_horizon ||
+           state.last_horizon <= top < state.new_horizon
+            return dequeue!(state.combinations), state
         end
-    else
-        return nothing, nothing
+    end 
+
+    # If there are no elements in the queue within the current horizon window
+    # Construct new solutions using combine once. If there are still no feasible solutions present, then exhaust the rest of the PQ by setting the horizon to get_measure_limit.
+    if !isnothing(state_tracker(state))
+        old_window = (state.last_horizon, state.new_horizon)
+        new_program_combinations, state = combine(iter, state)
+
+        window_changed = old_window != (state.last_horizon, state.new_horizon)
+        if isnothing(new_program_combinations)
+            return nothing, nothing
+        elseif window_changed
+            return get_next_program(iter, state) # Recurse and call combine again
+        elseif !isempty(new_program_combinations)
+            top = peek(state.combinations).second
+            if state.last_horizon == top == state.new_horizon ||
+               state.last_horizon <= top < state.new_horizon
+                return dequeue!(state.combinations), state
+            elseif state.new_horizon != get_measure_limit(iter) 
+                state.new_horizon = get_measure_limit(iter)
+                return dequeue!(state.combinations), state
+            end
+        else 
+            return nothing, nothing
+        end
+        # elseif isnothing(new_program_combinations) || isempty(state.combinations)
     end
+
+    return nothing, nothing
 end
+
 
 function derivation_heuristic(::BottomUpIterator, indices::Vector{<:Integer})
     return sort(indices)
@@ -541,15 +725,25 @@ remaining initial programs and the initialstate for the `combine` function
 function Base.iterate(iter::BottomUpIterator)
     solver = iter.solver
     starting_node = deepcopy(get_tree(solver))
-    addresses = populate_bank!(iter)
+
+    # Populate bank with terminals and get their AccessAddresses
+    addrs = populate_bank!(iter)
+
+    # Priority queue keyed by address, prioritized by its measure
+    pq = PriorityQueue{AbstractAddress, Number}()
+    for acc in addrs
+        enqueue!(pq, acc, get_measure(acc))
+    end
 
     return Base.iterate(
         iter,
         GenericBUState(
-            addresses,
+            pq,
             init_combine_structure(iter),
             nothing,
-            starting_node
+            starting_node,
+            0, # last_horizon
+            0 # new_horizon
         )
     )
 end
@@ -568,13 +762,10 @@ The second call to iterate uses [`get_next_program`](@ref) to retrive the next p
         - if it is not added to the bank, e.g., because of observational equivalence, then it calls itself again with the new state
 """
 function Base.iterate(iter::BottomUpIterator, state::GenericBUState)
-    # does state contain a uniform iterator? 
-    # if not exhausted: return solution
-    # otherwise remove it from the state
+    # Drain current uniform iterator if present
     if !isnothing(state.current_uniform_iterator)
         next_solution = next_solution!(state.current_uniform_iterator)
-
-        if isnothing(next_solution) 
+        if isnothing(next_solution)
             state.current_uniform_iterator = nothing
         else
             return next_solution, state
@@ -582,20 +773,19 @@ function Base.iterate(iter::BottomUpIterator, state::GenericBUState)
     end
 
     solver = get_solver(iter)
+
     next_program_address, new_state = get_next_program(iter, state)
 
     while !isnothing(next_program_address)
         program = retrieve(iter, next_program_address)
         keep = add_to_bank!(iter, next_program_address, program)
 
-        if keep && is_subdomain(program, state.starting_node)
-            # Take the program (uniform tree) convert to UniformIterator, and add to state
-            # Return the first concrete tree from the UniformIterator in the state (and the updated state)
+        if is_subdomain(program, state.starting_node)
             uniform_solver = UniformSolver(get_grammar(solver), program, with_statistics=solver.statistics)
             new_state.current_uniform_iterator = UniformIterator(uniform_solver, iter)
-            next_solution = next_solution!(state.current_uniform_iterator)
+            next_solution = next_solution!(new_state.current_uniform_iterator)
 
-            if isnothing(next_solution) 
+            if isnothing(next_solution)
                 new_state.current_uniform_iterator = nothing
             else
                 return next_solution, new_state
@@ -607,6 +797,7 @@ function Base.iterate(iter::BottomUpIterator, state::GenericBUState)
 
     return nothing
 end
+
 
 function calc_measure(iter::BottomUpIterator, program_combination::CombineAddress)
     return 1 + calc_measure(iter, get_children(program_combination))

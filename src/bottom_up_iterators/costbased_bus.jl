@@ -39,7 +39,7 @@ get_costs(grammar::AbstractGrammar) = abs.(grammar.log_probabilities)
 """
     $(TYPEDSIGNATURES)
 
-Defines the cost of a uniform hole as the **minimum** atom cost among its domain mask.
+Defines the cost of a uniform tree as the **minimum** atom cost among its domain mask.
 (Used only for scalar measure/pruning; tensors below cover the full cross product.)
 """
 function get_cost(grammar::AbstractGrammar, uhole::AbstractUniformHole)
@@ -92,7 +92,7 @@ end
 A cached, fully-factorized representation of a discovered uniform tree.
 
 Fields:
-- `hole::UniformHole` : the uniform tree (shape + children uniform trees).
+- `program::UniformHole` : the uniform tree (shape + children uniform trees).
 - `axes::Vector{Axis}` : one axis per decision (operators and leaves) in **fixed order**.
 - `cost_tensor::AbstractArray{Float64}` : N-D total-cost tensor of the full cross product.
 - `sorted_costs::Vector{Float64}` : unique sorted list of all total costs in `cost_tensor`.
@@ -100,8 +100,8 @@ Fields:
 - `new_shape::Bool` : marks whether this entry was created in the *current* wave.
 - `uiter::UniformIterator` : embedded iterator for reconstructing concrete programs.
 """
-mutable struct UniformTreeEntry
-    hole::UniformHole
+mutable struct UniformTreeEntry <: AbstractBankEntry
+    program::UniformHole
     axes::Vector{Axis}
     cost_tensor::AbstractArray{Float64}
     sorted_costs::Vector{Float64}
@@ -128,8 +128,6 @@ mutable struct CostBank
     uh_index::Dict{Int,UniformTreeEntry}
     pq::PriorityQueue{Tuple{Int,Int}, Float64}
     next_id::Base.RefValue{Int}
-    last_horizon::Float64
-    new_horizon::Float64
 end
 
 """
@@ -147,7 +145,7 @@ CostBank() = CostBank(
 """
     $(TYPEDSIGNATURES)
 
-Collect the **decision axes** for the full cross product of `hole`.
+Collect the **decision axes** for the full cross product of `program`.
 
 - For every leaf: add a leaf axis with all admissible terminal indices and costs.
 - For every internal node: add an op axis with all admissible operator indices and costs.
@@ -155,21 +153,21 @@ Collect the **decision axes** for the full cross product of `hole`.
 
 Axes order is deterministic (preorder: node, then its children), and defines the tensor axes.
 """
-function build_axes(grammar::AbstractGrammar, hole::UniformHole; path::Tuple{Vararg{Int}}=())
+function build_axes(grammar::AbstractGrammar, program::UniformHole; path::Tuple{Vararg{Int}}=())
     axes = Axis[]
 
-    if isempty(hole.children)
-        term_inds  = findall(hole.domain)
+    if isempty(program.children)
+        term_inds  = findall(program.domain)
         term_costs = Float64.(get_costs(grammar)[term_inds])
         push!(axes, Axis(path, term_inds, term_costs))
         return axes
     end
 
-    op_inds  = findall(hole.domain)
+    op_inds  = findall(program.domain)
     op_costs = Float64.(get_costs(grammar)[op_inds])
     push!(axes, Axis(path, op_inds, op_costs))
 
-    @inbounds for (j, ch) in pairs(hole.children)
+    @inbounds for (j, ch) in pairs(program.children)
         child_path = (path..., j)
         append!(axes, build_axes(grammar, ch; path=child_path))
     end
@@ -206,10 +204,10 @@ unique_sorted_costs(T::AbstractArray{<:Real}) = sort!(unique!(collect(vec(T))))
 """
     $(TYPEDSIGNATURES)
 
-Build the full cross-product for `hole`.
+Build the full cross-product for `program`.
 """
-function build_cost_cross_product(grammar::AbstractGrammar, hole::UniformHole)
-    axes = build_axes(grammar, hole)
+function build_cost_cross_product(grammar::AbstractGrammar, program::UniformHole)
+    axes = build_axes(grammar, program)
     T    = build_cost_tensor(axes)
     return axes, T, unique_sorted_costs(T)
 end
@@ -264,20 +262,20 @@ Add a newly discovered uniform tree to the bank, mark it as `new_shape = true`, 
 return its assigned `uh_id`. The caller is responsible for enqueuing its costs via
 `enqueue_entry_costs!`.
 """
-function add_to_bank!(iter::AbstractCostBasedBottomUpIterator, uh::UniformHole)::Int
+function add_to_bank!(iter::AbstractCostBasedBottomUpIterator, program::AbstractRuleNode)::Int
     grammar = get_grammar(iter.solver)
     bank    = get_bank(iter)
 
     # Caculate all possible costs
-    axes, T, sorted_costs = build_cost_cross_product(grammar, uh)
-    rtype = HerbGrammar.return_type(grammar, uh)
+    axes, T, sorted_costs = build_cost_cross_product(grammar, program)
+    rtype = HerbGrammar.return_type(grammar, program)
     uh_id = (bank.next_id[] += 1) - 1
 
     # Construct UniformIterator for the uniform tree
-    usolver = UniformSolver(grammar, uh, with_statistics=get_solver(iter).statistics)
+    usolver = UniformSolver(grammar, program, with_statistics=get_solver(iter).statistics)
     uiter = UniformIterator(usolver, iter)
 
-    bank.uh_index[uh_id] = UniformTreeEntry(uh, axes, T, sorted_costs, rtype, true, uiter)
+    bank.uh_index[uh_id] = UniformTreeEntry(program, axes, T, sorted_costs, rtype, true, uiter)
     return uh_id
 end
 
@@ -289,7 +287,7 @@ Compute the **lowest possible total cost** of any *new parent shape* formed by c
 children where **at least one** child has `new_shape == true`. Returns `Inf` if no such
 combination exists or none are within `max_cost`.
 """
-function calculate_new_horizon(iter::AbstractCostBasedBottomUpIterator)::Float64
+function compute_new_horizon(iter::AbstractCostBasedBottomUpIterator, state::GenericBUState)
     bank    = get_bank(iter)
     grammar = get_grammar(iter.solver)
     limit   = get_measure_limit(iter)
@@ -418,7 +416,7 @@ Wavefront expansion:
 5. Return addresses with cost in `[last_horizon, new_horizon)` (and `≤ max_cost`),
    sorted increasing by total cost. 
 """
-function combine(iter::AbstractCostBasedBottomUpIterator, state)
+function combine(iter::AbstractCostBasedBottomUpIterator, state::GenericBUState)
     bank    = get_bank(iter)
     grammar = get_grammar(iter.solver)
 
@@ -462,7 +460,7 @@ function combine(iter::AbstractCostBasedBottomUpIterator, state)
         for tuple_children in Iterators.product(candidates...)
             any_new = any( (id ∈ newly_flagged_ids) for (id, _e) in tuple_children )
             any_new || continue # At least one newly found shape must be present
-            parent_hole = UniformHole(shape.domain, UniformHole[e.hole for (_id, e) in tuple_children])
+            parent_hole = UniformHole(shape.domain, UniformHole[e.program for (_id, e) in tuple_children])
             if length(parent_hole) > size_limit || 
                depth(parent_hole) > depth_limit 
                 continue
@@ -548,25 +546,6 @@ function populate_bank!(iter::AbstractCostBasedBottomUpIterator)
     return out
 end
 
-"""
-    $(TYPEDSIGNATURES)
-
-On the first call, seed the bank and **preload the state** with all terminal
-`CostAccessAddress` items in `[last_horizon, new_horizon)`, so they are yielded first.
-"""
-function Base.iterate(iter::AbstractCostBasedBottomUpIterator)
-    grammar = get_grammar(iter.solver)
-    # Check whether all probabilities are negative, or all costs are positive.
-    @assert all(p <= 0 for p in grammar.log_probabilities) ||
-         all(c > 0 for c in grammar.log_probabilities)
-
-    addrs = populate_bank!(iter)
-    solver = get_solver(iter)
-    start  = get_tree(solver)
-    st = GenericBUState(addrs, nothing, nothing, start)
-    return Base.iterate(iter, st)
-end
-
 
 """
     $(TYPEDSIGNATURES)
@@ -575,6 +554,7 @@ Call `combine` when needed to fill the current wave window. Otherwise pop the ne
 `CostAccessAddress`, reconstruct its concrete program, and yield it.
 """
 function Base.iterate(iter::AbstractCostBasedBottomUpIterator, state::GenericBUState)
+    # Construct new combinations if empty
     if isempty(state.combinations)
         addrs, _ = combine(iter, state)
         if isempty(addrs)
