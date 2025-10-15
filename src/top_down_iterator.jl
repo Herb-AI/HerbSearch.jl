@@ -46,10 +46,10 @@ end
     function derivation_heuristic(::TopDownIterator, indices::Vector{Int})
 
 Returns a sorted sublist of the `indices`, based on which rules are most promising to fill a hole.
-By default, this is the identity function.
+The underlying solver can change the order within a Hole's domain. We sort the domain to make the enumeration order explicit and more predictable. 
 """
 function derivation_heuristic(::TopDownIterator, indices::Vector{Int})
-    return indices;
+    return sort(indices);
 end
 
 """
@@ -151,18 +151,32 @@ Iterator that enumerates expressions in the grammar in decreasing order of proba
 @programiterator MLFSIterator() <: TopDownIterator
 
 """
-    priority_function(::MLFSIterator, g::AbstractGrammar, tree::AbstractRuleNode, parent_value::Union{Real, Tuple{Vararg{Real}}}, isrequeued::Bool)
+    priority_function(::MLFSIterator, grammar::AbstractGrammar, current_program::AbstractRuleNode, parent_value::Union{Real, Tuple{Vararg{Real}}}, isrequeued::Bool)
 
-Calculates logit for all possible derivations for a node in a tree and returns them.
+Calculates the priority function of the `MLFSIterator`. The priority value of a tree is then the max_rulenode_log_probability within the represented uniform tree.
+The value is negated as lower priority values are popped earlier.
 """
 function priority_function(
     ::MLFSIterator,
-    g::AbstractGrammar, 
-    tree::AbstractRuleNode, 
-    ::Union{Real, Tuple{Vararg{Real}}},
+    grammar::AbstractGrammar, 
+    current_program::AbstractRuleNode, 
+    parent_value::Union{Real, Tuple{Vararg{Real}}},
     isrequeued::Bool
 )
-    -rulenode_log_probability(tree, g)
+    -max_rulenode_log_probability(current_program, grammar)
+end
+
+"""
+    derivation_heuristic(iter::MLFSIterator, domain::Vector{Int})
+
+Defines `derivation_heuristic` for the iterator type `MLFSIterator`. 
+Sorts the indices within a domain, that is grammar rules, by decreasing log_probabilities. 
+    
+This will invert the enumeration order if probabilities are equal.
+"""
+function derivation_heuristic(iter::MLFSIterator, domain::Vector{Int})
+    log_probs = get_grammar(iter.solver).log_probabilities
+    return sort(domain, by=i->log_probs[i], rev=true) # have highest log_probability first
 end
 
 """
@@ -219,7 +233,7 @@ end
 Describes the iteration for a given [`TopDownIterator`](@ref) and a [`PriorityQueue`](@ref) over the grammar without enqueueing new items to the priority queue. Recursively returns the result for the priority queue.
 """
 function Base.iterate(iter::TopDownIterator, tup::Tuple{Vector{<:AbstractRuleNode}, DataStructures.PriorityQueue})
-    track!(iter.solver, "#CompleteTrees (by FixedShapedIterator)")
+    @timeit_debug iter.solver.statistics "#CompleteTrees (by FixedShapedIterator)" begin end
     # iterating over fixed shaped trees using the FixedShapedIterator
     if !isempty(tup[1])
         return (pop!(tup[1]), tup)
@@ -230,7 +244,7 @@ end
 
 
 function Base.iterate(iter::TopDownIterator, pq::DataStructures.PriorityQueue)
-    track!(iter.solver, "#CompleteTrees (by UniformSolver)")
+    @timeit_debug iter.solver.statistics "#CompleteTrees (by UniformSolver)" begin end
     return _find_next_complete_tree(iter.solver, pq, iter)
 end
 
@@ -266,7 +280,7 @@ function _find_next_complete_tree(
 
             hole_res = hole_heuristic(iter, get_tree(solver), get_max_depth(solver))
             if hole_res ≡ already_complete
-                track!(solver, "#FixedShapedTrees")
+                @timeit_debug iter.solver.statistics "#FixedShapedTrees" begin end
                 # Always use the Uniform Solver
                 uniform_solver = UniformSolver(get_grammar(solver), get_tree(solver), with_statistics=solver.statistics)
                 uniform_iterator = UniformIterator(uniform_solver, iter)

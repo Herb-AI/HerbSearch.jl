@@ -1,11 +1,12 @@
 name = "HerbSearch"
 uuid = "3008d8e8-f9aa-438a-92ed-26e9c7b4829f"
 authors = ["Sebastijan Dumancic <s.dumancic@tudelft.nl>", "Jaap de Jong <J.deJong-18@student.tudelft.nl>", "Nicolae Filat <N.Filat@student.tudelft.nl>", "Piotr Cichoń <gitlab@gitlab.ewi.tudelft.nl>", "Tilman Hinnerichs <t.r.hinnerichs@tudelft.nl>"]
-version = "0.4.3"
+version = "0.4.7"
 
 [deps]
 ConflictAnalysis = "46d8c867-898e-41d3-9160-29f023e63481"
 DataStructures = "864edb3b-99cc-5e75-8d2d-829cb0a9cfe8"
+DocStringExtensions = "ffbed154-4ef7-542d-bbb7-c09d3a79fcae"
 HerbConstraints = "1fa96474-3206-4513-b4fa-23913f296dfc"
 HerbCore = "2b23ba43-8213-43cb-b5ea-38c12b45bd45"
 HerbGrammar = "4ef9e186-2fe5-4b24-8de7-9f7291f24af7"
@@ -14,15 +15,25 @@ HerbSpecification = "6d54aada-062f-46d8-85cf-a1ceaf058a06"
 MLStyle = "d8e11817-5142-5d16-987a-aa16d5891078"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 StatsBase = "2913bbd2-ae8a-5f71-8c99-4fb6c76f3a91"
+TimerOutputs = "a759f4b9-e2f1-59dc-863e-4aeb61b1ea8f"
+
+[weakdeps]
+DecisionTree = "7806a523-6efd-50cb-b5f6-3fa6f1930dbb"
+
+[extensions]
+DivideAndConquerExt = "DecisionTree"
 
 [compat]
 DataStructures = "0.17,0.18"
-HerbConstraints = "0.3.2"
+DecisionTree = "0.12"
+DocStringExtensions = "0.9"
+HerbConstraints = "0.4"
 HerbCore = "0.3.0"
-HerbGrammar = "0.5"
-HerbInterpret = "0.1.3"
+HerbGrammar = "0.6"
+HerbInterpret = "0.2.1"
 HerbSpecification = "0.2"
 MLStyle = "0.4.17"
 Random = "1.8.0"
 StatsBase = "0.34"
-julia = "1.8"
+TimerOutputs = "0.5.28"
+julia = "1.10"
