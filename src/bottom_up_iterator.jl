@@ -504,7 +504,6 @@ function combine(iter::BottomUpIterator, state::GenericBUState)
     new_horizon = compute_new_horizon(iter) 
     state.new_horizon  = min(new_horizon == typemax(Int) ? state.last_horizon : new_horizon, get_measure_limit(iter))
 
-
     # If we exceeded global measure limit, stop early
     if state.last_horizon > get_measure_limit(iter)
         return nothing, nothing
@@ -692,7 +691,7 @@ function get_next_program(iter::BottomUpIterator, state::GenericBUState)
         end
     end 
 
-    if state.new_horizon == get_measure_limit(iter)
+    if state.last_horizon == get_measure_limit(iter)
         return nothing, nothing
     end
 
@@ -711,6 +710,9 @@ function get_next_program(iter::BottomUpIterator, state::GenericBUState)
             return get_next_program(iter, state) # Recurse and call combine again
         elseif !isempty(new_program_combinations)
             top = peek(state.combinations).second
+
+            @show top, length(state.combinations)
+            @show length(get_bank(iter)), length(get_bank(iter).pq)
             if state.last_horizon == top == state.new_horizon ||
                state.last_horizon <= top < state.new_horizon
                 return dequeue!(state.combinations), state

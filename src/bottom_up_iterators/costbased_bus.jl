@@ -9,10 +9,13 @@ Concrete implementations are expected to provide at least:
 """
 abstract type AbstractCostBasedBottomUpIterator <: BottomUpIterator end
 
+
+# Add an SVector field holding per-rule atom costs
 @programiterator CostBasedBottomUpIterator(
     bank=CostBank(),
-    max_cost::Float64=Inf
+    max_cost::Float64=Inf,
 ) <: AbstractCostBasedBottomUpIterator
+
 
 @doc """
     CostBasedBottomUpIterator(; max_cost=Inf) <: AbstractCostBasedBottomUpIterator
@@ -34,7 +37,7 @@ Returns the maximum allowed total cost for enumeration.
 """
 get_max_cost(iter::AbstractCostBasedBottomUpIterator) = iter.max_cost
 
-get_costs(grammar::AbstractGrammar) = abs.(grammar.log_probabilities)
+get_costs(grammar::AbstractGrammar) = Float64.(abs.(grammar.log_probabilities))
 
 """
     $(TYPEDSIGNATURES)
@@ -42,8 +45,19 @@ get_costs(grammar::AbstractGrammar) = abs.(grammar.log_probabilities)
 Defines the cost of a uniform tree as the **minimum** atom cost among its domain mask.
 (Used only for scalar measure/pruning; tensors below cover the full cross product.)
 """
-function get_cost(grammar::AbstractGrammar, uhole::AbstractUniformHole)
-    return get_cost(get_costs(grammar), uhole)
+get_cost(grammar::AbstractGrammar, uhole::UniformHole) = get_cost(get_costs(grammar), uhole)
+
+@inline function min_on_mask(costs::AbstractVector{<:Real}, mask)::Float64
+    m = Inf
+    @inbounds @simd for i in eachindex(costs, mask)
+        if mask[i]
+            c = Float64(costs[i])
+            if c < m
+                m = c
+            end
+        end
+    end
+    return m
 end
 
 """
@@ -51,16 +65,21 @@ end
 
 Minimum cost among indices selected by `uhole.domain`.
 """
-function get_cost(costs::Vector{<:Number}, uhole::AbstractUniformHole) 
-    return minimum(costs[collect(uhole.domain)]) + sum((get_cost(costs, c) for c in uhole.children); init=0.0)
+function get_cost(costs::AbstractVector{<:Real}, uhole::AbstractUniformHole)::Float64
+    acc = min_on_mask(costs, uhole.domain)
+    @inbounds for ch in uhole.children
+        acc += get_cost(costs, ch)
+    end
+    return acc
 end
+
 
 """
     $(TYPEDSIGNATURES)
 
 The measure for a uniform hole is its **minimum** possible total cost (scalar).
 """
-calc_measure(iter::AbstractCostBasedBottomUpIterator, uhole::AbstractUniformHole) = get_cost(get_grammar(iter.solver), uhole)
+calc_measure(iter::AbstractCostBasedBottomUpIterator, uhole::UniformHole) = get_cost(get_grammar(iter.solver), uhole)
 
 """
     $(TYPEDSIGNATURES)
@@ -225,7 +244,7 @@ function indices_at_cost(iter::AbstractCostBasedBottomUpIterator,
                          ent::UniformTreeEntry,
                          total::Float64)
     atol = cost_match_atol(iter)
-    return findall(x -> isapprox(x, total; atol=atol, rtol=0.0), ent.cost_tensor)
+    return findall(@. abs(ent.cost_tensor - total) <= atol)
 end
 
 """
@@ -249,7 +268,6 @@ function enqueue_entry_costs!(iter::AbstractCostBasedBottomUpIterator, uh_id::In
             enqueue!(bank.pq, (uh_id, i), c)
         end
     end
-    return nothing
 end
 
 
@@ -260,7 +278,7 @@ Add a newly discovered uniform tree to the bank, mark it as `new_shape = true`, 
 return its assigned `uh_id`. The caller is responsible for enqueuing its costs via
 `enqueue_entry_costs!`.
 """
-function add_to_bank!(iter::AbstractCostBasedBottomUpIterator, program::AbstractRuleNode)::Int
+function add_to_bank!(iter::AbstractCostBasedBottomUpIterator, program::UniformHole)::Int
     grammar = get_grammar(iter.solver)
     bank    = get_bank(iter)
 
@@ -274,10 +292,9 @@ function add_to_bank!(iter::AbstractCostBasedBottomUpIterator, program::Abstract
     uiter = UniformIterator(usolver, iter)
 
     bank.uh_index[uh_id] = UniformTreeEntry(program, axes, T, sorted_costs, rtype, true, uiter)
+    enqueue_entry_costs!(iter, uh_id)
     return uh_id
 end
-
-add_to_bank!(iter::AbstractCostBasedBottomUpIterator, address::AbstractAddress, program::AbstractRuleNode) = add_to_bank!(iter, program) 
 
 function seed_terminals!(iter::AbstractCostBasedBottomUpIterator)
     grammar = get_grammar(iter.solver)
@@ -474,6 +491,7 @@ function combine(iter::AbstractCostBasedBottomUpIterator, state::GenericBUState)
 
     added_ids = Int[]
 
+    new_horizon = Inf
     for shape in shapes
         rule_idx = findfirst(shape.domain)
         rule_idx === nothing && continue
@@ -499,16 +517,26 @@ function combine(iter::AbstractCostBasedBottomUpIterator, state::GenericBUState)
                 continue
             end
             uh_id = add_to_bank!(iter, parent_hole) 
+            
+            if length(bank.uh_index) == 1000
+                println("----------------------------------------------------")
+                for (i, ent) in bank.uh_index
+                    println("$i => $(depth(ent.program))")
+                end
+
+                check_same(bank)
+
+                for (k, p) in bank.pq
+                    println("$k => $p")
+                end
+                error()
+            end
             push!(added_ids, uh_id)
         end
     end
 
     for id in newly_flagged_ids
         bank.uh_index[id].new_shape = false
-    end
-
-    for uh_id in added_ids
-        enqueue_entry_costs!(iter, uh_id)
     end
 
     state.last_horizon = state.new_horizon
@@ -524,7 +552,10 @@ function combine(iter::AbstractCostBasedBottomUpIterator, state::GenericBUState)
             ent  = bank.uh_index[uh_id]
             idxs = indices_at_cost(iter, ent, cost)
             @inbounds for i in 1:length(idxs)
-                enqueue!(state.combinations, CostAccessAddress(uh_id, cost, i), cost)
+                addrs = CostAccessAddress(uh_id, cost, i)
+                if !haskey(state.combinations, addrs)
+                    enqueue!(state.combinations, addrs, cost)
+                end
             end
         end
     end
