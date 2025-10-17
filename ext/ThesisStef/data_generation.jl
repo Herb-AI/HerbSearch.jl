@@ -1,41 +1,89 @@
 using HerbBenchmarks, HerbSearch, HerbConstraints, HerbCore, HerbGrammar
 include("best_first_string_iterator.jl")
+include("string_grammar.jl")
 
-function generate_triplets_2(;
+function generate_triplets_4(;
     amount_of_programs,
-    max_size,
+    max_depth,
     problem_id,
     example_ids,
 )
-    function heuristic(_, program, _)
-        l = length(program)
-        return l < max_size ? l : Inf
+    benchmark       = HerbBenchmarks.String_transformations_2020
+    problem_grammar = get_all_problem_grammar_pairs(benchmark)[problem_id]
+    problem         = problem_grammar.problem
+    spec            = problem.spec[example_ids]
+    start_states    = [example.in[:_arg_1] for example in spec]
+    final_states    = [example.out for example in spec]
+    iterator        = HerbSearch.BFSIterator(grammar, :Program, max_depth=max_depth)
+
+    function interpret_program(program)
+        try
+            return [benchmark.interpret(program, benchmark.get_relevant_tags(grammar), example.in[:_arg_1]) for example in spec]
+        catch e
+            if typeof(e) == BoundsError
+                return nothing
+            else
+                rethrow(e)
+            end
+        end
     end
 
-    iter = BestFirstStringIterator(heuristic, max_size, false, problem_id, example_ids)
+    function get_parents(program)
+        i = program.ind
+        c = program.children
 
-    @show [s.str for s in iter.start_states]
-    @show [s.str for s in iter.final_states]
+        if i == 1
+            return [nothing]
+        elseif i == 2
+            return [c[1], RuleNode(1, [c[2]])]
+        elseif i == 8
+            return c[2:3]
+        elseif i == 9
+            return c[2:2]
+        end
+    end
+
+    @show [s.str for s in start_states]
+    @show [s.str for s in final_states]
     println("\nGenerating triplets")
 
-    shortest_paths = Dict((iter.start_states, iter.start_states) => 0)
+    program_to_state = Dict("nothing" => start_states)
+    shortest_paths = Dict((start_states, start_states) => 0)
 
+    for (i, program) in enumerate(iterator)
+        states = interpret_program(program)
 
-    for (i, entry) in enumerate(iter)
-        # println()
-        # @show i
-        # @show entry.program
-        # @show entry.states[1]
-        # @show entry.parent.states[1]
-
-        # if not exists
-        if !haskey(shortest_paths, (entry.states, entry.states))
-            shortest_paths[(entry.states, entry.states)] = 0
+        if isnothing(states)
+            continue
         end
 
-        for ((states_in, states_out), size) in shortest_paths
-            if states_out == entry.parent.states && !haskey(shortest_paths, (states_in, entry.states))
-                shortest_paths[(states_in, entry.states)] = size + 1
+        # println()
+        # @show i
+        # @show program
+        # @show states[1]
+
+        program_to_state["$program"] = states
+
+        if !haskey(shortest_paths, (states, states))
+            shortest_paths[(states, states)] = 0
+            # println("\nAdded path")
+            # @show states[1]
+            # @show states[1]
+            # @show 0
+        end
+
+        for parent in get_parents(program)
+            parent_states = program_to_state["$parent"]
+
+            for ((states_in, states_out), size) in shortest_paths
+                if states_out == parent_states && !haskey(shortest_paths, (states_in, states))
+                    shortest_paths[(states_in, states)] = size + 1
+
+                    # println("\nAdded path")
+                    # @show states_in[1]
+                    # @show states[1]
+                    # @show size + 1
+                end
             end
         end
 
@@ -44,9 +92,23 @@ function generate_triplets_2(;
         end
     end
 
+    # for states in Set(values(program_to_state))
+    #     println(states[1])
+    # end
+
+
+    states = collect(Set(values(program_to_state)))
     triplets_anp = []
     equal_inputs = 0
     equal_outputs = 0
+
+    for states_1 in states
+        for states_2 in states
+            if !haskey(shortest_paths, (states_1, states_2))
+                # shortest_paths[(states_1, states_2)] = 100000
+            end
+        end
+    end
 
     for ((state_in_1, state_out_1), size_1) in shortest_paths
         for ((state_in_2, state_out_2), size_2) in shortest_paths
@@ -66,18 +128,22 @@ function generate_triplets_2(;
         end
     end
 
+    println("\nVisited $(length(Set(values(program_to_state)))) states")
+    println("Created $(length(shortest_paths)) paths")
     @show equal_inputs
     @show equal_outputs
-    @show length(triplets_anp)
 
     return triplets_anp
 end
 
-data = generate_triplets(
-    amount_of_programs=300, 
-    max_size=10, 
+data = generate_triplets_4(
+    amount_of_programs=100, 
+    max_depth=10, 
     problem_id=102, 
-    example_ids=1:5
+    example_ids=1:5,
 )
+
+#
+# 2869, 5256
 
 nothing

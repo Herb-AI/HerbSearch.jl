@@ -76,6 +76,7 @@ function add_to_queue!(
     parent,
 )
     for program in programs
+
         if length(program) > iter.max_size
             continue
         end
@@ -122,9 +123,9 @@ function expand!(
 
     programs = []
     append!(programs, [RuleNode(2, [program, p]) for p in iter.explored_programs])
-    append!(programs, [RuleNode(2, [p, program]) for p in iter.explored_programs])
-    append!(programs, [RuleNode(8, [RuleNode(c, []), program, p]) for p in iter.explored_programs for c in 10:19])
-    append!(programs, [RuleNode(9, [RuleNode(c, []), program]) for c in 10:19])
+    # append!(programs, [RuleNode(2, [p, program]) for p in iter.explored_programs])
+    append!(programs, [RuleNode(8, [RuleNode(c, []), program, p]) for p in iter.explored_programs for c in 10:23])
+    append!(programs, [RuleNode(9, [RuleNode(c, []), program]) for c in 10:23])
 
     # if "$program" == "2{9{15,7},3}"
     #     println("aaaaa")
@@ -155,8 +156,6 @@ function Base.iterate(
     if length(queue) == 0
         return nothing
     end
-
-    # @show queue
 
     return entry, queue
 end
