@@ -9,12 +9,16 @@ Concrete implementations are expected to provide at least:
 """
 abstract type AbstractCostBasedBottomUpIterator <: BottomUpIterator end
 
-
-# Add an SVector field holding per-rule atom costs
 @programiterator CostBasedBottomUpIterator(
     bank=CostBank(),
     max_cost::Float64=Inf,
+    current_costs::Vector{Float64}=Float64[]
 ) <: AbstractCostBasedBottomUpIterator
+
+function CostBasedBottomUpIterator(args...; kwargs...)
+    raw = Float64.(abs.(grammar.log_probabilities))
+    CostBasedBottomUpIterator(args...;current_costs=raw, kwargs...)
+end
 
 
 @doc """
@@ -37,7 +41,33 @@ Returns the maximum allowed total cost for enumeration.
 """
 get_max_cost(iter::AbstractCostBasedBottomUpIterator) = iter.max_cost
 
+@inline function min_on_mask(costs::AbstractVector{<:Real}, mask)::Float64
+    min_cost = Inf
+    @inbounds @simd for i in eachindex(costs, mask)
+        if mask[i]
+            cost = Float64(costs[i])
+            if cost < min_cost
+                min_cost = ccost
+            end
+        end
+    end
+    return min_cost
+end
+
+
+get_cost(iter::AbstractCostBasedBottomUpIterator, uhole::UniformHole) = get_cost(get_current_costs(iter), uhole)
+
+"""
+Returns the costs for all rules in a grammar. Transforms probabilistic grammars to their cost-based formulation by taking the absolute of the log_probabilities.
+"""
 get_costs(grammar::AbstractGrammar) = Float64.(abs.(grammar.log_probabilities))
+
+"""
+Calculates minimum cost within a uniform tree.
+"""
+calc_measure(iter::AbstractCostBasedBottomUpIterator, uhole::UniformHole) = _get_cost(iter, uhole)
+
+get_current_costs(iter::AbstractCostBasedBottomUpIterator) = iter.current_costs
 
 """
     $(TYPEDSIGNATURES)
@@ -47,39 +77,18 @@ Defines the cost of a uniform tree as the **minimum** atom cost among its domain
 """
 get_cost(grammar::AbstractGrammar, uhole::UniformHole) = get_cost(get_costs(grammar), uhole)
 
-@inline function min_on_mask(costs::AbstractVector{<:Real}, mask)::Float64
-    m = Inf
-    @inbounds @simd for i in eachindex(costs, mask)
-        if mask[i]
-            c = Float64(costs[i])
-            if c < m
-                m = c
-            end
-        end
-    end
-    return m
-end
-
 """
     $(TYPEDSIGNATURES)
 
 Minimum cost among indices selected by `uhole.domain`.
 """
-function get_cost(costs::AbstractVector{<:Real}, uhole::AbstractUniformHole)::Float64
+function _get_cost(costs::AbstractVector{<:Real}, uhole::AbstractUniformHole)::Float64
     acc = min_on_mask(costs, uhole.domain)
     @inbounds for ch in uhole.children
         acc += get_cost(costs, ch)
     end
     return acc
 end
-
-
-"""
-    $(TYPEDSIGNATURES)
-
-The measure for a uniform hole is its **minimum** possible total cost (scalar).
-"""
-calc_measure(iter::AbstractCostBasedBottomUpIterator, uhole::UniformHole) = get_cost(get_grammar(iter.solver), uhole)
 
 """
     $(TYPEDSIGNATURES)
@@ -88,60 +97,40 @@ The measure limit is `max_cost`.
 """
 get_measure_limit(iter::AbstractCostBasedBottomUpIterator) = get_max_cost(iter)
 
-"""
-    $(TYPEDEF)
-
-A decision axis for the cross product of a uniform tree.
-
-Fields:
-- `path::Tuple{Vararg{Int}}` : path from the tree root to this node; the root path is `()`.
-- `options::Vector{Int}`     : grammar indices allowed along this axis.
-- `costs::Vector{Float64}`   : atom costs corresponding 1-to-1 with `options`.
-"""
-struct Axis
-    path::Tuple{Vararg{Int}}
-    options::Vector{Int}
-    costs::Vector{Float64}
-end
-
 
 """
-    $(TYPEDEF)
+    UniformTreeEntry
 
-A cached, fully-factorized representation of a discovered uniform tree.
+Cached representation of a discovered uniform tree.
 
-Fields:
-- `program::UniformHole` : the uniform tree (shape + children uniform trees).
-- `axes::Vector{Axis}` : one axis per decision (operators and leaves) in **fixed order**.
-- `cost_tensor::AbstractArray{Float64}` : N-D total-cost tensor of the full cross product.
-- `sorted_costs::Vector{Float64}` : unique sorted list of all total costs in `cost_tensor`.
-- `rtype::Symbol` : cached return type of the uniform tree (grammar type symbol).
-- `new_shape::Bool` : marks whether this entry was created in the *current* wave.
-- `uiter::UniformIterator` : embedded iterator for reconstructing concrete programs.
+Fields
+- `program::UniformHole`        : the uniform tree.
+- `cost_flat::Vector{Float64}`  : flattened N-D total-cost tensor of the full cross product.
+- `dims::Vector{Int}`           : the length of each tensor axis (same order as preorder traversal).
+- `sorted_costs::Vector{Float64}` : unique, sorted list of all totals in `cost_flat`.
+- `rtype::Symbol`               : cached return type (grammar type symbol).
+- `new_shape::Bool`             : whether it was created in the *current* wave.
+- `uiter::UniformIterator`      : iterator for reconstructing concrete programs.
 """
 mutable struct UniformTreeEntry <: AbstractBankEntry
     program::UniformHole
-    axes::Vector{Axis}
-    cost_tensor::AbstractArray{Float64}
+    cost_flat::Vector{Float64}
+    dims::Vector{Int}
     sorted_costs::Vector{Float64}
     rtype::Symbol
     new_shape::Bool
     uiter::UniformIterator
 end
 
-
 """
-    $(TYPEDEF)
+    CostBank
 
 Holds all discovered uniform trees and the global frontier.
 
-Fields:
-- `uh_index::Dict{Int,UniformTreeEntry}` : discovered uniform trees by ID.
-- `pq::PriorityQueue{Tuple{Int,Int},Float64}` : maps `(uh_id, idx_in_sorted_costs) → total_cost`.
-- `next_id::Base.RefValue{Int}` : monotonically increasing ID source.
-- `last_horizon::Float64` : inclusive lower bound of the last emitted layer.
-- `new_horizon::Float64` : exclusive upper bound of the next layer, as computed by
-  `compute_new_horizon`.
+Fields
+- `uh_index::Dict{Int,UniformTreeEntry}`     : discovered trees by ID.
+- `pq::PriorityQueue{Tuple{Int,Int},Float64}`: maps `(uh_id, idx_in_sorted_costs) → total_cost`.
+- `next_id::Base.RefValue{Int}`              : monotonically increasing ID source.
 """
 mutable struct CostBank
     uh_index::Dict{Int,UniformTreeEntry}
@@ -155,78 +144,80 @@ Create an empty bank.
 CostBank() = CostBank(
     Dict{Int,UniformTreeEntry}(),
     PriorityQueue{Tuple{Int,Int}, Float64}(),
-    Ref(1),
+    Ref(1)
 )
 
-
 """
-    $(TYPEDSIGNATURES)
+    _indices_from_mask(mask::AbstractVector{Bool}) -> Vector{Int}
 
-Collect the **decision axes** for the full cross product of `program`.
-
-- For every leaf: add a leaf axis with all admissible terminal indices and costs.
-- For every internal node: add an op axis with all admissible operator indices and costs.
-- Recurse into children, extending `path` by child position.
-
-Axes order is deterministic (preorder: node, then its children), and defines the tensor axes.
+Collect indices where `mask[i] == true`. Cheaper than `findall(mask)` for hot paths.
 """
-function build_axes(grammar::AbstractGrammar, program::UniformHole; path::Tuple{Vararg{Int}}=())
-    axes = Axis[]
-
-    if isempty(program.children)
-        term_inds  = findall(program.domain)
-        term_costs = Float64.(get_costs(grammar)[term_inds])
-        push!(axes, Axis(path, term_inds, term_costs))
-        return axes
+function _indices_from_mask(mask)::Vector{Int}
+    idxs = Int[]
+    sizehint!(idxs, count(mask))
+    @inbounds for (i, b) in pairs(mask)
+        b && push!(idxs, i)
     end
-
-    op_inds  = findall(program.domain)
-    op_costs = Float64.(get_costs(grammar)[op_inds])
-    push!(axes, Axis(path, op_inds, op_costs))
-
-    @inbounds for (j, ch) in pairs(program.children)
-        child_path = (path..., j)
-        append!(axes, build_axes(grammar, ch; path=child_path))
-    end
-    return axes
+    return idxs
 end
 
 
 """
-    $(TYPEDSIGNATURES)
+    build_cost_cross_product(iter, grammar, uh) -> (flat, dims, sorted)
 
-Given `axes`, produce an N-D tensor `T` whose entry at a Cartesian index `(i₁,…,i_N)`
-equals `sum_k axes[k].costs[i_k]`.
+Construct the full N-D cross-product **cost tensor** for the uniform tree `uh`,
+*without* storing any Axis/Decision objects.
+
+Steps
+1. Traverse `uh` in **preorder** (node, then children) to gather, for each node:
+   - the `path` (Tuple) from the root (used later in `retrieve`);
+   - the `options` (grammar rule indices allowed at that node);
+   - the `costs` per option, pulled from `iter.current_costs`.
+   The traversal order defines the tensor axes order.
+2. For each axis `k`, broadcast-add its 1-D cost vector along axis `k` into an
+   N-D zero tensor of size `dims = length.(options)`.
+3. Return the flattened tensor (`vec`), the `dims`, and the `sorted` unique totals.
+
+Returns
+- `flat::Vector{Float64}`  : row-major flattened tensor, length `prod(dims)`.
+- `dims::Vector{Int}`      : axis lengths in preorder.
+- `sorted::Vector{Float64}`: unique sorted totals (for PQ slices etc).
 """
-function build_cost_tensor(axes::Vector{Axis})
-    N    = length(axes)
-    dims = ntuple(k -> length(axes[k].options), N)
-    T    = zeros(Float64, dims...)
-    for k in 1:N
-        v   = axes[k].costs
-        shp = ntuple(i -> i == k ? length(v) : 1, N)
-        T  .+= reshape(v, shp)
+function build_cost_cross_product(iter::AbstractCostBasedBottomUpIterator,
+                                  grammar::AbstractGrammar,
+                                  uh::UniformHole)
+    # Collect per-node decision info in preorder (ephemeral)
+    paths      = Tuple{Vararg{Int}}[]
+    options    = Vector{Int}[]
+    optioncost = Vector{Float64}[]
+    atom       = get_current_costs(iter)
+
+    function visit(node::UniformHole, path::Tuple{Vararg{Int}}=())
+        inds = _indices_from_mask(node.domain)
+        push!(paths, path)
+        push!(options, inds)
+        push!(optioncost, @inbounds Float64.(view(atom, inds)))
+        @inbounds for (j, ch) in pairs(node.children)
+            visit(ch, (path..., j))
+        end
     end
-    return T
-end
+    visit(uh)
 
-"""
-    $(TYPEDSIGNATURES)
+    # Build N-D tensor via Kronecker-sum of the 1-D cost vectors
+    n_axes = length(options)
+    dims   = map(length, options)
+    T      = zeros(Float64, Tuple(dims)...)
 
-Unique, sorted list of all total costs in a tensor.
-"""
-unique_sorted_costs(T::AbstractArray{<:Real}) = sort!(unique!(collect(vec(T))))
+    @inbounds for k in 1:n_axes
+        c_k  = optioncost[k]                           # Vector{Float64}
+        shp  = ntuple(i -> (i == k ? length(c_k) : 1), n_axes)
+        T   .+= reshape(c_k, shp)                      # broadcast add on axis k
+    end
 
-
-"""
-    $(TYPEDSIGNATURES)
-
-Build the full cross-product for `program`.
-"""
-function build_cost_cross_product(grammar::AbstractGrammar, program::UniformHole)
-    axes = build_axes(grammar, program)
-    T    = build_cost_tensor(axes)
-    return axes, T, unique_sorted_costs(T)
+    # Flatten + collect unique-sorted costs
+    flat   = vec(T)
+    sorted = sort!(unique!(copy(flat)))
+    return flat, collect(dims), sorted
 end
 
 
@@ -238,17 +229,20 @@ cost_match_atol(::AbstractCostBasedBottomUpIterator) = 1e-6
 """
     $(TYPEDSIGNATURES)
 
-Return all Cartesian indices in `ent.cost_tensor` whose value ≈ `total` (within `atol`).
+Return all Cartesian indices in `ent.cost_flat` (reshaped by `ent.dims`) whose
+value is approximately `total` within `cost_match_atol(iter)`.
 """
 function indices_at_cost(iter::AbstractCostBasedBottomUpIterator,
                          ent::UniformTreeEntry,
                          total::Float64)
     atol = cost_match_atol(iter)
-    return findall(@. abs(ent.cost_tensor - total) <= atol)
+    T = reshape(ent.cost_flat, Tuple(ent.dims))
+    return findall(@. abs(T - total) <= atol)
 end
 
+
 """
-convert to Vector of ints explicitly, due to empty tuples
+Convert to Vector of ints explicitly, due to empty tuples.
 """
 _pathvec(path::Tuple{Vararg{Int}}) = collect(Int, path)
 
@@ -274,27 +268,25 @@ end
 """
     $(TYPEDSIGNATURES)
 
-Add a newly discovered uniform tree to the bank, mark it as `new_shape = true`, and
-return its assigned `uh_id`. The caller is responsible for enqueuing its costs via
-`enqueue_entry_costs!`.
+Create a new `UniformTreeEntry` and add it to the bank by building the cross-product cost tensor directly from `program`, enqueue its cost slices into the bank PQ, and return the assigned ID.
 """
-function add_to_bank!(iter::AbstractCostBasedBottomUpIterator, program::UniformHole)::Int
+function add_to_bank!(iter::AbstractCostBasedBottomUpIterator,
+                      program::UniformHole)::Int
     grammar = get_grammar(iter.solver)
     bank    = get_bank(iter)
 
-    # Caculate all possible costs
-    axes, T, sorted_costs = build_cost_cross_product(grammar, program)
+    flat, dims, sorted_costs = build_cost_cross_product(iter, grammar, program)
     rtype = HerbGrammar.return_type(grammar, program)
     uh_id = (bank.next_id[] += 1) - 1
 
-    # Construct UniformIterator for the uniform tree
     usolver = UniformSolver(grammar, program, with_statistics=get_solver(iter).statistics)
-    uiter = UniformIterator(usolver, iter)
+    uiter   = UniformIterator(usolver, iter)
 
-    bank.uh_index[uh_id] = UniformTreeEntry(program, axes, T, sorted_costs, rtype, true, uiter)
+    bank.uh_index[uh_id] = UniformTreeEntry(program, flat, dims, sorted_costs, rtype, true, uiter)
     enqueue_entry_costs!(iter, uh_id)
     return uh_id
 end
+
 
 function seed_terminals!(iter::AbstractCostBasedBottomUpIterator)
     grammar = get_grammar(iter.solver)
@@ -369,7 +361,7 @@ function compute_new_horizon(iter::AbstractCostBasedBottomUpIterator)
         end
         feasible || continue
 
-        op_min = minimum(get_costs(grammar)[shape.domain])
+        op_min = minimum(@view get_current_costs(iter)[shape.domain])
 
         for tuple_children in Iterators.product(candidate_lists...)
             any_new = any(e.new_shape for e in tuple_children)
@@ -422,35 +414,54 @@ get_index(a::CostAccessAddress) = a.index
 """
     $(TYPEDSIGNATURES)
 
-Return the `a.index`-th concrete program in entry `a.uh_id` at total cost `a.cost`,
-by fixing all decisions in the entry's embedded `UniformIterator`.
+Reconstruct the `a.index`-th concrete program at total cost `a.cost` within
+entry `a.uh_id`. We:
+
+1. Reshape the flat tensor by `dims` to find all indices at `a.cost`.
+2. Rebuild (ephemerally) the same preorder decision info (paths, options, costs)
+   directly from the stored `UniformHole`.
+3. For each axis k, select the grammar rule index from `options[k][idx[k]]` and
+   restrict the solver at `paths[k]` accordingly.
 """
 function retrieve(iter::AbstractCostBasedBottomUpIterator, a::CostAccessAddress)
-    ent   = get_bank(iter).uh_index[a.uh_id]
-    idxs  = indices_at_cost(iter, ent, a.cost)
-    @boundscheck a.index ≤ length(idxs) || error("retrieve: index $(a.index) out of bounds at cost=$(a.cost)")
-    idx   = Tuple(idxs[a.index])
+    bank  = get_bank(iter)
+    ent   = bank.uh_index[a.uh_id]
 
+    # locate the Cartesian index
+    T     = reshape(ent.cost_flat, Tuple(ent.dims))
+    atol = cost_match_atol(iter)
+    idxs  = findall(@. abs(T - a.cost) <= atol) # broadcast cost matching
+    @boundscheck a.index ≤ length(idxs) || error("retrieve: index $(a.index) out of bounds at cost=$(a.cost)")
+    idx   = Tuple(idxs[a.index])  # N-tuple of Ints
+
+    # rebuild decisions from the uniform tree (same order as in builder)
+    grammar = get_grammar(iter.solver)
+    atom    = get_current_costs(iter)
+    paths   = Tuple{Vararg{Int}}[]
+    options = Vector{Int}[]
+
+    function visit(node::UniformHole, path::Tuple{Vararg{Int}}=())
+        inds = _indices_from_mask(node.domain)
+        push!(paths, path)
+        push!(options, inds)
+        @inbounds for (j, ch) in pairs(node.children)
+            visit(ch, (path..., j))
+        end
+    end
+    visit(ent.program)
+    @assert length(options) == length(idx)
+
+    # apply selections to the solver
     uiter  = ent.uiter
     solver = uiter.solver
+    restore!(solver); save_state!(solver)
 
-    # backtrack from the previous solution
-    restore!(solver)
-    save_state!(solver)
-
-    @inbounds for k in 1:length(ent.axes)
-        ax       = ent.axes[k]
-        rule_idx = ax.options[idx[k]]
-        remove_all_but!(solver, _pathvec(ax.path), rule_idx)
+    @inbounds for k in 1:length(idx)
+        selected_rule = options[k][idx[k]]
+        remove_all_but!(solver, collect(Int, paths[k]), selected_rule)
     end
 
-    # Check whether solver solver is infeasible
-    if !solver.isfeasible 
-        return nothing
-    end
-
-    sol = solver.tree
-    return sol
+    return solver.isfeasible ? solver.tree : nothing
 end
 
 
@@ -472,6 +483,9 @@ function combine(iter::AbstractCostBasedBottomUpIterator, state::GenericBUState)
 
     size_limit = get_max_size(iter)
     depth_limit = get_max_depth(iter)
+
+    state.last_horizon = state.new_horizon
+    state.new_horizon  = compute_new_horizon(iter)
 
     newly_flagged_ids = Set{Int}()
     for (id, ent) in bank.uh_index
@@ -518,19 +532,6 @@ function combine(iter::AbstractCostBasedBottomUpIterator, state::GenericBUState)
             end
             uh_id = add_to_bank!(iter, parent_hole) 
             
-            if length(bank.uh_index) == 1000
-                println("----------------------------------------------------")
-                for (i, ent) in bank.uh_index
-                    println("$i => $(depth(ent.program))")
-                end
-
-                check_same(bank)
-
-                for (k, p) in bank.pq
-                    println("$k => $p")
-                end
-                error()
-            end
             push!(added_ids, uh_id)
         end
     end
@@ -538,11 +539,6 @@ function combine(iter::AbstractCostBasedBottomUpIterator, state::GenericBUState)
     for id in newly_flagged_ids
         bank.uh_index[id].new_shape = false
     end
-
-    state.last_horizon = state.new_horizon
-    state.new_horizon  = compute_new_horizon(iter)
-
-    @show state.last_horizon, state.new_horizon
 
     limit = get_measure_limit(iter)
 
