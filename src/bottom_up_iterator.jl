@@ -274,7 +274,7 @@ combinations of the same complexity and the next level of complexity.
 
 The following methods must be implemented:
 
-- [`remaining_combinations`](@ref): returns an iterable of program combiantions that need to be explored
+- [`remaining_combinations`](@ref): returns an iterable of program combinations that need to be explored
 
 - [`state_tracker`](@ref): returns the state tracker for the `combine` method
 
@@ -463,7 +463,7 @@ function compute_new_horizon(iter::BottomUpIterator)
             children = ntuple(i ->
                 i == new_pos ?
                     make_synth(min_new_measure_by_type[child_types[i]], child_types[i], true) :
-                    make_synth(min_measure_by_type[child_types[i]],     child_types[i], false),
+                    make_synth(min_measure_by_type[child_types[i]], child_types[i], false),
                 length(child_types))
 
             # Result measure = 1 + measure(children)
@@ -497,9 +497,7 @@ function combine(iter::BottomUpIterator, state::GenericBUState)
     nonterminals_mask  = .~terminals_mask
     nonterminal_shapes = UniformHole.(partition(Hole(nonterminals_mask), grammar), ([],))
 
-    # ---------------------------
-    # 1) Recompute horizons
-    # ---------------------------
+    # Recompute horizons
     state.last_horizon = state.new_horizon
     new_horizon = compute_new_horizon(iter) 
     state.new_horizon  = min(new_horizon == typemax(Int) ? state.last_horizon : new_horizon, get_measure_limit(iter))
@@ -509,9 +507,7 @@ function combine(iter::BottomUpIterator, state::GenericBUState)
         return nothing, nothing
     end
 
-    # -----------------------------------------
-    # 2) Build a lazy stream of AccessAddresses
-    # -----------------------------------------
+    # Build a lazy stream of AccessAddresses
     # Tag each address with new_shape=true iff its BANK ENTRY is marked new.
     address_stream = (begin
             entry = get_entries(bank, measure, ret_type)[idx]   # BankEntry
@@ -527,11 +523,7 @@ function combine(iter::BottomUpIterator, state::GenericBUState)
         for idx in eachindex(get_entries(bank, measure, ret_type))
     )
 
-    # -----------------------------------------
-    # 3) Enqueue candidates into the PQ window
-    #     [last_horizon, new_horizon)
-    # -----------------------------------------
-
+    # Enqueue candidates into the PQ window [last_horizon, new_horizon)
     # Checking solver limits
     is_feasible = function(children::Tuple{Vararg{AccessAddress}})
         maximum(depth.(children)) < get_max_depth(iter) &&
@@ -557,7 +549,7 @@ function combine(iter::BottomUpIterator, state::GenericBUState)
 
             resulting_measure = 1 + calc_measure(iter, child_tuple)
 
-            resulting_measure < state.last_horizon && continue  # below window
+            # resulting_measure < state.last_horizon && continue  # below window
             resulting_measure > get_measure_limit(iter) && continue # exceeds cap
 
             enqueue!(state.combinations, CombineAddress(shape, child_tuple), resulting_measure)
@@ -691,7 +683,10 @@ function get_next_program(iter::BottomUpIterator, state::GenericBUState)
         end
     end 
 
-    if state.last_horizon == get_measure_limit(iter)
+    # Everything is exhausted and compute_new_horizon will not change.
+    if state.last_horizon == get_measure_limit(iter) || 
+        state.new_horizon == typemax(typeof(get_measure_limit(iter))) ||
+        state.new_horizon == Inf 
         return nothing, nothing
     end
 
@@ -700,6 +695,8 @@ function get_next_program(iter::BottomUpIterator, state::GenericBUState)
     if !isnothing(state_tracker(state)) 
         old_window = (state.last_horizon, state.new_horizon)
         new_program_combinations, state = combine(iter, state)
+        @show old_window, state.last_horizon, state.new_horizon
+        @show length(state.combinations)
 
         if isnothing(new_program_combinations) 
             return nothing, nothing
@@ -711,8 +708,6 @@ function get_next_program(iter::BottomUpIterator, state::GenericBUState)
         elseif !isempty(new_program_combinations)
             top = peek(state.combinations).second
 
-            @show top, length(state.combinations)
-            @show length(get_bank(iter)), length(get_bank(iter).pq)
             if state.last_horizon == top == state.new_horizon ||
                state.last_horizon <= top < state.new_horizon
                 return dequeue!(state.combinations), state

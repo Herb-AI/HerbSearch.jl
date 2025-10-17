@@ -60,7 +60,12 @@ get_cost(iter::AbstractCostBasedBottomUpIterator, uhole::UniformHole) = get_cost
 """
 Returns the costs for all rules in a grammar. Transforms probabilistic grammars to their cost-based formulation by taking the absolute of the log_probabilities.
 """
-get_costs(grammar::AbstractGrammar) = Float64.(abs.(grammar.log_probabilities))
+function get_costs(grammar::AbstractGrammar)
+    if isnothing(grammar.log_probabilities)
+        throw(ArgumentError("grammar is not probabilistic. Consider calling `init_probabilities!(grammar)`"))
+    end
+    return Float64.(abs.(grammar.log_probabilities))
+end
 
 """
 Calculates minimum cost within a uniform tree.
@@ -148,9 +153,10 @@ CostBank() = CostBank(
 )
 
 """
-    _indices_from_mask(mask::AbstractVector{Bool}) -> Vector{Int}
+    $(TYPEDSIGNATURES)
 
-Collect indices where `mask[i] == true`. Cheaper than `findall(mask)` for hot paths.
+Collect indices i where `mask[i] == true`. Faster and clearer than `findall(mask)`
+in hot paths because it avoids building an intermediate bitset vector first.
 """
 function _indices_from_mask(mask)::Vector{Int}
     idxs = Int[]
@@ -161,66 +167,6 @@ function _indices_from_mask(mask)::Vector{Int}
     return idxs
 end
 
-
-"""
-    build_cost_cross_product(iter, grammar, uh) -> (flat, dims, sorted)
-
-Construct the full N-D cross-product **cost tensor** for the uniform tree `uh`,
-*without* storing any Axis/Decision objects.
-
-Steps
-1. Traverse `uh` in **preorder** (node, then children) to gather, for each node:
-   - the `path` (Tuple) from the root (used later in `retrieve`);
-   - the `options` (grammar rule indices allowed at that node);
-   - the `costs` per option, pulled from `iter.current_costs`.
-   The traversal order defines the tensor axes order.
-2. For each axis `k`, broadcast-add its 1-D cost vector along axis `k` into an
-   N-D zero tensor of size `dims = length.(options)`.
-3. Return the flattened tensor (`vec`), the `dims`, and the `sorted` unique totals.
-
-Returns
-- `flat::Vector{Float64}`  : row-major flattened tensor, length `prod(dims)`.
-- `dims::Vector{Int}`      : axis lengths in preorder.
-- `sorted::Vector{Float64}`: unique sorted totals (for PQ slices etc).
-"""
-function build_cost_cross_product(iter::AbstractCostBasedBottomUpIterator,
-                                  grammar::AbstractGrammar,
-                                  uh::UniformHole)
-    # Collect per-node decision info in preorder (ephemeral)
-    paths      = Tuple{Vararg{Int}}[]
-    options    = Vector{Int}[]
-    optioncost = Vector{Float64}[]
-    atom       = get_current_costs(iter)
-
-    function visit(node::UniformHole, path::Tuple{Vararg{Int}}=())
-        inds = _indices_from_mask(node.domain)
-        push!(paths, path)
-        push!(options, inds)
-        push!(optioncost, @inbounds Float64.(view(atom, inds)))
-        @inbounds for (j, ch) in pairs(node.children)
-            visit(ch, (path..., j))
-        end
-    end
-    visit(uh)
-
-    # Build N-D tensor via Kronecker-sum of the 1-D cost vectors
-    n_axes = length(options)
-    dims   = map(length, options)
-    T      = zeros(Float64, Tuple(dims)...)
-
-    @inbounds for k in 1:n_axes
-        c_k  = optioncost[k]                           # Vector{Float64}
-        shp  = ntuple(i -> (i == k ? length(c_k) : 1), n_axes)
-        T   .+= reshape(c_k, shp)                      # broadcast add on axis k
-    end
-
-    # Flatten + collect unique-sorted costs
-    flat   = vec(T)
-    sorted = sort!(unique!(copy(flat)))
-    return flat, collect(dims), sorted
-end
-
-
 """
 Approximation tolerance for matching floating-point totals.
 """
@@ -229,15 +175,133 @@ cost_match_atol(::AbstractCostBasedBottomUpIterator) = 1e-6
 """
     $(TYPEDSIGNATURES)
 
-Return all Cartesian indices in `ent.cost_flat` (reshaped by `ent.dims`) whose
-value is approximately `total` within `cost_match_atol(iter)`.
+Return indices `i` where `mask[i] == true`. Avoids the extra work of `findall(mask)`.
+"""
+function _indices_from_mask(mask::AbstractVector{Bool})::Vector{Int}
+    indices = Int[]
+    sizehint!(indices, count(mask))
+    @inbounds for (i, bit) in pairs(mask)
+        bit && push!(indices, i)
+    end
+    return indices
+end
+
+
+"""
+    $(TYPEDSIGNATURES)
+
+Build the full cross-product total-cost tensor for a uniform tree `tree`.
+
+The preorder traversal order (node, then children) defines the tensor axis order.
+For each axis, admissible grammar indices are taken from `node.domain`, and the
+per-option cost defaults to `get_current_costs(iter)[index]`.
+
+Returns a tuple `(totals_flat, axis_lengths, sorted_costs)`:
+- `totals_flat::Vector{Float64}`  — row-major flattened totals of length `prod(axis_lengths)`
+- `axis_lengths::Vector{Int}`     — per-axis lengths in preorder
+- `sorted_costs::Vector{Float64}` — unique, sorted totals from `totals_flat`
+
+Notes for customization:
+Override this method if you want different costs (e.g. distance to a goal state).
+"""
+function build_cost_cross_product(iter::AbstractCostBasedBottomUpIterator,
+                                  grammar::AbstractGrammar,
+                                  tree::UniformHole)
+
+    current_costs = get_current_costs(iter)
+
+    # 1) Collect per-axis options (indices) and their costs in preorder.
+    option_indices = Vector{Vector{Int}}()
+    option_costs   = Vector{Vector{Float64}}()
+
+    function build_axes(node::UniformHole)
+        idxs = findall(node.domain)
+        push!(option_indices, idxs)
+        push!(option_costs, @inbounds Float64.(view(current_costs, idxs)))
+        @inbounds for child in node.children
+            build_axes(child)
+        end
+    end
+    build_axes(tree)
+
+    axis_lengths = map(length, option_indices)
+    n_axes = length(axis_lengths)
+
+    # 2) Row-major strides: stride[k] = prod(axis_lengths[k+1:end]); stride[end] = 1
+    strides = similar(axis_lengths)
+    s = 1
+    @inbounds for k in n_axes:-1:1
+        strides[k] = s
+        s *= axis_lengths[k]
+    end
+    total_len = s
+
+    # 3) Fill flat totals with a recursive loop.
+    totals_flat = Vector{Float64}(undef, total_len)
+
+    # Depth-first traversal over axes (equivalent to n nested loops).
+    # - `k`           : which axis we’re fixing now (1..n_axes)
+    # - `running`     : partial sum of costs chosen on axes 1..k-1
+    # - `base_lin`    : the current linear index position contributed by axes 1..k-1
+    #
+    # For the current axis k, choosing option i advances the linear index by
+    # (i-1) * strides[k]. We add that to `base_lin` and recurse to axis k+1.
+    # When k passes n_axes, we’ve picked one option on every axis, so we write
+    # the complete sum into `totals_flat` at the computed linear position.
+    function fill_axis(k::Int, running::Float64, base_lin::Int)
+        if k > n_axes
+            @inbounds totals_flat[base_lin] = running
+            return
+        end
+        lenk    = axis_lengths[k]
+        costs_k = option_costs[k]
+        step    = strides[k]
+        @inbounds for i in 1:lenk
+            fill_axis(k + 1, running + costs_k[i], base_lin + (i - 1) * step)
+        end
+    end
+    fill_axis(1, 0.0, 1)
+
+    sorted_costs = sort(unique(totals_flat))
+    return totals_flat, collect(axis_lengths), sorted_costs
+end
+
+
+"""
+    $(TYPEDSIGNATURES)
+
+Return all Cartesian indices whose total equals `target` (≈ within tolerance).
+Works in flat space and decodes linear indices back to N-D coordinates.
 """
 function indices_at_cost(iter::AbstractCostBasedBottomUpIterator,
                          ent::UniformTreeEntry,
-                         total::Float64)
-    atol = cost_match_atol(iter)
-    T = reshape(ent.cost_flat, Tuple(ent.dims))
-    return findall(@. abs(T - total) <= atol)
+                         target::Float64)
+    tolerance    = cost_match_atol(iter)
+    axis_lengths = ent.dims
+    num_axes     = length(axis_lengths)
+
+    # Row-major strides
+    row_strides = similar(axis_lengths)
+    accum = 1
+    @inbounds for k in num_axes:-1:1
+        row_strides[k] = accum
+        accum *= axis_lengths[k]
+    end
+    total_linear_len = accum
+
+    # Result buffer; element type is concrete for this call
+    matches = CartesianIndex{num_axes}[]
+
+    # We want to stream and not vectorize here to minimize allocations.
+    flat = ent.cost_flat
+    @inbounds for lin in 0:(total_linear_len - 1)
+        v = flat[lin + 1]
+        if isapprox(v, target; atol=tolerance, rtol=0.0)
+            coords = ntuple(k -> (lin ÷ row_strides[k]) % axis_lengths[k] + 1, num_axes)
+            push!(matches, CartesianIndex(coords))
+        end
+    end
+    return matches
 end
 
 
@@ -414,51 +478,124 @@ get_index(a::CostAccessAddress) = a.index
 """
     $(TYPEDSIGNATURES)
 
-Reconstruct the `a.index`-th concrete program at total cost `a.cost` within
-entry `a.uh_id`. We:
+Return the index of the `n`-th `true` in `mask` (1-based).
+Throws if `n` exceeds the number of `true` entries.
+"""
+@inline function _nth_true_index(mask::AbstractVector{Bool}, n::Int)::Int
+    n ≥ 1 || throw(ArgumentError("n must be ≥ 1, got $n"))
+    seen = 0
+    @inbounds for i in eachindex(mask)
+        if mask[i]
+            seen += 1
+            if seen == n
+                return i
+            end
+        end
+    end
+    throw(ArgumentError("n = $n exceeds number of admissible indices ($(seen))"))
+end
 
-1. Reshape the flat tensor by `dims` to find all indices at `a.cost`.
-2. Rebuild (ephemerally) the same preorder decision info (paths, options, costs)
-   directly from the stored `UniformHole`.
-3. For each axis k, select the grammar rule index from `options[k][idx[k]]` and
-   restrict the solver at `paths[k]` accordingly.
+
+"""
+    $(TYPEDSIGNATURES)
+
+Find the `rank`-th Cartesian position whose flat total equals `target` within `cost_match_atol(iter)`. Scans the flat buffer and decodes the position only when the `rank`-th match is reached. Returns `CartesianIndex` or `nothing`.
+"""
+function find_nth_index_at_cost(iter::AbstractCostBasedBottomUpIterator,
+                                ent::UniformTreeEntry,
+                                target::Float64,
+                                rank::Integer)
+    tol = cost_match_atol(iter)
+    lens = ent.dims
+    n_axes = length(lens)
+
+    # Row-major strides for mixed-radix decoding
+    strides = similar(lens)
+    prod_tail = 1
+    @inbounds for k in n_axes:-1:1
+        strides[k] = prod_tail
+        prod_tail *= lens[k]
+    end
+    total_len = prod_tail
+
+    found = 0
+    flat  = ent.cost_flat
+    @inbounds for lin in 0:(total_len - 1)
+        v = flat[lin + 1]
+        if isapprox(v, target; atol=tol, rtol=0.0)
+            found += 1
+            if found == rank
+                coords = ntuple(k -> (lin ÷ strides[k]) % lens[k] + 1, n_axes)
+                return CartesianIndex(coords)
+            end
+        end
+    end
+    return nothing
+end
+
+
+"""
+    $(TYPEDSIGNATURES)
+
+Reconstruct the `a.index`-th concrete program at total cost `a.cost` for entry `a.uh_id`,
+minimizing allocations.
+
+Strategy:
+- Locate the requested Cartesian position without collecting all matches.
+- Traverse the uniform tree iteratively (preorder) using parallel stacks:
+  `node_stack::Vector{UniformHole}` and `next_child_stack::Vector{Int}`.
+- Maintain a single `path_buf::Vector{Int}` (push when descending to a child, pop on return).
+- At each node, select the rule by taking the `coords[k]`-th admissible index directly
+  from the domain mask via `_nth_true_index` (no intermediate `options` vectors).
 """
 function retrieve(iter::AbstractCostBasedBottomUpIterator, a::CostAccessAddress)
     bank  = get_bank(iter)
     ent   = bank.uh_index[a.uh_id]
 
-    # locate the Cartesian index
-    T     = reshape(ent.cost_flat, Tuple(ent.dims))
-    atol = cost_match_atol(iter)
-    idxs  = findall(@. abs(T - a.cost) <= atol) # broadcast cost matching
-    @boundscheck a.index ≤ length(idxs) || error("retrieve: index $(a.index) out of bounds at cost=$(a.cost)")
-    idx   = Tuple(idxs[a.index])  # N-tuple of Ints
+    pos = find_nth_index_at_cost(iter, ent, a.cost, a.index)
+    pos === nothing && error("retrieve: index $(a.index) out of bounds at cost=$(a.cost)")
+    coords = Tuple(pos)  # one tuple built once
 
-    # rebuild decisions from the uniform tree (same order as in builder)
-    grammar = get_grammar(iter.solver)
-    atom    = get_current_costs(iter)
-    paths   = Tuple{Vararg{Int}}[]
-    options = Vector{Int}[]
+    # Parallel stacks (no tuple frames)
+    node_stack       = UniformHole[]
+    next_child_stack = Int[]
+    push!(node_stack, ent.program)
+    push!(next_child_stack, 0)  # 0 = "on entry" for this node
 
-    function visit(node::UniformHole, path::Tuple{Vararg{Int}}=())
-        inds = _indices_from_mask(node.domain)
-        push!(paths, path)
-        push!(options, inds)
-        @inbounds for (j, ch) in pairs(node.children)
-            visit(ch, (path..., j))
-        end
-    end
-    visit(ent.program)
-    @assert length(options) == length(idx)
+    path_buf = Int[]            # reused path vector passed to `remove_all_but!`
+    axis     = 0                # which decision axis we are at in preorder
 
-    # apply selections to the solver
     uiter  = ent.uiter
     solver = uiter.solver
     restore!(solver); save_state!(solver)
 
-    @inbounds for k in 1:length(idx)
-        selected_rule = options[k][idx[k]]
-        remove_all_but!(solver, collect(Int, paths[k]), selected_rule)
+    while !isempty(node_stack)
+        node       = node_stack[end]
+        next_child = next_child_stack[end]
+
+        if next_child == 0
+            # Enter node: apply the selected rule for this axis.
+            axis += 1
+            rule_idx = _nth_true_index(node.domain, coords[axis])
+            @inbounds remove_all_but!(solver, path_buf, rule_idx)
+            next_child_stack[end] = 1
+
+        elseif next_child <= length(node.children)
+            # Descend to child `next_child`.
+            child_pos = next_child
+            next_child_stack[end] = next_child + 1
+            push!(path_buf, child_pos)
+            push!(node_stack, node.children[child_pos])
+            push!(next_child_stack, 0)
+
+        else
+            # Done with this node; ascend one level.
+            pop!(node_stack)
+            pop!(next_child_stack)
+            if !isempty(path_buf)
+                pop!(path_buf)
+            end
+        end
     end
 
     return solver.isfeasible ? solver.tree : nothing
