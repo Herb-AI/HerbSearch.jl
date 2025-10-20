@@ -124,15 +124,23 @@ abstract type AbstractDFSIterator <: TopDownIterator end
 Assigns priority such that the search tree is traversed like in a DFS manner. 
 """
 function priority_function(
-    ::AbstractDFSIterator, 
+    iter::AbstractDFSIterator, 
     ::AbstractGrammar, 
     ::AbstractRuleNode, 
     parent_value::Union{Real, Tuple{Vararg{Real}}},
     isrequeued::Bool
 )
+    #the default priority function is the bfs priority function
     if isrequeued
         return parent_value;
     end
+
+    if parent_value isa Tuple && length(parent_value) == 2
+        # Increment insertion_counter and update tuple
+        iter.insertion_counter += 1
+        return (parent_value[1] - 1, iter.insertion_counter)
+    end
+
     return parent_value - 1;
 end
 
@@ -141,7 +149,10 @@ Base.@doc """
 
 Creates a depth-first search iterator for traversing a given a grammar, starting from a given symbol. The iterator returns trees in the grammar in decreasing order of size. 
 """ DFSIterator
-@programiterator DFSIterator() <: AbstractDFSIterator
+@programiterator mutable DFSIterator(
+    uniform_solver_ref::Ref{Union{UniformSolver, Nothing}} = Ref(nothing),
+    insertion_counter::Int = 0
+) <: AbstractDFSIterator
 
 Base.@doc """
     @programiterator MLFSIterator() <: TopDownIterator
