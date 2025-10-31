@@ -77,10 +77,10 @@ function populate_bank!(iter::AbstractCostBasedBottomUpIterator)
 
         ret_type   = grammar.types[rule_idx]
         rule_cost  = get_rule_cost(iter, rule_idx)
-        rule_cost <= get_max_cost(iter) || continue
+        rule_cost <= get_measure_limit(iter) || continue
 
         # adjust if your RuleNode signature differs
-        terminal_prog = RuleNode(rule_idx, AbstractRuleNode[])
+        terminal_prog = RuleNode(rule_idx)
 
         push!(get_entries(bank, ret_type, rule_cost), BankEntry(terminal_prog, true))
     end
@@ -90,7 +90,7 @@ function populate_bank!(iter::AbstractCostBasedBottomUpIterator)
     out  = AccessAddress[]
     for T in get_types(bank)
         for c in get_costs(bank, T)
-            c <= get_max_cost(iter) || continue
+            c <= get_measure_limit(iter) || continue
             entries = get_entries(bank, T, c)
             @inbounds for i in eachindex(entries)
                 prog = entries[i].program
@@ -126,7 +126,7 @@ struct CostCombineAddress{N} <: AbstractAddress
 end
 
 get_children(a::CostCombineAddress) = a.addrs
-get_rule(a::CostCombineAddress)     = a.rule_idx
+get_rule(a::CostCombineAddress) = a.rule_idx
 
 # cost = rule_cost + children_cost
 function calc_measure(iter::AbstractCostBasedBottomUpIterator,
@@ -142,16 +142,12 @@ function retrieve(iter::AbstractCostBasedBottomUpIterator, a::CostCombineAddress
     return RuleNode(a.rule_idx, kids)
 end
 
-function retrieve(iter::AbstractCostBasedBottomUpIterator,
-                  a::AccessAddress)::AbstractRuleNode
-    retrieve(get_bank(iter), a)
-end
 
 add_to_bank!(::AbstractCostBasedBottomUpIterator, ::AccessAddress, ::AbstractRuleNode) = true
 
 function add_to_bank!(iter::AbstractCostBasedBottomUpIterator, addr::CostCombineAddress, prog::AbstractRuleNode)
     total_cost = calc_measure(iter, addr)
-    if total_cost > get_max_cost(iter) || 
+    if total_cost > get_measure_limit(iter) || 
         depth(prog) >= get_max_depth(iter) || 
         length(prog) >= get_max_size(iter)
         return false
@@ -232,11 +228,10 @@ function combine(iter::AbstractCostBasedBottomUpIterator, state::GenericBUState)
     # advance horizons
     state.last_horizon = state.new_horizon
     new_h = compute_new_horizon(iter)
-    @show state.last_horizon, new_h
     
     # if no better horizon found, stick to old one
     if isfinite(new_h)
-        state.new_horizon = min(new_h, get_max_cost(iter))
+        state.new_horizon = min(new_h, get_measure_limit(iter))
     else
         state.new_horizon = state.last_horizon
     end
@@ -313,4 +308,42 @@ function combine(iter::AbstractCostBasedBottomUpIterator, state::GenericBUState)
     end
 
     return state.combinations, state
+end
+
+
+function Base.iterate(iter::AbstractCostBasedBottomUpIterator, state::GenericBUState)
+    # Drain current uniform iterator if present
+    if !isnothing(state.current_uniform_iterator)
+        next_solution = next_solution!(state.current_uniform_iterator)
+        if isnothing(next_solution)
+            state.current_uniform_iterator = nothing
+        else
+            return next_solution, state
+        end
+    end
+
+    solver = get_solver(iter)
+
+    next_program_address, new_state = get_next_program(iter, state)
+
+    while !isnothing(next_program_address)
+        program = retrieve(iter, next_program_address)
+
+        if isnothing(program) 
+            return nothing
+        end
+
+        keep = add_to_bank!(iter, next_program_address, program)
+
+        if is_subdomain(program, state.starting_node)
+            # Check for constraints in the grammar
+            if all(HerbConstraints.check_tree(constraint, program) for constraint in get_grammar(get_solver(iter)).constraints)
+                return program, new_state
+            end
+        end
+
+        next_program_address, new_state = get_next_program(iter, new_state)
+    end
+
+    return nothing
 end

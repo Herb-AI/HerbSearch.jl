@@ -700,6 +700,9 @@ function get_next_program(iter::BottomUpIterator, state::GenericBUState)
             return nothing, nothing
         end
 
+        @show old_window, state.last_horizon, state.new_horizon
+        @show length(state.combinations)
+
         window_changed = old_window != (state.last_horizon, state.new_horizon)
         if window_changed
             return get_next_program(iter, state) # Recurse and call combine again
