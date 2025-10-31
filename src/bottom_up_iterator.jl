@@ -695,8 +695,6 @@ function get_next_program(iter::BottomUpIterator, state::GenericBUState)
     if !isnothing(state_tracker(state)) 
         old_window = (state.last_horizon, state.new_horizon)
         new_program_combinations, state = combine(iter, state)
-        @show old_window, state.last_horizon, state.new_horizon
-        @show length(state.combinations)
 
         if isnothing(new_program_combinations) 
             return nothing, nothing
