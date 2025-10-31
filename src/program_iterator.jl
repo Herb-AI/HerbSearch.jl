@@ -1,3 +1,6 @@
+import HerbConstraints: get_grammar, get_starting_symbol, get_max_size,
+    get_max_depth
+
 """
     abstract type ProgramIterator
 
@@ -12,6 +15,81 @@ All iterators are expected to have the following fields:
 - `max_enumerations::Int`: maximum number of enumerations
 """
 abstract type ProgramIterator end
+
+"""
+    get_solver(pi::ProgramIterator)
+
+Get the program iterator solver.
+"""
+function get_solver(pi::ProgramIterator)
+    return pi.solver
+end
+
+"""
+    HerbConstraints.get_grammar(pi::ProgramIterator)
+
+"""
+function HerbConstraints.get_grammar(pi::ProgramIterator)
+    return get_grammar(get_solver(pi))
+end
+
+"""
+    HerbConstraints.get_starting_symbol(pi::ProgramIterator)
+
+Get the starting symbol of the iterator.
+
+# Example
+
+Given an iterator that is initialized with `:Int` as the starting symbol, the
+root of each of the programs returned from the iterator will have the same
+type, and this will match the symbol returned by [`get_starting_symbol`](@ref).
+
+```jldoctest
+julia> using HerbGrammar, HerbConstraints;
+
+julia> g = @csgrammar begin
+           Int = length(List)
+           Int = Int + Int
+           List = x
+       end;
+
+julia> it = BFSIterator(g, :Int; max_depth=4);
+
+julia> root_rules = get_rule.(it);
+
+julia> [g.types[idx] for idx in root_rules]
+5-element Vector{Symbol}:
+ :Int
+ :Int
+ :Int
+ :Int
+ :Int
+
+julia> get_starting_symbol(it)
+:Int
+```
+"""
+function HerbConstraints.get_starting_symbol(pi::ProgramIterator)
+    return get_starting_symbol(get_solver(pi))
+end
+
+"""
+    HerbConstraints.get_max_depth(pi::ProgramIterator)
+
+Get the maximum depth of the programs that the program iterator will return.
+"""
+function HerbConstraints.get_max_depth(pi::ProgramIterator)
+    return get_max_depth(get_solver(pi))
+end
+
+"""
+    HerbConstraints.get_max_size(pi::ProgramIterator)
+
+Get the maximum size of the programs that the program iterator will return.
+"""
+function HerbConstraints.get_max_size(pi::ProgramIterator)
+    return get_max_size(get_solver(pi))
+end
 
 Base.IteratorSize(::ProgramIterator) = Base.SizeUnknown()
 
