@@ -1,15 +1,10 @@
 """
     abstract type ProgramIterator
 
-Generic iterator for all possible search strategies.    
-All iterators are expected to have the following fields:
+Abstract iterator type for all search strategies.
 
-- `grammar::ContextSensitiveGrammar`: the grammar to search over
-- `sym::Symbol`: defines the start symbol from which the search should be started 
-- `max_depth::Int`: maximum depth of program trees
-- `max_size::Int`: maximum number of [`AbstractRuleNode`](@ref)s of program trees
-- `max_time::Int`: maximum time the iterator may take
-- `max_enumerations::Int`: maximum number of enumerations
+See [`@programiterator`](@ref) for details on constructing iterators or
+defining new strategies.
 """
 abstract type ProgramIterator end
 
@@ -17,12 +12,13 @@ Base.IteratorSize(::ProgramIterator) = Base.SizeUnknown()
 
 Base.eltype(::ProgramIterator) = Union{RuleNode,StateHole}
 
-
 """
     Base.length(iter::ProgramIterator)    
 
 Counts and returns the number of possible programs without storing all the programs.
-!!! warning: modifies and exhausts the iterator
+
+!!! warning
+    Modifies and exhausts the iterator
 """
 function Base.length(iter::ProgramIterator)
     l = 0
@@ -36,22 +32,39 @@ end
 """
     @programiterator
 
-Canonical way of creating a program iterator.
-The macro automatically declares the expected fields listed in the `ProgramIterator` documentation.
-Syntax accepted by the macro is as follows (anything enclosed in square brackets is optional):
-    ```
-    @programiterator [mutable] <IteratorName>(
-        <arg₁>,
-        ...,
-        <argₙ>
-    ) [<: <SupertypeIterator>]
-    ```
-Note that the macro emits an assertion that the `SupertypeIterator` 
-is a subtype of `ProgramIterator` which otherwise throws an ArgumentError.
-If no supertype is given, the new iterator extends `ProgramIterator` directly.
-Each <argᵢ> may be (almost) any expression valid in a struct declaration, and they must be comma separated.
-One known exception is that an inner constructor must always be given using the extended `function <name>(...) ... end` syntax.
+Create a new type `T<:ProgramIterator` that includes the common fields of
+[`ProgramIterator`](@ref)s.
+
+Syntax accepted by the macro is as follows (anything enclosed in square
+brackets is optional):
+
+```julia
+@programiterator [mutable] <IteratorName>(
+<arg₁>,
+...,
+<argₙ>
+) [<: <SupertypeIterator>]
+```
+
 The `mutable` keyword determines whether the declared struct is mutable.
+`SupertypeIterator` must be an abstract type `<:ProgramIterator`. If no
+supertype is given, the new iterator extends `ProgramIterator` directly. Each
+<argᵢ> may be (almost) any expression valid in a struct declaration, and they
+must be comma separated.
+
+!!! warning
+    An inner constructor must always be given using the extended `function
+    <name>(...) ... end` syntax.
+
+# Examples
+```jldoctest
+julia> abstract type SomeIteratorFamily<:ProgramIterator end
+
+julia> @programiterator mutable SomeCustomIterator(
+                   a_param::Int
+               ) <: SomeIteratorFamily
+SomeCustomIterator
+```
 """
 macro programiterator(mut, ex)
     if mut == :mutable
