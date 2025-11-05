@@ -1,5 +1,3 @@
-using DataStructures: DefaultDict
-
 """
     $(TYPEDEF)
 
@@ -11,21 +9,22 @@ Concrete implementations are expected to provide at least:
 """
 abstract type AbstractCostBasedBottomUpIterator <: BottomUpIterator end
 
+
 @programiterator CostBasedBottomUpIterator(
     bank=CostBank(),
     max_cost::Float64=Inf,
-    current_costs::Vector{Float64}=Float64[]
+    current_costs::Vector{Float64}=Float64[],
+    program_to_outputs::Union{Nothing,Function} = nothing, # Must return Float64
 ) <: AbstractCostBasedBottomUpIterator
 
-
-function CostBasedBottomUpIterator(solver; max_cost=Inf)
-    grammar = get_grammar(solver)
-    # take abs(log p) as a cost, like you suggested
-    rule_costs = Float64.(abs.(grammar.log_probabilities))
+function CostBasedBottomUpIterator(solver; max_cost=Inf, program_to_outputs=nothing)
+    grammar    = get_grammar(solver)
+    rule_costs = get_costs(grammar)
     return CostBasedBottomUpIterator(solver;
         bank=CostBank(),
         max_cost=max_cost,
         current_costs=rule_costs,
+        program_to_outputs=program_to_outputs,
     )
 end
 
@@ -37,6 +36,7 @@ get_measure_limit(iter::AbstractCostBasedBottomUpIterator) = get_max_cost(iter)
 
 get_costs(grammar::AbstractGrammar) = abs.(grammar.log_probabilities)
 
+
 """
     struct CostBank{C}
 
@@ -44,14 +44,51 @@ Bank keyed **first by type**, then by **cost**, storing concrete programs (`Rule
 """
 struct CostBank{C}
     bank::DefaultDict{Symbol,DefaultDict{C,Vector{BankEntry}}}
+    # per return-type: SET of VECTORS OF UInt64 (wrapped)
+    seen_outputs::DefaultDict{Symbol,Set{OutputSig}}
+
     function CostBank{C}() where {C}
-        inner = () -> DefaultDict{C,Vector{BankEntry}}(() -> BankEntry[])
-        return new{C}(DefaultDict{Symbol,DefaultDict{C,Vector{BankEntry}}}(inner))
+        inner_bank = () -> DefaultDict{C,Vector{BankEntry}}(() -> BankEntry[])
+        seen       = DefaultDict{Symbol,Set{OutputSig}}(() -> Set{OutputSig}())
+        return new{C}(
+            DefaultDict{Symbol,DefaultDict{C,Vector{BankEntry}}}(inner_bank),
+            seen,
+        )
     end
 end
 
-# nice default: Float64 costs
 CostBank() = CostBank{Float64}()
+
+"""
+    $(TYPEDSIGNATURES)
+
+Checks a program for observational equivalence by evaluating the program, hashing the outputs and checking them against the set of seen outputs. 
+    
+Returns true, if the program was seen already.
+Returns false, if the program was not seen yet. Adds the output signature to the set of seen outputs in that case.
+"""
+function is_observational_equivalent(
+    iter::AbstractCostBasedBottomUpIterator,
+    program::RuleNode,
+    rettype::Symbol
+)
+    f = iter.program_to_outputs
+    f === nothing && return false # checking for observational equivalence is turned off
+
+    outs_any = f(program)
+    sig_vec  = _hash_outputs_to_u64vec(outs_any)
+    wrapped = OutputSig(sig_vec) # Needed for set formulation
+
+    bank = get_bank(iter)
+    seen = get!(bank.seen_outputs, rettype, Set{OutputSig}())
+
+    if wrapped in seen
+        return true
+    else
+        push!(seen, wrapped)
+        return false
+    end
+end
 
 get_types(cb::CostBank) = keys(cb.bank)
 
@@ -68,21 +105,16 @@ retrieve(cb::CostBank, a::AccessAddress) = get_programs(cb, get_return_type(a), 
 
 function populate_bank!(iter::AbstractCostBasedBottomUpIterator)
     grammar = get_grammar(iter.solver)
-    bank    = get_bank(iter)
+    bank = get_bank(iter)
 
-    # seed terminals
-    # Create concrete terminal programs from the grammar and put them in the bank.
+    # seed terminals using add_to_bank!
     for rule_idx in eachindex(grammar.isterminal)
-        grammar.isterminal[rule_idx] || continue
+        grammar.isterminal[rule_idx] || continue # skip non-terminals
 
-        ret_type   = grammar.types[rule_idx]
-        rule_cost  = get_rule_cost(iter, rule_idx)
-        rule_cost <= get_measure_limit(iter) || continue
+        prog = RuleNode(rule_idx)
+        addr = CostCombineAddress{0}(rule_idx, ())  # terminal: no child addresses
 
-        # adjust if your RuleNode signature differs
-        terminal_prog = RuleNode(rule_idx)
-
-        push!(get_entries(bank, ret_type, rule_cost), BankEntry(terminal_prog, true))
+        add_to_bank!(iter, addr, prog)
     end
     
     # collect initial window
@@ -113,8 +145,7 @@ get_bank(iter::AbstractCostBasedBottomUpIterator) = iter.bank
 
 calc_measure(iter::AbstractCostBasedBottomUpIterator, a::AccessAddress) = get_cost(a)
 
-calc_measure(iter::AbstractCostBasedBottomUpIterator, children::Tuple) =
-    sum(get_cost, children)
+calc_measure(iter::AbstractCostBasedBottomUpIterator, children::Tuple) = sum(get_cost, children, init=0)
 
 
 """
@@ -156,12 +187,17 @@ function add_to_bank!(iter::AbstractCostBasedBottomUpIterator, addr::CostCombine
     grammar = get_grammar(iter.solver)
     ret_T   = grammar.types[addr.rule_idx]
 
+    # observational equivalence per return type
+    if is_observational_equivalent(iter, prog, ret_T)
+        return false
+    end
+
     push!(get_entries(bank, ret_T, total_cost), BankEntry(prog, true))
     return true
 end
 
 function compute_new_horizon(iter::AbstractCostBasedBottomUpIterator)
-    bank    = get_bank(iter)
+    bank = get_bank(iter)
     grammar = get_grammar(iter.solver)
 
     # 1) collect cheapest & cheapest-new per type
@@ -186,7 +222,6 @@ function compute_new_horizon(iter::AbstractCostBasedBottomUpIterator)
     best = Inf
 
     # 2) for every nonterminal rule, try “one new child, the rest old”
-    # @TODO Check whether this is correct
     for rule_idx in eachindex(grammar.isterminal)
 
         grammar.isterminal[rule_idx] && continue   # skip terminals
@@ -224,11 +259,11 @@ end
 function combine(iter::AbstractCostBasedBottomUpIterator, state::GenericBUState)
     bank    = get_bank(iter)
     grammar = get_grammar(iter.solver)
-
+    
     # advance horizons
     state.last_horizon = state.new_horizon
     new_h = compute_new_horizon(iter)
-    
+
     # if no better horizon found, stick to old one
     if isfinite(new_h)
         state.new_horizon = min(new_h, get_measure_limit(iter))
@@ -262,6 +297,8 @@ function combine(iter::AbstractCostBasedBottomUpIterator, state::GenericBUState)
     end
     is_well_typed = child_types -> (children -> child_types == get_return_type.(children))
 
+    any_new = child_tuple -> any(a -> a.new_shape, child_tuple)
+
     # @TODO do this by shape, so we don't have to iterate separately 
     for rule_idx in eachindex(grammar.isterminal)
         grammar.isterminal[rule_idx] && continue
@@ -278,31 +315,21 @@ function combine(iter::AbstractCostBasedBottomUpIterator, state::GenericBUState)
         candidate_combinations = Iterators.product(child_lists...)
         candidate_combinations = Iterators.filter(typed_filter, candidate_combinations)
         candidate_combinations = Iterators.filter(is_feasible, candidate_combinations)
+        candidate_combinations = Iterators.filter(any_new, candidate_combinations)
 
         # cartesian product over the child lists
         for child_tuple in candidate_combinations
             # must use at least one *new* program to progress the horizon
-            any_new = any(a -> a.new_shape, child_tuple)
-            any_new || continue
 
             total_cost = rule_cost + sum(a -> get_cost(a), child_tuple)
             total_cost > get_measure_limit(iter) && continue
 
             enqueue!(state.combinations, CostCombineAddress(rule_idx, Tuple(child_tuple)), total_cost)
-        end
-    end
 
-    # sort all candidates by cost *before* putting them in the PQ
-    # @TODO is this necessary?
-    # sort!(candidates, by = first)
-
-    # @show length(state.combinations), peek(state.combinations)[2]
-
-    # after we created wave-k parents, old newness is consumed
-    for T in get_types(bank)
-        for c in get_costs(bank, T)
-            for entry in get_entries(bank, T, c)
-                entry.is_new = false
+            for ch in child_tuple
+                if ch.new_shape == true
+                    get_entries(bank, get_return_type(ch), get_measure(ch))[get_index(ch)].is_new = false
+                end
             end
         end
     end
@@ -333,7 +360,19 @@ function Base.iterate(iter::AbstractCostBasedBottomUpIterator, state::GenericBUS
             return nothing
         end
 
-        keep = add_to_bank!(iter, next_program_address, program)
+        if length(program) > 1
+            keep = add_to_bank!(iter, next_program_address, program)
+            expr = rulenode2expr(program, get_grammar(iter.solver))
+
+            # if the horizon is set to max, but we encounter a program that we want to add to the bank, then we recompute the horizon.
+            if keep && 
+                (state.last_horizon == get_measure_limit(iter) || 
+                state.new_horizon == typemax(typeof(get_measure_limit(iter))) ||
+                state.new_horizon == Inf)
+                state.new_horizon = compute_new_horizon(iter)
+            end
+        end
+
 
         if is_subdomain(program, state.starting_node)
             # Check for constraints in the grammar
