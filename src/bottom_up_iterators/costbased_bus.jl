@@ -11,7 +11,7 @@ abstract type AbstractCostBasedBottomUpIterator <: BottomUpIterator end
 
 
 @programiterator CostBasedBottomUpIterator(
-    bank=CostBank(),
+    bank=MeasureHashedBank{Float64}(),
     max_cost::Float64=Inf,
     current_costs::Vector{Float64}=Float64[],
     program_to_outputs::Union{Nothing,Function} = nothing, # Must return Float64
@@ -21,43 +21,47 @@ function CostBasedBottomUpIterator(solver; max_cost=Inf, program_to_outputs=noth
     grammar    = get_grammar(solver)
     rule_costs = get_costs(grammar)
     return CostBasedBottomUpIterator(solver;
-        bank=CostBank(),
+        bank=MeasureHashedBank{Float64}(),
         max_cost=max_cost,
         current_costs=rule_costs,
         program_to_outputs=program_to_outputs,
     )
 end
 
-get_max_cost(iter::AbstractCostBasedBottomUpIterator) = iter.max_cost
+@doc """
+    CostBasedBottomUpIterator
+
+A bottom-up iterator which enumerates program by increasing cost.
+
+The bank is ordered by measures, i.e., the cost, just like the shape-based BUS but of type `Float64`.
+In contrast to the shape-based BUS implementations, each `BankEntry` holds a single program, not a shape. While is worse for propagating constraints, this is significantly faster for checking observational equivalence. 
+
+In `CostBasedBottomUpIterator`, we assume the costs to be compositional, i.e., the cost of a program is the sum of the costs of the sub-rules. This also holds when constructing a new program as the combination of existing programs in the bank.
+
+`CostBasedBottomUpIterator` implements and propagates observational equivalence by default. 
+To enable provide a `program_to_outputs` function, which takes a `RuleNode` and returns a concrete program. To check for observational equivalence, the outputs are hashed, compared to the bank of seen outputs, and added if not seen before.
+
+`CostBasedBottomUpIterator` keeps an enumeration window, similar to `BottomUpIterator`. 
+""" CostBasedBottomUpIterator
+
+
+
+"""
+    $(TYPEDSIGNATURES)
+
+Given an iter and the rule index, returns the current cost of that index, by getting the respective element of current_costs.
+"""
 get_rule_cost(iter::AbstractCostBasedBottomUpIterator, rule_idx::Int) = iter.current_costs[rule_idx]
 
-# make the *generic* code think "measure = cost"
-get_measure_limit(iter::AbstractCostBasedBottomUpIterator) = get_max_cost(iter)
+"""
+    $(TYPEDSIGNATURES)
+
+Returns maximum cost, which is set at init. If not defined, the maximum cost is set to `Inf`.
+"""
+get_measure_limit(iter::AbstractCostBasedBottomUpIterator) = iter.max_cost
 
 get_costs(grammar::AbstractGrammar) = abs.(grammar.log_probabilities)
 
-
-"""
-    struct CostBank{C}
-
-Bank keyed **first by type**, then by **cost**, storing concrete programs (`RuleNode`s).
-"""
-struct CostBank{C}
-    bank::DefaultDict{Symbol,DefaultDict{C,Vector{BankEntry}}}
-    # per return-type: SET of VECTORS OF UInt64 (wrapped)
-    seen_outputs::DefaultDict{Symbol,Set{OutputSig}}
-
-    function CostBank{C}() where {C}
-        inner_bank = () -> DefaultDict{C,Vector{BankEntry}}(() -> BankEntry[])
-        seen       = DefaultDict{Symbol,Set{OutputSig}}(() -> Set{OutputSig}())
-        return new{C}(
-            DefaultDict{Symbol,DefaultDict{C,Vector{BankEntry}}}(inner_bank),
-            seen,
-        )
-    end
-end
-
-CostBank() = CostBank{Float64}()
 
 """
     $(TYPEDSIGNATURES)
@@ -90,19 +94,13 @@ function is_observational_equivalent(
     end
 end
 
-get_types(cb::CostBank) = keys(cb.bank)
 
-get_costs(cb::CostBank, T::Symbol) = keys(cb.bank[T])
+"""
+    $(TYPEDSIGNATURES)
 
-get_entries(cb::CostBank, T::Symbol, c) = cb.bank[T][c]
-
-get_programs(cb::CostBank, T::Symbol, c) =
-    (e.program for e in cb.bank[T][c]) |> collect
-
-get_cost(a::AccessAddress) = get_measure(a)
-
-retrieve(cb::CostBank, a::AccessAddress) = get_programs(cb, get_return_type(a), get_cost(a))[get_index(a)]
-
+Fill the bank with the concrete programs in the grammar, i.e., the terminals.
+Returns the [`AccessAddress`](@ref)es of the newly-added programs.
+"""
 function populate_bank!(iter::AbstractCostBasedBottomUpIterator)
     grammar = get_grammar(iter.solver)
     bank = get_bank(iter)
@@ -112,7 +110,7 @@ function populate_bank!(iter::AbstractCostBasedBottomUpIterator)
         grammar.isterminal[rule_idx] || continue # skip non-terminals
 
         prog = RuleNode(rule_idx)
-        addr = CostCombineAddress{0}(rule_idx, ())  # terminal: no child addresses
+        addr = CombineAddress{0}(rule_idx, ())  # terminal: no child addresses
 
         add_to_bank!(iter, addr, prog)
     end
@@ -121,14 +119,14 @@ function populate_bank!(iter::AbstractCostBasedBottomUpIterator)
     # Collect the *initial window* of addresses: every terminal we’ve just added.
     out  = AccessAddress[]
     for T in get_types(bank)
-        for c in get_costs(bank, T)
+        for c in get_measures(bank, T)
             c <= get_measure_limit(iter) || continue
             entries = get_entries(bank, T, c)
             @inbounds for i in eachindex(entries)
                 prog = entries[i].program
                 push!(out, AccessAddress(
-                    c,               # cost
                     T,               # type
+                    c,               # cost
                     i,               # index in that bucket
                     depth(prog),     # depth of *concrete* program
                     length(prog),    # size   of *concrete* program
@@ -140,43 +138,47 @@ function populate_bank!(iter::AbstractCostBasedBottomUpIterator)
     return out
 end
 
-# the iterator already expects this:
-get_bank(iter::AbstractCostBasedBottomUpIterator) = iter.bank
+"""
+    $(TYPEDSIGNATURES)
 
-calc_measure(iter::AbstractCostBasedBottomUpIterator, a::AccessAddress) = get_cost(a)
-
-calc_measure(iter::AbstractCostBasedBottomUpIterator, children::Tuple) = sum(get_cost, children, init=0)
-
+Given the children of a node, returns the accumulated cost of the children, i.e., the sum of their respective costs.
+"""
+_calc_measure(iter::AbstractCostBasedBottomUpIterator, children::Tuple) = sum(get_measure, children, init=0)
 
 """
-Address describing “apply rule `rule_idx` to these children”.
+    $(TYPEDSIGNATURES)
+
+Calculates the cost of a CombineAddress, which refers to a concrete program. 
 """
-struct CostCombineAddress{N} <: AbstractAddress
-    rule_idx::Int
-    addrs::NTuple{N,AccessAddress}
-end
-
-get_children(a::CostCombineAddress) = a.addrs
-get_rule(a::CostCombineAddress) = a.rule_idx
-
-# cost = rule_cost + children_cost
 function calc_measure(iter::AbstractCostBasedBottomUpIterator,
-                      a::CostCombineAddress)
-    rule_c = get_rule_cost(iter, a.rule_idx)
-    return rule_c + calc_measure(iter, get_children(a))
+                      a::CombineAddress)
+    rule_c = get_rule_cost(iter, get_operator(a))
+    return rule_c + _calc_measure(iter, get_children(a))
 end
 
-function retrieve(iter::AbstractCostBasedBottomUpIterator, a::CostCombineAddress)
+"""
+    $(TYPEDSIGNATURES)
+
+Retrieve a program using a CombineAddress. Overwrites the parent function, as AbstractCostBasedBottomUpIterator operates over concrete trees, not uniform trees.
+"""
+function retrieve(iter::AbstractCostBasedBottomUpIterator, a::CombineAddress)
     grammar = get_grammar(iter.solver)
     kids = [retrieve(iter, ch) for ch in get_children(a)]
-    # again: tweak constructor name/arity if yours is different
-    return RuleNode(a.rule_idx, kids)
+    return RuleNode(get_operator(a), kids)
 end
 
 
-add_to_bank!(::AbstractCostBasedBottomUpIterator, ::AccessAddress, ::AbstractRuleNode) = true
+"""
+        $(TYPEDSIGNATURES)
 
-function add_to_bank!(iter::AbstractCostBasedBottomUpIterator, addr::CostCombineAddress, prog::AbstractRuleNode)
+Add the `program` (the result of combining `program_combination`) to the bank of
+the `iter`.
+
+Return `true` if the `program` is added to the bank, and `false` otherwise.
+
+This `add_to_bank!` checks for observational equivalence.  
+"""
+function add_to_bank!(iter::AbstractCostBasedBottomUpIterator, addr::CombineAddress, prog::AbstractRuleNode)
     total_cost = calc_measure(iter, addr)
     if total_cost > get_measure_limit(iter) || 
         depth(prog) >= get_max_depth(iter) || 
@@ -185,7 +187,7 @@ function add_to_bank!(iter::AbstractCostBasedBottomUpIterator, addr::CostCombine
     end 
     bank    = get_bank(iter)
     grammar = get_grammar(iter.solver)
-    ret_T   = grammar.types[addr.rule_idx]
+    ret_T   = grammar.types[get_operator(addr)]
 
     # observational equivalence per return type
     if is_observational_equivalent(iter, prog, ret_T)
@@ -196,6 +198,30 @@ function add_to_bank!(iter::AbstractCostBasedBottomUpIterator, addr::CostCombine
     return true
 end
 
+
+
+"""
+$(TYPEDSIGNATURES)
+
+
+Compute the **new horizon**  using the current contents of the bank.
+The new_horizon is an exclusive upper bound on the window we currently try to enumerate, with the inclusive lower bound being the last_horizon. 
+Both are stored in the `BottomUpState`.
+
+Definition:
+- Consider all **non-terminal shapes** (operators).
+- For each shape, form the cheapest child tuple that uses
+**at least one `new` child** (as marked by the bank’s `is_new` flags) and all other
+children at their **cheapest existing** measures (per return type).
+- The next horizon is the minimum, over those shapes, of
+`operator_cost + _calc_measure(children_tuple)`.
+
+Note that this differs from `compute_new_horizon(iter::BottomUpIterator)`, as operate over singular programs, not shapes.
+
+Notes:
+- “Newness” is derived from the bank’s `is_new` flags on entries, **not** from horizons.
+- This function does **not** mutate the bank or the state (other than reading state).
+"""
 function compute_new_horizon(iter::AbstractCostBasedBottomUpIterator)
     bank = get_bank(iter)
     grammar = get_grammar(iter.solver)
@@ -205,7 +231,7 @@ function compute_new_horizon(iter::AbstractCostBasedBottomUpIterator)
     min_new_cost_by_type = Dict{Symbol, Float64}()
 
     for T in get_types(bank)
-        for c in get_costs(bank, T)
+        for c in get_measures(bank, T)
             entries = get_entries(bank, T, c)
             isempty(entries) && continue
 
@@ -256,6 +282,19 @@ function compute_new_horizon(iter::AbstractCostBasedBottomUpIterator)
     return best
 end
 
+
+
+"""
+    $(TYPEDSIGNATURES)
+
+Combine the programs currently in `iter`'s bank to create a new set of programs.
+Constructs all tuples of combinations of programs joined by an operator. 
+To ensure that we only consider new programs, the tuple of existing programs has to contain at least one **new** program.
+New programs are represented by `CombineAddress`es, i.e., operators over a tuple of existing programs, represented with `AccessAddress`.
+
+Combine also calculates the new enumeration window, i.e. sets last_horizon to new_horizon and calculates new_horizon via `compute_new_horizon`.
+Enqueues ALL found combinations into `state.combinations` that are bigger than last_horizon, but will NOT prune solutions that exceed the current window, i.e., new_horizon.
+"""
 function combine(iter::AbstractCostBasedBottomUpIterator, state::GenericBUState)
     bank    = get_bank(iter)
     grammar = get_grammar(iter.solver)
@@ -272,17 +311,16 @@ function combine(iter::AbstractCostBasedBottomUpIterator, state::GenericBUState)
     end
 
     # build an address list grouped by type (this is fast to reuse below)
-    # @TODO This is an optional caching of rules.
     addrs_by_type = Dict{Symbol,Vector{AccessAddress}}()
     for T in get_types(bank)
         vs = AccessAddress[]
-        for c in get_costs(bank, T)
+        for c in get_measures(bank, T)
             entries = get_entries(bank, T, c)
             @inbounds for i in eachindex(entries)
                 e = entries[i]
                 prog = e.program
                 push!(vs, AccessAddress(
-                    c, T, i,
+                    T, c, i,
                     depth(prog), length(prog),
                     e.is_new
                 ))
@@ -321,13 +359,13 @@ function combine(iter::AbstractCostBasedBottomUpIterator, state::GenericBUState)
         for child_tuple in candidate_combinations
             # must use at least one *new* program to progress the horizon
 
-            total_cost = rule_cost + sum(a -> get_cost(a), child_tuple)
+            total_cost = rule_cost + sum(a -> get_measure(a), child_tuple)
             total_cost > get_measure_limit(iter) && continue
 
-            enqueue!(state.combinations, CostCombineAddress(rule_idx, Tuple(child_tuple)), total_cost)
+            enqueue!(state.combinations, CombineAddress(rule_idx, child_tuple), total_cost)
 
             for ch in child_tuple
-                if ch.new_shape == true
+                if ch.new_shape
                     get_entries(bank, get_return_type(ch), get_measure(ch))[get_index(ch)].is_new = false
                 end
             end
