@@ -126,7 +126,7 @@ g = @csgrammar begin
 end
 iter = SizeBasedBottomUpIterator(g, :Int)
 populate_bank!(iter)
-acc = AccessAddress(:Int, 1, 1)
+acc = AccessAddress(:Int, 1, 1, 1, 1, false)
 retrieve(iter, acc)
 
 # output
@@ -218,7 +218,7 @@ iter = SizeBasedBottomUpIterator(g, :Int);
 populate_bank!(iter);
 acc = CombineAddress(
         UniformHole([1, 0, 0, 0]),
-        [AccessAddress(:Int, 1, 1), AccessAddress(:Int, 1, 1)]
+        [AccessAddress(:Int, 1, 1, 1, 1, false), AccessAddress(:Int, 1, 1, 1, 1, false)]
 );
 retrieve(iter, acc)
 
@@ -618,7 +618,8 @@ function new_address(
         calc_measure(iter, program_combination),
         idx,
         1,
-        1 #@TODO placeholders for now. Should be set properly for checking feasibility
+        1, #@TODO placeholders for now. Should be set properly for checking feasibility
+        false
     )
 end
 
@@ -736,7 +737,7 @@ function Base.iterate(iter::BottomUpIterator)
     addrs = populate_bank!(iter)
 
     # Priority queue keyed by address, prioritized by its measure
-    pq = PriorityQueue{AbstractAddress, Number}()
+    pq = PriorityQueue{AbstractAddress, Number}(DataStructures.FasterForward())
     for acc in addrs
         enqueue!(pq, acc, get_measure(acc))
     end
@@ -803,4 +804,3 @@ function Base.iterate(iter::BottomUpIterator, state::GenericBUState)
 
     return nothing
 end
-

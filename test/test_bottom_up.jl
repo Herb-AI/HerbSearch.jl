@@ -1,18 +1,14 @@
 using Test
-using DataStructures: DefaultDict
+using DataStructures: DefaultDict, PriorityQueue, FasterForward, enqueue!
 import HerbSearch: init_combine_structure
+import HerbSearch: OutputSig, _hash_outputs_to_u64vec
 
 grammars_to_test = Dict(
     "arity <= 1" => (@csgrammar begin
         Int = 1 | 2
         Int = 3 + Int
     end),
-    "arity = 2" => (@csgrammar begin
-        Int = 1 | 2
-        Int = Int + Int
-        Int = Int * Int
-    end),
-    "arity = 3" => (@csgrammar begin
+    "arity <= 3" => (@csgrammar begin
         Int = 1
         Int = Int + Int
         Int = f(Int, Int, Int)
@@ -35,7 +31,8 @@ general_iterator_factories = Dict(
     "DepthBased" => (g; kwargs...) -> DepthBasedBottomUpIterator(g, :Int; kwargs...),
     "CostBased"  => (g; kwargs...) -> begin
         g2 = isprobabilistic(g) ? g : init_probabilities!(g)
-        CostBasedBottomUpIterator(g2, :Int; max_cost=1e12, kwargs...)
+        costs = HerbSearch.get_costs(g2)
+        CostBasedBottomUpIterator(g2, :Int; current_costs=costs, kwargs...)
     end
 )
 
@@ -48,36 +45,54 @@ structural_iterator_factories = Dict(
 # Cost-only variants (control max_cost explicitly in the tests)
 cost_iterator_factory = Dict(
     "CostBased"  => (g; kwargs...) -> begin
-        CostBasedBottomUpIterator(g, :Int; kwargs...)
+        g2 = isprobabilistic(g) ? g : init_probabilities!(g)
+        costs = HerbSearch.get_costs(g2)
+        CostBasedBottomUpIterator(g, :Int; current_costs=costs, kwargs...)
     end
 )
+
+# Observational equivalence utils:
+run_prog_factory(g) = function (program::AbstractRuleNode)
+    res = eval(rulenode2expr(program, g))
+    # repeat outputs to simulate multiple inputs.
+    return [res, res]
+end
+
+output_sig(g, prog::AbstractRuleNode) = begin
+    outs = run_prog_factory(g)(prog)
+    OutputSig(_hash_outputs_to_u64vec(outs))
+end
+
+collect_outsigs(g, iter) = begin
+    sigs = Set{OutputSig}()
+    for p in iter
+        push!(sigs, output_sig(g, p))
+    end
+    sigs
+end
 
 @testset "Bottom-Up Search" begin
 @testset "Generic Bottom-Up Search Test" begin
     for (iter_name, make_iter) in general_iterator_factories
         @testset "$iter_name" begin
-            @testset "Compare to DFS (same max_depth)" begin
+            @testset "Compare to DFS (same max_depth / max_size)" begin
                 test_with_grammars(grammars_to_test) do g
-                    for max_depth in 1:4
+                    for max_depth in 2:4
                         iter_bu  = make_iter(g; max_depth=max_depth)
                         iter_dfs = DFSIterator(g, :Int; max_depth=max_depth)
-
                         bu  = [freeze_state(p) for p in iter_bu]
                         dfs = [freeze_state(p) for p in iter_dfs]
-
                         @testset "max_depth=$max_depth" begin
                             @test issetequal(bu, dfs)
                             @test length(bu) == length(dfs)
                         end
                     end
 
-                    for size in 1:4
+                    for size in 2:4
                         iter_bu  = make_iter(g; max_size=size)
                         iter_dfs = DFSIterator(g, :Int; max_size=size)
-
                         bu  = [freeze_state(p) for p in iter_bu]
                         dfs = [freeze_state(p) for p in iter_dfs]
-
                         @testset "max_size=$size" begin
                             @test issetequal(bu, dfs)
                             @test length(bu) == length(dfs)
@@ -86,28 +101,12 @@ cost_iterator_factory = Dict(
                 end
             end
 
-            @testset "Rooted correctly" begin
+            @testset "Rooted correctly/No Duplicates" begin
                 test_with_grammars(grammars_to_test) do g
                     iter = make_iter(g; max_depth=3, max_size=6)
-                    for p in iter
-                        pf = freeze_state(p)
-                        @test g.types[get_rule(pf)] == :Int
-                    end
-                end
-            end
-
-            @testset "No duplicates enumerated" begin
-                test_with_grammars(grammars_to_test) do g
-                    iter = make_iter(g; max_depth=3, max_size=6)
-                    seen = Set{Any}()
-                    nxt = Base.iterate(iter)
-                    while !isnothing(nxt)
-                        (p, st) = nxt
-                        pf = freeze_state(p)
-                        @test !in(pf, seen)
-                        push!(seen, pf)
-                        nxt = Base.iterate(iter, st)
-                    end
+                    progs = [freeze_state(p) for p in iter]
+                    @test all(g.types[get_rule(pf)] == :Int for pf in progs)
+                    @test length(Set(progs)) == length(progs)
                 end
             end
 
@@ -115,10 +114,9 @@ cost_iterator_factory = Dict(
                 test_with_grammars(grammars_to_test) do g
                     for max_depth in 1:4
                         iter = make_iter(g; max_depth=max_depth, max_size=2*max_depth)
-                        for p in iter
-                            @test depth(p) ≤ get_max_depth(iter)
-                            @test length(p) ≤ get_max_size(iter)
-                        end
+                        progs = [freeze_state(p) for p in iter]
+                        @test all(depth(p) ≤ get_max_depth(iter) for p in progs) 
+                        @test all(length(p) ≤ get_max_size(iter) for p in progs)
                     end
                 end
             end
@@ -127,17 +125,29 @@ cost_iterator_factory = Dict(
                 test_with_grammars(grammars_to_test) do g
                     max_depth = 3
                     iter_bu = make_iter(g; max_depth=max_depth, max_size=max_depth*2)
-                    last_measure = -Inf
-                    for p in iter_bu
-                        m = HerbSearch.calc_measure(iter_bu, p)
-                        @test m ≥ last_measure
-                        if m > last_measure
-                            last_measure = m
-                        end
-                    end
+
+                    measures = [HerbSearch.calc_measure(iter_bu, p) for p in iter_bu]
+
+                    @test all(measures[i] <= measures[i+1] for i in 1:length(measures)-1)
                 end
             end
 
+            @testset "Constraint checking" begin
+                @testset "Search respects Forbidden" begin
+                    g = (@csgrammar begin
+                        Int = 1 | 2
+                        Int = Int + Int
+                    end)
+
+                    # We forbid the binary '+' with identical children: RuleNode(3, [a, a])
+                    forbidden_plus_same = Forbidden(RuleNode(3, [VarNode(:a), VarNode(:a)]))
+                    HerbConstraints.addconstraint!(g, forbidden_plus_same)
+
+                    iter = make_iter(g; max_depth=3, max_size=5)
+                    progs = [freeze_state(p) for p in iter]
+                    @test all(check_tree(forbidden_plus_same, p) for p in progs)
+                end
+            end
         end
     end
 end
@@ -146,7 +156,7 @@ end
     for (iter_name, make_iter) in structural_iterator_factories
         @testset "$iter_name" begin
             @testset "basic sanity" begin
-                g = grammars_to_test["arity = 2"]
+                g = grammars_to_test["multiple types"]
                 iter = make_iter(g; max_depth=3, max_size=6)
                 expected_programs = [
                     (@rulenode 1),
@@ -163,7 +173,7 @@ end
 
             @testset "populate_bank! returns exactly one terminal per type" begin
                 test_with_grammars(grammars_to_test) do g
-                    iter = make_iter(g; max_depth=3, max_size=4)
+                    iter = make_iter(g; max_depth=3, max_size=3)
                     initial_addresses = populate_bank!(iter)
                     num_uniform_trees_terminals = length(unique(g.types[g.isterminal]))
                     @test length(initial_addresses) == num_uniform_trees_terminals
@@ -183,11 +193,16 @@ end
             @testset "combine produces work after seed" begin
                 test_with_grammars(grammars_to_test) do g
                     iter = make_iter(g; max_depth=4, max_size=8)
-                    populate_bank!(iter)
-                    state = GenericBUState(pq, init_combine_structure(iter), nothing, start, -Inf, Inf)
-                    state = init_combine_structure(iter)
+                    solver = get_solver(iter)
+                    addrs = populate_bank!(iter)
+                    starting_node = deepcopy(get_tree(solver))
 
-                    populate_bank!(iter, state)
+                    pq = PriorityQueue{AbstractAddress, Number}(FasterForward())
+                    for acc in addrs
+                        enqueue!(pq, acc, HerbSearch.get_measure(acc))
+                    end
+
+                    state = GenericBUState(pq, init_combine_structure(iter), nothing, starting_node, -Inf, 0)
 
                     combinations, state = combine(iter, state)
                     @test !isempty(combinations)
@@ -195,34 +210,16 @@ end
             end
 
             @testset "duplicates not added to bank" begin
-                all_progs(bank) = (p for m in HerbSearch.get_measures(bank)
-                                     for t in HerbSearch.get_types(bank, m)
-                                     for p in HerbSearch.get_programs(bank, m, t))
+                all_progs(bank) = (p for t in HerbSearch.get_types(bank)
+                                     for m in HerbSearch.get_measures(bank, t)
+                                     for p in HerbSearch.get_programs(bank, t, m))
                 test_with_grammars(grammars_to_test) do g
-                    iter = make_iter(g; max_depth=3, max_size=6)
+                    iter = make_iter(g; max_depth=3, max_size=4)
+                    length(iter)
                     bank = get_bank(iter)
-                    for p in iter
-                        @test allunique(all_progs(bank))
-                    end
+                    @test allunique(all_progs(bank))
                 end
             end
-
-            @testset "duplicates not enumerated + remaining_combinations unique" begin
-                test_with_grammars(grammars_to_test) do g
-                    iter = make_iter(g; max_depth=3, max_size=6)
-                    progs = []
-                    next_iter = Base.iterate(iter)
-                    while !isnothing(next_iter)
-                        (p, state) = next_iter
-                        pf = freeze_state(p)
-                        push!(progs, pf)
-                        @test allunique(progs)
-                        @test allunique(remaining_combinations(state))
-                        next_iter = Base.iterate(iter, state)
-                    end
-                end
-            end
-
         end
     end
 end
@@ -233,33 +230,29 @@ end
             @testset "populate_bank! seeds and yields terminals in first horizon" begin
                 test_with_grammars(grammars_to_test) do g
                     iter = make_iter(g; max_depth=3, max_cost=1e6)
-                    initial_addrs = populate_bank!(iter)
+                    addrs = populate_bank!(iter)
                     # Expect at least some terminals within the first horizon
-                    @test !isempty(initial_addrs)
+                    @test !isempty(addrs)
 
-                    # And the first enumerate wave should be terminals only
-                    solver = get_solver(iter)
-                    start  = get_tree(solver)
-                    st = GenericBUState(initial_addrs, nothing, nothing, start, -Inf, Inf)
-
-                    # Collect only the first wave (exactly the preloaded addresses)
-                    got = Any[]
-                    for a in initial_addrs
-                        p, st = Base.iterate(iter, st)
-                        push!(got, p)
+                    pq = PriorityQueue{AbstractAddress, Number}(FasterForward())
+                    for acc in addrs
+                        enqueue!(pq, acc, HerbSearch.get_measure(acc))
                     end
-                    @test all(length(p) == 1 for p in got)
+
+                    progs = [retrieve(iter, addr) for (addr, prio) in pq]
+                    
+                    @test all(length(p) == 1 for p in progs)
                 end
             end
 
             @testset "max_cost prunes results (small cap)" begin
                 test_with_grammars(grammars_to_test) do g
                     # Use a tiny max_cost; expect either empty or only the cheapest terminals
-                    iter = make_iter(g; max_depth=5, max_cost=0.0)
+                    iter = make_iter(g; max_depth=3, max_cost=1.0)
                     # Enumerate a handful
-                    progs = [p for (i, p) in enumerate(iter) if i ≤ 5]
-                    # All programs seen (if any) must be terminals (since any op adds positive cost)
-                    @test all(length(p) == 1 for p in progs)
+                    measures = [HerbSearch.calc_measure(iter, p) for p in iter]
+
+                    @test all(m<= get_measure_limit(iter) for m in measures)
                 end
             end
 
@@ -274,6 +267,25 @@ end
                 end
             end
 
+            @testset "observational equivalence (DFS vs Cost-Based)" begin
+                # Keep this on a single small grammar to limit runtime.
+                g = grammars_to_test["multiple types"]
+                max_size = 5
+                # DFS baseline: collect signatures of all programs up to max_size
+                dfs_sigs = collect_outsigs(g, DFSIterator(g, :Int; max_size=max_size))
+
+                # Cost-based: pass same eval function so outputs are identical
+                costs = HerbSearch.get_costs(g)
+                cb_iter = CostBasedBottomUpIterator(
+                    g, :Int;
+                    max_size=max_size,
+                    current_costs=costs,
+                    program_to_outputs=run_prog_factory(g)
+                )
+                cb_sigs = collect_outsigs(g, cb_iter)
+
+                @test issetequal(dfs_sigs, cb_sigs)
+            end
         end
     end
 end

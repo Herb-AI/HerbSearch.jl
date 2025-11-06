@@ -27,8 +27,6 @@ function calc_measure(iter::SizeBasedBottomUpIterator, program::AbstractRuleNode
     return length(program)
 end
 
-_calc_measure(::SizeBasedBottomUpIterator, children_costs::Tuple{Vararg{Int}}) = sum(children_costs)
-
 _calc_measure(::SizeBasedBottomUpIterator, combination::Tuple{Vararg{AccessAddress}}) = sum(get_measure.(combination))
 
 

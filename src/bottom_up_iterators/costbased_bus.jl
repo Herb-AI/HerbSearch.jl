@@ -17,17 +17,6 @@ abstract type AbstractCostBasedBottomUpIterator <: BottomUpIterator end
     program_to_outputs::Union{Nothing,Function} = nothing, # Must return Float64
 ) <: AbstractCostBasedBottomUpIterator
 
-function CostBasedBottomUpIterator(solver; max_cost=Inf, program_to_outputs=nothing)
-    grammar    = get_grammar(solver)
-    rule_costs = get_costs(grammar)
-    return CostBasedBottomUpIterator(solver;
-        bank=MeasureHashedBank{Float64}(),
-        max_cost=max_cost,
-        current_costs=rule_costs,
-        program_to_outputs=program_to_outputs,
-    )
-end
-
 @doc """
     CostBasedBottomUpIterator
 
@@ -155,6 +144,13 @@ function calc_measure(iter::AbstractCostBasedBottomUpIterator,
     rule_c = get_rule_cost(iter, get_operator(a))
     return rule_c + _calc_measure(iter, get_children(a))
 end
+
+"""
+    $(TYPEDSIGNATURES)
+
+Calculates the cost of a CombineAddress given a concrete program in form of a `RuleNode`.
+"""
+calc_measure(iter::AbstractCostBasedBottomUpIterator, rn::AbstractRuleNode) = abs(HerbGrammar.rulenode_log_probability(rn, HerbConstraints.get_grammar(iter)))
 
 """
     $(TYPEDSIGNATURES)
@@ -400,7 +396,6 @@ function Base.iterate(iter::AbstractCostBasedBottomUpIterator, state::GenericBUS
 
         if length(program) > 1
             keep = add_to_bank!(iter, next_program_address, program)
-            expr = rulenode2expr(program, get_grammar(iter.solver))
 
             # if the horizon is set to max, but we encounter a program that we want to add to the bank, then we recompute the horizon.
             if keep && 
