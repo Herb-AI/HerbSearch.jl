@@ -45,8 +45,6 @@ root of each of the programs returned from the iterator will have the same
 type, and this will match the symbol returned by [`get_starting_symbol`](@ref).
 
 ```jldoctest
-julia> using HerbGrammar, HerbConstraints;
-
 julia> g = @csgrammar begin
            Int = length(List)
            Int = Int + Int
@@ -55,19 +53,20 @@ julia> g = @csgrammar begin
 
 julia> it = BFSIterator(g, :Int; max_depth=4);
 
-julia> root_rules = get_rule.(it);
-
-julia> [g.types[idx] for idx in root_rules]
-5-element Vector{Symbol}:
- :Int
- :Int
- :Int
- :Int
- :Int
+julia> programs = rulenode2expr.((freeze_state(p) for p in it), (g,))
+5-element Vector{Expr}:
+ :(length(x))
+ :(length(x) + length(x))
+ :(length(x) + (length(x) + length(x)))
+ :((length(x) + length(x)) + length(x))
+ :((length(x) + length(x)) + (length(x) + length(x)))
 
 julia> get_starting_symbol(it)
 :Int
 ```
+
+Note that all of the programs will return an `Int`, matching the type returned
+by `get_starting_symbol(it)`.
 """
 function HerbConstraints.get_starting_symbol(pi::ProgramIterator)
     return get_starting_symbol(get_solver(pi))
