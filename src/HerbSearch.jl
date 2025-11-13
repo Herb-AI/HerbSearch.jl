@@ -40,6 +40,8 @@ include("genetic_search_iterator.jl")
 
 include("random_iterator.jl")
 
+include("budgeted_search.jl")
+
 # include("divide_conquer_functions/divide.jl")
 # include("divide_conquer_functions/decide.jl")
 # include("divide_conquer_functions/conquer.jl")
