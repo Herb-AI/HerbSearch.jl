@@ -13,9 +13,9 @@
             UniformHole(BitVector((1, 1, 0, 0)), [])
         ])
 
-        asp_solver = ASPSolver(grammar, tree)
+        asp_solver = ASPSolver(g, tree)
         asp_iterator = UniformASPIterator(asp_solver, nothing)
-        @test length(asp_solver.solutions) == 8
+        @test length(asp_solver.solutions) == 6
         sol = next_solution!(asp_iterator)
         while !isnothing(sol)
             @test sol isa RuleNode
@@ -38,9 +38,10 @@
             UniformHole(BitVector((1, 1, 0, 0)), [])
         ])
 
-        asp_solver = ASPSolver(grammar, tree)
+        asp_solver = ASPSolver(g, tree)
         asp_iterator = UniformASPIterator(asp_solver, nothing)
-        @test length(asp_solver.solutions) == 16
+        @test length(asp_solver.solutions) == 14
+
         sol = next_solution!(asp_iterator)
         while !isnothing(sol)
             @test sol isa RuleNode
@@ -107,7 +108,6 @@
     end
 
     @testset "No solutions (ordered constraint)" begin
-        # TODO update ASP to correct ordered constraint with `order` and allow VarNode
         grammar = @csgrammar begin
             Number = 1
             Number = x
@@ -133,13 +133,11 @@
             UniformHole(BitVector((1, 1, 0, 0)), [])
         ])
         asp_solver = ASPSolver(grammar, tree)
-        println(asp_solver.solutions)
         asp_iterator = UniformASPIterator(asp_solver, nothing)
         @test isnothing(next_solution!(asp_iterator))
     end
 
     @testset "No solutions (forbidden constraint)" begin
-        # TODO update ASP to correct forbidden constraint
         grammar = @csgrammar begin
             Number = 1
             Number = x
