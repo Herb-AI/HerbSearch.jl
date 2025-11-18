@@ -44,7 +44,7 @@ Returns:
   - times   :: Vector{Float} (duration of each attempt)
   - total_time :: Float      (sum of all attempt durations)
 """
-function run_budget_search(ctrl::BudgetedSearchController, problem)
+function run_budget_search(ctrl::BudgetedSearchController)
     results = []
     times = []
 
