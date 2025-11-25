@@ -68,3 +68,54 @@ function synth(
 	# The enumeration exhausted, but an optimal problem was not found
 	return (best_program, suboptimal_program)
 end
+
+function synth_multi(
+	problem::Problem,
+	iterator::ProgramIterator;
+	shortcircuit::Bool = true,
+	selection_criteria::Float64=1.0,
+	stop_when_found::Bool=true,
+	allow_evaluation_errors::Bool = false,
+	max_time = typemax(Int),
+	max_enumerations = typemax(Int),
+	mod::Module = Main)::Tuple{Vector{Tuple{AbstractRuleNode, Float64}}, Bool}
+	@assert 0 ≤ selection_criteria ≤ 1 "selection_criteria must be between 0 and 1"
+	start_time = time()
+	grammar = get_grammar(iterator.solver)
+	symboltable = grammar2symboltable(grammar, mod)
+
+	scored = Vector{Tuple{AbstractRuleNode, Float64}}()
+	optimal_found = false
+
+	for (i, candidate_program) ∈ enumerate(iterator)
+		# Create expression from rulenode representation of AST
+		expr = rulenode2expr(candidate_program, grammar)
+
+		# Evaluate the expression
+		score = evaluate(
+			problem,
+			expr,
+			symboltable,
+			shortcircuit = shortcircuit,
+			allow_evaluation_errors = allow_evaluation_errors,
+		)
+
+		candidate_program = freeze_state(candidate_program)
+
+		if score >= selection_criteria
+			push!(scored, (candidate_program, score))
+		end
+		if score == 1 && stop_when_found
+			optimal_found = true
+			return (scored, optimal_found)
+		end
+
+		# Check stopping criteria
+		if i > max_enumerations || time() - start_time > max_time
+			break
+		end
+	end
+
+	# The enumeration exhausted, but an optimal problem was not found
+	return (scored, optimal_found)
+end
