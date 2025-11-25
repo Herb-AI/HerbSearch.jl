@@ -42,6 +42,8 @@ include("random_iterator.jl")
 
 include("budgeted_search.jl")
 
+include("sketch_learning/anti_unify.jl")
+
 # include("divide_conquer_functions/divide.jl")
 # include("divide_conquer_functions/decide.jl")
 # include("divide_conquer_functions/conquer.jl")
@@ -53,7 +55,7 @@ export
     @programiterator, heuristic_leftmost,
     heuristic_rightmost,
     heuristic_random,
-    heuristic_smallest_domain, derivation_heuristic, synth,
+    heuristic_smallest_domain, derivation_heuristic, synth, synth_multi,
     SynthResult,
     optimal_program,
     suboptimal_program, UniformIterator,
@@ -71,5 +73,6 @@ export
     rand,
     divide_and_conquer,
     EvaluationError,
-    get_solver
+    get_solver,
+    anti_unify
 end # module HerbSearch
