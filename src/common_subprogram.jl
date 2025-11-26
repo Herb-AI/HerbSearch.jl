@@ -1,10 +1,16 @@
 using ..BudgetedSearch
+using ..HerbGrammar
 
 function selector(results::Vector{Any})
   return results
 end
 
 function updater(results::Vector{Any}, iterator::ProgramIterator, grammar::ContextSensitiveGrammar)
+  iter_grammar = get_grammar(iterator.solver)
+  fragments = last(last(results))
+  for fragment in fragments
+    add_rule!(iter_grammar, rulenode2expr(fragment))
+  end
   return iterator
 end
 
