@@ -50,6 +50,7 @@ function synth(
 			shortcircuit = shortcircuit,
 			allow_evaluation_errors = allow_evaluation_errors,
 		)
+		println("SCORE", score)
 		if score == 1
 			candidate_program = freeze_state(candidate_program)
 			return (candidate_program, optimal_program)
@@ -87,6 +88,7 @@ function synth_multi(
 	scored = Vector{Tuple{AbstractRuleNode, Float64}}()
 	optimal_found = false
 
+
 	for (i, candidate_program) ∈ enumerate(iterator)
 		# Create expression from rulenode representation of AST
 		expr = rulenode2expr(candidate_program, grammar)
@@ -102,10 +104,12 @@ function synth_multi(
 
 		candidate_program = freeze_state(candidate_program)
 
+
 		if score >= selection_criteria
 			push!(scored, (candidate_program, score))
 		end
 		if score == 1 && stop_when_found
+			println("FOUND OPTIMAL", expr)
 			optimal_found = true
 			return (scored, optimal_found)
 		end

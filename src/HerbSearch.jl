@@ -76,6 +76,9 @@ export
     EvaluationError,
     get_solver,
 
+    BudgetedSearchController,
+    run_budget_search,
+
     anti_unify,
     collect_subtrees,
     count_nonhole_nodes,

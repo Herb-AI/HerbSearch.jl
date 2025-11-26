@@ -1,7 +1,6 @@
 using HerbGrammar, HerbCore, HerbSpecification
 
-using HerbSearch: BFSIterator
-using HerbSearch.BudgetedSearch
+using HerbSearch: BFSIterator, BudgetedSearchController, run_budget_search
 
 struct MockProblem end
 
@@ -22,7 +21,7 @@ end
 
 fake_selector = results -> results[end]
 
-fake_updater = function(selected, iter, grammar)
+fake_updater = function(selected, iter)
     global fake_state += 1
     return iter
 end
@@ -39,19 +38,17 @@ end
     problem, examples = create_problem(x -> x)
     iterator = BFSIterator(grammar, :Number, max_depth=4)
 
-
     ctrl = BudgetedSearchController(
         problem=problem,
-        grammar=grammar,
         iterator=iterator,
         synth_fn=fake_synth_fn,
         attempts=3,
         selector=fake_selector,
-        updater=fake_updater
+        updater=fake_updater,
+        
     )
 
     @test ctrl.problem==problem
-    @test ctrl.grammar==grammar
     @test ctrl.iterator==iterator
 
     results, times, total = run_budget_search(ctrl)

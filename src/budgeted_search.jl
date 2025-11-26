@@ -1,7 +1,3 @@
-module BudgetedSearch
-
-export BudgetedSearchController, run_budget_search
-
 using ..HerbSearch: ProgramIterator
 using ..HerbGrammar
 using ..HerbCore
@@ -15,15 +11,16 @@ and adapts the grammar/problem between attempts.
 """
 @kwdef mutable struct BudgetedSearchController
     problem:: Problem
-    grammar::ContextSensitiveGrammar
 
     iterator::ProgramIterator
 
     synth_fn::Function
+
+    stop_checker::Function = (timed_solution) -> Bool
     
     attempts::Int
     selector::Function = results -> results
-    updater::Function = (selected, iter, grammar) -> iter
+    updater::Function = (selected, iter) -> iter
 end
 
 """
@@ -56,13 +53,12 @@ function run_budget_search(ctrl::BudgetedSearchController)
         push!(times, solution.time)
         push!(results, solution.value)
 
-        selected = ctrl.selector(results)
-        ctrl.iterator = ctrl.updater(selected, ctrl.iterator, ctrl.grammar)
+        ctrl.stop_checker(solution) && break
+
+        selected = ctrl.selector(solution.value)
+        ctrl.iterator = ctrl.updater(selected, ctrl.iterator)
     end
 
     return results, times, time_count
-
-
-end
 
 end
