@@ -24,7 +24,7 @@ end
     grammar=g,
     iterator=iterator_1,
     synth_fn=UsefulSubprograms.synth_fn,
-    attempts=10,
+    attempts=3,
     selector=UsefulSubprograms.selector,
     updater=UsefulSubprograms.updater
   )

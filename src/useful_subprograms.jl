@@ -10,7 +10,7 @@ using HerbSpecification
 using HerbConstraints
 
 import ..HerbSearch: optimal_program, suboptimal_program, SynthResult, ProgramIterator,
-  get_grammar, get_max_size, EvaluationError
+  get_grammar, get_max_size, EvaluationError, BFSIterator
 
 function selector(results::Vector{Any})
   return results
@@ -18,11 +18,29 @@ end
 
 function updater(results::Vector{Any}, iterator::ProgramIterator, grammar::ContextSensitiveGrammar)
   iter_grammar = get_grammar(iterator.solver)
+  updated_grammar = deepcopy(iter_grammar)
+
   fragments = last(last(results))
+
   for fragment in fragments
-    add_rule!(iter_grammar, fragment)
+    if fragment isa RuleNode
+      add_rule!(updated_grammar, fragment)
+    end
   end
-  return iterator
+
+  #reconstruct the iterator with the new grammar 
+  root_hole = iterator.solver.state.tree
+  first_rule_index = findfirst(root_hole.domain)
+  start_symbol = iter_grammar.types[first_rule_index]
+
+  new_iterator = BFSIterator(
+    updated_grammar,
+    start_symbol;
+    max_depth=iterator.solver.max_depth,
+    max_size=iterator.solver.max_size
+  )
+
+  return new_iterator
 end
 
 """
