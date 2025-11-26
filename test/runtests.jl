@@ -31,7 +31,6 @@ Random.seed!(1234)
 	include("test_unique.jl")
 	include("test_constraints.jl")
 	include("test_budgeted_search.jl")
-        include("test_sketch_learning/test_anti_unify.jl")
 
 
 	# 	# Excluded because it contains long tests
@@ -45,6 +44,7 @@ end
 
 @testset verbose = true "AntiUnification" begin
 	include("test_sketch_learning/test_anti_unify.jl")
+        include("test_sketch_learning/test_anti_unify_utils.jl")
 end
 
 

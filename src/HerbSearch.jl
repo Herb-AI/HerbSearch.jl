@@ -43,6 +43,7 @@ include("random_iterator.jl")
 include("budgeted_search.jl")
 
 include("sketch_learning/anti_unify.jl")
+include("sketch_learning/anti_unify_utils.jl")
 
 # include("divide_conquer_functions/divide.jl")
 # include("divide_conquer_functions/decide.jl")
@@ -74,5 +75,14 @@ export
     divide_and_conquer,
     EvaluationError,
     get_solver,
-    anti_unify
+
+    anti_unify,
+    collect_subtrees,
+    count_nonhole_nodes,
+    count_holes,
+    passes_hole_thresholds,
+    all_pairwise_anti_unification,
+    anti_unify_patterns_and_tree,
+    multi_MST_unify
+
 end # module HerbSearch
