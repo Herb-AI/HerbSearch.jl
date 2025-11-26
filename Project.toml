@@ -4,7 +4,6 @@ authors = ["Sebastijan Dumancic <s.dumancic@tudelft.nl>", "Jaap de Jong <J.deJon
 version = "0.4.7"
 
 [deps]
-ConflictAnalysis = "46d8c867-898e-41d3-9160-29f023e63481"
 DataStructures = "864edb3b-99cc-5e75-8d2d-829cb0a9cfe8"
 DocStringExtensions = "ffbed154-4ef7-542d-bbb7-c09d3a79fcae"
 HerbConstraints = "1fa96474-3206-4513-b4fa-23913f296dfc"
@@ -18,9 +17,11 @@ StatsBase = "2913bbd2-ae8a-5f71-8c99-4fb6c76f3a91"
 TimerOutputs = "a759f4b9-e2f1-59dc-863e-4aeb61b1ea8f"
 
 [weakdeps]
+Satisfiability = "160ab843-0bc6-4ba4-9585-b7478b70f443"
 DecisionTree = "7806a523-6efd-50cb-b5f6-3fa6f1930dbb"
 
 [extensions]
+ConflictAnalysisExt = "Satisfiability"
 DivideAndConquerExt = "DecisionTree"
 
 [compat]
@@ -34,6 +35,7 @@ HerbInterpret = "0.2.1"
 HerbSpecification = "0.2"
 MLStyle = "0.4.17"
 Random = "1.8.0"
+Satisfiability = "0.2.0"
 StatsBase = "0.34"
 TimerOutputs = "0.5.28"
 julia = "1.10"

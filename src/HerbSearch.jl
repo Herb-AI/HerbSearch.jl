@@ -46,6 +46,8 @@ include("random_iterator.jl")
 
 function divide_and_conquer end
 
+function conflict_analysis end
+
 export
 	ProgramIterator,
 	@programiterator, heuristic_leftmost,
@@ -68,5 +70,6 @@ export
 	sample,
 	rand,
 	divide_and_conquer,
+	conflict_analysis,
 	EvaluationError
 end # module HerbSearch
