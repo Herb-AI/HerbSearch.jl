@@ -1,5 +1,16 @@
+module UsefulSubprograms
+
+export UsefulSubprograms
+
 using ..BudgetedSearch
-using ..HerbGrammar
+using HerbGrammar
+using HerbCore
+using HerbInterpret
+using HerbSpecification
+using HerbConstraints
+
+import ..HerbSearch: optimal_program, suboptimal_program, SynthResult, ProgramIterator,
+  get_grammar, get_max_size, EvaluationError
 
 function selector(results::Vector{Any})
   return results
@@ -9,7 +20,7 @@ function updater(results::Vector{Any}, iterator::ProgramIterator, grammar::Conte
   iter_grammar = get_grammar(iterator.solver)
   fragments = last(last(results))
   for fragment in fragments
-    add_rule!(iter_grammar, rulenode2expr(fragment))
+    add_rule!(iter_grammar, fragment)
   end
   return iterator
 end
@@ -21,34 +32,30 @@ a subset of tests.
 function synth_fn(
   problem::Problem,
   iterator::ProgramIterator,
-)::Union{Tuple{RuleNode,SynthResult,Set{RuleNode}},Nothing}
+)::Union{Tuple{AbstractRuleNode,SynthResult,Set{AbstractRuleNode}},Nothing}
   start_time = time()
   grammar = get_grammar(iterator.solver)
-  symboltable::SymbolTable = SymbolTable(grammar)
+  symboltable::SymbolTable = grammar2symboltable(grammar)
 
   best_score = 0
   best_program = nothing
 
-  fragments = Set{RuleNode}()
-
-  # Find a way to keep simplest programs.
+  fragments = Set{AbstractRuleNode}()
 
   for (i, candidate_program) ∈ enumerate(iterator)
-    # Create expression from rulenode representation of AST
     expr = rulenode2expr(candidate_program, grammar)
 
-    # Evaluate the expression
     # Don't want to short-circuit since subset of passed examples is useful
     passed_examples = evaluate(problem, expr, symboltable, shortcircuit=false, allow_evaluation_errors=true)
     score = count(passed_examples) / length(passed_examples)
     if score > 0
-      # Mine fragments here
-    fragments_of_program = mine_fragments(candidate_program)
-    append!(fragments, fragments_of_program)
+      fragments_of_program = mine_fragments(freeze_state(candidate_program))
+      union!(fragments, fragments_of_program)
+    end
 
     if score == 1
       candidate_program = freeze_state(candidate_program)
-      println(i)
+      println("Found optimal solution at iteration: ", i)
       return (candidate_program, optimal_program, fragments)
     elseif score >= best_score
       best_score = score
@@ -56,7 +63,9 @@ function synth_fn(
       best_program = candidate_program
     end
 
-    # Check stopping criteria
+    # Check stopping criteria (get from iterator if available)
+    max_enumerations = get_max_size(iterator)
+    max_time = typemax(Int)  # No time limit for now
     if i > max_enumerations || time() - start_time > max_time
       break
     end
@@ -67,19 +76,10 @@ function synth_fn(
 end
 
 """
-    evaluate(problem::Problem{Vector{IOExample}}, expr::Any, tab::SymbolTable; allow_evaluation_errors::Bool=false)
-
-Evaluate the expression on the examples.
-
-Optional parameters:
-
-    - `shortcircuit` - Whether to stop evaluating after finding single example fails, to speed up the [synth](@ref) procedure. If true, the returned score is an underapproximation of the actual score.
-    - `allow_evaluation_errors` - Whether the search should continue if an exception is thrown in the evaluation or throw the error
-
 Returns a BitVector of the examples that were fulfilled
 """
-function evaluate(problem::Problem{Vector{IOExample}}, expr::Any, symboltable::SymbolTable; shortcircuit::Bool=true, allow_evaluation_errors::Bool=false)::Number
-  passed_examples = BitVector(length(problem))
+function evaluate(problem::Problem, expr::Any, symboltable::SymbolTable; shortcircuit::Bool=true, allow_evaluation_errors::Bool=false)::BitVector
+  passed_examples = falses(length(problem.spec))
 
   crashed = false
   for (i, example) ∈ enumerate(problem.spec)
@@ -107,9 +107,9 @@ end
 """
 Returns a Set{RuleNode} of all the fragments of the passed program 
 """
-function mine_fragments(program::RuleNode)
+function mine_fragments(program::AbstractRuleNode)
   # For now just does depth first trasversal to add all nodes of the program tree to the fragment set
-  fragments = Set{RuleNode}()
+  fragments = Set{AbstractRuleNode}()
   stack = [program]
   while !isempty(stack)
     current_node = pop!(stack)
@@ -120,4 +120,5 @@ function mine_fragments(program::RuleNode)
   end
 
   return fragments
+end
 end
