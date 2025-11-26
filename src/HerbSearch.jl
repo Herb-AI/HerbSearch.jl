@@ -71,5 +71,7 @@ export
     rand,
     divide_and_conquer,
     EvaluationError,
-    get_solver
+    get_solver,
+    BudgetedSearchController,
+    run_budget_search
 end # module HerbSearch
