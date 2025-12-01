@@ -40,10 +40,17 @@ include("genetic_search_iterator.jl")
 
 include("random_iterator.jl")
 
+
 include("budgeted_search.jl")
 
 include("sketch_learning/anti_unify.jl")
 include("sketch_learning/anti_unify_utils.jl")
+
+include("bottom_up_iterators/observational_equivalence.jl")
+include("bottom_up_iterator.jl")
+include("bottom_up_iterators/costbased_bus.jl")
+include("bottom_up_iterators/shapebased_bus.jl")
+
 
 # include("divide_conquer_functions/divide.jl")
 # include("divide_conquer_functions/decide.jl")
@@ -56,7 +63,7 @@ export
     @programiterator, heuristic_leftmost,
     heuristic_rightmost,
     heuristic_random,
-    heuristic_smallest_domain, derivation_heuristic, synth, synth_multi,
+    heuristic_smallest_domain, derivation_heuristic, synth, synth_multi, get_solver,
     SynthResult,
     optimal_program,
     suboptimal_program, UniformIterator,
@@ -72,6 +79,7 @@ export
     validate_iterator,
     sample,
     rand,
+
     divide_and_conquer,
     EvaluationError,
     get_solver,
@@ -88,4 +96,28 @@ export
     anti_unify_patterns_and_tree,
     multi_MST_unify
 
+    EvaluationError,
+
+    # Bottom-up Searches
+    BottomUpState,
+    BottomUpIterator,
+    AbstractAddress,
+    SizeBasedBottomUpIterator,
+    DepthBasedBottomUpIterator,
+    CostBasedBottomUpIterator,
+    AccessAddress,
+    CombineAddress,
+    remaining_combinations,
+    state_tracker,
+    new_combinations!,
+    new_state_tracker!,
+    has_remaining_iterations,
+    GenericBUState,
+    populate_bank!,
+    combine,
+    add_to_bank!,
+    new_address,
+    retrieve,
+    init_combine_structure,
+    get_bank
 end # module HerbSearch

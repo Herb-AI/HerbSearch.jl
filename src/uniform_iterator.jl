@@ -21,6 +21,8 @@ mutable struct UniformIterator
     nsolutions::Int
 end
 
+get_solver(iter::UniformIterator) = iter.solver
+
 """
     UniformIterator(solver::UniformSolver, outeriter::ProgramIterator)
 

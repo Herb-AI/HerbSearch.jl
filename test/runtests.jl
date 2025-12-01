@@ -1,12 +1,16 @@
+using Aqua
 using DecisionTree: Leaf, Node
+using HerbConstraints
 using HerbCore
-using HerbSearch
 using HerbGrammar
 using HerbInterpret
-using HerbConstraints
+using HerbSearch
 using HerbSpecification
 using Test
-using Aqua
+using Documenter
+
+DocMeta.setdocmeta!(HerbSearch, :DocTestSetup, :(using HerbSearch);
+    recursive=true)
 
 include("test_helpers.jl")
 using Random
@@ -31,7 +35,7 @@ Random.seed!(1234)
 	include("test_unique.jl")
 	include("test_constraints.jl")
 	include("test_budgeted_search.jl")
-
+        include("test_bottom_up.jl")
 
 	# 	# Excluded because it contains long tests
 	# 	# include("test_realistic_searches.jl")
