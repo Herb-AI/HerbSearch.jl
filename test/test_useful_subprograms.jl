@@ -1,6 +1,6 @@
 using HerbGrammar, HerbCore, HerbSpecification
 
-using HerbSearch: BFSIterator
+using HerbSearch: BFSIterator, get_grammar
 using HerbSearch.BudgetedSearch
 using HerbSearch.UsefulSubprograms
 using Test
@@ -45,6 +45,7 @@ end
   for (i, result) in enumerate(results)
     println("  Result $i: ", result)
   end
+  println("Final grammar: ", get_grammar(ctrl.iterator.solver))
 
 end
 
