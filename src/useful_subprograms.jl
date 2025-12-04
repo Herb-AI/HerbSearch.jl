@@ -10,32 +10,43 @@ using HerbSpecification
 using HerbConstraints
 
 import ..HerbSearch: optimal_program, suboptimal_program, SynthResult, ProgramIterator,
-  get_grammar, get_max_size, EvaluationError, BFSIterator
+  get_grammar, get_max_size, EvaluationError, BFSIterator, get_starting_symbol
+
 
 function selector(results::Vector{Any})
-  return results
+  # Here I will insert elements of the latest results array into the previous one and update the grammar based on that.
+  if length(results) < 2
+    return last(results)
+  else
+    prev_result = results[end-1]
+    curr_result = results[end]
+    for idx in eachindex(prev_result[3])
+      if isassigned(prev_result[3], idx) && (length(prev_result[3][idx]) < length(curr_result[3][idx]))
+        curr_result[3][idx] = prev_result[3][idx]
+      end
+    end
+    # results[end] = curr_result
+    return curr_result
+  end
+  # This should also work for the removal of elements from the grammar
 end
 
-function updater(results::Vector{Any}, iterator::ProgramIterator, grammar::ContextSensitiveGrammar)
+function updater(results::Tuple{RuleNode,SynthResult,Vector{AbstractRuleNode}}, iterator::ProgramIterator, grammar::ContextSensitiveGrammar)
+  # The latest array in results will contain the simplest subprograms array that matches the latest run.
   iter_grammar = get_grammar(iterator.solver)
-  updated_grammar = deepcopy(iter_grammar)
 
-  fragments = last(last(results))
+  fragments = last(results)
 
-  for fragment in fragments
-    if fragment isa RuleNode
-      add_rule!(updated_grammar, fragment)
+  for idx in eachindex(fragments)
+    if isassigned(fragments, idx) && fragments[idx] isa RuleNode
+      add_rule!(iter_grammar, fragments[idx])
     end
   end
 
-  #reconstruct the iterator with the new grammar 
-  root_hole = iterator.solver.state.tree
-  first_rule_index = findfirst(root_hole.domain)
-  start_symbol = iter_grammar.types[first_rule_index]
-
-  new_iterator = BFSIterator(
-    updated_grammar,
-    start_symbol;
+  IterType = typeof(iterator)
+  new_iterator = IterType(
+    iter_grammar,
+    get_starting_symbol(iterator.solver),
     max_depth=iterator.solver.max_depth,
     max_size=iterator.solver.max_size
   )
@@ -48,9 +59,7 @@ Iterates over and evaluates programs, mining fragments of those that passed
 a subset of tests. 
 """
 function synth_fn(
-  problem::Problem,
-  iterator::ProgramIterator,
-)::Union{Tuple{AbstractRuleNode,SynthResult,Set{AbstractRuleNode}},Nothing}
+  problem::Problem, iterator::ProgramIterator)::Union{Tuple{AbstractRuleNode,SynthResult,Vector{AbstractRuleNode}},Nothing}
   start_time = time()
   grammar = get_grammar(iterator.solver)
   symboltable::SymbolTable = grammar2symboltable(grammar)
@@ -58,23 +67,33 @@ function synth_fn(
   best_score = 0
   best_program = nothing
 
-  fragments = Set{AbstractRuleNode}()
+  #fragments = Set{AbstractRuleNode}()
+  simplest_subprograms = Vector{AbstractRuleNode}(undef, 2^length(problem.spec))
 
   for (i, candidate_program) ∈ enumerate(iterator)
     expr = rulenode2expr(candidate_program, grammar)
 
     # Don't want to short-circuit since subset of passed examples is useful
     passed_examples = evaluate(problem, expr, symboltable, shortcircuit=false, allow_evaluation_errors=true)
-    score = count(passed_examples) / length(passed_examples)
-    if score > 0
-      fragments_of_program = mine_fragments(freeze_state(candidate_program))
-      union!(fragments, fragments_of_program)
+    idx = bitvec_to_idx(passed_examples)
+    if !isassigned(simplest_subprograms, idx)
+      simplest_subprograms[idx] = freeze_state(candidate_program)
+      println("bitvec idx", idx)
+    elseif isassigned(simplest_subprograms, idx)
+      if length(candidate_program) < length(simplest_subprograms[idx])
+        simplest_subprograms[idx] = freeze_state(candidate_program)
+      end
     end
+    score = count(passed_examples) / length(passed_examples)
+    # if score > 0
+    #   fragments_of_program = mine_fragments(freeze_state(candidate_program))
+    #   union!(fragments, fragments_of_program)
+    # end
 
     if score == 1
       candidate_program = freeze_state(candidate_program)
       println("Found optimal solution at iteration: ", i)
-      return (candidate_program, optimal_program, fragments)
+      return (candidate_program, optimal_program, simplest_subprograms)
     elseif score >= best_score
       best_score = score
       candidate_program = freeze_state(candidate_program)
@@ -90,7 +109,7 @@ function synth_fn(
   end
   println(i)
   # The enumeration exhausted, but an optimal problem was not found
-  return (best_program, suboptimal_program, fragments)
+  return (best_program, suboptimal_program, simplest_subprograms)
 end
 
 """
@@ -128,15 +147,24 @@ Returns a Set{RuleNode} of all the fragments of the passed program
 function mine_fragments(program::AbstractRuleNode)
   # For now just does depth first trasversal to add all nodes of the program tree to the fragment set
   fragments = Set{AbstractRuleNode}()
-  stack = [program]
-  while !isempty(stack)
-    current_node = pop!(stack)
-    push!(fragments, current_node)
-    for child in current_node.children
-      push!(stack, child)
-    end
-  end
+  push!(fragments, program)
+  # stack = [program]
+  # while !isempty(stack)
+  #   current_node = pop!(stack)
+  #   push!(fragments, current_node)
+  #   for child in current_node.children
+  #     push!(stack, child)
+  #   end
+  # end
 
   return fragments
+end
+
+function bitvec_to_idx(bv::BitVector)::Int64
+  sum = 1
+  for pos in eachindex(bv)
+    sum += bv[pos] * 2^(pos - 1)
+  end
+  return sum
 end
 end
