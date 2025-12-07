@@ -35,6 +35,7 @@ Random.seed!(1234)
         include("test_unique.jl")
         include("test_constraints.jl")
         include("test_bottom_up.jl")
+        include("test_budgeted_search.jl")
 
         # 	# Excluded because it contains long tests
         # 	# include("test_realistic_searches.jl")

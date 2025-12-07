@@ -83,7 +83,6 @@ export
     get_solver,
     BudgetedSearchController,
     run_budget_search
-    EvaluationError,
 
     # Bottom-up Searches
     BottomUpState,
