@@ -1,7 +1,6 @@
 using HerbGrammar, HerbCore, HerbSpecification
 
-using HerbSearch: BFSIterator, get_grammar
-using HerbSearch.BudgetedSearch
+using HerbSearch: BudgetedSearchController, BFSIterator, get_grammar, run_budget_search
 using HerbSearch.UsefulSubprograms
 using Test
 
@@ -21,12 +20,12 @@ end
 
   ctrl = BudgetedSearchController(
     problem=problem_1,
-    grammar=g,
     iterator=iterator_1,
     synth_fn=UsefulSubprograms.synth_fn,
     attempts=3,
     selector=UsefulSubprograms.selector,
-    updater=UsefulSubprograms.updater
+    updater=UsefulSubprograms.updater,
+    stop_checker=(x)->false
   )
 
   @test ctrl.problem == problem_1

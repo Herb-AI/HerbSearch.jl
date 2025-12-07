@@ -2,7 +2,6 @@ module UsefulSubprograms
 
 export UsefulSubprograms
 
-using ..BudgetedSearch
 using HerbGrammar
 using HerbCore
 using HerbInterpret
@@ -10,7 +9,7 @@ using HerbSpecification
 using HerbConstraints
 
 import ..HerbSearch: optimal_program, suboptimal_program, SynthResult, ProgramIterator,
-  get_grammar, get_max_size, EvaluationError, BFSIterator, get_starting_symbol
+  get_grammar, get_max_size, EvaluationError, BFSIterator, get_starting_symbol, BudgetedSearchController
 
 
 function selector(results::Vector{Any})
@@ -31,7 +30,7 @@ function selector(results::Vector{Any})
   # This should also work for the removal of elements from the grammar
 end
 
-function updater(results::Tuple{RuleNode,SynthResult,Vector{AbstractRuleNode}}, iterator::ProgramIterator, grammar::ContextSensitiveGrammar)
+function updater(results::Tuple{RuleNode,SynthResult,Vector{AbstractRuleNode}}, iterator::ProgramIterator)
   # The latest array in results will contain the simplest subprograms array that matches the latest run.
   iter_grammar = get_grammar(iterator.solver)
 
