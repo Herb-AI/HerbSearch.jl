@@ -58,9 +58,6 @@ struct IteratorState
     dmap::AbstractVector{Int} # depth map of each rule
 end
 
-
-
-
 Base.IteratorSize(::StochasticSearchIterator) = Base.SizeUnknown()
 Base.eltype(::StochasticSearchIterator) = RuleNode
 
