@@ -5,17 +5,19 @@ A meta-controller that runs multiple synthesis attempts under a fixed budget
 and adapts the grammar/problem between attempts.
 """
 @kwdef mutable struct BudgetedSearchController
-    problem:: Problem
+  problem::Problem
 
-    iterator::ProgramIterator
+  iterator::ProgramIterator
 
-    synth_fn::Function
+  synth_fn::Function
 
-    stop_checker::Function = (timed_solution) -> Bool
-    
-    attempts::Int
-    selector::Function = results -> results
-    updater::Function = (selected, iter) -> iter
+  stop_checker::Function = (timed_solution) -> Bool
+
+  attempts::Int
+  selector::Function = results -> results
+  updater::Function = (selected, iter) -> iter
+
+  init_bank::Function = (problem, iter) -> bank
 end
 
 """
@@ -37,23 +39,24 @@ Returns:
   - total_time :: Float      (sum of all attempt durations)
 """
 function run_budget_search(ctrl::BudgetedSearchController)
-    results = []
-    times = []
+  results = []
+  times = []
+  bank = ctrl.init_bank(ctrl.problem, ctrl.iterator)
 
-    time_count = 0
+  time_count = 0
 
-    for att in 1:ctrl.attempts
-        solution = @timed ctrl.synth_fn(ctrl.problem, ctrl.iterator)
-        time_count += solution.time
-        push!(times, solution.time)
-        push!(results, solution.value)
+  for att in 1:ctrl.attempts
+    solution = @timed ctrl.synth_fn(ctrl.problem, ctrl.iterator)
+    time_count += solution.time
+    push!(times, solution.time)
+    push!(results, solution.value)
 
-        ctrl.stop_checker(solution) && break
+    ctrl.stop_checker(solution) && break
 
-        selected = ctrl.selector(solution.value)
-        ctrl.iterator = ctrl.updater(selected, ctrl.iterator)
-    end
+    selected = ctrl.selector(solution.value, bank)
+    ctrl.iterator = ctrl.updater(selected, ctrl.iterator, bank)
+  end
 
-    return results, times, time_count
+  return results, times, time_count
 
 end
