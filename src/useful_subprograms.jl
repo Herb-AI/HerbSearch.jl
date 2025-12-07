@@ -12,33 +12,56 @@ import ..HerbSearch: optimal_program, suboptimal_program, SynthResult, ProgramIt
   get_grammar, get_max_size, EvaluationError, BFSIterator, get_starting_symbol, BudgetedSearchController
 
 
-function selector(results::Vector{Any})
+@kwdef mutable struct BankEntry
+  remembered_program::AbstractRuleNode
+  grammar_rule_idx::Union{Nothing,Int}
+  has_been_updated::Bool
+end
+
+# initializes entries as undefined BankEntries, they are assigned during execution of the selector and updater functions
+function init_bank(problem::Problem, iterator::ProgramIterator)::Vector{BankEntry}
+  bank = Vector{BankEntry}(undef, 2^length(problem.spec))
+  return bank
+end
+
+function selector(solution::Tuple{AbstractRuleNode,SynthResult,Vector{AbstractRuleNode}}, bank::Vector{BankEntry})
   # Here I will insert elements of the latest results array into the previous one and update the grammar based on that.
-  if length(results) < 2
-    return last(results)
-  else
-    prev_result = results[end-1]
-    curr_result = results[end]
-    for idx in eachindex(prev_result[3])
-      if isassigned(prev_result[3], idx) && (length(prev_result[3][idx]) < length(curr_result[3][idx]))
-        curr_result[3][idx] = prev_result[3][idx]
+  # The bank is updated based on the result of the synth_fn. Only the programs are updates, not the corresponding grammar rules
+  found_programs = solution[3]
+  for idx in eachindex(bank)
+    if isassigned(bank, idx)
+      # edit already remembered subprogram
+      if !isnothing(found_programs[idx]) && isassigned(found_programs, idx) && length(found_programs[idx]) < length(bank[idx].remembered_program)
+        bank[idx].remembered_program = found_programs[idx]
+        bank[idx].has_been_updated = true
       end
+    elseif isassigned(found_programs, idx)
+      # Add new subprogram to the remembered_subprograms bank
+      bank[idx] = BankEntry(found_programs[idx], nothing, false)
     end
-    # results[end] = curr_result
-    return curr_result
   end
+  # results[end] = curr_result
+  return solution
   # This should also work for the removal of elements from the grammar
 end
 
-function updater(results::Tuple{RuleNode,SynthResult,Vector{AbstractRuleNode}}, iterator::ProgramIterator)
+function updater(selected::Tuple{RuleNode,SynthResult,Vector{AbstractRuleNode}}, iterator::ProgramIterator, bank::Vector{BankEntry})
   # The latest array in results will contain the simplest subprograms array that matches the latest run.
   iter_grammar = get_grammar(iterator.solver)
 
-  fragments = last(results)
-
-  for idx in eachindex(fragments)
-    if isassigned(fragments, idx) && fragments[idx] isa RuleNode
-      add_rule!(iter_grammar, fragments[idx])
+  for idx in eachindex(bank)
+    if !isassigned(bank, idx)
+      continue
+    end
+    if bank[idx].has_been_updated
+      # updates the rule stored at the index (since a simpler program has been found)
+      updated_rule = rulenode2expr(bank[idx].remembered_program, iter_grammar)
+      iter_grammar.rules[bank[idx].grammar_rule_idx] = updated_rule
+      bank[idx].has_been_updated = false
+    elseif isnothing(bank[idx].grammar_rule_idx)
+      # add a grammar rule and store the index
+      add_rule!(iter_grammar, bank[idx].remembered_program)
+      bank[idx].grammar_rule_idx = length(iter_grammar.rules)
     end
   end
 
