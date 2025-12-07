@@ -25,7 +25,8 @@ end
     attempts=3,
     selector=UsefulSubprograms.selector,
     updater=UsefulSubprograms.updater,
-    stop_checker=(x)->false
+    stop_checker=(x) -> false,
+    init_bank=UsefulSubprograms.init_bank
   )
 
   @test ctrl.problem == problem_1
