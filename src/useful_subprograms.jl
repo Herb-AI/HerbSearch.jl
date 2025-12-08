@@ -18,6 +18,10 @@ import ..HerbSearch: optimal_program, suboptimal_program, SynthResult, ProgramIt
   has_been_updated::Bool
 end
 
+function stop_checker(timed_solution)::Bool
+  return timed_solution[2] == optimal_program
+end
+
 # initializes entries as undefined BankEntries, they are assigned during execution of the selector and updater functions
 function init_bank(problem::Problem, iterator::ProgramIterator)::Vector{BankEntry}
   bank = Vector{BankEntry}(undef, 2^length(problem.spec))
@@ -88,11 +92,13 @@ function synth_fn(
 
   best_score = 0
   best_program = nothing
+  num_iterations = 0
 
   #fragments = Set{AbstractRuleNode}()
   simplest_subprograms = Vector{AbstractRuleNode}(undef, 2^length(problem.spec))
 
   for (i, candidate_program) ∈ enumerate(iterator)
+    num_iterations = i
     expr = rulenode2expr(candidate_program, grammar)
 
     # Don't want to short-circuit since subset of passed examples is useful
@@ -100,7 +106,6 @@ function synth_fn(
     idx = bitvec_to_idx(passed_examples)
     if !isassigned(simplest_subprograms, idx)
       simplest_subprograms[idx] = freeze_state(candidate_program)
-      println("bitvec idx", idx)
     elseif isassigned(simplest_subprograms, idx)
       if length(candidate_program) < length(simplest_subprograms[idx])
         simplest_subprograms[idx] = freeze_state(candidate_program)
@@ -129,7 +134,7 @@ function synth_fn(
       break
     end
   end
-  println(i)
+  println(num_iterations)
   # The enumeration exhausted, but an optimal problem was not found
   return (best_program, suboptimal_program, simplest_subprograms)
 end
