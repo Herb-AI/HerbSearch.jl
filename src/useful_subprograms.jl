@@ -23,12 +23,12 @@ function stop_checker(timed_solution)::Bool
 end
 
 # initializes entries as undefined BankEntries, they are assigned during execution of the selector and updater functions
-function init_bank(problem::Problem, iterator::ProgramIterator)::Vector{BankEntry}
-  bank = Vector{BankEntry}(undef, 2^length(problem.spec))
+function init_bank(problem::Problem, iterator::ProgramIterator)::Dict{Int,BankEntry}
+  bank = Dict{Int, BankEntry}()
   return bank
 end
 
-function selector(solution::Tuple{AbstractRuleNode,SynthResult,Vector{AbstractRuleNode}}, bank::Vector{BankEntry})
+function selector(solution::Tuple{AbstractRuleNode,SynthResult,Dict{Int,AbstractRuleNode}}, bank::Dict{Int,BankEntry})
   # Here I will insert elements of the latest results array into the previous one and update the grammar based on that.
   # The bank is updated based on the result of the synth_fn. Only the programs are updates, not the corresponding grammar rules
   found_programs = solution[3]
@@ -49,12 +49,12 @@ function selector(solution::Tuple{AbstractRuleNode,SynthResult,Vector{AbstractRu
   # This should also work for the removal of elements from the grammar
 end
 
-function updater(selected::Tuple{RuleNode,SynthResult,Vector{AbstractRuleNode}}, iterator::ProgramIterator, bank::Vector{BankEntry})
+function updater(selected::Tuple{RuleNode,SynthResult,Dict{Int,AbstractRuleNode}}, iterator::ProgramIterator, bank::Dict{Int,BankEntry})
   # The latest array in results will contain the simplest subprograms array that matches the latest run.
   iter_grammar = get_grammar(iterator.solver)
 
   for idx in eachindex(bank)
-    if !isassigned(bank, idx)
+    if !haskey(bank, idx)
       continue
     end
     if bank[idx].has_been_updated
@@ -85,7 +85,7 @@ Iterates over and evaluates programs, mining fragments of those that passed
 a subset of tests. 
 """
 function synth_fn(
-  problem::Problem, iterator::ProgramIterator)::Union{Tuple{AbstractRuleNode,SynthResult,Vector{AbstractRuleNode}},Nothing}
+  problem::Problem, iterator::ProgramIterator)::Union{Tuple{AbstractRuleNode,SynthResult,Dict{Int,AbstractRuleNode}},Nothing}
   start_time = time()
   grammar = get_grammar(iterator.solver)
   symboltable::SymbolTable = grammar2symboltable(grammar)
@@ -95,7 +95,7 @@ function synth_fn(
   num_iterations = 0
 
   #fragments = Set{AbstractRuleNode}()
-  simplest_subprograms = Vector{AbstractRuleNode}(undef, 2^length(problem.spec))
+  simplest_subprograms = Dict{Int,AbstractRuleNode}()
 
   for (i, candidate_program) ∈ enumerate(iterator)
     num_iterations = i
@@ -104,9 +104,9 @@ function synth_fn(
     # Don't want to short-circuit since subset of passed examples is useful
     passed_examples = evaluate(problem, expr, symboltable, shortcircuit=false, allow_evaluation_errors=true)
     idx = bitvec_to_idx(passed_examples)
-    if !isassigned(simplest_subprograms, idx)
+    if !haskey(simplest_subprograms, idx)
       simplest_subprograms[idx] = freeze_state(candidate_program)
-    elseif isassigned(simplest_subprograms, idx)
+    elseif haskey(simplest_subprograms, idx)
       if length(candidate_program) < length(simplest_subprograms[idx])
         simplest_subprograms[idx] = freeze_state(candidate_program)
       end
