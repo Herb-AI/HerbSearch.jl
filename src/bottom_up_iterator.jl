@@ -41,46 +41,92 @@ function calc_measure end
 abstract type AbstractBankEntry end
 
 """
+    $(TYPEDEF)
 
+Describes a entry in the program bank of a bottom-up iterator. 
+Holds a program and a flag describing whether the entry is new. 
+The flag is used for calculating the new horizon.
+
+For access use `get_program(entry)` and `is_new(entry)`.
 """
-mutable struct BankEntry <: AbstractBankEntry
-    program::AbstractRuleNode
+mutable struct BankEntry{R<:AbstractRuleNode} <: AbstractBankEntry
+    program::R
     is_new::Bool
+end
+
+is_new(entry::BankEntry) = entry.is_new
+get_program(entry::BankEntry) = entry.program
+
+
+const HASH_SEED = hash("DON'T PANIC")  # returns a UInt
+"""
+    $(TYPEDSIGNATURES)
+Hashes a vector of outputs. Hashes to UInt64 by default.
+"""
+function _hash_outputs_to_u64vec(outs_any::Vector{<:Any})
+    sig = Vector{UInt64}(undef, length(outs_any))
+    for i in eachindex(outs_any)
+        sig[i] = hash(outs_any[i], HASH_SEED)
+    end
+    return sig
 end
 
 
 """
-    struct MeasureHashedBank{M}
+    struct MeasureHashedBank{M,T,O<:AbstractVector{<:T},R<:AbstractRuleNode}
 
 A bank that hashes programs on some measure of type `M` (ex: program depth,
 size, etc.).
 """
-struct MeasureHashedBank{M}
-    bank::DefaultDict{Symbol,DefaultDict{M,Vector{BankEntry}}}
-    seen_outputs::DefaultDict{Symbol,Set{OutputSig}}
-    function MeasureHashedBank{M}() where M
-        inner_bank = () -> DefaultDict{M,Vector{BankEntry}}(() -> BankEntry[])
-        seen = DefaultDict{Symbol,Set{OutputSig}}(() -> Set{OutputSig}())
-        return new{M}(
-            DefaultDict{Symbol,DefaultDict{M,Vector{BankEntry}}}(inner_bank), seen
+struct MeasureHashedBank{M<:Real,R<:AbstractRuleNode}
+    bank::DefaultDict{Symbol,DefaultDict{M,Vector{BankEntry{R}}}}
+    observed_outputs::DefaultDict{Symbol,Set{Vector{UInt64}}}
+
+    function MeasureHashedBank{M,R}() where {M,R<:AbstractRuleNode}
+        # For each symbol, we keep a DefaultDict keyed by the measure M,
+        # whose values are vectors of BankEntry{R}.
+        inner_bank = () -> DefaultDict{M,Vector{BankEntry{R}}}(() -> BankEntry{R}[])
+
+        seen = DefaultDict{Symbol,Set{Vector{UInt64}}}(() -> Set{Vector{UInt64}}())
+
+        return new{M,R}(
+            DefaultDict{Symbol,DefaultDict{M,Vector{BankEntry{R}}}}(inner_bank),
+            seen,
         )
     end
 end
 
+observed_outputs(mhb::MeasureHashedBank) = mhb.observed_outputs
+inner_bank(mhb::MeasureHashedBank) = mhb.bank
+
+
+"""
+    $(TYPEDSIGNATURES)
+
+Return the measure type `M` used by this `MeasureHashedBank{M,R}`.
+"""
+measure_type(::MeasureHashedBank{M,R}) where {M,R<:AbstractRuleNode} = M
+
+"""
+    $(TYPEDSIGNATURES)
+
+Return the measure type `M` used by the bank of the iterator.
+"""
+measure_type(iter::BottomUpIterator) = measure_type(get_bank(iter))
 
 """
     get_types(mhb::MeasureHashedBank, measure)
 
 Retrieve the types of programs in bank `mhb`.
 """
-get_types(mhb::MeasureHashedBank) = keys(mhb.bank)
+get_types(mhb::MeasureHashedBank) = keys(inner_bank(mhb))
 
 """
     get_measures(mhb::MeasureHashedBank)
 
 Retrieve the measures present in the bank `mhb` with a certain type.
 """
-get_measures(mhb::MeasureHashedBank, type::Symbol) = keys(mhb.bank[type])
+get_measures(mhb::MeasureHashedBank, type::Symbol) = keys(inner_bank(mhb)[type])
 
 
 """
@@ -88,14 +134,14 @@ get_measures(mhb::MeasureHashedBank, type::Symbol) = keys(mhb.bank[type])
 
 Retrieve all bank entries in bank `mhb` with a certain `type` and `measure`. 
 """
-get_entries(mhb::MeasureHashedBank, type::Symbol, measure) = mhb.bank[type][measure]
+get_entries(mhb::MeasureHashedBank, type::Symbol, measure) = inner_bank(mhb)[type][measure]
 
 """
     programs(mhb::MeasureHashedBank, measure, type)
 
 Retrieve the programs in bank `mhb` with a certain `type` and `measure`. 
 """
-get_programs(mhb::MeasureHashedBank, type::Symbol, measure) = (e.program for e in mhb.bank[type][measure]) |> collect
+get_programs(mhb::MeasureHashedBank, type::Symbol, measure) = (get_program(e) for e in get_entries(mhb, type, measure)) |> collect
 
 """
     AbstractAddress
@@ -134,12 +180,12 @@ retrieve(iter, acc)
 UniformHole[Bool[0, 1, 1, 1]]
 ```
 """
-struct AccessAddress{M,I<:Integer} <: AbstractAddress
+struct AccessAddress{M} <: AbstractAddress
     type::Symbol
     measure::M
-    index::I
-    depth::Int64
-    size::Int64
+    index::Int
+    depth::Int
+    size::Int
     new_shape::Bool
 end
 
@@ -343,7 +389,7 @@ function populate_bank!(iter::BottomUpIterator)
         term_mask = grammar.isterminal .& grammar.domains[t]
         if any(term_mask)
             uh = UniformHole(term_mask, [])
-            push!(get_entries(bank, t, calc_measure(iter, uh)), BankEntry(uh, true))
+            push!(get_entries(bank, t, calc_measure(iter, uh)), BankEntry{UniformHole}(uh, true))
         end
     end
 
@@ -371,8 +417,6 @@ end
 Get the problem bank from the `BottomUpIterator`, `iter`.
 """
 get_bank(iter::BottomUpIterator) = iter.bank
-
-
 
 
 """
