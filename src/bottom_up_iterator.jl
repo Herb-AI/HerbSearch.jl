@@ -467,7 +467,7 @@ function compute_new_horizon(iter::BottomUpIterator)
             min_measure_by_type[t] = min(current_min, measure)
 
             # Update "new" min per type if there is any new entry at this measure
-            if any(e -> e.is_new, entries)
+            if any(e -> is_new(e), entries)
                 current_new_min = get(min_new_measure_by_type, t, typemax(Int))
                 min_new_measure_by_type[t] = min(current_new_min, measure)
             end
@@ -543,11 +543,11 @@ function combine(iter::BottomUpIterator, state::GenericBUState)
     # Tag each address with new_shape=true iff its BANK ENTRY is marked new.
     address_stream = (begin
             entry = get_entries(bank, ret_type, measure)[idx] # BankEntry
-            prog = entry.program
+            prog = get_program(entry)
             AccessAddress(
             ret_type, measure, idx,
             depth(prog), length(prog),
-            entry.is_new
+            is_new(entry)
             )
         end
         for ret_type in get_types(bank)
@@ -630,7 +630,7 @@ function add_to_bank!(
     end
 
     program_type = return_type(get_grammar(iter.solver), program)
-    push!(get_entries(bank, program_type, prog_measure), BankEntry(program, true))
+    push!(get_entries(bank, program_type, prog_measure), BankEntry{UniformHole}(program, true))
     return true
 end
 

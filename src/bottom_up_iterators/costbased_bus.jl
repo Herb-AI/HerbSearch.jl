@@ -110,9 +110,7 @@ function populate_bank!(iter::AbstractCostBasedBottomUpIterator)
     for T in get_types(bank)
         for c in get_measures(bank, T)
             c <= get_measure_limit(iter) || continue
-            entries = get_entries(bank, T, c)
-            @inbounds for i in eachindex(entries)
-                prog = entries[i].program
+            @inbounds for (i,prog) in enumerate(get_programs(bank,T,c))
                 push!(out, AccessAddress{Float64}(
                     T,               # type
                     c,               # cost
