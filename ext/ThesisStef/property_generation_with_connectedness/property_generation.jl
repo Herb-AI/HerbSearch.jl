@@ -18,7 +18,7 @@ function generate_properties(;
         output_type = output_type,
         max_program_size = max_program_size,
     )
- 
+
     properties, values_per_property, = create_properties(
         seen_outputs = seen_outputs,
         property_grammar = property_grammar,
@@ -51,40 +51,49 @@ function generate_programs(;
 
     for program in program_iterator
         outputs = []
-        expr = rulenode2expr(program, grammar)
-        @show expr
 
-        # for input in inputs
-        #     output = interpreter(program, grammar_tags, input)
-        #     push!(outputs, output)
+        for input in inputs
+            output = nothing 
 
-        #     if isnothing(output)
-        #         break
-        #     end
-        # end
+            try
+                output = interpreter(program, grammar_tags, input)
+            catch e
+                if e isa MethodError
+                    output = nothing
+                else
+                    rethrow(e)
+                end
+            end
 
-        # if any(isnothing(outputs))
-        #     continue
-        # end
+            push!(outputs, output)
 
-        # if outputs == target_outputs
-        #     throw(ErrorException("Solution found during exploration"))
-        # end
+            if isnothing(output)
+                break
+            end
+        end
 
-        # if outputs in seen_outputs
-        #     continue
-        # end
+        if any(isnothing, outputs)
+            continue
+        end
 
-        # program_to_outputs["$program"] = outputs
-        # push!(seen_outputs, outputs)
+        if outputs == target_outputs
+            throw(ErrorException("Solution found during exploration"))
+        end
 
-        # program_to_parents["$program"] = []
+        if outputs in seen_outputs
+            continue
+        end
 
-        # for child in get_children(program)
-        #    if haskey(program_to_outputs, "$child")
-        #         push!(program_to_parents["$program"], "$child")
-        #    end
-        # end
+        program_to_outputs["$program"] = outputs
+        push!(seen_outputs, outputs)
+
+        program_to_parents["$program"] = []
+
+        for child in get_children(program)
+           if haskey(program_to_outputs, "$child")
+                push!(program_to_parents["$program"], "$child")
+           end
+        end
     end
 
     return seen_outputs, program_to_outputs, program_to_parents
@@ -137,11 +146,13 @@ function create_properties(;
         
         # Prune p if it produced an error (nothing)
         if any(isnothing, values_target)
+            # println("Pruned: invalid")
             continue
         end
         
         # Discard p if V contains any false value
         if any(!, values_target)
+            # println("Pruned: does not hold for solution")
             continue
         end
     
@@ -164,16 +175,19 @@ function create_properties(;
 
         # Prune if p produced an error (nothing)
         if produced_error
+            # println("Pruned: invalid")
             continue
         end
 
         # Discard p if V_i is only trues
         if all([all(pv) for pv in property_values])
+            # println("Pruned: tautology")
             continue
         end
 
         # Discard p if V_i is in V
         if property_values in values_per_property
+            # println("Pruned: redundant")
             continue
         end
 
@@ -184,4 +198,16 @@ function create_properties(;
     println("Iterated over $n_properties_attempted properties of max size $max_property_size of which $(length(properties)) are valid")
 
     return properties, values_per_property
+end
+
+function score_property(;
+    property_grammar,
+    interpreter,
+    inputs,
+    target_outputs,
+    seen_outputs, 
+    program_to_outputs, 
+    program_to_parents
+)
+    n_falsified_by_programs = 0
 end
