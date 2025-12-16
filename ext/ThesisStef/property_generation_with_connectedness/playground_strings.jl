@@ -44,26 +44,6 @@ properties = generate_properties(
     target_outputs = target_outputs,
     output_type = output_type,
     boolean_type = :ntBool,
-    max_property_size = 4,
-    max_program_size = 4,
+    max_property_size = 5,
+    max_program_size = 6,
 )
-
-# for p in properties
-#     expr = rulenode2expr(p, property_grammar)
-#     @show expr
-# end
-
-# satisfying_programs = find_programs_satisfying_properties(;
-#     grammar = grammar,
-#     property_grammar = property_grammar,
-#     properties = properties,
-#     interpreter = interpret_sygus,
-#     output_type = output_type,
-#     max_program_size = 3,
-# )
-
-
-# for p in satisfying_programs
-#     prog = rulenode2expr(p, grammar)
-#     @show prog
-# end

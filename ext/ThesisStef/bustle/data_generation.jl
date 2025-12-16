@@ -2,6 +2,7 @@ using HerbCore, HerbGrammar, HerbConstraints, HerbBenchmarks, HerbSearch, HerbSp
 using MLStyle
 
 include("string_domain.jl")
+include("property_signature.jl")
 
 
 #=
@@ -38,7 +39,7 @@ function generate_training_data_observation_equivalence(; n_inputs_per_search = 
 
     # Constraint to use the last rule, which is the argument rule
     rule_index = length(string_grammar.rules)
-    # addconstraint!(string_grammar, Contains(rule_index))
+    addconstraint!(string_grammar, Contains(rule_index))
     grammar_tags = get_relevant_tags(string_grammar)
 
     # Perform n (= 1000) searches
@@ -50,8 +51,6 @@ function generate_training_data_observation_equivalence(; n_inputs_per_search = 
         # @show inputs
         # From these input strings, perform bottom-up search without target to generate n (= ?) expression
         expressions_and_outputs = generate_expressions_with_outputs(inputs, n_expressions_per_search, grammar_tags)
-
-
 
         # Perform n (= 100) selections
         for _ in 1:n_selections
@@ -84,25 +83,30 @@ function generate_training_data_observation_equivalence(; n_inputs_per_search = 
 
             # @show non_subexpression, non_intermediate_output
 
-            @show inputs
-            println()
+            # @show inputs
+            # println()
 
-            @show rulenode2expr(expression, string_grammar)
-            @show output
-            println()
+            # @show rulenode2expr(expression, string_grammar)
+            # @show output
+            # println()
 
-            @show rulenode2expr(subexpression, string_grammar)
-            @show intermediate_output
-            println()
+            # @show rulenode2expr(subexpression, string_grammar)
+            # @show intermediate_output
+            # println()
 
-            @show rulenode2expr(non_subexpression, string_grammar)
-            @show non_intermediate_output
-            println()
+            # @show rulenode2expr(non_subexpression, string_grammar)
+            # @show non_intermediate_output
+            # println()
 
+            positive_sign = sign_ternary(inputs, intermediate_output, output)
+            negative_sign = sign_ternary(inputs, non_intermediate_output, output)
+
+            # @show positive_sign
+            # @show negative_sign
 
             # Add positive and negative training examples
-            positive_training_example = ((inputs, intermediate_output, output), 1)
-            negative_training_example = ((inputs, non_intermediate_output, output), 0)
+            positive_training_example = (positive_sign, 1)
+            negative_training_example = (negative_sign, 0)
             push!(training_examples, positive_training_example)
             push!(training_examples, negative_training_example)
         end
@@ -111,20 +115,22 @@ function generate_training_data_observation_equivalence(; n_inputs_per_search = 
     return training_examples
 end
 
-function generate_training_data_no_observation_equivalence(; n_inputs_per_search = 5, n_searches = 1000, n_expressions_per_search = 5000, n_selections = 100)
+function generate_training_data_no_observation_equivalence(; n_inputs_per_search = 5, n_searches = 1000, n_expressions_per_search = 5000, n_selections = 100)::Vector{Tuple{Vector{Number},Number}}
     training_examples = []
 
+    rule_index = length(string_grammar.rules)
+    addconstraint!(string_grammar, Contains(rule_index))
     grammar_tags = get_relevant_tags(string_grammar)
 
     # From these input strings, perform bottom-up search without target to generate n (= ?) expression
     expressions = generate_expressions(n_expressions_per_search)
 
     # Perform n (= 1000) searches
-    for _ in 1:n_searches
+    for n in 1:n_searches
+        @show n
 
         # For each search, generate n (= ?) random input strings
         inputs = [generate_random_string() for _ in 1:n_inputs_per_search]
-
 
         # Perform n (= 100) selections
         for _ in 1:n_selections
@@ -138,7 +144,7 @@ function generate_training_data_no_observation_equivalence(; n_inputs_per_search
                 expression = rand(expressions)
                 outputs = execute_expression(expression, grammar_tags, inputs)
 
-                if any(isnothing, outputs)
+                if isnothing(outputs)
                     # println("Failed expression")
                     continue
                 end
@@ -167,7 +173,7 @@ function generate_training_data_no_observation_equivalence(; n_inputs_per_search
 
                 non_intermediate_output_candidate = execute_expression(non_subexpression_candidate, grammar_tags, inputs)
 
-                if any(isnothing, non_intermediate_output_candidate)
+                if isnothing(non_intermediate_output_candidate)
                     # println("Invalid subexpression")
                     continue
                 end
@@ -178,9 +184,12 @@ function generate_training_data_no_observation_equivalence(; n_inputs_per_search
 
             # @show non_subexpression, non_intermediate_output
 
+            positive_sign = sign_ternary(inputs, intermediate_output, outputs)
+            negative_sign = sign_ternary(inputs, non_intermediate_output, outputs)
+
             # Add positive and negative training examples
-            positive_training_example = ((inputs, intermediate_output, outputs), 1)
-            negative_training_example = ((inputs, non_intermediate_output, outputs), 0)
+            positive_training_example = (positive_sign, 1)
+            negative_training_example = (negative_sign, 0)
             push!(training_examples, positive_training_example)
             push!(training_examples, negative_training_example)
         end
@@ -251,15 +260,19 @@ function generate_expressions(n_expressions::Int)::Vector{AbstractRuleNode}
     return expressions
 end
 
-function execute_expression(expression::AbstractRuleNode, grammar_tags::Dict{Int,Any}, inputs::Vector{String})::Vector{String}
+function execute_expression(expression::AbstractRuleNode, grammar_tags::Dict{Int,Any}, inputs::Vector{String})::Union{Nothing,Vector{String}}
     outputs = []
 
     for input in inputs
-        output = interpret_string(expression, grammar_tags, input)
-        push!(outputs, output)
-
-        if isnothing(output)
-            return nothing
+        try
+            output = interpret_string(expression, grammar_tags, input)
+            push!(outputs, output)
+        catch e
+            if e isa BoundsError || e isa ArgumentError || e isa MethodError
+                return nothing
+            else
+                rethrow(e)
+            end
         end
     end
     
@@ -288,13 +301,13 @@ end
 # generate_training_data_no_observation_equivalence(
 #     n_inputs_per_search = 5, 
 #     n_searches = 1000,
-#     n_expressions_per_search = 10_000, 
+#     n_expressions_per_search = 100_000, 
 #     n_selections = 100
 # )
 
-generate_training_data_observation_equivalence(
-    n_inputs_per_search = 5, 
-    n_searches = 1,
-    n_expressions_per_search = 1000, 
-    n_selections = 1
-)
+# generate_training_data_observation_equivalence(
+#     n_inputs_per_search = 5, 
+#     n_searches = 1000,
+#     n_expressions_per_search = 5000, 
+#     n_selections = 100,
+# )

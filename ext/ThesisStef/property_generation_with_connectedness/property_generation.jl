@@ -10,7 +10,7 @@ function generate_properties(;
     max_property_size,
     max_program_size,
 )
-    seen_outputs, program_to_outputs, program_to_parents = generate_programs(
+    program_to_outputs, program_to_parents = generate_programs(
         grammar = grammar,
         interpreter = interpreter,
         inputs = inputs,
@@ -19,8 +19,8 @@ function generate_properties(;
         max_program_size = max_program_size,
     )
 
-    properties, values_per_property, = create_properties(
-        seen_outputs = seen_outputs,
+    properties, program_to_property_to_values = create_properties(
+        program_to_outputs = program_to_outputs,
         property_grammar = property_grammar,
         interpreter = interpreter,
         inputs = inputs,
@@ -29,7 +29,16 @@ function generate_properties(;
         boolean_type = boolean_type,
         max_property_size = max_property_size,
     )
-    
+
+    for property in properties
+        score_property(
+            property = property,
+            property_grammar = property_grammar,
+            program_to_parents = program_to_parents,
+            program_to_property_to_values = program_to_property_to_values,
+        )
+    end
+
     return nothing
 end
 
@@ -48,8 +57,10 @@ function generate_programs(;
     program_to_outputs = Dict()
     program_to_parents = Dict()
     seen_outputs = Set()
+    n_programs_iterated = 0
 
     for program in program_iterator
+        n_programs_iterated += 1
         outputs = []
 
         for input in inputs
@@ -67,12 +78,12 @@ function generate_programs(;
 
             push!(outputs, output)
 
-            if isnothing(output)
+            if isnothing(output) || output isa Bool
                 break
             end
         end
 
-        if any(isnothing, outputs)
+        if any(isnothing, outputs) || any(v -> (v isa Bool), outputs)
             continue
         end
 
@@ -96,11 +107,13 @@ function generate_programs(;
         end
     end
 
-    return seen_outputs, program_to_outputs, program_to_parents
+    println("Iterated over $n_programs_iterated programs of max size $max_program_size, creating $(length(seen_outputs)) unique outputs")
+
+    return program_to_outputs, program_to_parents
 end
 
 function create_properties(;
-    seen_outputs,
+    program_to_outputs,
     property_grammar,
     interpreter,
     inputs,
@@ -121,7 +134,9 @@ function create_properties(;
     n_properties_attempted = 0
 
     # Seen property values
-    values_per_property = []
+    values_per_property = Set()
+    program_to_property_to_values = Dict(program => Dict() for (program, _) in program_to_outputs)
+    property_to_target_value = Dict()
 
     for property in property_iterator
         # expr = rulenode2expr(property, property_grammar)
@@ -143,6 +158,8 @@ function create_properties(;
                 break
             end
         end
+
+        property_to_target_value["$property"] = values_target
         
         # Prune p if it produced an error (nothing)
         if any(isnothing, values_target)
@@ -157,10 +174,11 @@ function create_properties(;
         end
     
         # Compute list of values V_i = p(o_i, x_1, x_2) for each concrete I/candidate O example
+        program_to_values = Dict()
         property_values = []
         produced_error = false
 
-        for outputs in seen_outputs
+        for (program, outputs) in program_to_outputs
             [input[:_arg_out] = outputs[i] for (i, input) in enumerate(inputs)]
             values = [interpreter(property, grammar_tags, input) for input in inputs]
 
@@ -171,6 +189,7 @@ function create_properties(;
             end
 
             push!(property_values, values)
+            program_to_values[program] = values
         end
 
         # Prune if p produced an error (nothing)
@@ -191,23 +210,53 @@ function create_properties(;
             continue
         end
 
+        for (program, values) in program_to_values
+            program_to_property_to_values[program]["$property"] = values
+        end
+
         push!(values_per_property, property_values)
         push!(properties, deepcopy(property))
     end
 
     println("Iterated over $n_properties_attempted properties of max size $max_property_size of which $(length(properties)) are valid")
 
-    return properties, values_per_property
+    return properties, program_to_property_to_values
 end
 
 function score_property(;
+    property,
     property_grammar,
-    interpreter,
-    inputs,
-    target_outputs,
-    seen_outputs, 
-    program_to_outputs, 
-    program_to_parents
+    program_to_parents,
+    program_to_property_to_values,
 )
     n_falsified_by_programs = 0
+
+    for (program, property_to_value) in program_to_property_to_values
+        if !all(property_to_value["$property"])
+            n_falsified_by_programs += 1
+        end 
+    end
+
+    n_disconnected_regions = 0
+
+    for (program, property_to_value) in program_to_property_to_values
+        program_satisfies = all(property_to_value["$property"])
+        parents_statisfy = [all(program_to_property_to_values[parent]["$property"]) for parent in program_to_parents[program]]
+        disconnected = program_satisfies && all(!, parents_statisfy)
+        
+        n_disconnected_regions += disconnected ? 1 : 0
+    end
+
+    if n_falsified_by_programs >= 212
+        println()
+        expr = rulenode2expr(property, property_grammar)
+        n_programs = length(program_to_property_to_values)
+        portion_falisified = n_falsified_by_programs / n_programs
+        disconnected_per_confirmed = n_disconnected_regions / (n_programs - n_falsified_by_programs)
+        @show expr
+        @show n_falsified_by_programs
+        @show portion_falisified
+        @show n_disconnected_regions
+        @show disconnected_per_confirmed
+    end
 end
