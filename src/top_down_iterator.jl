@@ -207,14 +207,14 @@ Describes the iteration for a given [`TopDownIterator`](@ref) over the grammar. 
 """
 function Base.iterate(iter::TopDownIterator)
     # Priority queue with `SolverState`s (for variable shaped trees) and `UniformIterator`s (for fixed shaped trees)
-    pq::PriorityQueue{Union{SolverState,UniformIterator},Union{Real,Tuple{Vararg{Real}}}} = PriorityQueue()
+    smd = SortedMultiDict{Union{Real,Tuple{Vararg{Real}}},Union{SolverState,UniformIterator}}()
 
     solver = iter.solver
 
     if isfeasible(solver)
-        push!(pq, get_state(solver) => priority_function(iter, get_grammar(solver), get_tree(solver), 0, false))
+        push!(smd, priority_function(iter, get_grammar(solver), get_tree(solver), 0, false) => get_state(solver))
     end
-    return _find_next_complete_tree(iter.solver, pq, iter)
+    return _find_next_complete_tree(iter.solver, smd, iter)
 end
 
 """
@@ -233,10 +233,11 @@ function Base.iterate(iter::TopDownIterator, tup::Tuple{Vector{<:AbstractRuleNod
 end
 
 
-function Base.iterate(iter::TopDownIterator, pq::DataStructures.PriorityQueue)
+function Base.iterate(iter::TopDownIterator, smd::DataStructures.SortedMultiDict)
     @timeit_debug iter.solver.statistics "#CompleteTrees (by UniformSolver)" begin end
-    return _find_next_complete_tree(iter.solver, pq, iter)
+    return _find_next_complete_tree(iter.solver, smd, iter)
 end
+
 
 """
     _find_next_complete_tree(solver::Solver, pq::PriorityQueue, iter::TopDownIterator)::Union{Tuple{RuleNode, Tuple{Vector{AbstractRuleNode}, PriorityQueue}}, Nothing}
@@ -246,18 +247,26 @@ Returns `nothing` if there are no trees left within the depth limit.
 """
 function _find_next_complete_tree(
     solver::Solver,
-    pq::PriorityQueue,
+    smd::SortedMultiDict,
     iter::TopDownIterator
 )
-    while length(pq) ≠ 0
-        (item, priority_value) = popfirst!(pq)
+    while !isempty(smd)
+        # get the token (like an index, but with some extra info) of the next item
+        # this is the item with the minimum key value + that was inserted first
+        token_next_item = token_firstindex(smd)
+        # get the actual item
+        @inbounds item = deref_value(token_next_item)
+        @inbounds priority_value = deref_key(token_next_item)
+        # pop it from the "queue" (SortedMultiDict)
+        delete!(token_next_item)
+
         if item isa UniformIterator
             #the item is a fixed shaped solver, we should get the next solution and re-enqueue it with a new priority value
             uniform_iterator = item
             solution = next_solution!(uniform_iterator)
             if !isnothing(solution)
-                push!(pq, uniform_iterator => priority_function(iter, get_grammar(solver), solution, priority_value, true))
-                return (solution, pq)
+                push!(smd, priority_function(iter, get_grammar(solver), solution, priority_value, true) => uniform_iterator)
+                return (solution, smd)
             end
         elseif item isa SolverState
             #the item is a solver state, we should find a variable shaped hole to branch on
@@ -272,8 +281,8 @@ function _find_next_complete_tree(
                 uniform_iterator = UniformIterator(uniform_solver, iter)
                 solution = next_solution!(uniform_iterator)
                 if !isnothing(solution)
-                    push!(pq, uniform_iterator => priority_function(iter, get_grammar(solver), solution, priority_value, true))
-                    return (solution, pq)
+                    push!(smd, priority_function(iter, get_grammar(solver), solution, priority_value, true) => uniform_iterator)
+                    return (solution, smd)
                 end
             elseif hole_res ≡ limit_reached
                 # The maximum depth is reached
@@ -291,7 +300,7 @@ function _find_next_complete_tree(
                     @assert isfeasible(solver) "Attempting to expand an infeasible tree: $(get_tree(solver))"
                     remove_all_but!(solver, path, domain)
                     if isfeasible(solver)
-                        push!(pq, get_state(solver) => priority_function(iter, get_grammar(solver), get_tree(solver), priority_value, false))
+                        push!(smd, priority_function(iter, get_grammar(solver), get_tree(solver), priority_value, false) => get_state(solver))
                     end
                     if i < number_of_domains
                         load_state!(solver, state)

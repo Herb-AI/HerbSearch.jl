@@ -1,6 +1,6 @@
 using HerbCore, HerbGrammar, HerbConstraints
 
-@testset verbose=true "Forbidden" begin
+@testset verbose = true "Forbidden" begin
 
     @testset "Number of candidate programs" begin
         #with constraints
@@ -13,7 +13,7 @@ using HerbCore, HerbGrammar, HerbConstraints
         #without constraints
         iter = BFSIterator(grammar, :Number, max_depth=3)
         @test length(iter) == 202
-        
+
         constraint = Forbidden(RuleNode(4, [RuleNode(1), RuleNode(1)]))
         addconstraint!(grammar, constraint)
 
@@ -31,7 +31,7 @@ using HerbCore, HerbGrammar, HerbConstraints
         constraint = Forbidden(RuleNode(3, [VarNode(:x), VarNode(:x)]))
         addconstraint!(grammar, constraint)
 
-        solver = GenericSolver(grammar, :Number, max_depth = 3)
+        solver = GenericSolver(grammar, :Number, max_depth=3)
         #jump start with new_state!
         new_state!(solver, RuleNode(3, [Hole(get_domain(grammar, :Number)), Hole(get_domain(grammar, :Number))]))
         iter = BFSIterator(solver)
@@ -64,18 +64,18 @@ using HerbCore, HerbGrammar, HerbConstraints
         partial_tree = RuleNode(4, [
             RuleNode(4, [
                 RuleNode(3, [
-                    RuleNode(1), 
+                    RuleNode(1),
                     RuleNode(1)
-                ]), 
+                ]),
                 UniformHole(BitVector((1, 1, 0, 0)), [])
-            ]), 
+            ]),
             UniformHole(BitVector((0, 0, 1, 1)), [
                 RuleNode(3, [
-                    RuleNode(1), 
+                    RuleNode(1),
                     RuleNode(1)
-                ]), 
+                ]),
                 RuleNode(1)
-            ]), 
+            ]),
         ])
 
         solver = GenericSolver(grammar, :Number)
@@ -85,13 +85,13 @@ using HerbCore, HerbGrammar, HerbConstraints
     end
 
     @testset "DomainRuleNode" begin
-        function get_grammar1() 
+        function get_grammar1()
             # Use 5 constraints to forbid rules 1, 2, 3, 4 and 5
             grammar = @csgrammar begin
                 Int = |(1:5)
                 Int = x
                 Int = Int + Int
-            end  
+            end
             constraint1 = Forbidden(RuleNode(1))
             constraint2 = Forbidden(RuleNode(2))
             constraint3 = Forbidden(RuleNode(3))
@@ -105,7 +105,7 @@ using HerbCore, HerbGrammar, HerbConstraints
             return grammar
         end
 
-        function get_grammar2() 
+        function get_grammar2()
             # Use a DomainRuleNode to forbid rules 1, 2, 3, 4 and 5
             grammar = @csgrammar begin
                 Int = |(1:5)
@@ -116,7 +116,7 @@ using HerbCore, HerbGrammar, HerbConstraints
             addconstraint!(grammar, constraint_combined)
             return grammar
         end
-        
+
         iter1 = BFSIterator(get_grammar1(), :Int, max_depth=4, max_size=100)
         number_of_programs1 = length(iter1)
 
@@ -125,5 +125,35 @@ using HerbCore, HerbGrammar, HerbConstraints
 
         @test number_of_programs1 == 26
         @test number_of_programs2 == 26
+    end
+
+    @testset "QN Grammar Forbidden" begin
+        g = @csgrammar begin
+            Const = 0
+            Const = 1
+            Entity = A
+            Entity = B
+            Entity = C
+            Expr = Const
+            Expr = Entity
+            Expr = Add(Expr, Expr)
+            Expr = Sub(Expr, Expr)
+            Expr = Div(Expr, Expr)
+            Expr = Mul(Expr, Expr)
+            Expr = Min(Expr, Expr)
+            Expr = Max(Expr, Expr)
+            Expr = Ceil(Expr)
+            Expr = Floor(Expr)
+            Model = [(A, Expr), (B, Expr), (C, Expr)]
+        end
+
+        iter_no_constraint = BFSIterator(g, :Model; max_depth=3)
+        @test first(iter_no_constraint) == @rulenode(16{6{1},6{1},6{1}})
+
+        # f = Forbidden(DomainRuleNode(g, [14, 15], [DomainRuleNode(g, [6, 7, 14, 15], [VarNode(:a)])]))
+        # addconstraint!(g, f)
+        # iter = BFSIterator(g, :Model; max_depth=3)
+        #
+        # @test first(iter) == @rulenode(16{6{1},6{1},6{1}})
     end
 end

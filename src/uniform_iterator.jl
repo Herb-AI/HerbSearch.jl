@@ -1,5 +1,5 @@
 #Branching constraint, the `StateHole` hole must be filled with rule_index `Int`.
-Branch = Tuple{StateHole, Int}
+Branch = Tuple{StateHole,Int}
 
 #Shared reference to an empty vector to reduce memory allocations.
 NOBRANCHES = Vector{Branch}()
@@ -15,7 +15,7 @@ Inner iterator that enumerates all candidate programs of a uniform tree.
 """
 mutable struct UniformIterator
     solver::UniformSolver
-    outeriter::Union{ProgramIterator, Nothing}
+    outeriter::Union{ProgramIterator,Nothing}
     unvisited_branches::Stack{Vector{Branch}}
     stateholes::Vector{StateHole}
     nsolutions::Int
@@ -26,7 +26,7 @@ end
 
 Constructs a new UniformIterator that traverses solutions of the [`UniformSolver`](@ref) and is an inner iterator of an outer [`ProgramIterator`](@ref).
 """
-function UniformIterator(solver::UniformSolver, outeriter::Union{ProgramIterator, Nothing})
+function UniformIterator(solver::UniformSolver, outeriter::Union{ProgramIterator,Nothing})
     iter = UniformIterator(solver, outeriter, Stack{Vector{Branch}}(), Vector{StateHole}(), 0)
     if isfeasible(solver)
         # create search-branches for the root search-node
@@ -43,7 +43,7 @@ end
 
 Does a dfs to retrieve all unfilled state holes in the program tree and stores them in the `stateholes` vector.
 """
-function set_stateholes!(iter::UniformIterator, node::Union{StateHole, RuleNode})
+function set_stateholes!(iter::UniformIterator, node::Union{StateHole,RuleNode})
     if node isa StateHole && size(node.domain) > 1
         push!(iter.stateholes, node)
     end
@@ -78,7 +78,7 @@ function generate_branches(iter::UniformIterator)::Vector{Branch}
                 return [(hole, rule) for rule ∈ hole.domain]
             end
             #reversing is needed because we pop and consider the rightmost branch first
-            return reverse!([(hole, rule) for rule ∈ derivation_heuristic(iter.outeriter, findall(hole.domain))])
+            return reverse([(hole, rule) for rule ∈ derivation_heuristic(iter.outeriter, findall(hole.domain))])
         end
     end
     return NOBRANCHES
@@ -91,9 +91,11 @@ end
 Searches for the next unvisited solution.
 Returns nothing if all solutions have been found already.
 """
-function next_solution!(iter::UniformIterator)::Union{RuleNode, StateHole, Nothing}
+function next_solution!(iter::UniformIterator)::Union{RuleNode,StateHole,Nothing}
     solver = iter.solver
-    if iter.nsolutions == 1000000 @warn "UniformSolver is iterating over more than 1000000 solutions..." end
+    if iter.nsolutions == 1000000
+        @warn "UniformSolver is iterating over more than 1000000 solutions..."
+    end
     if iter.nsolutions > 0
         # backtrack from the previous solution
         restore!(solver)
@@ -158,14 +160,14 @@ function Base.length(iter::UniformIterator)
     return count
 end
 
-Base.eltype(::UniformIterator) = Union{RuleNode, StateHole}
+Base.eltype(::UniformIterator) = Union{RuleNode,StateHole}
 
 function Base.iterate(iter::UniformIterator)
     solution = next_solution!(iter)
     if !isnothing(solution)
         return solution, nothing
     end
-    return nothing 
+    return nothing
 end
 
 Base.iterate(iter::UniformIterator, _) = iterate(iter)

@@ -137,6 +137,30 @@
         @test all(p ∈ bfs_programs for p ∈ answer_programs)
     end
 
+    @testset "BFS order with arity=3" begin
+        g = @csgrammar begin
+            Const = 0
+            Const = 1
+            Entity = A
+            Entity = B
+            Entity = C
+            Expr = Const
+            Expr = Entity
+            # Expr = Add(Expr, Expr)
+            # Expr = Sub(Expr, Expr)
+            # Expr = Div(Expr, Expr)
+            # Expr = Mul(Expr, Expr)
+            # Expr = Min(Expr, Expr)
+            # Expr = Max(Expr, Expr)
+            # Expr = Ceil(Expr)
+            # Expr = Floor(Expr)
+            Model = [(A, Expr), (B, Expr), (C, Expr)]
+        end
+
+        iter = BFSIterator(g, :Model; max_depth=3)
+        @test first(iter) == @rulenode(8{6{1},6{1},6{1}})
+    end
+
     @testset "DFSIterator test" begin
         g1 = @csgrammar begin
             Real = 1 | 2
