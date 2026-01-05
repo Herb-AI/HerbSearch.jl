@@ -1,5 +1,5 @@
 #Branching constraint, the `StateHole` hole must be filled with rule_index `Int`.
-Branch = Tuple{StateHole, Int}
+Branch = Tuple{StateHole,Int}
 
 #Shared reference to an empty vector to reduce memory allocations.
 NOBRANCHES = Vector{Branch}()
@@ -15,7 +15,7 @@ Inner iterator that enumerates all candidate programs of a uniform tree.
 """
 mutable struct UniformASPIterator
     solver::ASPSolver
-    outeriter::Union{ProgramIterator, Nothing}
+    outeriter::Union{ProgramIterator,Nothing}
     unvisited_branches::Stack{Vector{Branch}}
     stateholes::Vector{StateHole}
     nsolutions::Int
@@ -26,7 +26,7 @@ end
 
 Constructs a new UniformASPIterator that traverses solutions of the [`ASPSolver`](@ref) and is an inner iterator of an outer [`ProgramIterator`](@ref).
 """
-function UniformASPIterator(solver::ASPSolver, outeriter::Union{ProgramIterator, Nothing})
+function UniformASPIterator(solver::ASPSolver, outeriter::Union{ProgramIterator,Nothing})
     iter = UniformASPIterator(solver, outeriter, Stack{Vector{Branch}}(), Vector{StateHole}(), 0)
     if isfeasible(solver)
         # create search-branches for the root search-node
@@ -42,7 +42,7 @@ end
 
 Does a dfs to retrieve all unfilled state holes in the program tree and stores them in the `stateholes` vector.
 """
-function set_stateholes!(iter::UniformASPIterator, node::Union{StateHole, UniformHole, RuleNode})
+function set_stateholes!(iter::UniformASPIterator, node::Union{StateHole,UniformHole,RuleNode})
     if node isa StateHole && size(node.domain) > 1
         push!(iter.stateholes, node)
     end
@@ -98,7 +98,7 @@ function next_solution!(iter::UniformASPIterator)
         return nothing
     else
         sol = popfirst!(solver.solutions)
-        result_tree = deepcopy(solver.tree)
+        result_tree = deepcopy(get_tree(solver))
         fill_hole!(iter, result_tree, sol, 1)
         result_tree = convert_to_rulenode!(result_tree)
         return result_tree
@@ -114,7 +114,7 @@ Use `current_index` to traverse through the tree and update the correct nodes.
 function fill_hole!(
     iter::UniformASPIterator,
     tree::AbstractRuleNode,
-    mapping::Dict{Int64, Int64},
+    mapping::Dict{Int64,Int64},
     current_index::Int64
 )
     if tree isa UniformHole
@@ -151,7 +151,7 @@ function convert_to_rulenode!(tree::AbstractRuleNode)::AbstractRuleNode
         else
             tree = RuleNode(findfirst(tree.domain))
         end
-    else 
+    else
         tree.children = new_children
     end
     return tree
@@ -173,14 +173,14 @@ function Base.length(iter::UniformASPIterator)
     return count
 end
 
-Base.eltype(::UniformASPIterator) = Union{RuleNode, StateHole}
+Base.eltype(::UniformASPIterator) = Union{RuleNode,StateHole}
 
 function Base.iterate(iter::UniformASPIterator)
     solution = next_solution!(iter)
     if !isnothing(solution)
         return solution, nothing
     end
-    return nothing 
+    return nothing
 end
 
 Base.iterate(iter::UniformASPIterator, _) = iterate(iter)
