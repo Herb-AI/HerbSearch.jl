@@ -120,13 +120,14 @@ function fill_hole!(
     if tree isa UniformHole
         if haskey(mapping, current_index)
             # Check if rule to be assigned exists in grammar
-            if mapping[current_index] <= length(iter.solver.grammar.rules)
-                rule_indices = findall(tree.domain)
-                # Set the domain of the tree node to 1 for the mapping, and to 0 for all other rules
-                for i in rule_indices
-                    tree.domain[i] = (i == mapping[current_index]) ? 1 : 0
-                end
+            if mapping[current_index] > length(iter.solver.grammar.rules)
+                error("The mapping from ASP would assign a rule index ($(mapping[current_index])) that is not a valid index in the current grammar (N rules: $(length(iter.solver.grammar.rules)))")
             end
+            if mapping[current_index] ∉ findall(tree.domain)
+                error("The mapping would assign a rule index ($(mapping[current_index])) that is not within the current uniform hole's domain ($(tree.domain))")
+            end
+            tree.domain = falses(length(tree.domain))
+            tree.domain[mapping[current_index]] = 1
         end
     end
     for child in get_children(tree)
