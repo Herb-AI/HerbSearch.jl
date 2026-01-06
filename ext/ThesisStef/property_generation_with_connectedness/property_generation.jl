@@ -52,7 +52,8 @@ function generate_programs(;
 )
     grammar_tags = get_relevant_tags(grammar)
     
-    program_iterator = SizeBasedBottomUpIterator(grammar, output_type, max_size = max_program_size)
+    # program_iterator = SizeBasedBottomUpIterator(grammar, output_type, max_size = max_program_size)
+    program_iterator = BFSIterator(grammar, output_type, max_size = max_program_size)
 
     program_to_outputs = Dict()
     program_to_parents = Dict()
@@ -95,15 +96,17 @@ function generate_programs(;
             continue
         end
 
-        program_to_outputs["$program"] = outputs
+        expr = rulenode2expr(program, grammar)
+        program_to_outputs["$expr"] = outputs
         push!(seen_outputs, outputs)
 
-        program_to_parents["$program"] = []
+        program_to_parents["$expr"] = []
 
         for child in get_children(program)
-           if haskey(program_to_outputs, "$child")
-                push!(program_to_parents["$program"], "$child")
-           end
+            child_expr = rulenode2expr(child, grammar)
+            if haskey(program_to_outputs, "$child_expr")
+                    push!(program_to_parents["$expr"], "$child_expr")
+            end
         end
     end
 
@@ -144,7 +147,7 @@ function create_properties(;
 
         n_properties_attempted += 1
         
-        # Compute values V_t = p(o_t, x_1, x_2) for each concrete I/O example
+        # Compute values V_t = pi(o_t, x_1, x_2) for each concrete I/O example
         [input[:_arg_out] = target_outputs[i] for (i, input) in enumerate(inputs)]
 
         values_target = []
@@ -161,13 +164,13 @@ function create_properties(;
 
         property_to_target_value["$property"] = values_target
         
-        # Prune p if it produced an error (nothing)
+        # Prune pi if it produced an error (nothing)
         if any(isnothing, values_target)
             # println("Pruned: invalid")
             continue
         end
         
-        # Discard p if V contains any false value
+        # Discard pi if V contains any false value
         if any(!, values_target)
             # println("Pruned: does not hold for solution")
             continue
@@ -181,6 +184,14 @@ function create_properties(;
         for (program, outputs) in program_to_outputs
             [input[:_arg_out] = outputs[i] for (i, input) in enumerate(inputs)]
             values = [interpreter(property, grammar_tags, input) for input in inputs]
+
+            expr = rulenode2expr(property, property_grammar)
+            if startswith("$expr","prefixof_cvc(at_cvc(_arg_1, 2), _arg_out)")
+                if startswith(program, "substr_cvc")
+                    @show program
+                    @show values
+                end
+            end
 
             # Prune if p produced an error (nothing)
             if any(isnothing, values)
@@ -238,25 +249,35 @@ function score_property(;
     end
 
     n_disconnected_regions = 0
+    roots = []
 
     for (program, property_to_value) in program_to_property_to_values
         program_satisfies = all(property_to_value["$property"])
         parents_statisfy = [all(program_to_property_to_values[parent]["$property"]) for parent in program_to_parents[program]]
         disconnected = program_satisfies && all(!, parents_statisfy)
-        
-        n_disconnected_regions += disconnected ? 1 : 0
+
+        if disconnected
+            n_disconnected_regions += 1
+            push!(roots, program)
+        end
     end
 
-    if n_falsified_by_programs >= 212
+    expr = rulenode2expr(property, property_grammar)
+    if startswith("$expr", "!(contains_cvc(_arg_out, ")
         println()
         expr = rulenode2expr(property, property_grammar)
-        n_programs = length(program_to_property_to_values)
-        portion_falisified = n_falsified_by_programs / n_programs
-        disconnected_per_confirmed = n_disconnected_regions / (n_programs - n_falsified_by_programs)
+        program_space_size = length(program_to_property_to_values)
+        property_space_size = program_space_size - n_falsified_by_programs
+        property_space_ratio = property_space_size / program_space_size
+        property_space_regions = n_disconnected_regions
+        property_space_average_region_size = property_space_size / n_disconnected_regions
+        
         @show expr
-        @show n_falsified_by_programs
-        @show portion_falisified
-        @show n_disconnected_regions
-        @show disconnected_per_confirmed
+        @show property_space_size
+        @show program_space_size
+        @show property_space_ratio
+        @show property_space_regions
+        @show property_space_average_region_size
+        @show roots
     end
 end
