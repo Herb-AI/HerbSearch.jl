@@ -115,7 +115,7 @@ function generate_training_data_observation_equivalence(; n_inputs_per_search = 
     return training_examples
 end
 
-function generate_training_data_no_observation_equivalence(; n_inputs_per_search = 5, n_searches = 1000, n_expressions_per_search = 5000, n_selections = 100)::Vector{Tuple{Vector{Number},Number}}
+function generate_training_data_no_observation_equivalence(; n_inputs_per_search = 5, n_searches = 1000, n_expressions_per_search = 5000, n_selections = 100)::Vector{Tuple{Vector{Int8},Int8}}
     training_examples = []
 
     rule_index = length(string_grammar.rules)
@@ -127,7 +127,6 @@ function generate_training_data_no_observation_equivalence(; n_inputs_per_search
 
     # Perform n (= 1000) searches
     for n in 1:n_searches
-        @show n
 
         # For each search, generate n (= ?) random input strings
         inputs = [generate_random_string() for _ in 1:n_inputs_per_search]
