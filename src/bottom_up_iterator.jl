@@ -75,8 +75,7 @@ end
 """
     struct MeasureHashedBank{M,T,O<:AbstractVector{<:T},R<:AbstractRuleNode}
 
-A bank that hashes programs on some measure of type `M` (ex: program depth,
-size, etc.).
+A bank that groups programs by a measure of type `M`` (e.g., depth, size, etc.) by hashing them.
 """
 struct MeasureHashedBank{M<:Real,R<:AbstractRuleNode}
     bank::DefaultDict{Symbol,DefaultDict{M,Vector{BankEntry{R}}}}
@@ -142,6 +141,10 @@ get_entries(mhb::MeasureHashedBank, type::Symbol, measure) = inner_bank(mhb)[typ
 Retrieve the programs in bank `mhb` with a certain `type` and `measure`. 
 """
 get_programs(mhb::MeasureHashedBank, type::Symbol, measure) = (get_program(e) for e in get_entries(mhb, type, measure)) |> collect
+
+function get_measure_limit(iter::SizeBasedBottomUpIterator)
+    return get_max_size(iter)
+end
 
 """
     AbstractAddress
@@ -337,7 +340,7 @@ has_remaining_iterations(state::BottomUpState) = !isempty(remaining_combinations
 """
     $(TYPEDEF)
 
-Generic bottom-up search state
+Generic bottom-up search state. Tracks the current state of the search procedure.
 
 # Fields
 
@@ -681,7 +684,7 @@ end
 """
     $(TYPEDSIGNATURES)
 
-Construct a program using the [`CombineAddress`](@ref) `address` and the `iter`'s bank.
+Construct a program using the [`CombineAddress`](@ref) `address` and the `iter`'s bank and return it.
 """
 function retrieve(iter::BottomUpIterator, address::CombineAddress)::UniformHole
     return UniformHole(get_operator(address).domain, [retrieve(iter, a) for a in
@@ -691,7 +694,7 @@ end
 """
     $(TYPEDSIGNATURES)
 
-Return the initial state for the first `combine` call
+Return the initial state for the first `combine` call.
 """
 function init_combine_structure(::BottomUpIterator)
     return Dict()
@@ -848,3 +851,5 @@ function Base.iterate(iter::BottomUpIterator, state::GenericBUState)
 
     return nothing
 end
+
+
