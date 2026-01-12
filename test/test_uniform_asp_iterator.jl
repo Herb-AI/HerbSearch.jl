@@ -1,4 +1,5 @@
-@testset verbose=true "UniformASPIterator" begin
+@testset verbose = true "UniformASPIterator" begin
+    using Clingo_jll
 
     @testset "ASP_solution_conversion" begin
         g = @csgrammar begin
@@ -13,7 +14,7 @@
             UniformHole(BitVector((1, 1, 0, 0)), [])
         ])
 
-        asp_solver = ASPSolver(g, tree)
+        asp_solver = @test_nowarn ASPSolver(g, tree)
         asp_iterator = UniformASPIterator(asp_solver, nothing)
         @test length(asp_solver.solutions) == 6
         sol = next_solution!(asp_iterator)
@@ -24,7 +25,7 @@
             sol = next_solution!(asp_iterator)
         end
     end
-    
+
     @testset "ASP_solution_conversion_nonuniform" begin
         g = @csgrammar begin
             S = 1 | x
@@ -38,7 +39,7 @@
             UniformHole(BitVector((1, 1, 0, 0)), [])
         ])
 
-        asp_solver = ASPSolver(g, tree)
+        asp_solver = @test_nowarn ASPSolver(g, tree)
         asp_iterator = UniformASPIterator(asp_solver, nothing)
         @test length(asp_solver.solutions) == 14
 
@@ -49,7 +50,7 @@
             @test get_children(sol)[2] isa RuleNode
             sol = next_solution!(asp_iterator)
         end
-    end    
+    end
 
     function create_dummy_grammar_and_tree_128programs()
         grammar = @csgrammar begin
@@ -61,20 +62,23 @@
         end
 
         uniform_tree = RuleNode(1, [
-            UniformHole(BitVector((1, 1, 1, 1, 0, 0, 0, 0)), [
-                UniformHole(BitVector((0, 0, 0, 0, 1, 1, 1, 1)), [])
-                UniformHole(BitVector((0, 0, 0, 0, 1, 0, 0, 1)), [])
-            ]),
+            UniformHole(
+                BitVector((1, 1, 1, 1, 0, 0, 0, 0)),
+                [
+                    UniformHole(BitVector((0, 0, 0, 0, 1, 1, 1, 1)), [])
+                    UniformHole(BitVector((0, 0, 0, 0, 1, 0, 0, 1)), [])
+                ]
+            ),
             UniformHole(BitVector((0, 0, 0, 0, 1, 1, 1, 1)), [])
         ])
-         # 4 * 4 * 2 * 4 = 128 programs without constraints
+        # 4 * 4 * 2 * 4 = 128 programs without constraints
 
         return grammar, uniform_tree
     end
 
     @testset "Without constraints" begin
         grammar, uniform_tree = create_dummy_grammar_and_tree_128programs()
-        asp_solver = ASPSolver(grammar, uniform_tree)
+        asp_solver = @test_nowarn ASPSolver(grammar, uniform_tree)
         asp_iterator = UniformASPIterator(asp_solver, nothing)
         @test length(asp_iterator) == 128
     end
@@ -83,14 +87,14 @@
         #forbid "a - a"
         grammar, uniform_tree = create_dummy_grammar_and_tree_128programs()
         addconstraint!(grammar, Forbidden(RuleNode(2, [VarNode(:a), VarNode(:a)])))
-        asp_solver = ASPSolver(grammar, uniform_tree)
+        asp_solver = @test_nowarn ASPSolver(grammar, uniform_tree)
         asp_iterator = UniformASPIterator(asp_solver, nothing)
         @test length(asp_iterator) == 120
 
         #forbid all rulenodes
         grammar, uniform_tree = create_dummy_grammar_and_tree_128programs()
         addconstraint!(grammar, Forbidden(VarNode(:a)))
-        asp_solver = ASPSolver(grammar, uniform_tree)
+        asp_solver = @test_nowarn ASPSolver(grammar, uniform_tree)
         asp_iterator = UniformASPIterator(asp_solver, nothing)
         @test length(asp_iterator) == 0
     end
@@ -99,10 +103,10 @@
         grammar = @csgrammar begin
             S = 1
         end
-        
-        asp_solver = ASPSolver(grammar, RuleNode(1))
+
+        asp_solver = @test_nowarn ASPSolver(grammar, RuleNode(1))
         asp_iterator = UniformASPIterator(asp_solver, nothing)
-        
+
         @test next_solution!(asp_iterator) == RuleNode(1)
         @test isnothing(next_solution!(asp_iterator))
     end
@@ -115,16 +119,16 @@
             Number = Number - Number
         end
         constraint1 = Ordered(RuleNode(3, [
-            VarNode(:a),
-            VarNode(:b)
-        ]), [:a, :b])
+                VarNode(:a),
+                VarNode(:b)
+            ]), [:a, :b])
         constraint2 = Ordered(RuleNode(4, [
-            VarNode(:a),
-            VarNode(:b)
-        ]), [:a, :b])
+                VarNode(:a),
+                VarNode(:b)
+            ]), [:a, :b])
         addconstraint!(grammar, constraint1)
         addconstraint!(grammar, constraint2)
-        
+
         tree = UniformHole(BitVector((0, 0, 1, 1)), [
             UniformHole(BitVector((0, 0, 1, 1)), [
                 UniformHole(BitVector((1, 1, 0, 0)), []),
@@ -132,7 +136,7 @@
             ]),
             UniformHole(BitVector((1, 1, 0, 0)), [])
         ])
-        asp_solver = ASPSolver(grammar, tree)
+        asp_solver = @test_nowarn ASPSolver(grammar, tree)
         asp_iterator = UniformASPIterator(asp_solver, nothing)
         @test isnothing(next_solution!(asp_iterator))
     end
@@ -154,7 +158,7 @@
         ]))
         addconstraint!(grammar, constraint1)
         addconstraint!(grammar, constraint2)
-        
+
         tree = UniformHole(BitVector((0, 0, 1, 1)), [
             UniformHole(BitVector((0, 0, 1, 1)), [
                 UniformHole(BitVector((1, 1, 0, 0)), []),
@@ -162,7 +166,7 @@
             ]),
             UniformHole(BitVector((1, 1, 0, 0)), [])
         ])
-        asp_solver = ASPSolver(grammar, tree)
+        asp_solver = @test_nowarn ASPSolver(grammar, tree)
         asp_iterator = UniformASPIterator(asp_solver, nothing)
         @test isnothing(next_solution!(asp_iterator))
     end
