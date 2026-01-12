@@ -41,6 +41,9 @@ include("genetic_search_iterator.jl")
 include("random_iterator.jl")
 
 include("bottom_up_iterator.jl")
+include("bottom_up_iterators/costbased_bus.jl")
+include("bottom_up_iterators/shapebased_bus.jl")
+
 
 # include("divide_conquer_functions/divide.jl")
 # include("divide_conquer_functions/decide.jl")
@@ -50,7 +53,9 @@ function divide_and_conquer end
 
 export
     ProgramIterator,
-    @programiterator, heuristic_leftmost,
+    @programiterator, 
+    get_solver,
+    heuristic_leftmost,
     heuristic_rightmost,
     heuristic_random,
     heuristic_smallest_domain, derivation_heuristic, synth,
@@ -70,10 +75,14 @@ export
     sample,
     rand,
     EvaluationError,
+
+    # Bottom-up Searches
     BottomUpState,
     BottomUpIterator,
-    SizeBasedBottomUpIterator,
     AbstractAddress,
+    SizeBasedBottomUpIterator,
+    DepthBasedBottomUpIterator,
+    CostBasedBottomUpIterator,
     AccessAddress,
     CombineAddress,
     remaining_combinations,
