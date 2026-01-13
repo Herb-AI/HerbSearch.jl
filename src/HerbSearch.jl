@@ -74,7 +74,6 @@ export
     validate_iterator,
     sample,
     rand,
-    EvaluationError,
 
     # Bottom-up Searches
     BottomUpState,
@@ -98,4 +97,8 @@ export
     retrieve,
     init_combine_structure,
     get_bank
+
+    divide_and_conquer,
+    EvaluationError,
+    get_solver
 end # module HerbSearch
