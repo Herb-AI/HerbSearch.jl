@@ -142,9 +142,6 @@ Retrieve the programs in bank `mhb` with a certain `type` and `measure`.
 """
 get_programs(mhb::MeasureHashedBank, type::Symbol, measure) = (get_program(e) for e in get_entries(mhb, type, measure)) |> collect
 
-function get_measure_limit(iter::SizeBasedBottomUpIterator)
-    return get_max_size(iter)
-end
 
 """
     AbstractAddress

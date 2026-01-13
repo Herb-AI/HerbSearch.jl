@@ -1,7 +1,7 @@
 using Test
 using DataStructures: DefaultDict, PriorityQueue, FasterForward, enqueue!
 import HerbSearch: init_combine_structure
-import HerbSearch: OutputSig, _hash_outputs_to_u64vec
+import HerbSearch: _hash_outputs_to_u64vec
 
 grammars_to_test = Dict(
     "arity <= 1" => (@csgrammar begin
@@ -58,20 +58,22 @@ run_prog_factory(g) = function (program::AbstractRuleNode)
     return [res, res]
 end
 
-output_sig(g, prog::AbstractRuleNode) = begin
+# Hash the concrete outputs produced
+hashed_outputs(g, prog::AbstractRuleNode) = begin
     outs = run_prog_factory(g)(prog)
-    OutputSig(_hash_outputs_to_u64vec(outs))
+    _hash_outputs_to_u64vec(outs)  # ::Vector{UInt64}
 end
 
-collect_outsigs(g, iter) = begin
-    sigs = Set{OutputSig}()
+# Collect unique hashed output vectors from an iterator
+collect_hashed_outputs(g, iter) = begin
+    sigs = Set{Vector{UInt64}}()
     for p in iter
-        push!(sigs, output_sig(g, p))
+        push!(sigs, hashed_outputs(g, p))
     end
     sigs
 end
 
-@testset "Bottom-Up Search" begin
+@testset verbose=true "Bottom-Up Search" begin
 @testset "Generic Bottom-Up Search Test" begin
     for (iter_name, make_iter) in general_iterator_factories
         @testset "$iter_name" begin
@@ -271,18 +273,20 @@ end
                 # Keep this on a single small grammar to limit runtime.
                 g = grammars_to_test["multiple types"]
                 max_size = 5
-                # DFS baseline: collect signatures of all programs up to max_size
-                dfs_sigs = collect_outsigs(g, DFSIterator(g, :Int; max_size=max_size))
 
-                # Cost-based: pass same eval function so outputs are identical
+                # DFS baseline: collect hashed outputs of all programs up to max_size
+                dfs_iter = DFSIterator(g, :Int; max_size=max_size)
+                dfs_sigs = collect_hashed_outputs(g, dfs_iter)
+
+                # Cost-based: same evaluator so outputs are identical
                 costs = HerbSearch.get_costs(g)
                 cb_iter = CostBasedBottomUpIterator(
                     g, :Int;
                     max_size=max_size,
                     current_costs=costs,
-                    program_to_outputs=run_prog_factory(g)
+                    program_to_outputs=run_prog_factory(g),
                 )
-                cb_sigs = collect_outsigs(g, cb_iter)
+                cb_sigs = collect_hashed_outputs(g, cb_iter)
 
                 @test issetequal(dfs_sigs, cb_sigs)
             end
