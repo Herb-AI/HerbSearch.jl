@@ -7,18 +7,10 @@ using HerbInterpret
 using HerbSearch
 using HerbSpecification
 using Test
-<<<<<<< HEAD
 using Documenter
 
 DocMeta.setdocmeta!(HerbSearch, :DocTestSetup, :(using HerbSearch);
     recursive=true)
-=======
-using Aqua
-using Documenter
-
-DocMeta.setdocmeta!(HerbSearch, :DocTestSetup, :(using HerbCore,
-        HerbConstraints, HerbGrammar, HerbSearch); recursive=true)
->>>>>>> master
 
 include("test_helpers.jl")
 using Random

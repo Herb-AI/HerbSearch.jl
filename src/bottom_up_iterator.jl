@@ -584,7 +584,7 @@ function combine(iter::BottomUpIterator, state::GenericBUState)
             # resulting_measure < state.last_horizon && continue  # below window
             resulting_measure > get_measure_limit(iter) && continue # exceeds cap
 
-            enqueue!(state.combinations, CombineAddress(shape, child_tuple), resulting_measure)
+            push!(state.combinations, CombineAddress(shape, child_tuple) => resulting_measure)
         end
     end
 
@@ -711,10 +711,10 @@ function get_next_program(iter::BottomUpIterator, state::GenericBUState)
     # Dequeue all elements from the current horizon window if last and new horizon are equal
     # OR dequeue if within horizon bounds.
     if !isempty(state.combinations)
-        top = peek(state.combinations).second
+        top = first(state.combinations).second
        if state.last_horizon == top == state.new_horizon ||
            state.last_horizon <= top < state.new_horizon
-            return dequeue!(state.combinations), state
+           return popfirst!(state.combinations).first, state
         end
     end 
 
@@ -741,14 +741,14 @@ function get_next_program(iter::BottomUpIterator, state::GenericBUState)
             return get_next_program(iter, state) 
         elseif !isempty(new_program_combinations)
             # If the window didn't change, exhaust the next element from the queue
-            top = peek(state.combinations).second
+            top = first(state.combinations).second
             if state.last_horizon == top == state.new_horizon ||
                state.last_horizon <= top < state.new_horizon
-                return dequeue!(state.combinations), state
+                return popfirst!(state.combinations).first, state
             elseif state.new_horizon != get_measure_limit(iter) 
                 # set measure limit to max. Thus return all solutions in state.combinations.
                 state.new_horizon = get_measure_limit(iter)
-                return dequeue!(state.combinations), state
+                return popfirst!(state.combinations).first, state
             end
         else 
             return nothing, nothing
@@ -783,7 +783,7 @@ function Base.iterate(iter::BottomUpIterator)
     # Priority queue keyed by address, prioritized by its measure
     pq = PriorityQueue{AbstractAddress, Number}(DataStructures.FasterForward())
     for acc in addrs
-        enqueue!(pq, acc, get_measure(acc))
+        push!(pq, acc => get_measure(acc))
     end
 
     return Base.iterate(
@@ -848,5 +848,3 @@ function Base.iterate(iter::BottomUpIterator, state::GenericBUState)
 
     return nothing
 end
-
-

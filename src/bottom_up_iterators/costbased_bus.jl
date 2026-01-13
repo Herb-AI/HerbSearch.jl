@@ -371,7 +371,7 @@ function combine(iter::AbstractCostBasedBottomUpIterator, state::GenericBUState)
                 total_cost = rule_cost + sum(a -> get_measure(a), child_tuple)
                 total_cost > get_measure_limit(iter) && continue
 
-                enqueue!(state.combinations, CombineAddress(rule_idx, child_tuple), total_cost)
+                push!(state.combinations, CombineAddress(rule_idx, child_tuple) => total_cost)
 
                 for ch in child_tuple
                     if ch.new_shape

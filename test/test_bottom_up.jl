@@ -201,7 +201,7 @@ end
 
                     pq = PriorityQueue{AbstractAddress, Number}(FasterForward())
                     for acc in addrs
-                        enqueue!(pq, acc, HerbSearch.get_measure(acc))
+                        push!(pq, acc => HerbSearch.get_measure(acc))
                     end
 
                     state = GenericBUState(pq, init_combine_structure(iter), nothing, starting_node, -Inf, 0)
@@ -238,7 +238,7 @@ end
 
                     pq = PriorityQueue{AbstractAddress, Number}(FasterForward())
                     for acc in addrs
-                        enqueue!(pq, acc, HerbSearch.get_measure(acc))
+                        push!(pq, acc => HerbSearch.get_measure(acc))
                     end
 
                     progs = [retrieve(iter, addr) for (addr, prio) in pq]

@@ -96,7 +96,7 @@ export
     new_address,
     retrieve,
     init_combine_structure,
-    get_bank
+    get_bank,
 
     divide_and_conquer,
     EvaluationError,
