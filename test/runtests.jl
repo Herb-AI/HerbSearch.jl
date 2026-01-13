@@ -1,5 +1,6 @@
 using Aqua
 using DecisionTree: Leaf, Node
+using Documenter
 using HerbConstraints
 using HerbCore
 using HerbGrammar
@@ -7,10 +8,9 @@ using HerbInterpret
 using HerbSearch
 using HerbSpecification
 using Test
-using Documenter
 
-DocMeta.setdocmeta!(HerbSearch, :DocTestSetup, :(using HerbSearch);
-    recursive=true)
+DocMeta.setdocmeta!(HerbSearch, :DocTestSetup, :(using HerbCore,
+        HerbConstraints, HerbGrammar, HerbSearch); recursive=true)
 
 include("test_helpers.jl")
 using Random
