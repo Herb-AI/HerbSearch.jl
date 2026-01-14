@@ -1,5 +1,6 @@
 [deps]
 Aqua = "4c88cf16-eb10-579e-8560-4a9242c79595"
+DataStructures = "864edb3b-99cc-5e75-8d2d-829cb0a9cfe8"
 DecisionTree = "7806a523-6efd-50cb-b5f6-3fa6f1930dbb"
 Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
 HerbConstraints = "1fa96474-3206-4513-b4fa-23913f296dfc"
