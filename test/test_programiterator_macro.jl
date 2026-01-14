@@ -20,7 +20,7 @@
         @test fieldcount(LonelyIterator) == 3
 
         lit = LonelyIterator(g, s, max_depth=max_depth, max_size=max_size, 2, :a)
-        @test lit.solver.grammar == g && lit.f1 == 2 && lit.f2 == :a
+        @test get_grammar(lit) == g && lit.f1 == 2 && lit.f2 == :a
         @test LonelyIterator <: ProgramIterator
     end
 
@@ -52,10 +52,10 @@
         @programiterator mutable AnotherIterator() <: IteratorFamily
 
 
-        it = AnotherIterator(g, s, max_depth=10, max_size=5)
+        iter = AnotherIterator(g, s, max_depth=10, max_size=5)
 
-        @test it.solver.max_depth == 10
-        @test it.solver.max_size == 5
+        @test get_max_depth(iter) == 10
+        @test get_max_size(iter) == 5
         @test AnotherIterator <: IteratorFamily
     end
 
@@ -65,32 +65,32 @@
             b=nothing
         )
 
-        it = DefValIterator(g, :R)
+        iter = DefValIterator(g, :R)
 
-        @test it.a == 5 && isnothing(it.b)
-        @test it.solver.max_depth == typemax(Int)
+        @test iter.a == 5 && isnothing(iter.b)
+        @test get_max_depth(iter) == typemax(Int)
 
-        it = DefValIterator(g, :R, max_depth=5)
+        iter = DefValIterator(g, :R, max_depth=5)
 
-        @test it.solver.max_depth == 5
+        @test get_max_depth(iter) == 5
     end
     @testset "Check if max_depth and max_size are overwritten" begin
 
         solver = GenericSolver(g, :R, max_size=10, max_depth=5)
-        @test solver.max_size == 10
-        @test solver.max_depth == 5
-        # will overwrite solver.max_depth from 5 to 3. But keeps solver.max_size=10.
-        iterator = BFSIterator(solver=solver, max_depth=3)
         @test get_max_size(solver) == 10
-        @test get_max_depth(solver) == 3
+        @test get_max_depth(solver) == 5
+        # will overwrite solver.max_depth from 5 to 3. But keeps solver.max_size=10.
+        iter = BFSIterator(solver=solver, max_depth=3)
+        @test get_max_size(iter) == 10
+        @test get_max_depth(iter) == 3
     end
 
     @testset "Check default constructors with a solver" begin
         solver = GenericSolver(g, :R, max_size=10, max_depth=5)
-        iterator = BFSIterator(solver)
-        @test get_grammar(iterator.solver) == g
-        @test get_max_size(iterator.solver) == 10
-        @test get_max_depth(iterator.solver) == 5
+        iter = BFSIterator(solver)
+        @test get_grammar(iter) == g
+        @test get_max_size(iter) == 10
+        @test get_max_depth(iter) == 5
     end
 
     @testset "Overlapping with default fields throws error" begin

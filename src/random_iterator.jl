@@ -61,12 +61,12 @@ Base.IteratorSize(::RandomSearchIterator) = Base.SizeUnknown()
 Base.eltype(::RandomSearchIterator) = RuleNode
 
 function Base.iterate(iter::RandomSearchIterator)
-    solver_state = save_state!(iter.solver) #TODO: if this is the last iteration, don't save the state
-    return rand_with_constraints!(iter.solver, iter.path), solver_state
+    solver_state = save_state!(get_solver(iter)) #TODO: if this is the last iteration, don't save the state
+    return rand_with_constraints!(get_solver(iter), iter.path), solver_state
 end
 
 function Base.iterate(iter::RandomSearchIterator, solver_state::SolverState)
-    load_state!(iter.solver, solver_state)
-    solver_state = save_state!(iter.solver) #TODO: if this is the last iteration, don't save the state
-    return rand_with_constraints!(iter.solver, iter.path), solver_state
+    load_state!(get_solver(iter), solver_state)
+    solver_state = save_state!(get_solver(iter)) #TODO: if this is the last iteration, don't save the state
+    return rand_with_constraints!(get_solver(iter), iter.path), solver_state
 end

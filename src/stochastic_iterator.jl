@@ -24,7 +24,7 @@ abstract type StochasticSearchIterator <: ProgramIterator end
 
 Returns a node location from the neighbourhood of the current program. 
 """
-neighbourhood(iter::StochasticSearchIterator, current_program::RuleNode) = constructNeighbourhood(current_program, get_grammar(iter.solver))
+neighbourhood(iter::StochasticSearchIterator, current_program::RuleNode) = constructNeighbourhood(current_program, get_grammar(iter))
 
 
 """
@@ -32,7 +32,7 @@ neighbourhood(iter::StochasticSearchIterator, current_program::RuleNode) = const
 
 Proposes a list of programs to fill in the location provided by `path` and the `dict`.
 """
-propose(iter::StochasticSearchIterator, path::Vector{Int}, dict::Union{Nothing,Dict{String,Any}}) = random_fill_propose(iter.solver, path, dict)
+propose(iter::StochasticSearchIterator, path::Vector{Int}, dict::Union{Nothing,Dict{String,Any}}) = random_fill_propose(get_solver(iter), path, dict)
 
 """
     temperature(::StochasticSearchIterator, current_temperature::Real)
@@ -62,7 +62,7 @@ Base.IteratorSize(::StochasticSearchIterator) = Base.SizeUnknown()
 Base.eltype(::StochasticSearchIterator) = RuleNode
 
 function Base.iterate(iter::StochasticSearchIterator)
-    solver = iter.solver
+    solver = get_solver(iter)
     grammar, max_depth = get_grammar(solver), get_max_depth(solver)
 
     # sample a random node using start symbol and grammar
@@ -92,7 +92,7 @@ The algorithm that constructs the iterator of StochasticSearchIterator. It has t
 5. return the new next_program
 """
 function Base.iterate(iter::StochasticSearchIterator, iterator_state::IteratorState)
-    grammar, solver = get_grammar(iter.solver), iter.solver
+    grammar, solver = get_grammar(iter), get_solver(iter)
     current_program = get_tree(solver)#iterator_state.current_program
     
     current_cost = calculate_cost(iter, current_program)
@@ -173,7 +173,7 @@ end
 
 Wrapper around [`_calculate_cost`](@ref).
 """
-calculate_cost(iter::T, program::Union{RuleNode, StateHole}) where T <: StochasticSearchIterator = _calculate_cost(program, iter.cost_function, iter.spec, get_grammar(iter.solver), iter.evaluation_function)
+calculate_cost(iter::T, program::Union{RuleNode, StateHole}) where T <: StochasticSearchIterator = _calculate_cost(program, iter.cost_function, iter.spec, get_grammar(iter), iter.evaluation_function)
 
 
 """
@@ -215,7 +215,7 @@ This is the supertype for all VLSN search iterators.
 """
 abstract type AbstractVLSNSearchIterator <: StochasticSearchIterator end
 
-propose(iter::AbstractVLSNSearchIterator, path::Vector{Int}, dict::Union{Nothing,Dict{String,Any}}) = enumerate_neighbours_propose(iter.vlsn_neighbourhood_depth)(iter.solver, path, dict)
+propose(iter::AbstractVLSNSearchIterator, path::Vector{Int}, dict::Union{Nothing,Dict{String,Any}}) = enumerate_neighbours_propose(iter.vlsn_neighbourhood_depth)(get_solver(iter), path, dict)
 temperature(::AbstractVLSNSearchIterator, current_temperature::Real) = const_temperature(current_temperature)
 accept(::AbstractVLSNSearchIterator, current_cost::Real, next_cost::Real, temperature::Real) = best_accept(current_cost, next_cost, temperature)
 
@@ -246,7 +246,7 @@ This is the supertype for all SA search iterators.
 """
 abstract type AbstractSASearchIterator <: StochasticSearchIterator end
 
-propose(iter::AbstractSASearchIterator, path::Vector{Int}, dict::Union{Nothing,Dict{String,Any}}) = random_fill_propose(iter.solver, path, dict)
+propose(iter::AbstractSASearchIterator, path::Vector{Int}, dict::Union{Nothing,Dict{String,Any}}) = random_fill_propose(get_solver(iter), path, dict)
 
 temperature(iter::AbstractSASearchIterator, current_temperature::Real) = decreasing_temperature(iter.temperature_decreasing_factor)(current_temperature)
 
