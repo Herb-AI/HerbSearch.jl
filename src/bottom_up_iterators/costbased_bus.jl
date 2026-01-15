@@ -295,16 +295,45 @@ function combine(iter::AbstractCostBasedBottomUpIterator, state::GenericBUState)
     bank    = get_bank(iter)
     grammar = get_grammar(iter.solver)
     
+    # new_h = compute_new_horizon(iter)
+    # if no better horizon found, stick to old one
+    # if isfinite(new_h)
+    #   if new_h > state.new_horizon
+    #     state.last_horizon = state.new_horizon
+    #     state.new_horizon = min(new_h, get_measure_limit(iter))
+    #   else
+    #     state.last_horizon = state.new_horizon
+    #   end
+    # end
+    #
+    # println("LAST HORIZON: ", state.last_horizon)
+    # println("NEW HORIZON: ", state.new_horizon)
+
+
     # advance horizons
-    state.last_horizon = state.new_horizon
+    # state.last_horizon = state.new_horizon
+    # new_h = compute_new_horizon(iter)
+    #
+    # # if no better horizon found, stick to old one
+    # if isfinite(new_h)
+    #     state.new_horizon = min(new_h, get_measure_limit(iter))
+    # else
+    #     state.new_horizon = state.last_horizon
+    # end
+    old_last = state.last_horizon
+    old_new  = state.new_horizon
+
     new_h = compute_new_horizon(iter)
 
-    # if no better horizon found, stick to old one
     if isfinite(new_h)
-        state.new_horizon = min(new_h, get_measure_limit(iter))
-    else
-        state.new_horizon = state.last_horizon
+        new_h = min(new_h, get_measure_limit(iter))
+
+        if new_h > old_new
+            state.last_horizon = old_new
+            state.new_horizon  = new_h
+        end
     end
+
 
     # build an address list grouped by type (this is fast to reuse below)
     addrs_by_type = Dict{Symbol,Vector{AccessAddress}}()
