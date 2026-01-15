@@ -17,7 +17,13 @@ and adapts the grammar/problem between attempts.
   selector::Function = results -> results
   updater::Function = (selected, iter) -> iter
 
+  max_enumerations::Int
+
+  interpret::Union{Function,Nothing}
+  tags::Any
+
   init_bank::Function = (problem, iter) -> bank
+  mod::Module
 end
 
 """
@@ -46,7 +52,7 @@ function run_budget_search(ctrl::BudgetedSearchController)
   time_count = 0
 
   for att in 1:ctrl.attempts
-    solution = @timed ctrl.synth_fn(ctrl.problem, ctrl.iterator)
+    solution = @timed ctrl.synth_fn(ctrl.problem, ctrl.iterator, ctrl.interpret, ctrl.max_enumerations, ctrl.tags, ctrl.mod)
     time_count += solution.time
     push!(times, solution.time)
     push!(results, solution.value)
@@ -55,6 +61,7 @@ function run_budget_search(ctrl::BudgetedSearchController)
 
     selected = ctrl.selector(solution.value, bank)
     ctrl.iterator = ctrl.updater(selected, ctrl.iterator, bank)
+    println(get_grammar(ctrl.iterator))
   end
 
   return results, times, time_count
