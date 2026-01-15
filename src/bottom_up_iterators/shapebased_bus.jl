@@ -3,7 +3,7 @@ function calc_measure(iter::BottomUpIterator, program_combination::CombineAddres
 end
 
 @programiterator SizeBasedBottomUpIterator(
-    bank=MeasureHashedBank{Int}()
+    bank=MeasureHashedBank{Int, UniformHole}()
 ) <: BottomUpIterator
 
 @doc """
@@ -27,11 +27,17 @@ function calc_measure(iter::SizeBasedBottomUpIterator, program::AbstractRuleNode
     return length(program)
 end
 
+"""
+    $(TYPEDSIGNATURES)
+
+Calculates the measure given a combination of children. 
+Does not take the parent cost into account.
+"""
 _calc_measure(::SizeBasedBottomUpIterator, combination::Tuple{Vararg{AccessAddress}}) = sum(get_measure.(combination))
 
 
 @programiterator DepthBasedBottomUpIterator(
-    bank=MeasureHashedBank{Int}()
+    bank=MeasureHashedBank{Int, UniformHole}()
 ) <: BottomUpIterator
 
 @doc """
@@ -55,5 +61,11 @@ function calc_measure(iter::DepthBasedBottomUpIterator, program::AbstractRuleNod
     return depth(program)
 end
 
+"""
+    $(TYPEDSIGNATURES)
+
+Calculates the measure given a combination of children. 
+Does not take the parent cost into account.
+"""
 _calc_measure(::DepthBasedBottomUpIterator, combination::Tuple{Vararg{AccessAddress}}) = maximum(get_measure.(combination))
 

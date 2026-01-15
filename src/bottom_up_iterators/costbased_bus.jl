@@ -11,7 +11,7 @@ abstract type AbstractCostBasedBottomUpIterator <: BottomUpIterator end
 
 
 @programiterator CostBasedBottomUpIterator(
-    bank=MeasureHashedBank{Float64}(),
+    bank=MeasureHashedBank{Float64, RuleNode}(),
     max_cost::Float64=Inf,
     current_costs::Vector{Float64}=Float64[],
     program_to_outputs::Union{Nothing,Function} = nothing, # Must return Float64
@@ -60,25 +60,25 @@ Checks a program for observational equivalence by evaluating the program, hashin
 Returns true, if the program was seen already.
 Returns false, if the program was not seen yet. Adds the output signature to the set of seen outputs in that case.
 """
-function is_observational_equivalent(
+function is_observationally_equivalent(
     iter::AbstractCostBasedBottomUpIterator,
     program::RuleNode,
     rettype::Symbol
 )
-    f = iter.program_to_outputs
-    f === nothing && return false # checking for observational equivalence is turned off
-
-    outs_any = f(program)
-    sig_vec  = _hash_outputs_to_u64vec(outs_any)
-    wrapped = OutputSig(sig_vec) # Needed for set formulation
+    fn_map_to_outputs = iter.program_to_outputs
+    if isnothing(fn_map_to_outputs)
+        return false # no function given for observational equivalence, assume not equivalent
+    end
+    outputs = fn_map_to_outputs(program)
+    outputs = _hash_outputs_to_u64vec(outputs)
 
     bank = get_bank(iter)
-    seen = get!(bank.seen_outputs, rettype, Set{OutputSig}())
+    observed = get!(observed_outputs(bank), rettype, Set{Vector{UInt64}}())
 
-    if wrapped in seen
+    if outputs in observed
         return true
     else
-        push!(seen, wrapped)
+        push!(observed, outputs)
         return false
     end
 end
@@ -110,10 +110,8 @@ function populate_bank!(iter::AbstractCostBasedBottomUpIterator)
     for T in get_types(bank)
         for c in get_measures(bank, T)
             c <= get_measure_limit(iter) || continue
-            entries = get_entries(bank, T, c)
-            @inbounds for i in eachindex(entries)
-                prog = entries[i].program
-                push!(out, AccessAddress(
+            @inbounds for (i,prog) in enumerate(get_programs(bank,T,c))
+                push!(out, AccessAddress{Float64}(
                     T,               # type
                     c,               # cost
                     i,               # index in that bucket
@@ -186,14 +184,13 @@ function add_to_bank!(iter::AbstractCostBasedBottomUpIterator, addr::CombineAddr
     ret_T   = grammar.types[get_operator(addr)]
 
     # observational equivalence per return type
-    if is_observational_equivalent(iter, prog, ret_T)
+    if is_observationally_equivalent(iter, prog, ret_T)
         return false
     end
 
-    push!(get_entries(bank, ret_T, total_cost), BankEntry(prog, true))
+    push!(get_entries(bank, ret_T, total_cost), BankEntry{RuleNode}(prog, true))
     return true
 end
-
 
 
 """
@@ -244,13 +241,17 @@ function compute_new_horizon(iter::AbstractCostBasedBottomUpIterator)
     best = Inf
 
     # 2) for every nonterminal rule, try “one new child, the rest old”
-    for rule_idx in eachindex(grammar.isterminal)
+    # All “shapes”, i.e., rule schemas we can combine children with
+    terminals_mask     = grammar.isterminal
+    nonterminals_mask  = .~terminals_mask
+    nonterminal_shapes = UniformHole.(partition(Hole(nonterminals_mask), grammar), ([],))
 
-        grammar.isterminal[rule_idx] && continue   # skip terminals
+    # for rule_idx in eachindex(grammar.isterminal)
+    # for rule_idx in eachindex(grammar.isterminal)
+    for shape in nonterminal_shapes
 
-        ret_T      = grammar.types[rule_idx]
-        child_types   = grammar.childtypes[rule_idx]
-        rule_cost  = get_rule_cost(iter, rule_idx)
+        child_types = Tuple(grammar.childtypes[findfirst(shape.domain)])
+        ret_T = grammar.types[findfirst(shape.domain)]
 
         # we need *some* program for every child type
         all(t -> haskey(min_cost_by_type, t), child_types) || continue
@@ -260,18 +261,22 @@ function compute_new_horizon(iter::AbstractCostBasedBottomUpIterator)
         for new_pos in eachindex(child_types)
             t_new = child_types[new_pos]
             haskey(min_new_cost_by_type, t_new) || continue
+            
+            for rule_idx in findall(shape.domain)
+                rule_cost  = get_rule_cost(iter, rule_idx)
 
-            # cost of this particular choice “child i is new”
-            total = rule_cost
-            for (i, ct) in pairs(child_types)
-                if i == new_pos
-                    total += min_new_cost_by_type[ct]
-                else
-                    total += min_cost_by_type[ct]
+                # cost of this particular choice “child i is new”
+                total = rule_cost
+                for (i, ct) in pairs(child_types)
+                    if i == new_pos
+                        total += min_new_cost_by_type[ct]
+                    else
+                        total += min_cost_by_type[ct]
+                    end
                 end
-            end
 
-            best = min(best, total)
+                best = min(best, total)
+            end
         end
     end
 
@@ -338,41 +343,47 @@ function combine(iter::AbstractCostBasedBottomUpIterator, state::GenericBUState)
     # build an address list grouped by type (this is fast to reuse below)
     addrs_by_type = Dict{Symbol,Vector{AccessAddress}}()
     for T in get_types(bank)
-        vs = AccessAddress[]
+        vs = Vector{AccessAddress}()
         for c in get_measures(bank, T)
             entries = get_entries(bank, T, c)
             @inbounds for i in eachindex(entries)
                 e = entries[i]
-                prog = e.program
-                push!(vs, AccessAddress(
+                prog = get_program(e)
+                push!(vs, AccessAddress{Float64}(
                     T, c, i,
                     depth(prog), length(prog),
-                    e.is_new
+                    is_new(e)
                 ))
             end
         end
         addrs_by_type[T] = vs
     end
 
+    # Define filters to apply over child_tuples
+    # Stays within solver bounds
     is_feasible = function(children::Tuple{Vararg{AccessAddress}})
         maximum(depth.(children)) < get_max_depth(iter) &&
         sum(size.(children)) < get_max_size(iter)
     end
+    # Uses the correct types
     is_well_typed = child_types -> (children -> child_types == get_return_type.(children))
 
+    # must use at least one *new* program to progress the horizon
     any_new = child_tuple -> any(a -> a.new_shape, child_tuple)
 
-    # @TODO do this by shape, so we don't have to iterate separately 
-    for rule_idx in eachindex(grammar.isterminal)
-        grammar.isterminal[rule_idx] && continue
+    # All “shapes”, i.e., rule schemas we can combine children with
+    terminals_mask     = grammar.isterminal
+    nonterminals_mask  = .~terminals_mask
+    nonterminal_shapes = UniformHole.(partition(Hole(nonterminals_mask), grammar), ([],))
 
-        child_types  = Tuple(grammar.childtypes[rule_idx])
+    # Iterate over shapes
+    for shape in nonterminal_shapes
+        child_types  = Tuple(grammar.childtypes[findfirst(shape.domain)])
         arity     = length(child_types)
-        rule_cost = get_rule_cost(iter, rule_idx)
 
         typed_filter = is_well_typed(child_types) 
-    
-        child_lists = map(t -> get(addrs_by_type, t, AccessAddress[]), child_types)
+
+        child_lists = map(t -> get(addrs_by_type, t, Vector{AccessAddress}()), child_types)
         any(isempty, child_lists) && continue
 
         candidate_combinations = Iterators.product(child_lists...)
@@ -382,16 +393,19 @@ function combine(iter::AbstractCostBasedBottomUpIterator, state::GenericBUState)
 
         # cartesian product over the child lists
         for child_tuple in candidate_combinations
-            # must use at least one *new* program to progress the horizon
+            # Iterate over concrete rules within that shape
+            for rule_idx in findall(shape.domain)
+                rule_cost = get_rule_cost(iter, rule_idx)
 
-            total_cost = rule_cost + sum(a -> get_measure(a), child_tuple)
-            total_cost > get_measure_limit(iter) && continue
+                total_cost = rule_cost + sum(a -> get_measure(a), child_tuple)
+                total_cost > get_measure_limit(iter) && continue
 
-            enqueue!(state.combinations, CombineAddress(rule_idx, child_tuple), total_cost)
+                enqueue!(state.combinations, CombineAddress(rule_idx, child_tuple), total_cost)
 
-            for ch in child_tuple
-                if ch.new_shape
-                    get_entries(bank, get_return_type(ch), get_measure(ch))[get_index(ch)].is_new = false
+                for ch in child_tuple
+                    if ch.new_shape
+                        get_entries(bank, get_return_type(ch), get_measure(ch))[get_index(ch)].is_new = false
+                    end
                 end
             end
         end
