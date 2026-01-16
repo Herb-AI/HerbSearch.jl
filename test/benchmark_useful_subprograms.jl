@@ -16,6 +16,31 @@ arg_max_enumerations = parse(Int64, ARGS[2])
 arg_max_cost = parse(Float64, ARGS[3])
 arg_num_attempts = parse(Int64, ARGS[4])
 
+# @testset "Sanity Check" begin
+#
+#   for pair in get_all_problem_grammar_pairs(PBE_SLIA_Track_2019)[2:5]
+#     problem = pair.problem
+#     grammar = deepcopy(pair.grammar)
+#     grammar_bu = isprobabilistic(grammar) ? grammar : init_probabilities!(deepcopy(grammar))
+#     costs = get_costs(grammar_bu)
+#
+#     iterator_2 = CostBasedBottomUpIterator(
+#       grammar_bu,
+#       :Start;
+#       max_depth=arg_max_depth,
+#       max_cost=arg_max_cost,
+#       current_costs=costs
+#     )
+#     println("Starting synth")
+#     result = synth(problem, iterator_2, mod=PBE_SLIA_Track_2019, allow_evaluation_errors=true)
+#
+#     println("Synth done! Result: ", result)
+#
+#     # tags = get_relevant_tags(grammar_bu)
+#     # eval(make_interpreter(grammar_bu))
+#   end
+# end
+
 # @testset "BFSIterator solution" begin
 # for pair in get_all_problem_grammar_pairs(PBE_SLIA_Track_2019)[2:5]
 #   g = pair.grammar
@@ -62,8 +87,8 @@ arg_num_attempts = parse(Int64, ARGS[4])
       current_costs=costs
     )
 
-    tags = get_relevant_tags(grammar_bu)
-    eval(make_interpreter(grammar_bu))
+    tags = get_relevant_tags(grammar)
+    eval(make_interpreter(grammar))
 
     ctrl_bu = BudgetedSearchController(
       problem=problem,

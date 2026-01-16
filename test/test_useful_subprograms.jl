@@ -28,6 +28,20 @@ problem_1 = HerbSpecification.Problem("example", examples)
     current_costs=costs
   )
 
+  # ctrl_bu = BudgetedSearchController(
+  #   problem=problem,
+  #   iterator=iterator_2,
+  #   synth_fn=UsefulSubprograms.synth_fn,
+  #   attempts=arg_num_attempts,
+  #   selector=UsefulSubprograms.selector,
+  #   updater=UsefulSubprograms.updater,
+  #   max_enumerations=arg_max_enumerations,
+  #   interpret=interpret,
+  #   tags=tags,
+  #   stop_checker=UsefulSubprograms.stop_checker,
+  #   init_bank=UsefulSubprograms.init_bank,
+  #   mod=PBE_SLIA_Track_2019
+  # )
   ctrl_bu = BudgetedSearchController(
     problem=problem_1,
     iterator=iterator_2,
@@ -35,6 +49,9 @@ problem_1 = HerbSpecification.Problem("example", examples)
     attempts=10,
     selector=UsefulSubprograms.selector,
     updater=UsefulSubprograms.updater,
+    max_enumerations=100,
+    interpret=nothing,
+    tags=nothing,
     stop_checker=UsefulSubprograms.stop_checker,
     init_bank=UsefulSubprograms.init_bank,
     mod=Main
@@ -44,7 +61,7 @@ problem_1 = HerbSpecification.Problem("example", examples)
   if !isnothing(last(results_bu)[1])
     program = rulenode2expr(last(results_bu)[1], get_grammar(iterator_2.solver))
     println("Found solution: $program")
-  else 
+  else
     println("No solution found")
   end
 end
