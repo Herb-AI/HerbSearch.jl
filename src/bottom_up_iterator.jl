@@ -142,9 +142,9 @@ Retrieve the programs in bank `mhb` with a certain `type` and `measure`.
 """
 get_programs(mhb::MeasureHashedBank, type::Symbol, measure) = (get_program(e) for e in get_entries(mhb, type, measure)) |> collect
 
-function get_measure_limit(iter::SizeBasedBottomUpIterator)
-    return get_max_size(iter)
-end
+# function get_measure_limit(iter::SizeBasedBottomUpIterator)
+#     return get_max_size(iter)
+# end
 
 """
     AbstractAddress
@@ -791,14 +791,14 @@ function Base.iterate(iter::BottomUpIterator)
 
     return Base.iterate(
         iter,
-        GenericBUState(
+        isnothing(iter.state) ? GenericBUState(
             pq,
             init_combine_structure(iter),
             nothing,
             starting_node,
             -Inf, # last_horizon
             0 # new_horizon
-        )
+        ) : iter.state
     )
 end
 

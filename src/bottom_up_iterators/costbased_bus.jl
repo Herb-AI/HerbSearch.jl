@@ -11,10 +11,11 @@ abstract type AbstractCostBasedBottomUpIterator <: BottomUpIterator end
 
 
 @programiterator CostBasedBottomUpIterator(
-    bank=MeasureHashedBank{Float64, RuleNode}(),
-    max_cost::Float64=Inf,
-    current_costs::Vector{Float64}=Float64[],
-    program_to_outputs::Union{Nothing,Function} = nothing, # Must return Float64
+  bank=MeasureHashedBank{Float64,RuleNode}(),
+  max_cost::Float64=Inf,
+  current_costs::Vector{Float64}=Float64[],
+  program_to_outputs::Union{Nothing,Function}=nothing, # Must return Float64
+  state::Union{GenericBUState,Nothing}=nothing,
 ) <: AbstractCostBasedBottomUpIterator
 
 @doc """
@@ -61,26 +62,26 @@ Returns true, if the program was seen already.
 Returns false, if the program was not seen yet. Adds the output signature to the set of seen outputs in that case.
 """
 function is_observationally_equivalent(
-    iter::AbstractCostBasedBottomUpIterator,
-    program::RuleNode,
-    rettype::Symbol
+  iter::AbstractCostBasedBottomUpIterator,
+  program::RuleNode,
+  rettype::Symbol
 )
-    fn_map_to_outputs = iter.program_to_outputs
-    if isnothing(fn_map_to_outputs)
-        return false # no function given for observational equivalence, assume not equivalent
-    end
-    outputs = fn_map_to_outputs(program)
-    outputs = _hash_outputs_to_u64vec(outputs)
+  fn_map_to_outputs = iter.program_to_outputs
+  if isnothing(fn_map_to_outputs)
+    return false # no function given for observational equivalence, assume not equivalent
+  end
+  outputs = fn_map_to_outputs(program)
+  outputs = _hash_outputs_to_u64vec(outputs)
 
-    bank = get_bank(iter)
-    observed = get!(observed_outputs(bank), rettype, Set{Vector{UInt64}}())
+  bank = get_bank(iter)
+  observed = get!(observed_outputs(bank), rettype, Set{Vector{UInt64}}())
 
-    if outputs in observed
-        return true
-    else
-        push!(observed, outputs)
-        return false
-    end
+  if outputs in observed
+    return true
+  else
+    push!(observed, outputs)
+    return false
+  end
 end
 
 
@@ -91,38 +92,38 @@ Fill the bank with the concrete programs in the grammar, i.e., the terminals.
 Returns the [`AccessAddress`](@ref)es of the newly-added programs.
 """
 function populate_bank!(iter::AbstractCostBasedBottomUpIterator)
-    grammar = get_grammar(iter.solver)
-    bank = get_bank(iter)
+  grammar = get_grammar(iter.solver)
+  bank = get_bank(iter)
 
-    # seed terminals using add_to_bank!
-    for rule_idx in eachindex(grammar.isterminal)
-        grammar.isterminal[rule_idx] || continue # skip non-terminals
+  # seed terminals using add_to_bank!
+  for rule_idx in eachindex(grammar.isterminal)
+    grammar.isterminal[rule_idx] || continue # skip non-terminals
 
-        prog = RuleNode(rule_idx)
-        addr = CombineAddress{0}(rule_idx, ())  # terminal: no child addresses
+    prog = RuleNode(rule_idx)
+    addr = CombineAddress{0}(rule_idx, ())  # terminal: no child addresses
 
-        add_to_bank!(iter, addr, prog)
+    add_to_bank!(iter, addr, prog)
+  end
+
+  # collect initial window
+  # Collect the *initial window* of addresses: every terminal we’ve just added.
+  out = AccessAddress[]
+  for T in get_types(bank)
+    for c in get_measures(bank, T)
+      c <= get_measure_limit(iter) || continue
+      @inbounds for (i, prog) in enumerate(get_programs(bank, T, c))
+        push!(out, AccessAddress{Float64}(
+          T,               # type
+          c,               # cost
+          i,               # index in that bucket
+          depth(prog),     # depth of *concrete* program
+          length(prog),    # size   of *concrete* program
+          true             # all terminals are "new"
+        ))
+      end
     end
-    
-    # collect initial window
-    # Collect the *initial window* of addresses: every terminal we’ve just added.
-    out  = AccessAddress[]
-    for T in get_types(bank)
-        for c in get_measures(bank, T)
-            c <= get_measure_limit(iter) || continue
-            @inbounds for (i,prog) in enumerate(get_programs(bank,T,c))
-                push!(out, AccessAddress{Float64}(
-                    T,               # type
-                    c,               # cost
-                    i,               # index in that bucket
-                    depth(prog),     # depth of *concrete* program
-                    length(prog),    # size   of *concrete* program
-                    true             # all terminals are "new"
-                ))
-            end
-        end
-    end
-    return out
+  end
+  return out
 end
 
 """
@@ -138,9 +139,9 @@ _calc_measure(iter::AbstractCostBasedBottomUpIterator, children::Tuple) = sum(ge
 Calculates the cost of a CombineAddress, which refers to a concrete program. 
 """
 function calc_measure(iter::AbstractCostBasedBottomUpIterator,
-                      a::CombineAddress)
-    rule_c = get_rule_cost(iter, get_operator(a))
-    return rule_c + _calc_measure(iter, get_children(a))
+  a::CombineAddress)
+  rule_c = get_rule_cost(iter, get_operator(a))
+  return rule_c + _calc_measure(iter, get_children(a))
 end
 
 """
@@ -156,9 +157,9 @@ calc_measure(iter::AbstractCostBasedBottomUpIterator, rn::AbstractRuleNode) = ab
 Retrieve a program using a CombineAddress. Overwrites the parent function, as AbstractCostBasedBottomUpIterator operates over concrete trees, not uniform trees.
 """
 function retrieve(iter::AbstractCostBasedBottomUpIterator, a::CombineAddress)
-    grammar = get_grammar(iter.solver)
-    kids = [retrieve(iter, ch) for ch in get_children(a)]
-    return RuleNode(get_operator(a), kids)
+  grammar = get_grammar(iter.solver)
+  kids = [retrieve(iter, ch) for ch in get_children(a)]
+  return RuleNode(get_operator(a), kids)
 end
 
 
@@ -173,23 +174,23 @@ Return `true` if the `program` is added to the bank, and `false` otherwise.
 This `add_to_bank!` checks for observational equivalence.  
 """
 function add_to_bank!(iter::AbstractCostBasedBottomUpIterator, addr::CombineAddress, prog::AbstractRuleNode)
-    total_cost = calc_measure(iter, addr)
-    if total_cost > get_measure_limit(iter) || 
-        depth(prog) >= get_max_depth(iter) || 
-        length(prog) >= get_max_size(iter)
-        return false
-    end 
-    bank    = get_bank(iter)
-    grammar = get_grammar(iter.solver)
-    ret_T   = grammar.types[get_operator(addr)]
+  total_cost = calc_measure(iter, addr)
+  if total_cost > get_measure_limit(iter) ||
+     depth(prog) >= get_max_depth(iter) ||
+     length(prog) >= get_max_size(iter)
+    return false
+  end
+  bank = get_bank(iter)
+  grammar = get_grammar(iter.solver)
+  ret_T = grammar.types[get_operator(addr)]
 
-    # observational equivalence per return type
-    if is_observationally_equivalent(iter, prog, ret_T)
-        return false
-    end
+  # observational equivalence per return type
+  if is_observationally_equivalent(iter, prog, ret_T)
+    return false
+  end
 
-    push!(get_entries(bank, ret_T, total_cost), BankEntry{RuleNode}(prog, true))
-    return true
+  push!(get_entries(bank, ret_T, total_cost), BankEntry{RuleNode}(prog, true))
+  return true
 end
 
 
@@ -216,71 +217,71 @@ Notes:
 - This function does **not** mutate the bank or the state (other than reading state).
 """
 function compute_new_horizon(iter::AbstractCostBasedBottomUpIterator)
-    bank = get_bank(iter)
-    grammar = get_grammar(iter.solver)
+  bank = get_bank(iter)
+  grammar = get_grammar(iter.solver)
 
-    # 1) collect cheapest & cheapest-new per type
-    min_cost_by_type     = Dict{Symbol, Float64}()
-    min_new_cost_by_type = Dict{Symbol, Float64}()
+  # 1) collect cheapest & cheapest-new per type
+  min_cost_by_type = Dict{Symbol,Float64}()
+  min_new_cost_by_type = Dict{Symbol,Float64}()
 
-    for T in get_types(bank)
-        for c in get_measures(bank, T)
-            entries = get_entries(bank, T, c)
-            isempty(entries) && continue
+  for T in get_types(bank)
+    for c in get_measures(bank, T)
+      entries = get_entries(bank, T, c)
+      isempty(entries) && continue
 
-            # cheapest existing
-            min_cost_by_type[T] = min(get(min_cost_by_type, T, Inf), c)
+      # cheapest existing
+      min_cost_by_type[T] = min(get(min_cost_by_type, T, Inf), c)
 
-            # cheapest *new* at this type
-            if any(e -> e.is_new, entries)
-                min_new_cost_by_type[T] = min(get(min_new_cost_by_type, T, Inf), c)
-            end
-        end
+      # cheapest *new* at this type
+      if any(e -> e.is_new, entries)
+        min_new_cost_by_type[T] = min(get(min_new_cost_by_type, T, Inf), c)
+      end
     end
+  end
 
-    best = Inf
+  best = Inf
 
-    # 2) for every nonterminal rule, try “one new child, the rest old”
-    # All “shapes”, i.e., rule schemas we can combine children with
-    terminals_mask     = grammar.isterminal
-    nonterminals_mask  = .~terminals_mask
-    nonterminal_shapes = UniformHole.(partition(Hole(nonterminals_mask), grammar), ([],))
+  # 2) for every nonterminal rule, try “one new child, the rest old”
+  # All “shapes”, i.e., rule schemas we can combine children with
+  terminals_mask = grammar.isterminal
+  nonterminals_mask = .~terminals_mask
+  nonterminal_shapes = UniformHole.(partition(Hole(nonterminals_mask), grammar), ([],))
 
-    # for rule_idx in eachindex(grammar.isterminal)
-    # for rule_idx in eachindex(grammar.isterminal)
-    for shape in nonterminal_shapes
+  # for rule_idx in eachindex(grammar.isterminal)
+  # for rule_idx in eachindex(grammar.isterminal)
+  for shape in nonterminal_shapes
 
-        child_types = Tuple(grammar.childtypes[findfirst(shape.domain)])
-        ret_T = grammar.types[findfirst(shape.domain)]
+    child_types = Tuple(grammar.childtypes[findfirst(shape.domain)])
+    ret_T = grammar.types[findfirst(shape.domain)]
 
-        # we need *some* program for every child type
-        all(t -> haskey(min_cost_by_type, t), child_types) || continue
-        # ...and we need *at least one* child type that is new
-        any(t -> haskey(min_new_cost_by_type, t), child_types) || continue
+    # we need *some* program for every child type
+    all(t -> haskey(min_cost_by_type, t), child_types) || continue
+    # ...and we need *at least one* child type that is new
+    any(t -> haskey(min_new_cost_by_type, t), child_types) || continue
 
-        for new_pos in eachindex(child_types)
-            t_new = child_types[new_pos]
-            haskey(min_new_cost_by_type, t_new) || continue
-            
-            for rule_idx in findall(shape.domain)
-                rule_cost  = get_rule_cost(iter, rule_idx)
+    for new_pos in eachindex(child_types)
+      t_new = child_types[new_pos]
+      haskey(min_new_cost_by_type, t_new) || continue
 
-                # cost of this particular choice “child i is new”
-                total = rule_cost
-                for (i, ct) in pairs(child_types)
-                    if i == new_pos
-                        total += min_new_cost_by_type[ct]
-                    else
-                        total += min_cost_by_type[ct]
-                    end
-                end
+      for rule_idx in findall(shape.domain)
+        rule_cost = get_rule_cost(iter, rule_idx)
 
-                best = min(best, total)
-            end
+        # cost of this particular choice “child i is new”
+        total = rule_cost
+        for (i, ct) in pairs(child_types)
+          if i == new_pos
+            total += min_new_cost_by_type[ct]
+          else
+            total += min_cost_by_type[ct]
+          end
         end
-    end
 
-    return best
+        best = min(best, total)
+      end
+    end
+  end
+
+  return best
 end
 
 
@@ -297,168 +298,158 @@ Combine also calculates the new enumeration window, i.e. sets last_horizon to ne
 Enqueues ALL found combinations into `state.combinations` that are bigger than last_horizon, but will NOT prune solutions that exceed the current window, i.e., new_horizon.
 """
 function combine(iter::AbstractCostBasedBottomUpIterator, state::GenericBUState)
-    bank    = get_bank(iter)
-    grammar = get_grammar(iter.solver)
-    
-    # new_h = compute_new_horizon(iter)
-    # if no better horizon found, stick to old one
-    # if isfinite(new_h)
-    #   if new_h > state.new_horizon
-    #     state.last_horizon = state.new_horizon
-    #     state.new_horizon = min(new_h, get_measure_limit(iter))
-    #   else
-    #     state.last_horizon = state.new_horizon
-    #   end
-    # end
-    #
-    # println("LAST HORIZON: ", state.last_horizon)
-    # println("NEW HORIZON: ", state.new_horizon)
+  bank = get_bank(iter)
+  grammar = get_grammar(iter.solver)
+
+  # new_    #
+  # println("LAST HORIZON: ", state.last_horizon)
+  # println("NEW HORIZON: ", state.new_horizon)
 
 
-    # advance horizons
-    # state.last_horizon = state.new_horizon
-    # new_h = compute_new_horizon(iter)
-    #
-    # # if no better horizon found, stick to old one
-    # if isfinite(new_h)
-    #     state.new_horizon = min(new_h, get_measure_limit(iter))
-    # else
-    #     state.new_horizon = state.last_horizon
-    # end
-    old_last = state.last_horizon
-    old_new  = state.new_horizon
+  # advance horizons
+  # state.last_horizon = state.new_horizon
+  # new_h = compute_new_horizon(iter)
 
-    new_h = compute_new_horizon(iter)
+  # if no better horizon found, stick to old one
+  # if isfinite(new_h)
+  #   state.new_horizon = min(new_h, get_measure_limit(iter))
+  # else
+  #   state.new_horizon = state.last_horizon
+  # end
+  old_last = state.last_horizon
+  old_new = state.new_horizon
 
-    if isfinite(new_h)
-        new_h = min(new_h, get_measure_limit(iter))
+  new_h = compute_new_horizon(iter)
 
-        if new_h > old_new
-            state.last_horizon = old_new
-            state.new_horizon  = new_h
+  if isfinite(new_h)
+    new_h = min(new_h, get_measure_limit(iter))
+
+    if new_h > old_new
+      state.last_horizon = old_new
+      state.new_horizon = new_h
+    end
+  end
+
+
+  # build an address list grouped by type (this is fast to reuse below)
+  addrs_by_type = Dict{Symbol,Vector{AccessAddress}}()
+  for T in get_types(bank)
+    vs = Vector{AccessAddress}()
+    for c in get_measures(bank, T)
+      entries = get_entries(bank, T, c)
+      @inbounds for i in eachindex(entries)
+        e = entries[i]
+        prog = get_program(e)
+        push!(vs, AccessAddress{Float64}(
+          T, c, i,
+          depth(prog), length(prog),
+          is_new(e)
+        ))
+      end
+    end
+    addrs_by_type[T] = vs
+  end
+
+  # Define filters to apply over child_tuples
+  # Stays within solver bounds
+  is_feasible = function (children::Tuple{Vararg{AccessAddress}})
+    maximum(depth.(children)) < get_max_depth(iter) &&
+      sum(size.(children)) < get_max_size(iter)
+  end
+  # Uses the correct types
+  is_well_typed = child_types -> (children -> child_types == get_return_type.(children))
+
+  # must use at least one *new* program to progress the horizon
+  any_new = child_tuple -> any(a -> a.new_shape, child_tuple)
+
+  # All “shapes”, i.e., rule schemas we can combine children with
+  terminals_mask = grammar.isterminal
+  nonterminals_mask = .~terminals_mask
+  nonterminal_shapes = UniformHole.(partition(Hole(nonterminals_mask), grammar), ([],))
+
+  # Iterate over shapes
+  for shape in nonterminal_shapes
+    child_types = Tuple(grammar.childtypes[findfirst(shape.domain)])
+    arity = length(child_types)
+
+    typed_filter = is_well_typed(child_types)
+
+    child_lists = map(t -> get(addrs_by_type, t, Vector{AccessAddress}()), child_types)
+    any(isempty, child_lists) && continue
+
+    candidate_combinations = Iterators.product(child_lists...)
+    candidate_combinations = Iterators.filter(typed_filter, candidate_combinations)
+    candidate_combinations = Iterators.filter(is_feasible, candidate_combinations)
+    candidate_combinations = Iterators.filter(any_new, candidate_combinations)
+
+    # cartesian product over the child lists
+    for child_tuple in candidate_combinations
+      # Iterate over concrete rules within that shape
+      for rule_idx in findall(shape.domain)
+        rule_cost = get_rule_cost(iter, rule_idx)
+
+        total_cost = rule_cost + sum(a -> get_measure(a), child_tuple)
+        total_cost > get_measure_limit(iter) && continue
+
+        enqueue!(state.combinations, CombineAddress(rule_idx, child_tuple), total_cost)
+
+        for ch in child_tuple
+          if ch.new_shape
+            get_entries(bank, get_return_type(ch), get_measure(ch))[get_index(ch)].is_new = false
+          end
         end
+      end
     end
+  end
 
-
-    # build an address list grouped by type (this is fast to reuse below)
-    addrs_by_type = Dict{Symbol,Vector{AccessAddress}}()
-    for T in get_types(bank)
-        vs = Vector{AccessAddress}()
-        for c in get_measures(bank, T)
-            entries = get_entries(bank, T, c)
-            @inbounds for i in eachindex(entries)
-                e = entries[i]
-                prog = get_program(e)
-                push!(vs, AccessAddress{Float64}(
-                    T, c, i,
-                    depth(prog), length(prog),
-                    is_new(e)
-                ))
-            end
-        end
-        addrs_by_type[T] = vs
-    end
-
-    # Define filters to apply over child_tuples
-    # Stays within solver bounds
-    is_feasible = function(children::Tuple{Vararg{AccessAddress}})
-        maximum(depth.(children)) < get_max_depth(iter) &&
-        sum(size.(children)) < get_max_size(iter)
-    end
-    # Uses the correct types
-    is_well_typed = child_types -> (children -> child_types == get_return_type.(children))
-
-    # must use at least one *new* program to progress the horizon
-    any_new = child_tuple -> any(a -> a.new_shape, child_tuple)
-
-    # All “shapes”, i.e., rule schemas we can combine children with
-    terminals_mask     = grammar.isterminal
-    nonterminals_mask  = .~terminals_mask
-    nonterminal_shapes = UniformHole.(partition(Hole(nonterminals_mask), grammar), ([],))
-
-    # Iterate over shapes
-    for shape in nonterminal_shapes
-        child_types  = Tuple(grammar.childtypes[findfirst(shape.domain)])
-        arity     = length(child_types)
-
-        typed_filter = is_well_typed(child_types) 
-
-        child_lists = map(t -> get(addrs_by_type, t, Vector{AccessAddress}()), child_types)
-        any(isempty, child_lists) && continue
-
-        candidate_combinations = Iterators.product(child_lists...)
-        candidate_combinations = Iterators.filter(typed_filter, candidate_combinations)
-        candidate_combinations = Iterators.filter(is_feasible, candidate_combinations)
-        candidate_combinations = Iterators.filter(any_new, candidate_combinations)
-
-        # cartesian product over the child lists
-        for child_tuple in candidate_combinations
-            # Iterate over concrete rules within that shape
-            for rule_idx in findall(shape.domain)
-                rule_cost = get_rule_cost(iter, rule_idx)
-
-                total_cost = rule_cost + sum(a -> get_measure(a), child_tuple)
-                total_cost > get_measure_limit(iter) && continue
-
-                enqueue!(state.combinations, CombineAddress(rule_idx, child_tuple), total_cost)
-
-                for ch in child_tuple
-                    if ch.new_shape
-                        get_entries(bank, get_return_type(ch), get_measure(ch))[get_index(ch)].is_new = false
-                    end
-                end
-            end
-        end
-    end
-
-    return state.combinations, state
+  return state.combinations, state
 end
 
 
 function Base.iterate(iter::AbstractCostBasedBottomUpIterator, state::GenericBUState)
-    # Drain current uniform iterator if present
-    if !isnothing(state.current_uniform_iterator)
-        next_solution = next_solution!(state.current_uniform_iterator)
-        if isnothing(next_solution)
-            state.current_uniform_iterator = nothing
-        else
-            return next_solution, state
-        end
+  # Drain current uniform iterator if present
+  if !isnothing(state.current_uniform_iterator)
+    next_solution = next_solution!(state.current_uniform_iterator)
+    if isnothing(next_solution)
+      state.current_uniform_iterator = nothing
+    else
+      return next_solution, state
+    end
+  end
+
+  solver = get_solver(iter)
+
+  next_program_address, new_state = get_next_program(iter, state)
+
+  while !isnothing(next_program_address)
+    program = retrieve(iter, next_program_address)
+
+    if isnothing(program)
+      return nothing
     end
 
-    solver = get_solver(iter)
+    if length(program) > 1
+      keep = add_to_bank!(iter, next_program_address, program)
 
-    next_program_address, new_state = get_next_program(iter, state)
-
-    while !isnothing(next_program_address)
-        program = retrieve(iter, next_program_address)
-
-        if isnothing(program) 
-            return nothing
-        end
-
-        if length(program) > 1
-            keep = add_to_bank!(iter, next_program_address, program)
-
-            # if the horizon is set to max, but we encounter a program that we want to add to the bank, then we recompute the horizon.
-            if keep && 
-                (state.last_horizon == get_measure_limit(iter) || 
-                state.new_horizon == typemax(typeof(get_measure_limit(iter))) ||
-                state.new_horizon == Inf)
-                state.new_horizon = compute_new_horizon(iter)
-            end
-        end
-
-
-        if is_subdomain(program, state.starting_node)
-            # Check for constraints in the grammar
-            if all(HerbConstraints.check_tree(constraint, program) for constraint in get_grammar(get_solver(iter)).constraints)
-                return program, new_state
-            end
-        end
-
-        next_program_address, new_state = get_next_program(iter, new_state)
+      # if the horizon is set to max, but we encounter a program that we want to add to the bank, then we recompute the horizon.
+      if keep &&
+         (state.last_horizon == get_measure_limit(iter) ||
+          state.new_horizon == typemax(typeof(get_measure_limit(iter))) ||
+          state.new_horizon == Inf)
+        state.new_horizon = compute_new_horizon(iter)
+      end
     end
 
-    return nothing
+
+    if is_subdomain(program, state.starting_node)
+      # Check for constraints in the grammar
+      if all(HerbConstraints.check_tree(constraint, program) for constraint in get_grammar(get_solver(iter)).constraints)
+        return program, new_state
+      end
+    end
+
+    next_program_address, new_state = get_next_program(iter, new_state)
+  end
+
+  return nothing
 end

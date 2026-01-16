@@ -304,6 +304,6 @@ function _processkwarg!(keywords::Vector{Expr}, ex::Union{Expr,Symbol})
     end
 end
 
-get_solver(iter::ProgramIterator) = iter.solver
-HerbConstraints.get_max_depth(iter::ProgramIterator) = HerbConstraints.get_max_depth(get_solver(iter))
-HerbConstraints.get_max_size(iter::ProgramIterator) = HerbConstraints.get_max_size(get_solver(iter))
+# get_solver(iter::ProgramIterator) = iter.solver
+#HerbConstraints.get_max_depth(iter::ProgramIterator) = HerbConstraints.get_max_depth(get_solver(iter))
+#HerbConstraints.get_max_size(iter::ProgramIterator) = HerbConstraints.get_max_size(get_solver(iter))

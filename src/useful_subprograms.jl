@@ -9,7 +9,9 @@ using HerbSpecification
 using HerbConstraints
 
 import ..HerbSearch: optimal_program, suboptimal_program, SynthResult, ProgramIterator,
-  get_grammar, get_max_size, EvaluationError, BFSIterator, get_starting_symbol, BudgetedSearchController, CostBasedBottomUpIterator, get_costs, get_bank
+  get_grammar, get_max_size, EvaluationError, BFSIterator, get_starting_symbol,
+  BudgetedSearchController, CostBasedBottomUpIterator, get_costs, get_bank,
+  inner_bank, get_entries, get_types, get_measures, GenericBUState
 
 # Id of each bank entry corresponds to a bitvector of passed examples
 @kwdef mutable struct BankEntry
@@ -19,6 +21,7 @@ import ..HerbSearch: optimal_program, suboptimal_program, SynthResult, ProgramIt
 end
 
 function stop_checker(timed_solution)::Bool
+  println("Stop Checker")
   return timed_solution.value[2] == optimal_program
 end
 
@@ -28,7 +31,7 @@ function init_bank(problem::Problem, iterator::ProgramIterator)::Tuple{Dict{Int,
   return (bank, length(get_grammar(iterator.solver).rules))
 end
 
-function selector(solution::Tuple{AbstractRuleNode,SynthResult,Dict{Int,AbstractRuleNode}}, bank::Tuple{Dict{Int,BankEntry},Int})
+function selector(solution::Tuple{AbstractRuleNode,SynthResult,Dict{Int,AbstractRuleNode},GenericBUState}, bank::Tuple{Dict{Int,BankEntry},Int})
   # Here I will insert elements of the latest results array into the previous one and update the grammar based on that.
   # The bank is updated based on the result of the synth_fn. Only the programs are updates, not the corresponding grammar rules
   found_programs = solution[3]
@@ -52,7 +55,7 @@ function selector(solution::Tuple{AbstractRuleNode,SynthResult,Dict{Int,Abstract
   # This should also work for the removal of elements from the grammar
 end
 
-function updater(selected::Tuple{RuleNode,SynthResult,Dict{Int,AbstractRuleNode}}, iterator::ProgramIterator, bank::Tuple{Dict{Int,BankEntry},Int})
+function updater(selected::Tuple{RuleNode,SynthResult,Dict{Int,AbstractRuleNode},GenericBUState}, iterator::ProgramIterator, bank::Tuple{Dict{Int,BankEntry},Int})
   # The latest array in results will contain the simplest subprograms array that matches the latest run.
   iter_grammar = get_grammar(iterator.solver)
   bank_entries = bank[1]
@@ -73,6 +76,7 @@ function updater(selected::Tuple{RuleNode,SynthResult,Dict{Int,AbstractRuleNode}
     end
   end
 
+  # cite this
   IterType = typeof(iterator)
   if IterType <: CostBasedBottomUpIterator
     updated_costs = get_costs(iter_grammar)
@@ -85,10 +89,20 @@ function updater(selected::Tuple{RuleNode,SynthResult,Dict{Int,AbstractRuleNode}
       end
     end
 
+    old_bank = get_bank(iterator)
+    # for type in get_types(old_bank)                                                                                                              
+    #     for measure in get_measures(old_bank, type)                                                                                                       
+    #         for entry in get_entries(old_bank, type, measure)                                                                                                 
+    #             entry.is_new = true                                                                                                                  
+    #         end                                                                                                                                      
+    #     end                                                                                                                                          
+    # end
+
     new_iterator = IterType(
       iter_grammar,
       get_starting_symbol(iterator.solver);
-      bank=get_bank(iterator),
+      bank=old_bank,
+      state=selected[4],
       max_depth=iterator.solver.max_depth,
       max_cost=iterator.max_cost,
       current_costs=updated_costs
@@ -110,7 +124,7 @@ Iterates over and evaluates programs, mining fragments of those that passed
 a subset of tests. 
 """
 function synth_fn(
-  problem::Problem, iterator::ProgramIterator, interpret::Union{Function,Nothing}, max_enumerations::Int64, tags::Any, mod::Module=Main)::Union{Tuple{AbstractRuleNode,SynthResult,Dict{Int,AbstractRuleNode}},Nothing}
+  problem::Problem, iterator::ProgramIterator, interpret::Union{Function,Nothing}, max_enumerations::Int64, tags::Any, mod::Module=Main)::Union{Tuple{AbstractRuleNode,SynthResult,Dict{Int,AbstractRuleNode},GenericBUState},Nothing}
 
   start_time = time()
   grammar = get_grammar(iterator.solver)
@@ -122,9 +136,13 @@ function synth_fn(
 
   #fragments = Set{AbstractRuleNode}()
   simplest_subprograms = Dict{Int,AbstractRuleNode}()
-
+  last_state = nothing
   # println("iterator length", length(enumerate(iterator)))
-  for (i, candidate_program) ∈ enumerate(iterator)
+  iteration = iterate(iterator)
+  while iteration != nothing
+    println("PING")
+    (candidate_program, state) = iteration
+    last_state = state
     if (!isnothing(interpret))
       # Don't want to short-circuit since subset of passed examples is useful
       passed_examples = evaluate_with_interpreter(problem, candidate_program, interpret, tags, shortcircuit=false, allow_evaluation_errors=true)
@@ -134,7 +152,7 @@ function synth_fn(
       # Don't want to short-circuit since subset of passed examples is useful
       passed_examples = evaluate(problem, expr, symboltable, shortcircuit=false, allow_evaluation_errors=true)
     end
-    num_iterations = i
+    num_iterations += 1
     idx = bitvec_to_idx(passed_examples)
     if !haskey(simplest_subprograms, idx)
       simplest_subprograms[idx] = freeze_state(candidate_program)
@@ -151,8 +169,8 @@ function synth_fn(
 
     if score == 1
       candidate_program = freeze_state(candidate_program)
-      println("Found optimal solution at iteration: ", i)
-      return (candidate_program, optimal_program, simplest_subprograms)
+      println("Found optimal solution at iteration: ", num_iterations)
+      return (candidate_program, optimal_program, simplest_subprograms, state)
     elseif score >= best_score
       best_score = score
       candidate_program = freeze_state(candidate_program)
@@ -161,19 +179,20 @@ function synth_fn(
 
     # Check stopping criteria (get from iterator if available)
     max_time = typemax(Int)  # No time limit for now
-    if i > max_enumerations || time() - start_time > max_time
+    if num_iterations > max_enumerations || time() - start_time > max_time
       println("Max enumerations or time limit exceeded!")
-      println("i = ", i)
+      println("i = ", num_iterations)
 
       break
     end
     if (num_iterations % 1 == 0)
       println("Finished evaluating iteration: ", num_iterations)
     end
+    iteration = iterate(iterator, state)
   end
   println("iterations: ", num_iterations)
   # The enumeration exhausted, but an optimal problem was not found
-  return (best_program, suboptimal_program, simplest_subprograms)
+  return (best_program, suboptimal_program, simplest_subprograms, last_state)
 end
 
 """
@@ -263,4 +282,5 @@ function bitvec_to_idx(bv::BitVector)::Int64
   end
   return sum
 end
+
 end
