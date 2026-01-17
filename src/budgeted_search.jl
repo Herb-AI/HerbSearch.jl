@@ -46,6 +46,7 @@ Returns:
 """
 function run_budget_search(ctrl::BudgetedSearchController)
   results = []
+  grammars = []
   times = []
   bank = ctrl.init_bank(ctrl.problem, ctrl.iterator)
 
@@ -62,8 +63,9 @@ function run_budget_search(ctrl::BudgetedSearchController)
     selected = ctrl.selector(solution.value, bank)
     ctrl.iterator = ctrl.updater(selected, ctrl.iterator, bank)
     println(get_grammar(ctrl.iterator))
+    push!(grammars, get_grammar(ctrl.iterator))
   end
 
-  return results, times, time_count
+  return results, times, time_count, grammars
 
 end

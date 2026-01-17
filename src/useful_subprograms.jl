@@ -140,7 +140,7 @@ function synth_fn(
   # println("iterator length", length(enumerate(iterator)))
   iteration = iterate(iterator)
   while iteration != nothing
-    println("PING")
+    # println("PING")
     (candidate_program, state) = iteration
     last_state = state
     if (!isnothing(interpret))
@@ -185,12 +185,12 @@ function synth_fn(
 
       break
     end
-    if (num_iterations % 1 == 0)
+    if (num_iterations % 200 == 0)
       println("Finished evaluating iteration: ", num_iterations)
     end
     iteration = iterate(iterator, state)
   end
-  println("iterations: ", num_iterations)
+  println("Synth finished with num_iterations: ", num_iterations)
   # The enumeration exhausted, but an optimal problem was not found
   return (best_program, suboptimal_program, simplest_subprograms, last_state)
 end
