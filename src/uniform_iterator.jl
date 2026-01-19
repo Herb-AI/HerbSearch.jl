@@ -94,7 +94,7 @@ Searches for the next unvisited solution.
 Returns nothing if all solutions have been found already.
 """
 function next_solution!(iter::UniformIterator)::Union{RuleNode, StateHole, Nothing}
-    solver = iter.solver
+    solver = get_solver(iter)
     if iter.nsolutions == 1000000 @warn "UniformSolver is iterating over more than 1000000 solutions..." end
     if iter.nsolutions > 0
         # backtrack from the previous solution
@@ -113,16 +113,16 @@ function next_solution!(iter::UniformIterator)::Union{RuleNode, StateHole, Nothi
                 if length(branches) == 0
                     # search node is a solution leaf node, return the solution
                     iter.nsolutions += 1
-                    @timeit_debug iter.solver.statistics "#CompleteTrees" begin end
+                    @timeit_debug get_solver(iter).statistics "#CompleteTrees" begin end
                     return solver.tree
                 else
                     # search node is an (non-root) internal node, store the branches to visit
-                    @timeit_debug iter.solver.statistics "#InternalSearchNodes" begin end
+                    @timeit_debug get_solver(iter).statistics "#InternalSearchNodes" begin end
                     push!(iter.unvisited_branches, branches)
                 end
             else
                 # search node is an infeasible leaf node, backtrack
-                @timeit_debug iter.solver.statistics "#InfeasibleTrees" begin end
+                @timeit_debug get_solver(iter).statistics "#InfeasibleTrees" begin end
                 restore!(solver)
             end
         else
@@ -136,7 +136,7 @@ function next_solution!(iter::UniformIterator)::Union{RuleNode, StateHole, Nothi
         if _isfilledrecursive(solver.tree)
             # search node is the root and the only solution, return the solution.
             iter.nsolutions += 1
-            @timeit_debug iter.solver.statistics "#CompleteTrees" begin end
+            @timeit_debug get_solver(iter).statistics "#CompleteTrees" begin end
             return solver.tree
         end
     end

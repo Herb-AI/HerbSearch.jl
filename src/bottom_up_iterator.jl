@@ -381,7 +381,7 @@ Return the [`AbstractAddress`](@ref)es to the newly-added programs.
 """
 function populate_bank!(iter::BottomUpIterator)
     bank    = get_bank(iter)
-    grammar = get_grammar(iter.solver)
+    grammar = get_grammar(iter)
     limit = get_measure_limit(iter)
 
     # seed terminals
@@ -444,7 +444,7 @@ Notes:
 """
 function compute_new_horizon(iter::BottomUpIterator)
     bank = get_bank(iter)
-    grammar = get_grammar(iter.solver)
+    grammar = get_grammar(iter)
 
     # Enumerate all non-terminal “shapes” (operator schemas)
     terminals_mask = grammar.isterminal
@@ -522,7 +522,7 @@ Enqueues ALL found combinations into `state.combinations` that are bigger than l
 """
 function combine(iter::BottomUpIterator, state::GenericBUState)
     bank    = get_bank(iter)
-    grammar = get_grammar(iter.solver)
+    grammar = get_grammar(iter)
 
     # All “shapes”, i.e., rule schemas we can combine children with
     terminals_mask     = grammar.isterminal
@@ -629,7 +629,7 @@ function add_to_bank!(
         return false
     end
 
-    program_type = return_type(get_grammar(iter.solver), program)
+    program_type = return_type(get_grammar(iter), program)
     push!(get_entries(bank, program_type, prog_measure), BankEntry{UniformHole}(program, true))
     return true
 end
@@ -774,7 +774,7 @@ Return the first program and a state-tracking [`GenericBUState`](@ref) containin
 remaining initial programs and the initialstate for the `combine` function
 """
 function Base.iterate(iter::BottomUpIterator)
-    solver = iter.solver
+    solver = get_solver(iter)
     starting_node = deepcopy(get_tree(solver))
 
     # Populate bank with terminals and get their AccessAddresses

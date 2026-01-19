@@ -91,7 +91,7 @@ Fill the bank with the concrete programs in the grammar, i.e., the terminals.
 Returns the [`AccessAddress`](@ref)es of the newly-added programs.
 """
 function populate_bank!(iter::AbstractCostBasedBottomUpIterator)
-    grammar = get_grammar(iter.solver)
+    grammar = get_grammar(iter)
     bank = get_bank(iter)
 
     # seed terminals using add_to_bank!
@@ -156,7 +156,7 @@ calc_measure(iter::AbstractCostBasedBottomUpIterator, rn::AbstractRuleNode) = ab
 Retrieve a program using a CombineAddress. Overwrites the parent function, as AbstractCostBasedBottomUpIterator operates over concrete trees, not uniform trees.
 """
 function retrieve(iter::AbstractCostBasedBottomUpIterator, a::CombineAddress)
-    grammar = get_grammar(iter.solver)
+    grammar = get_grammar(iter)
     kids = [retrieve(iter, ch) for ch in get_children(a)]
     return RuleNode(get_operator(a), kids)
 end
@@ -180,7 +180,7 @@ function add_to_bank!(iter::AbstractCostBasedBottomUpIterator, addr::CombineAddr
         return false
     end 
     bank    = get_bank(iter)
-    grammar = get_grammar(iter.solver)
+    grammar = get_grammar(iter)
     ret_T   = grammar.types[get_operator(addr)]
 
     # observational equivalence per return type
@@ -217,7 +217,7 @@ Notes:
 """
 function compute_new_horizon(iter::AbstractCostBasedBottomUpIterator)
     bank = get_bank(iter)
-    grammar = get_grammar(iter.solver)
+    grammar = get_grammar(iter)
 
     # 1) collect cheapest & cheapest-new per type
     min_cost_by_type     = Dict{Symbol, Float64}()
@@ -298,7 +298,7 @@ Enqueues ALL found combinations into `state.combinations` that are bigger than l
 """
 function combine(iter::AbstractCostBasedBottomUpIterator, state::GenericBUState)
     bank    = get_bank(iter)
-    grammar = get_grammar(iter.solver)
+    grammar = get_grammar(iter)
     
     # advance horizons
     state.last_horizon = state.new_horizon
