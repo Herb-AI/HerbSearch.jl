@@ -162,6 +162,11 @@ function synth_fn(
       end
     end
     score = count(passed_examples) / length(passed_examples)
+    if score > 0.0
+      println("Finished evaluating iteration: ", num_iterations)
+      println("Program: ", rulenode2expr(candidate_program, grammar))
+      println("Score: ", score)
+    end
     # if score > 0
     #   fragments_of_program = mine_fragments(freeze_state(candidate_program))
     #   union!(fragments, fragments_of_program)
@@ -185,9 +190,9 @@ function synth_fn(
 
       break
     end
-    if (num_iterations % 200 == 0)
-      println("Finished evaluating iteration: ", num_iterations)
-    end
+    # if (num_iterations % 10 == 0)
+    #   println("Finished evaluating iteration: ", num_iterations)
+    # end
     iteration = iterate(iterator, state)
   end
   println("Synth finished with num_iterations: ", num_iterations)

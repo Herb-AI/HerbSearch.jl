@@ -12,9 +12,11 @@ using HerbBenchmarks#: PBE_SLIA_Track_2019, get_all_problem_grammar_pairs, make_
 # Arg 3 - num_attempts
 
 arg_max_depth = parse(Int64, ARGS[1])
-arg_max_enumerations = parse(Int64, ARGS[2])
-arg_max_cost = parse(Float64, ARGS[3])
-arg_num_attempts = parse(Int64, ARGS[4])
+arg_max_size = parse(Int64, ARGS[2])
+arg_max_enumerations = parse(Int64, ARGS[3])
+arg_max_cost = parse(Float64, ARGS[4])
+arg_num_attempts = parse(Int64, ARGS[5])
+
 
 # @testset "Sanity Check" begin
 #
@@ -84,6 +86,7 @@ arg_num_attempts = parse(Int64, ARGS[4])
       :Start;
       max_depth=arg_max_depth,
       max_cost=arg_max_cost,
+      max_size=arg_max_size,
       current_costs=costs
     )
 
