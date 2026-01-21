@@ -51,6 +51,8 @@ include("bottom_up_iterators/shapebased_bus.jl")
 
 function divide_and_conquer end
 
+function conflict_analysis end
+
 export
     ProgramIterator,
     @programiterator, 
@@ -99,6 +101,7 @@ export
     get_bank,
 
     divide_and_conquer,
+	conflict_analysis,
     EvaluationError,
     get_solver
 end # module HerbSearch
