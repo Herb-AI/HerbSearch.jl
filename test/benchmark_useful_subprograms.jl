@@ -4,8 +4,11 @@ using HerbSearch: BudgetedSearchController, BFSIterator, CostBasedBottomUpIterat
 using HerbSearch.UsefulSubprograms
 using Test
 using MLStyle
+using DataFrames
 
-using HerbBenchmarks#: PBE_SLIA_Track_2019, get_all_problem_grammar_pairs, make_interpreter, get_relevant_tags
+import HerbBenchmarks
+using HerbBenchmarks.PBE_SLIA_Track_2019: interpret_sygus
+using HerbBenchmarks: PBE_SLIA_Track_2019, get_all_problem_grammar_pairs, make_interpreter, get_relevant_tags
 
 # Arg 1 - max_depth
 # Arg 2 - max_cost
@@ -72,12 +75,44 @@ arg_num_attempts = parse(Int64, ARGS[5])
 #
 # end
 # end
+# function create_patched_interpret(orig_interpret)                                                                                                
+#       function patched(prog::AbstractRuleNode, grammar_tags::Dict{Int, Any}, input::Dict{Symbol, Any})                                             
+#           r = get_rule(prog)                                                                                                                       
+#           c = get_children(prog)                                                                                                                   
+#           tag = grammar_tags[r]                                                                                                                    
+#
+#           # Handle non-terminal pass-through                                                                                                       
+#           if tag in [:ntString, :ntInt, :ntBool]                                                                                                   
+#               return patched(c[1], grammar_tags, input)                                                                                            
+#           end                                                                                                                                      
+#           # Handle integer literals                                                                                                                
+#           if tag isa Integer                                                                                                                       
+#               return tag            
+#           end                       
+#           # Handle string literals  
+#           if tag isa String         
+#               return tag            
+#           end                       
+#           # Handle boolean literals 
+#           if tag == :true           
+#               return true           
+#           elseif tag == :false      
+#               return false          
+#           end                       
+#
+#           return Base.invokelatest(orig_interpret, prog, grammar_tags, input)                                                                      
+#       end                           
+#       return patched                
+#   end 
 
 @testset "Cost-based bottom-up iterator" begin
 
-  for pair in get_all_problem_grammar_pairs(PBE_SLIA_Track_2019)[2:5]
-    problem = pair.problem
-    grammar = deepcopy(pair.grammar)
+  for pair in get_all_problem_grammar_pairs(PBE_SLIA_Track_2019)[5:5]
+    grammar = deepcopy(HerbBenchmarks.PBE_SLIA_Track_2019.grammar_19558979)
+
+    problem = PBE_SLIA_Track_2019.problem_19558979
+    # problem = pair.problem
+    # grammar = deepcopy(pair.grammar)
     grammar_bu = isprobabilistic(grammar) ? grammar : init_probabilities!(deepcopy(grammar))
     costs = get_costs(grammar_bu)
 
@@ -89,9 +124,26 @@ arg_num_attempts = parse(Int64, ARGS[5])
       max_size=arg_max_size,
       current_costs=costs
     )
+                                                                                                                                                   
+  # eval(make_interpreter(grammar_test))                                                                                                                  
+  # println("methods test: ", methods(interpret))
+  #
+  tags = get_relevant_tags(grammar)
+  # #   println(methods(make_interpreter))
+  # expr = make_interpreter(grammar)                                                                                                                 
+  # println("expr repr: ", repr(expr))
+  #   eval(make_interpreter(grammar))   
+  # patched_interpret = create_patched_interpret(interpret)
+                                                                                                                                                   
+      # println("interpret methods: ", methods(interpret))
+    # println(pathof(HerbBenchmarks))
 
-    tags = get_relevant_tags(grammar)
-    eval(make_interpreter(grammar))
+    # Print the grammar rules and their tags                                                                                                         
+  # println("Grammar rules:")                                                                                                                        
+  # for (i, rule) in enumerate(grammar.rules)                                                                                                        
+  #     println("Rule $i: $rule => tag: $(get(tags, i, :missing))")                                                                                  
+  # end
+    # patched_interpret = create_patched_interpret(interpret_sygus) 
 
     ctrl_bu = BudgetedSearchController(
       problem=problem,
@@ -101,10 +153,13 @@ arg_num_attempts = parse(Int64, ARGS[5])
       selector=UsefulSubprograms.selector,
       updater=UsefulSubprograms.updater,
       max_enumerations=arg_max_enumerations,
-      interpret=interpret,
+      interpret=interpret_sygus,
       tags=tags,
       stop_checker=UsefulSubprograms.stop_checker,
       init_bank=UsefulSubprograms.init_bank,
+      last_state=nothing,
+      csv_file_name="$(problem.name)_log.csv",
+      data_frame=DataFrame(),
       mod=PBE_SLIA_Track_2019
     )
 

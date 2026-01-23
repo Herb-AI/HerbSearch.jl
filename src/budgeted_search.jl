@@ -1,3 +1,7 @@
+using CSV
+using DataFrames
+using HerbGrammar: rulenode2expr
+
 """
     BudgetedSearchController
 
@@ -21,6 +25,11 @@ and adapts the grammar/problem between attempts.
 
   interpret::Union{Function,Nothing}
   tags::Any
+
+  last_state
+
+  csv_file_name::String
+  data_frame::DataFrame
 
   init_bank::Function = (problem, iter) -> bank
   mod::Module
@@ -48,24 +57,63 @@ function run_budget_search(ctrl::BudgetedSearchController)
   results = []
   grammars = []
   times = []
+  ctrl.data_frame = DataFrame(
+    attempt = Int[],
+    best_program = String[],
+    program_score = Float64[],
+    time = Float64[],
+    new_updated_rules = String[]
+  )
   bank = ctrl.init_bank(ctrl.problem, ctrl.iterator)
 
   time_count = 0
-
   for att in 1:ctrl.attempts
-    solution = @timed ctrl.synth_fn(ctrl.problem, ctrl.iterator, ctrl.interpret, ctrl.max_enumerations, ctrl.tags, ctrl.mod)
-    time_count += solution.time
+    solution = @timed ctrl.synth_fn(ctrl.problem, ctrl.iterator, ctrl.interpret, ctrl.max_enumerations, ctrl.tags, ctrl.mod, ctrl.last_state)
+    ctrl.last_state = solution.value[2]
     push!(times, solution.time)
-    push!(results, solution.value)
+    push!(results, solution.value[1])
 
-    ctrl.stop_checker(solution) && break
-
-    selected = ctrl.selector(solution.value, bank)
-    ctrl.iterator = ctrl.updater(selected, ctrl.iterator, bank)
-    println(get_grammar(ctrl.iterator))
+    selector_updater_start_time = time()
+    selected = ctrl.selector(solution.value[1], bank)
+    ctrl.iterator = ctrl.updater(selected, ctrl.iterator, bank, ctrl.last_state, ctrl.data_frame)
+    time_for_attempt = solution.time + time() - selector_updater_start_time
+    time_count += time_for_attempt
+    ctrl.data_frame[nrow(ctrl.data_frame), :time] = time_for_attempt
+    # println(get_grammar(ctrl.iterator))
     push!(grammars, get_grammar(ctrl.iterator))
+    ctrl.stop_checker(solution) && break
+  end
+  
+  # this part is just for logging the final result
+  final_grammar = get_grammar(ctrl.iterator)
+  if !isempty(results) && !isnothing(last(results))
+    best_prog = nothing
+    best_score = 0.0
+    for solution in results
+      if(solution[4] > best_score)
+        best_prog = solution[1]
+        best_score = solution[4]
+      end
+    end
+    push!(ctrl.data_frame, (
+      attempt = ctrl.attempts + 1,  # Mark as final
+      best_program = isnothing(best_prog) ? "Nothing" : string(rulenode2expr(best_prog, final_grammar)),
+      program_score = best_score,
+      time = time_count,
+      new_updated_rules = "Final result so no updates"
+    ))
   end
 
+  push!(ctrl.data_frame, (
+    attempt = -1,
+    best_program = "Final grammar",
+    program_score = -1.0,
+    time = 0,
+    new_updated_rules = string(final_grammar)
+  ))
+
+  # Write DataFrame to CSV (column names are automatically used as headers)
+  CSV.write(ctrl.csv_file_name, ctrl.data_frame)
   return results, times, time_count, grammars
 
 end

@@ -1,5 +1,7 @@
 [deps]
 Aqua = "4c88cf16-eb10-579e-8560-4a9242c79595"
+CSV = "336ed68f-0bac-5ca0-87d4-7b16caf5d00b"
+DataFrames = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
 DataStructures = "864edb3b-99cc-5e75-8d2d-829cb0a9cfe8"
 DecisionTree = "7806a523-6efd-50cb-b5f6-3fa6f1930dbb"
 Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
@@ -13,9 +15,11 @@ HerbSpecification = "6d54aada-062f-46d8-85cf-a1ceaf058a06"
 LegibleLambdas = "f1f30506-32fe-5131-bd72-7c197988f9e5"
 Logging = "56ddb016-857b-54e1-b83d-db4d58db5568"
 MLStyle = "d8e11817-5142-5d16-987a-aa16d5891078"
+MPI = "da04e1cc-30fd-572f-bb4f-1f8673147195"
+MPIPreferences = "3da0fdf6-3ccc-4f1b-acd9-58baa6c99267"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [sources]
-HerbBenchmarks = {path = "/home/ethanj/.julia/packages/HerbBenchmarks/qpcOY"}
+HerbBenchmarks = {path = "/home/ethanj/CSE/RP/HerbBenchmarks"}
 HerbSearch = {path = "/home/ethanj/CSE/RP/HerbSearch.jl"}
