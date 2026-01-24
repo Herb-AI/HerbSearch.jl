@@ -1,3 +1,8 @@
+using ..HerbSearch: ProgramIterator
+using ..HerbGrammar
+using ..HerbCore
+using ..HerbSpecification: Problem 
+
 """
     BudgetedSearchController
 
@@ -40,6 +45,9 @@ function run_budget_search(ctrl::BudgetedSearchController)
     results = []
     times = []
 
+    probabilities = []
+    selected_prom_prog = []
+
     time_count = 0
 
     for att in 1:ctrl.attempts
@@ -48,12 +56,14 @@ function run_budget_search(ctrl::BudgetedSearchController)
         push!(times, solution.time)
         push!(results, solution.value)
 
+        push!(probabilities, deepcopy(HerbConstraints.get_grammar(ctrl.iterator.solver).log_probabilities))
+
         ctrl.stop_checker(solution) && break
 
         selected = ctrl.selector(solution.value)
+        push!(selected_prom_prog, length(selected))
         ctrl.iterator = ctrl.updater(selected, ctrl.iterator)
-    end
-
-    return results, times, time_count
+    end    
+    return results, times, time_count, probabilities, selected_prom_prog
 
 end

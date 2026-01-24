@@ -42,6 +42,8 @@ include("random_iterator.jl")
 
 include("budgeted_search.jl")
 
+include("herb-probe/probe-methods.jl")
+
 # include("divide_conquer_functions/divide.jl")
 # include("divide_conquer_functions/decide.jl")
 # include("divide_conquer_functions/conquer.jl")
@@ -73,5 +75,12 @@ export
     EvaluationError,
     get_solver,
     BudgetedSearchController,
-    run_budget_search
+    run_budget_search,
+    decide_probe,
+    create_probe_synth_fn,
+    probe_selector,
+    probe_stop_checker,
+    modify_grammar_probe!,
+    get_promising_programs_with_fitness,
+    create_probe_updater
 end # module HerbSearch
