@@ -1,10 +1,11 @@
 using HerbGrammar, HerbCore, HerbSpecification
 
-using HerbSearch: BudgetedSearchController, BFSIterator, CostBasedBottomUpIterator, get_grammar, run_budget_search, get_costs, synth
+using HerbSearch: BudgetedSearchController, BFSIterator, CostBasedBottomUpIterator, get_grammar, run_budget_search, get_costs, synth, freeze_state
 using HerbSearch.UsefulSubprograms
 using Test
 using MLStyle
 using DataFrames
+using CSV
 
 import HerbBenchmarks
 using HerbBenchmarks.PBE_SLIA_Track_2019: interpret_sygus
@@ -19,6 +20,10 @@ arg_max_size = parse(Int64, ARGS[2])
 arg_max_enumerations = parse(Int64, ARGS[3])
 arg_max_cost = parse(Float64, ARGS[4])
 arg_num_attempts = parse(Int64, ARGS[5])
+
+# Configurable output directory (6th argument, defaults to "results")
+output_dir = length(ARGS) >= 6 ? ARGS[6] : "results"
+mkpath(output_dir)  # Create directory if it doesn't exist
 
 
 # @testset "Sanity Check" begin
@@ -108,9 +113,84 @@ arg_num_attempts = parse(Int64, ARGS[5])
 @testset "Cost-based bottom-up iterator" begin
 
   for pair in get_all_problem_grammar_pairs(PBE_SLIA_Track_2019)[5:5]
-    grammar = deepcopy(HerbBenchmarks.PBE_SLIA_Track_2019.grammar_19558979)
 
-    problem = PBE_SLIA_Track_2019.problem_19558979
+    # ==================== CONTROL RUN (no grammar updates) ====================
+    problem = PBE_SLIA_Track_2019.problem_split_numbers_from_units_of_measure_1
+    println("\n=== Starting CONTROL run for $(problem.name) ===")
+
+    grammar = deepcopy(HerbBenchmarks.PBE_SLIA_Track_2019.grammar_split_numbers_from_units_of_measure_1)
+
+    grammar_control = deepcopy(HerbBenchmarks.PBE_SLIA_Track_2019.grammar_split_numbers_from_units_of_measure_1)
+    p_grammar_control = isprobabilistic(grammar_control) ? grammar_control : init_probabilities!(deepcopy(grammar_control))
+    costs_control = get_costs(p_grammar_control)
+
+    iterator_control = CostBasedBottomUpIterator(
+      p_grammar_control,
+      :Start;
+      max_cost=arg_max_cost,
+      max_size=arg_max_size,
+      current_costs=costs_control
+    )
+
+    tags_control = get_relevant_tags(p_grammar_control)
+
+    overall_best_score = -1.0
+    overall_best_program = nothing
+    last_state_control = nothing
+    total_iterations = 0
+
+    for attempt in 1:arg_num_attempts
+      num_iterations = 0
+
+      iteration = nothing
+      if !isnothing(last_state_control)
+        iteration = iterate(iterator_control, last_state_control)
+      else
+        iteration = iterate(iterator_control)
+      end
+
+      while !isnothing(iteration)
+        println("synth_fn: iter $num_iterations - start")
+        flush(stdout)
+        (candidate_program, state) = iteration
+        last_state_control = state
+
+        passed_examples = UsefulSubprograms.evaluate_with_interpreter(
+          problem, candidate_program, interpret_sygus, tags_control,
+          shortcircuit=false, allow_evaluation_errors=true
+        )
+        num_iterations += 1
+        total_iterations += 1
+
+        score = count(passed_examples) / length(passed_examples)
+
+        if score > overall_best_score
+          overall_best_score = score
+          overall_best_program = freeze_state(candidate_program)
+        end
+
+        if score == 1 || num_iterations >= arg_max_enumerations
+          break
+        end
+
+        iteration = iterate(iterator_control, state)
+      end
+
+      println("CONTROL attempt $attempt: best_score=$overall_best_score, iterations=$num_iterations")
+
+      if isnothing(iteration) || overall_best_score == 1.0
+        break
+      end
+    end
+
+    println("CONTROL finished: Best score=$overall_best_score, Total iterations=$total_iterations")
+    if !isnothing(overall_best_program)
+      println("CONTROL best program: ", rulenode2expr(overall_best_program, get_grammar(iterator_control.solver)))
+    end
+    println("=" ^ 60)
+    grammar = deepcopy(HerbBenchmarks.PBE_SLIA_Track_2019.grammar_split_numbers_from_units_of_measure_1)
+
+    problem = PBE_SLIA_Track_2019.problem_split_numbers_from_units_of_measure_1
     # problem = pair.problem
     # grammar = deepcopy(pair.grammar)
     grammar_bu = isprobabilistic(grammar) ? grammar : init_probabilities!(deepcopy(grammar))
@@ -119,7 +199,7 @@ arg_num_attempts = parse(Int64, ARGS[5])
     iterator_2 = CostBasedBottomUpIterator(
       grammar_bu,
       :Start;
-      max_depth=arg_max_depth,
+      # max_depth=arg_max_depth,
       max_cost=arg_max_cost,
       max_size=arg_max_size,
       current_costs=costs
@@ -158,7 +238,7 @@ arg_num_attempts = parse(Int64, ARGS[5])
       stop_checker=UsefulSubprograms.stop_checker,
       init_bank=UsefulSubprograms.init_bank,
       last_state=nothing,
-      csv_file_name="$(problem.name)_log.csv",
+      csv_file_name="$(output_dir)/$(problem.name)_log.csv",
       data_frame=DataFrame(),
       mod=PBE_SLIA_Track_2019
     )
@@ -169,7 +249,7 @@ arg_num_attempts = parse(Int64, ARGS[5])
       println("Found solution: $program")
 
       # Append to log file instead of overwriting
-      open("program_solutions_log.txt", "a") do io
+      open("$(output_dir)/program_solutions_log.txt", "a") do io
         println(io, "Problem: $(problem.name)")
         println(io, "Bottom-up Results = ", results_bu)
         println(io, "Bottom-up Times = ", times_bu)
@@ -184,6 +264,7 @@ arg_num_attempts = parse(Int64, ARGS[5])
     else
       println("No solution found for $(problem.name)")
     end
+
   end
 
   # @testset verbose = true "Budgeted search with useful subprograms tests" begin
