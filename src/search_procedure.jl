@@ -32,7 +32,7 @@ function synth(
 	max_enumerations = typemax(Int),
 	mod::Module = Main)::Union{Tuple{RuleNode, SynthResult}, Nothing}
 	start_time = time()
-	grammar = get_grammar(iterator.solver)
+	grammar = get_grammar(iterator)
 	symboltable = grammar2symboltable(grammar, mod)
 
 	best_score = 0
