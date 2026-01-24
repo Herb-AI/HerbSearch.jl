@@ -533,14 +533,28 @@ function combine(iter::BottomUpIterator, state::GenericBUState)
     nonterminal_shapes = UniformHole.(partition(Hole(nonterminals_mask), grammar), ([],))
 
     # Recompute horizons
-    state.last_horizon = state.new_horizon
-    new_horizon = compute_new_horizon(iter) 
-    state.new_horizon  = min(new_horizon == typemax(Int) ? state.last_horizon : new_horizon, get_measure_limit(iter))
+    old_last = state.last_horizon
+    old_new = state.new_horizon
 
-    # If we exceeded global measure limit, stop early
-    if state.last_horizon > get_measure_limit(iter)
-        return nothing, nothing
+    new_h = compute_new_horizon(iter)
+
+    if isfinite(new_h)
+      new_h = min(new_h, get_measure_limit(iter))
+
+      if new_h > old_new
+        state.last_horizon = old_new
+        state.new_horizon = new_h
+      end
     end
+
+    # state.last_horizon = state.new_horizon
+    # new_horizon = compute_new_horizon(iter) 
+    # state.new_horizon  = min(new_horizon == typemax(Int) ? state.last_horizon : new_horizon, get_measure_limit(iter))
+    #
+    # # If we exceeded global measure limit, stop early
+    # if state.last_horizon > get_measure_limit(iter)
+    #     return nothing, nothing
+    # end
 
     # Build a lazy stream of AccessAddresses
     # Tag each address with new_shape=true iff its BANK ENTRY is marked new.
@@ -791,14 +805,15 @@ function Base.iterate(iter::BottomUpIterator)
 
     return Base.iterate(
         iter,
-        isnothing(iter.state) ? GenericBUState(
+        # isnothing(iter.state) ? 
+      GenericBUState(
             pq,
             init_combine_structure(iter),
             nothing,
             starting_node,
             -Inf, # last_horizon
             0 # new_horizon
-        ) : iter.state
+        ) #: iter.state
     )
 end
 

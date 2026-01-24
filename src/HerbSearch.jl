@@ -88,7 +88,7 @@ export
 BottomUpState,
 BottomUpIterator,
 AbstractAddress,
-#SizeBasedBottomUpIterator,
+SizeBasedBottomUpIterator,
 DepthBasedBottomUpIterator,
 CostBasedBottomUpIterator,
 AccessAddress,

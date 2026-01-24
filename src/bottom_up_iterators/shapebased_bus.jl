@@ -3,7 +3,8 @@ function calc_measure(iter::BottomUpIterator, program_combination::CombineAddres
 end
 
 @programiterator SizeBasedBottomUpIterator(
-    bank=MeasureHashedBank{Int, UniformHole}()
+    bank=MeasureHashedBank{Int, UniformHole}(),
+    # state::Union{GenericBUState,Nothing}=nothing
 ) <: BottomUpIterator
 
 @doc """
@@ -37,7 +38,8 @@ _calc_measure(::SizeBasedBottomUpIterator, combination::Tuple{Vararg{AccessAddre
 
 
 @programiterator DepthBasedBottomUpIterator(
-    bank=MeasureHashedBank{Int, UniformHole}()
+    bank=MeasureHashedBank{Int, UniformHole}(),
+    state::Union{GenericBUState,Nothing}=nothing
 ) <: BottomUpIterator
 
 @doc """

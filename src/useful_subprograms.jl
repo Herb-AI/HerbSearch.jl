@@ -61,13 +61,15 @@ function selector(solution::Tuple{Union{AbstractRuleNode,Nothing},SynthResult,Di
   # This should also work for the removal of elements from the grammar
 end
 
-function updater(selected::Tuple{Union{RuleNode,Nothing},SynthResult,Dict{Int,AbstractRuleNode},Float64,Bool}, iterator::ProgramIterator, bank::Tuple{Dict{Int,BankEntry},Int}, state::GenericBUState, data_frame)
+function updater(selected::Tuple{Union{RuleNode,Nothing},SynthResult,Dict{Int,AbstractRuleNode},Float64,Bool}, iterator::ProgramIterator, bank::Tuple{Dict{Int,BankEntry},Int}, state, data_frame)
   if isnothing(selected[2])
-    return solution
+    return iterator
   end
   #latest array in results will contain the simplest subprograms array that matches the latest run.
   iter_grammar = get_grammar(iterator.solver)
   bank_entries = bank[1]
+
+  is_cost_based = iterator isa CostBasedBottomUpIterator
 
   updates = []
   for idx in eachindex(bank_entries)
@@ -75,80 +77,43 @@ function updater(selected::Tuple{Union{RuleNode,Nothing},SynthResult,Dict{Int,Ab
       continue
     end
     if bank_entries[idx].has_been_updated
-      #prob will error cuz rulenode2expr returns a string
       println("Updating Rule")
       # updates the rule stored at the index (since a simpler program has been found)
       remove_rule!(iter_grammar, bank_entries[idx].grammar_rule_idx)
       add_rule!(iter_grammar, bank_entries[idx].remembered_program)
       bank_entries[idx].has_been_updated = false
 
-      rule_cost = max(state.last_horizon, 1.0)
-      push!(iter_grammar.log_probabilities, -rule_cost)
-      push!(iterator.current_costs, rule_cost)
-      push!(get_entries(get_bank(iterator), return_type(iter_grammar, bank_entries[idx].remembered_program), rule_cost), IteratorBankEntry{RuleNode}(bank_entries[idx].remembered_program, true))
+      # CostBased-specific: update costs and bank
+      if is_cost_based
+        rule_cost = max(state.last_horizon, 1.0)
+        push!(iter_grammar.log_probabilities, -rule_cost)
+        push!(iterator.current_costs, rule_cost)
+        push!(get_entries(get_bank(iterator), return_type(iter_grammar, bank_entries[idx].remembered_program), rule_cost), IteratorBankEntry{RuleNode}(bank_entries[idx].remembered_program, true))
+      end
+
       push!(updates, "Update: " * string(rulenode2expr(bank_entries[idx].remembered_program, iter_grammar)) * " Replaces: ")
       bank_entries[idx].grammar_rule_idx = length(iter_grammar.rules) + 1
+
     elseif isnothing(bank_entries[idx].grammar_rule_idx)
       # add a grammar rule and store the index
       add_rule!(iter_grammar, bank_entries[idx].remembered_program)
       bank_entries[idx].grammar_rule_idx = length(iter_grammar.rules) + 1
 
-      rule_cost = max(state.last_horizon, 1.0)
-      push!(iter_grammar.log_probabilities, -rule_cost)
-      push!(iterator.current_costs, rule_cost)
-      push!(get_entries(get_bank(iterator), return_type(iter_grammar, bank_entries[idx].remembered_program), rule_cost), IteratorBankEntry{RuleNode}(bank_entries[idx].remembered_program, true))
+      # CostBased-specific: update costs and bank
+      if is_cost_based
+        rule_cost = max(state.last_horizon, 1.0)
+        push!(iter_grammar.log_probabilities, -rule_cost)
+        push!(iterator.current_costs, rule_cost)
+        push!(get_entries(get_bank(iterator), return_type(iter_grammar, bank_entries[idx].remembered_program), rule_cost), IteratorBankEntry{RuleNode}(bank_entries[idx].remembered_program, true))
+      end
+
       push!(updates, "New Rule: " * string(rulenode2expr(bank_entries[idx].remembered_program, iter_grammar)))
     end
   end
 
   push!(data_frame, (attempt = nrow(data_frame) + 1, best_program = isnothing(selected[1]) ? "Nothing" : string(rulenode2expr(selected[1], iter_grammar)), program_score = selected[4], time = 0, new_updated_rules = isempty(updates) ? "No updates" : join(updates)))
 
-  # add info to the data frame
-
-  # cite this
-  # IterType = typeof(iterator)
-  # if IterType <: CostBasedBottomUpIterator
-    # updated_costs = get_costs(iter_grammar)
-    # num_rules = length(iter_grammar.rules)
-    # old_length = length(updated_costs)
-    # if old_length < num_rules
-    #   resize!(updated_costs, num_rules)
-    #   for i in (old_length+1):num_rules
-    #     updated_costs[i] = 1.0
-    #   end
-    # end
-
-    # iterator.grammar = iter_grammar
-    # iterator.current_costs = new_costs
-    # old_bank = get_bank(iterator)
-    # for type in get_types(old_bank)                                                                                                              
-    #     for measure in get_measures(old_bank, type)                                                                                                       
-    #         for entry in get_entries(old_bank, type, measure)                                                                                                 
-    #             entry.is_new = true                                                                                                                  
-    #         end                                                                                                                                      
-    #     end                                                                                                                                          
-    # end
-
-    # new_iterator = IterType(
-    #   iter_grammar,
-    #   get_starting_symbol(iterator.solver);
-    #   bank=old_bank,
-    #   state=selected[4],
-    #   max_depth=iterator.solver.max_depth,
-    #   max_cost=iterator.max_cost,
-    #   current_costs=updated_costs
-    # )
-    return iterator
-  # else
-  #   new_iterator = IterType(
-  #     iter_grammar,
-  #     get_starting_symbol(iterator.solver),
-  #     max_depth=iterator.solver.max_depth,
-  #     max_size=iterator.solver.max_size
-  #   )
-  # end
-
-  # return new_iterator
+  return iterator
 end
 
 """
@@ -176,7 +141,6 @@ function synth_fn(
     iteration = iterate(iterator)
   end
   while !isnothing(iteration)
-    # println("PING")
     (candidate_program, state) = iteration
     last_state = state
     if (!isnothing(interpret))
@@ -221,8 +185,8 @@ function synth_fn(
     end
     # Check stopping criteria (get from iterator if available)
     max_time = typemax(Int)  # No time limit for now
-    if num_iterations > max_enumerations || time() - start_time > max_time
-      println("Max enumerations or time limit exceeded!")
+    if num_iterations > max_enumerations
+      println("Max enumerations exceeded!")
       println("i = ", num_iterations)
 
       break

@@ -33,6 +33,8 @@ and adapts the grammar/problem between attempts.
 
   init_bank::Function = (problem, iter) -> bank
   mod::Module
+
+  total_timeout::Float64 = 0.0
 end
 
 """
@@ -67,21 +69,36 @@ function run_budget_search(ctrl::BudgetedSearchController)
   bank = ctrl.init_bank(ctrl.problem, ctrl.iterator)
 
   time_count = 0
-  for att in 1:ctrl.attempts
-    solution = @timed ctrl.synth_fn(ctrl.problem, ctrl.iterator, ctrl.interpret, ctrl.max_enumerations, ctrl.tags, ctrl.mod, ctrl.last_state)
-    ctrl.last_state = solution.value[2]
-    push!(times, solution.time)
-    push!(results, solution.value[1])
-
-    selector_updater_start_time = time()
-    selected = ctrl.selector(solution.value[1], bank)
-    ctrl.iterator = ctrl.updater(selected, ctrl.iterator, bank, ctrl.last_state, ctrl.data_frame)
-    time_for_attempt = solution.time + time() - selector_updater_start_time
-    time_count += time_for_attempt
-    ctrl.data_frame[nrow(ctrl.data_frame), :time] = time_for_attempt
-    # println(get_grammar(ctrl.iterator))
-    push!(grammars, get_grammar(ctrl.iterator))
-    ctrl.stop_checker(solution) && break
+  budgeted_search_timed_out = false
+  function run_search_loop!()
+    for att in 1:ctrl.attempts
+      solution = @timed ctrl.synth_fn(ctrl.problem, ctrl.iterator, ctrl.interpret, ctrl.max_enumerations, ctrl.tags, ctrl.mod, ctrl.last_state)
+      ctrl.last_state = solution.value[2]
+      push!(times, solution.time)
+      push!(results, solution.value[1])
+      selector_updater_start_time = time()
+      selected = ctrl.selector(solution.value[1], bank)
+      ctrl.iterator = ctrl.updater(selected, ctrl.iterator, bank, ctrl.last_state, ctrl.data_frame)
+      time_for_attempt = solution.time + time() - selector_updater_start_time
+      time_count += time_for_attempt
+      ctrl.data_frame[nrow(ctrl.data_frame), :time] = time_for_attempt
+      push!(grammars, get_grammar(ctrl.iterator))
+      ctrl.stop_checker(solution) && break
+    end
+  end   
+  if ctrl.total_timeout > 0
+    bs_task = Threads.@spawn run_search_loop!()
+    start_time = time()
+    while !istaskdone(bs_task) && (time() - start_time) < ctrl.total_timeout
+      sleep(1.0)
+    end
+    if !istaskdone(bs_task)
+      println("WARNING: Total search timeout reached after $(ctrl.total_timeout) seconds")
+      println("Task will continue in background, proceeding to save results...")
+      budgeted_search_timed_out = true
+    end
+  else
+    run_search_loop!()
   end
   
   # this part is just for logging the final result
@@ -112,6 +129,13 @@ function run_budget_search(ctrl::BudgetedSearchController)
     new_updated_rules = string(final_grammar)
   ))
 
+  push!(ctrl.data_frame, (
+    attempt = -2,
+    best_program = "Timed out: $(budgeted_search_timed_out)",
+    program_score = -1.0,
+    time = 0,
+    new_updated_rules = " "
+  ))
   # Write DataFrame to CSV (column names are automatically used as headers)
   CSV.write(ctrl.csv_file_name, ctrl.data_frame)
   return results, times, time_count, grammars
