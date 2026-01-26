@@ -11,7 +11,7 @@ function collect_subtrees(tree::AbstractRuleNode)
         node = pop!(stack)
         push!(subtrees, node)
 
-        for child in get_children(node)
+        for child in HerbCore.get_children(node)
             push!(stack, child)
         end
 

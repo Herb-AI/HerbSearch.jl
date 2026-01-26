@@ -31,8 +31,8 @@ function anti_unify(t1::AbstractRuleNode, t2::AbstractRuleNode, grammar::Context
     rule2 = get_rule(t2)
 
     if rule1 == rule2
-        c1 = get_children(t1)
-        c2 = get_children(t2)
+        c1 = HerbCore.get_children(t1)
+        c2 = HerbCore.get_children(t2)
 
         length(c1) == length(c2) || return nothing
 
@@ -82,7 +82,7 @@ function all_pairwise_anti_unification(tree_1::AbstractRuleNode,
         for subtree_2 in subtrees_2
             
             u = anti_unify(subtree_1, subtree_2, grammar)
-            if u !== nothing && passes_hole_thresholds(u; min_nonholes=min_nonholes, max_holes=max_holes) && length(get_children(u))>0
+            if u !== nothing && passes_hole_thresholds(u; min_nonholes=min_nonholes, max_holes=max_holes) && length(HerbCore.get_children(u))>0
                 push!(patterns, u)
             end
         end
@@ -110,18 +110,45 @@ function anti_unify_patterns_and_tree(
 
     for pattern in pattterns
         for subtree in subtrees
-            if length(get_children(subtree)) == 0
+            if length(HerbCore.get_children(subtree)) == 0
                 continue
             end
 
             u = anti_unify(subtree, pattern, grammar)
-            if u !== nothing && passes_hole_thresholds(u; min_nonholes=min_nonholes, max_holes=max_holes) && length(get_children(u)) > 0
+            if u !== nothing && passes_hole_thresholds(u; min_nonholes=min_nonholes, max_holes=max_holes) && length(HerbCore.get_children(u)) > 0
                 push!(final_patterns, u)
             end
         end
     end
 
     return final_patterns
+end
+
+function anti_unify_programs(
+    trees::Vector{AbstractRuleNode},
+    grammar::ContextSensitiveGrammar;
+    min_nonholes=0,
+    max_holes=3
+)
+    n = length(trees)
+    n < 2 && return nothing
+    pattern = anti_unify(trees[1], trees[2], grammar)
+    pattern === nothing && return nothing
+
+    # Check hole constraints
+    (passes_hole_thresholds(pattern; min_nonholes=min_nonholes, max_holes=max_holes) && length(HerbCore.get_children(pattern))>0) || return nothing
+
+
+    for i in 3:n
+        pattern = anti_unify(pattern, trees[i], grammar)
+        pattern === nothing && return nothing
+
+        (passes_hole_thresholds(pattern; min_nonholes=min_nonholes, max_holes=max_holes) && length(HerbCore.get_children(pattern))>0) || return nothing
+
+    end
+
+    return pattern
+
 end
 
 
