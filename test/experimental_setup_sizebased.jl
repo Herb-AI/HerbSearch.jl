@@ -26,7 +26,25 @@ mkpath(output_dir)  # Create directory if it doesn't exist
 
 arg_total_timeout = parse(Float64, ARGS[6])
 
-problem_grammar_pairs = get_all_problem_grammar_pairs(PBE_SLIA_Track_2019)[2:end]
+# Optional: specify a subset of benchmarks to run (empty array = run all)
+# If non-empty, only benchmarks with names in this array will be run
+selected_benchmarks = [
+  # Add benchmark names here to run only those, e.g.:
+  "phone_2",
+  "phone_6_long_repeat",
+]
+
+# Get all problem-grammar pairs
+all_pairs = get_all_problem_grammar_pairs(PBE_SLIA_Track_2019)[2:end]
+
+# Filter to selected benchmarks if specified
+if isempty(selected_benchmarks)
+  problem_grammar_pairs = all_pairs
+else
+  problem_grammar_pairs = filter(p -> any(s -> occursin(s, p.problem.name), selected_benchmarks), all_pairs)
+  println("Running $(length(problem_grammar_pairs)) selected benchmarks out of $(length(all_pairs)) total")
+end
+
 start_problem = div(length(problem_grammar_pairs)*(mpi_rank), mpi_size) + 1
 end_problem = div(length(problem_grammar_pairs)*(mpi_rank + 1), mpi_size)
 
@@ -43,7 +61,7 @@ for pair in problem_grammar_pairs[start_problem:end_problem]
 
   iterator_control = SizeBasedBottomUpIterator(
     grammar_control,
-    :Start;
+    grammar_control.rules[1];
     max_depth=arg_max_depth,
     max_size=arg_max_size
   )
@@ -83,6 +101,7 @@ for pair in problem_grammar_pairs[start_problem:end_problem]
 
       while !isnothing(iteration)
         (candidate_program, state) = iteration
+        candidate_program = freeze_state(candidate_program)
         last_state_control = state
 
         passed_examples = UsefulSubprograms.evaluate_with_interpreter(
@@ -179,7 +198,7 @@ for pair in problem_grammar_pairs[start_problem:end_problem]
 
   iterator = SizeBasedBottomUpIterator(
     grammar,
-    :Start;
+    grammar.rules[1];
     max_depth=arg_max_depth,
     max_size=arg_max_size
   )
