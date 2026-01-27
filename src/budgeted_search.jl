@@ -70,20 +70,36 @@ function run_budget_search(ctrl::BudgetedSearchController)
 
   time_count = 0
   budgeted_search_timed_out = false
+  search_error = nothing
   function run_search_loop!()
-    for att in 1:ctrl.attempts
-      solution = @timed ctrl.synth_fn(ctrl.problem, ctrl.iterator, ctrl.interpret, ctrl.max_enumerations, ctrl.tags, ctrl.mod, ctrl.last_state)
-      ctrl.last_state = solution.value[2]
-      push!(times, solution.time)
-      push!(results, solution.value[1])
-      selector_updater_start_time = time()
-      selected = ctrl.selector(solution.value[1], bank)
-      ctrl.iterator = ctrl.updater(selected, ctrl.iterator, bank, ctrl.last_state, ctrl.data_frame)
-      time_for_attempt = solution.time + time() - selector_updater_start_time
-      time_count += time_for_attempt
-      ctrl.data_frame[nrow(ctrl.data_frame), :time] = time_for_attempt
-      push!(grammars, get_grammar(ctrl.iterator))
-      ctrl.stop_checker(solution) && break
+    try
+      for att in 1:ctrl.attempts
+        solution = @timed ctrl.synth_fn(ctrl.problem, ctrl.iterator, ctrl.interpret, ctrl.max_enumerations, ctrl.tags, ctrl.mod, ctrl.last_state)
+        ctrl.last_state = solution.value[2]
+        push!(times, solution.time)
+        push!(results, solution.value[1])
+        selector_updater_start_time = time()
+        selected = ctrl.selector(solution.value[1], bank)
+        old_iterator = ctrl.iterator
+        ctrl.iterator = ctrl.updater(selected, ctrl.iterator, bank, ctrl.last_state, ctrl.data_frame)
+        # Reset state if iterator was replaced (new iterator has empty bank)
+        if ctrl.iterator !== old_iterator
+          ctrl.last_state = nothing
+        end
+        time_for_attempt = solution.time + time() - selector_updater_start_time
+        time_count += time_for_attempt
+        ctrl.data_frame[nrow(ctrl.data_frame), :time] = time_for_attempt
+        push!(grammars, get_grammar(ctrl.iterator))
+        ctrl.stop_checker(solution) && break
+      end
+    catch e
+      search_error = e
+      println("ERROR in budgeted search loop: ", e)
+      println("Stacktrace:")
+      for (exc, bt) in current_exceptions()
+        showerror(stdout, exc, bt)
+        println()
+      end
     end
   end   
   if ctrl.total_timeout > 0
@@ -134,7 +150,7 @@ function run_budget_search(ctrl::BudgetedSearchController)
     best_program = "Timed out: $(budgeted_search_timed_out)",
     program_score = -1.0,
     time = 0,
-    new_updated_rules = " "
+    new_updated_rules = isnothing(search_error) ? " " : "Error: $(search_error)"
   ))
   # Write DataFrame to CSV (column names are automatically used as headers)
   CSV.write(ctrl.csv_file_name, ctrl.data_frame)

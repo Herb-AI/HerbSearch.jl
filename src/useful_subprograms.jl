@@ -14,7 +14,7 @@ import ..HerbSearch: optimal_program, suboptimal_program, SynthResult, ProgramIt
   get_grammar, get_max_size, EvaluationError, BFSIterator, get_starting_symbol,
   BudgetedSearchController, CostBasedBottomUpIterator, get_costs, get_bank,
   inner_bank, get_entries, get_types, get_measures, GenericBUState,
-  BankEntry as IteratorBankEntry
+  BankEntry as IteratorBankEntry, SizeBasedBottomUpIterator
 
 # Id of each bank entry corresponds to a bitvector of passed examples
 @kwdef mutable struct BankEntry
@@ -24,7 +24,6 @@ import ..HerbSearch: optimal_program, suboptimal_program, SynthResult, ProgramIt
 end
 
 function stop_checker(timed_solution)::Bool
-  println("Stop Checker")
   return timed_solution.value[1][2] == optimal_program || timed_solution.value[1][5]
 end
 
@@ -42,7 +41,7 @@ function selector(solution::Tuple{Union{AbstractRuleNode,Nothing},SynthResult,Di
   end
   found_programs = solution[3]
   bank_entries = bank[1]
-  println("Before selection:", bank_entries)
+  # println("Before selection:", bank_entries)
   for idx in eachindex(found_programs)
     if haskey(bank_entries, idx)
       # edit already remembered subprogram
@@ -55,7 +54,7 @@ function selector(solution::Tuple{Union{AbstractRuleNode,Nothing},SynthResult,Di
       bank_entries[idx] = BankEntry(found_programs[idx], nothing, false)
     end
   end
-  println("After selection", bank_entries)
+  # println("After selection", bank_entries)
   # results[end] = curr_result
   return solution
   # This should also work for the removal of elements from the grammar
@@ -76,11 +75,46 @@ function updater(selected::Tuple{Union{RuleNode,Nothing},SynthResult,Dict{Int,Ab
     if !haskey(bank_entries, idx)
       continue
     end
+
+    # Validate that the remembered program has valid rule indices for the current grammar
+    program = bank_entries[idx].remembered_program
+    try
+      # Test if the program can be converted to an expression with current grammar
+      rulenode2expr(program, iter_grammar)
+    catch e
+      # Program has invalid rule indices for current grammar
+      println("WARNING: Cannot convert remembered program to expression")
+      println("  RuleNode: ", program)
+      println("  Grammar has $(length(iter_grammar.rules)) rules")
+      println("  Error: ", e)
+      continue
+    end
+
     if bank_entries[idx].has_been_updated
-      println("Updating Rule")
-      # updates the rule stored at the index (since a simpler program has been found)
-      remove_rule!(iter_grammar, bank_entries[idx].grammar_rule_idx)
-      add_rule!(iter_grammar, bank_entries[idx].remembered_program)
+      # A simpler program has been found - rebuild grammar with the replacement
+      rule_to_replace = bank_entries[idx].grammar_rule_idx
+      new_rule_expr = rulenode2expr(bank_entries[idx].remembered_program, iter_grammar)
+      old_rule_expr = iter_grammar.rules[rule_to_replace]
+      rule_type = iter_grammar.types[rule_to_replace]
+
+      # Create new grammar by adding all rules in order, substituting the updated one
+      new_grammar = HerbGrammar.@csgrammar begin end  # Empty grammar
+      for i in 1:length(iter_grammar.rules)
+        r_type = iter_grammar.types[i]
+        if i == rule_to_replace
+          # Use the new simplified rule
+          add_rule!(new_grammar, :($r_type = $new_rule_expr))
+        else
+          # Copy existing rule
+          r_expr = iter_grammar.rules[i]
+          add_rule!(new_grammar, :($r_type = $r_expr))
+        end
+      end
+
+      # Replace the grammar in the iterator's solver
+      iterator.solver.grammar = new_grammar
+      iter_grammar = new_grammar
+
       bank_entries[idx].has_been_updated = false
 
       # CostBased-specific: update costs and bank
@@ -91,8 +125,7 @@ function updater(selected::Tuple{Union{RuleNode,Nothing},SynthResult,Dict{Int,Ab
         push!(get_entries(get_bank(iterator), return_type(iter_grammar, bank_entries[idx].remembered_program), rule_cost), IteratorBankEntry{RuleNode}(bank_entries[idx].remembered_program, true))
       end
 
-      push!(updates, "Update: " * string(rulenode2expr(bank_entries[idx].remembered_program, iter_grammar)) * " Replaces: ")
-      bank_entries[idx].grammar_rule_idx = length(iter_grammar.rules) + 1
+      push!(updates, "Update: " * string(new_rule_expr) * " Replaces: " * string(old_rule_expr))
 
     elseif isnothing(bank_entries[idx].grammar_rule_idx)
       # add a grammar rule and store the index
@@ -113,6 +146,17 @@ function updater(selected::Tuple{Union{RuleNode,Nothing},SynthResult,Dict{Int,Ab
 
   push!(data_frame, (attempt = nrow(data_frame) + 1, best_program = isnothing(selected[1]) ? "Nothing" : string(rulenode2expr(selected[1], iter_grammar)), program_score = selected[4], time = 0, new_updated_rules = isempty(updates) ? "No updates" : join(updates)))
 
+  # If grammar was modified and using SizeBasedBottomUpIterator, create a new iterator
+  # to avoid BitVector dimension mismatch errors (iterator's internal bank has stale BitVectors)
+  if !isempty(updates) && iterator isa SizeBasedBottomUpIterator
+    new_iterator = SizeBasedBottomUpIterator(
+      iter_grammar,
+      get_starting_symbol(iterator);
+      max_depth=get_max_depth(iterator)
+    )
+    return new_iterator
+  end
+
   return iterator
 end
 
@@ -121,10 +165,11 @@ Iterates over and evaluates programs, mining fragments of those that passed
 a subset of tests. 
 """
 function synth_fn(
-  problem::Problem, iterator::ProgramIterator, interpret::Union{Function,Nothing}, max_enumerations::Int64, tags::Any, mod::Module=Main, state=nothing)::Tuple{Union{Tuple{Union{AbstractRuleNode,Nothing},SynthResult,Dict{Int,AbstractRuleNode},Float64,Bool},Nothing},GenericBUState}
+  problem::Problem, iterator::ProgramIterator, interpret::Union{Function,Nothing}, max_enumerations::Int64, tags::Any, mod::Module=Main, state=nothing)::Tuple{Union{Tuple{Union{AbstractRuleNode,Nothing},SynthResult,Dict{Int,AbstractRuleNode},Float64,Bool},Nothing},Union{GenericBUState,Nothing}}
 
   start_time = time()
   grammar = get_grammar(iterator.solver)
+  num_grammar_rules = length(grammar.rules)
 
   best_score = -1
   best_program = nothing
@@ -134,6 +179,17 @@ function synth_fn(
   simplest_subprograms = Dict{Int,AbstractRuleNode}()
   # println("iterator length", length(enumerate(iterator)))
   last_state = state
+
+  # Check if state is incompatible with current grammar (e.g., grammar was modified)
+  # If so, reset state to avoid BitVector dimension mismatch errors
+  if !isnothing(last_state) && hasproperty(last_state, :starting_node)
+    starting_node = last_state.starting_node
+    if hasproperty(starting_node, :domain) && length(starting_node.domain) != num_grammar_rules
+      # Grammar size changed, reset state to start fresh with new grammar
+      last_state = nothing
+    end
+  end
+
   iteration = nothing
   if !isnothing(last_state)
     iteration = iterate(iterator, last_state)
@@ -142,24 +198,27 @@ function synth_fn(
   end
   while !isnothing(iteration)
     (candidate_program, state) = iteration
+    candidate_program = freeze_state(candidate_program)
     last_state = state
     if (!isnothing(interpret))
-      # Don't want to short-circuit since subset of passed examples is useful
+      # don't want to short-circuit since subset of passed examples is useful
       passed_examples = evaluate_with_interpreter(problem, candidate_program, interpret, tags, shortcircuit=false, allow_evaluation_errors=true)
     else
       symboltable::SymbolTable = grammar2symboltable(grammar, mod)
       expr = rulenode2expr(candidate_program, grammar)
 
-      # Don't want to short-circuit since subset of passed examples is useful
+      # don't want to short-circuit since subset of passed examples is useful
       passed_examples = evaluate(problem, expr, symboltable, shortcircuit=false, allow_evaluation_errors=true)
     end
     num_iterations += 1
     idx = bitvec_to_idx(passed_examples)
-    if !haskey(simplest_subprograms, idx)
-      simplest_subprograms[idx] = freeze_state(candidate_program)
-    elseif haskey(simplest_subprograms, idx)
-      if length(candidate_program) < length(simplest_subprograms[idx])
-        simplest_subprograms[idx] = freeze_state(candidate_program)
+    if idx > 1
+      if !haskey(simplest_subprograms, idx)
+        simplest_subprograms[idx] = candidate_program
+      elseif haskey(simplest_subprograms, idx)
+        if length(candidate_program) < length(simplest_subprograms[idx])
+          simplest_subprograms[idx] = candidate_program
+        end
       end
     end
     score = count(passed_examples) / length(passed_examples)
@@ -175,19 +234,18 @@ function synth_fn(
 
     if score > best_score
       best_score = score
-      candidate_program = freeze_state(candidate_program)
       best_program = candidate_program
     end
 
     if score == 1
-      println("Found optimal solution at iteration: ", num_iterations)
+      # println("Found optimal solution at iteration: ", num_iterations)
       return ((best_program, optimal_program, simplest_subprograms, best_score, true), last_state)
     end
     # Check stopping criteria (get from iterator if available)
     max_time = typemax(Int)  # No time limit for now
-    if num_iterations > max_enumerations
-      println("Max enumerations exceeded!")
-      println("i = ", num_iterations)
+    if num_iterations >= max_enumerations
+      # println("Max enumerations exceeded!")
+      # println("i = ", num_iterations)
 
       break
     end
@@ -196,9 +254,9 @@ function synth_fn(
     # end
     iteration = iterate(iterator, state)
   end
-  println("Synth finished with num_iterations: ", num_iterations)
-  println("Best_program: ", isnothing(best_program) ? "Nothing" : rulenode2expr(best_program, grammar))
-  println("Score: ", best_score)
+  # println("Synth finished with num_iterations: ", num_iterations)
+  # println("Best_program: ", isnothing(best_program) ? "Nothing" : rulenode2expr(best_program, grammar))
+  # println("Score: ", best_score)
   # The enumeration exhausted, but an optimal problem was not found
   return ((best_program, suboptimal_program, simplest_subprograms, best_score, isnothing(iteration)), last_state)
 end
