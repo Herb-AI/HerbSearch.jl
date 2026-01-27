@@ -82,7 +82,7 @@ function run_budget_search(ctrl::BudgetedSearchController)
         selected = ctrl.selector(solution.value[1], bank)
         old_iterator = ctrl.iterator
         ctrl.iterator = ctrl.updater(selected, ctrl.iterator, bank, ctrl.last_state, ctrl.data_frame)
-        # Reset state if iterator was replaced (new iterator has empty bank)
+        # reset state if iterator was replaced (new iterator has empty bank)
         if ctrl.iterator !== old_iterator
           ctrl.last_state = nothing
         end

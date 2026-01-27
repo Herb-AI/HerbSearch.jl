@@ -16,7 +16,7 @@ import ..HerbSearch: optimal_program, suboptimal_program, SynthResult, ProgramIt
   inner_bank, get_entries, get_types, get_measures, GenericBUState,
   BankEntry as IteratorBankEntry, SizeBasedBottomUpIterator
 
-# Id of each bank entry corresponds to a bitvector of passed examples
+# ID of each bank entry corresponds to a bitvector of passed examples
 @kwdef mutable struct BankEntry
   remembered_program::AbstractRuleNode
   grammar_rule_idx::Union{Nothing,Int}
@@ -35,16 +35,16 @@ end
 
 function selector(solution::Tuple{Union{AbstractRuleNode,Nothing},SynthResult,Dict{Int,AbstractRuleNode},Float64,Bool}, bank::Tuple{Dict{Int,BankEntry},Int})
   # Here I will insert elements of the latest results array into the previous one and update the grammar based on that.
-  # The bank is updated based on the result of the synth_fn. Only the programs are updates, not the corresponding grammar rules
+  # The budgeted search bank is updated based on the result of the synth_fn. Only the programs are updates, not the 
+  # corresponding grammar rules
   if isnothing(solution[2])
     return solution
   end
   found_programs = solution[3]
   bank_entries = bank[1]
-  # println("Before selection:", bank_entries)
   for idx in eachindex(found_programs)
     if haskey(bank_entries, idx)
-      # edit already remembered subprogram
+      # edit already remembered subprogram if the new one is simpler
       if !isnothing(found_programs[idx]) && haskey(found_programs, idx) && length(found_programs[idx]) < length(bank_entries[idx].remembered_program)
         bank_entries[idx].remembered_program = found_programs[idx]
         bank_entries[idx].has_been_updated = true
@@ -54,17 +54,14 @@ function selector(solution::Tuple{Union{AbstractRuleNode,Nothing},SynthResult,Di
       bank_entries[idx] = BankEntry(found_programs[idx], nothing, false)
     end
   end
-  # println("After selection", bank_entries)
-  # results[end] = curr_result
   return solution
-  # This should also work for the removal of elements from the grammar
 end
 
 function updater(selected::Tuple{Union{RuleNode,Nothing},SynthResult,Dict{Int,AbstractRuleNode},Float64,Bool}, iterator::ProgramIterator, bank::Tuple{Dict{Int,BankEntry},Int}, state, data_frame)
   if isnothing(selected[2])
     return iterator
   end
-  #latest array in results will contain the simplest subprograms array that matches the latest run.
+  # latest dict in results will contain the simplest subprograms dict that matches the latest run.
   iter_grammar = get_grammar(iterator.solver)
   bank_entries = bank[1]
 
@@ -76,13 +73,13 @@ function updater(selected::Tuple{Union{RuleNode,Nothing},SynthResult,Dict{Int,Ab
       continue
     end
 
-    # Validate that the remembered program has valid rule indices for the current grammar
+    # validate that the remembered program has valid rule indices for the current grammar
     program = bank_entries[idx].remembered_program
     try
-      # Test if the program can be converted to an expression with current grammar
+      # test if the program can be converted to an expression with current grammar
       rulenode2expr(program, iter_grammar)
     catch e
-      # Program has invalid rule indices for current grammar
+      # program has invalid rule indices for current grammar
       println("WARNING: Cannot convert remembered program to expression")
       println("  RuleNode: ", program)
       println("  Grammar has $(length(iter_grammar.rules)) rules")
@@ -91,33 +88,37 @@ function updater(selected::Tuple{Union{RuleNode,Nothing},SynthResult,Dict{Int,Ab
     end
 
     if bank_entries[idx].has_been_updated
-      # A simpler program has been found - rebuild grammar with the replacement
+      # a simpler program has been found - rebuild grammar with the replacement
       rule_to_replace = bank_entries[idx].grammar_rule_idx
       new_rule_expr = rulenode2expr(bank_entries[idx].remembered_program, iter_grammar)
       old_rule_expr = iter_grammar.rules[rule_to_replace]
       rule_type = iter_grammar.types[rule_to_replace]
 
-      # Create new grammar by adding all rules in order, substituting the updated one
+      # Create new grammar by adding all rules in order, substituting the updated one. This was done
+      # since initially remove_rule! and add_rule! were used to update the rule, but this resulted in
+      # programs generating that were referencing "nothing" rules.
       new_grammar = HerbGrammar.@csgrammar begin end  # Empty grammar
       for i in 1:length(iter_grammar.rules)
         r_type = iter_grammar.types[i]
         if i == rule_to_replace
-          # Use the new simplified rule
+          # use the new simplified rule
           add_rule!(new_grammar, :($r_type = $new_rule_expr))
         else
-          # Copy existing rule
+          # copy existing rule
           r_expr = iter_grammar.rules[i]
           add_rule!(new_grammar, :($r_type = $r_expr))
         end
       end
 
-      # Replace the grammar in the iterator's solver
+      # replace the grammar in the iterator's solver
       iterator.solver.grammar = new_grammar
       iter_grammar = new_grammar
 
       bank_entries[idx].has_been_updated = false
 
       # CostBased-specific: update costs and bank
+      # Note: the CostBasedBottomUpIterator was not used in the final version of the eperiments, since it was enumerating
+      # programs extremely slowly, so this code was not part of the final experiment
       if is_cost_based
         rule_cost = max(state.last_horizon, 1.0)
         push!(iter_grammar.log_probabilities, -rule_cost)
@@ -146,8 +147,8 @@ function updater(selected::Tuple{Union{RuleNode,Nothing},SynthResult,Dict{Int,Ab
 
   push!(data_frame, (attempt = nrow(data_frame) + 1, best_program = isnothing(selected[1]) ? "Nothing" : string(rulenode2expr(selected[1], iter_grammar)), program_score = selected[4], time = 0, new_updated_rules = isempty(updates) ? "No updates" : join(updates)))
 
-  # If grammar was modified and using SizeBasedBottomUpIterator, create a new iterator
-  # to avoid BitVector dimension mismatch errors (iterator's internal bank has stale BitVectors)
+  # If the grammar was modified and using SizeBasedBottomUpIterator, create a new iterator to avoid BitVector dimension 
+  # mismatch errors. This did not seem to be an issue for the CostBasedIterator variant since it seemed that no errors were thrown.
   if !isempty(updates) && iterator isa SizeBasedBottomUpIterator
     new_iterator = SizeBasedBottomUpIterator(
       iter_grammar,
@@ -175,17 +176,15 @@ function synth_fn(
   best_program = nothing
   num_iterations = 0
 
-  #fragments = Set{AbstractRuleNode}()
   simplest_subprograms = Dict{Int,AbstractRuleNode}()
-  # println("iterator length", length(enumerate(iterator)))
   last_state = state
 
-  # Check if state is incompatible with current grammar (e.g., grammar was modified)
-  # If so, reset state to avoid BitVector dimension mismatch errors
+  # check if the state is incompatible with the current grammar (e.g., grammar was modified)
+  # if so, reset state to avoid BitVector dimension mismatch errors
   if !isnothing(last_state) && hasproperty(last_state, :starting_node)
     starting_node = last_state.starting_node
     if hasproperty(starting_node, :domain) && length(starting_node.domain) != num_grammar_rules
-      # Grammar size changed, reset state to start fresh with new grammar
+      # grammar size changed, reset state to start fresh with new grammar
       last_state = nothing
     end
   end
@@ -212,6 +211,7 @@ function synth_fn(
     end
     num_iterations += 1
     idx = bitvec_to_idx(passed_examples)
+    # this check was added to avoid remembering subprograms if they passed an empty subset of tests (so score = 0)
     if idx > 1
       if !haskey(simplest_subprograms, idx)
         simplest_subprograms[idx] = candidate_program
@@ -222,15 +222,6 @@ function synth_fn(
       end
     end
     score = count(passed_examples) / length(passed_examples)
-    # if score > 0.0
-    #   println("Finished evaluating iteration: ", num_iterations)
-    #   println("Program: ", rulenode2expr(candidate_program, grammar))
-    #   println("Score: ", score)
-    # end
-    # if score > 0
-    #   fragments_of_program = mine_fragments(freeze_state(candidate_program))
-    #   union!(fragments, fragments_of_program)
-    # end
 
     if score > best_score
       best_score = score
@@ -241,23 +232,15 @@ function synth_fn(
       # println("Found optimal solution at iteration: ", num_iterations)
       return ((best_program, optimal_program, simplest_subprograms, best_score, true), last_state)
     end
-    # Check stopping criteria (get from iterator if available)
+    # check stopping criteria (get from iterator if available)
     max_time = typemax(Int)  # No time limit for now
     if num_iterations >= max_enumerations
-      # println("Max enumerations exceeded!")
-      # println("i = ", num_iterations)
 
       break
     end
-    # if (num_iterations % 10 == 0)
-    #   println("Finished evaluating iteration: ", num_iterations)
-    # end
     iteration = iterate(iterator, state)
   end
-  # println("Synth finished with num_iterations: ", num_iterations)
-  # println("Best_program: ", isnothing(best_program) ? "Nothing" : rulenode2expr(best_program, grammar))
-  # println("Score: ", best_score)
-  # The enumeration exhausted, but an optimal problem was not found
+  # the enumeration exhausted, but an optimal problem was not found
   return ((best_program, suboptimal_program, simplest_subprograms, best_score, isnothing(iteration)), last_state)
 end
 
@@ -277,13 +260,12 @@ function evaluate(problem::Problem, expr::Any, symboltable::SymbolTable; shortci
         break
       end
     catch e
-      # You could also decide to handle less severe errors (such as index out of range) differently,
-      # for example by just increasing the error value and keeping the program as a candidate.
+      # you could also decide to handle less severe errors (such as index out of range) differently,
+      # for example by just increasing the error value and keeping the program as a candidate
       crashed = true
-      # Throw the error again if evaluation errors aren't allowed
+      # throw the error again if evaluation errors aren't allowed
       eval_error = EvaluationError(expr, example.in, e)
       allow_evaluation_errors || throw(eval_error)
-      # break
     end
   end
 
@@ -298,7 +280,6 @@ function evaluate_with_interpreter(problem::Problem, rulenode::RuleNode, interpr
   passed_examples = falses(length(problem.spec))
 
   crashed = false
-  # println("PROBLEM SPEC LENGTH: ", length(problem.spec))
   for (i, example) ∈ enumerate(problem.spec)
     try
       output = Base.invokelatest(interpret, rulenode, tags, example.in)
@@ -315,57 +296,6 @@ function evaluate_with_interpreter(problem::Problem, rulenode::RuleNode, interpr
 
   # for now assume crashes result in 0 score
   return crashed ? falses(length(problem.spec)) : passed_examples
-end
-
-# function evaluate_with_interpreter(problem::Problem, rulenode::RuleNode, interpreter::Function, tags; shortcircuit::Bool=true,                   
-#   allow_evaluation_errors::Bool=false)::BitVector                                                                                                  
-#     passed_examples = falses(length(problem.spec))                                                                                                 
-#
-#     # Debug: check what interpreter is                                                                                                             
-#     println("interpreter: ", interpreter)                                                                                                          
-#     println("interpreter methods: ", methods(interpreter))               
-#
-#     for (i, example) ∈ enumerate(problem.spec)                           
-#       try                           
-#         println("Calling with: rulenode=", rulenode, " tags=", typeof(tags), " input=", example.in)                                                
-#         output = Base.invokelatest(interpreter, rulenode, tags, example.in)                                                                        
-#         println("Output: ", output, " Expected: ", example.out)          
-#         if (output == example.out)  
-#           passed_examples[i] = true 
-#         elseif (shortcircuit)       
-#           break                     
-#         end                         
-#       catch e                       
-#         println("ERROR: ", e)       
-#         println("Stacktrace: ")     
-#         for (exc, bt) in current_exceptions()                            
-#           showerror(stdout, exc, bt)
-#           println()                 
-#         end                         
-#         break                       
-#       end                           
-#     end                             
-#
-#     return passed_examples          
-#   end 
-
-"""
-Returns a Set{RuleNode} of all the fragments of the passed program 
-"""
-function mine_fragments(program::AbstractRuleNode)
-  # For now just does depth first trasversal to add all nodes of the program tree to the fragment set
-  fragments = Set{AbstractRuleNode}()
-  push!(fragments, program)
-  # stack = [program]
-  # while !isempty(stack)
-  #   current_node = pop!(stack)
-  #   push!(fragments, current_node)
-  #   for child in current_node.children
-  #     push!(stack, child)
-  #   end
-  # end
-
-  return fragments
 end
 
 function bitvec_to_idx(bv::BitVector)::Int64

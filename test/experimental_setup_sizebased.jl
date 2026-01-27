@@ -26,18 +26,19 @@ mkpath(output_dir)  # Create directory if it doesn't exist
 
 arg_total_timeout = parse(Float64, ARGS[6])
 
-# Optional: specify a subset of benchmarks to run (empty array = run all)
-# If non-empty, only benchmarks with names in this array will be run
+# optional: specify a subset of benchmarks to run (empty array = run all)
+# if non-empty, only benchmarks with names in this array will be run
+# Note: this was added after the main experimental run with all benchmarks
+# was ran, but there was no time to run experiments for individual benchmarks
 selected_benchmarks = [
-  # Add benchmark names here to run only those, e.g.:
-  "phone_2",
-  "phone_6_long_repeat",
+  # add benchmark names here to run only those, e.g.:
+  # "phone_2",
+  # "phone_6_long_repeat",
 ]
 
-# Get all problem-grammar pairs
 all_pairs = get_all_problem_grammar_pairs(PBE_SLIA_Track_2019)[2:end]
 
-# Filter to selected benchmarks if specified
+# filter to selected benchmarks if specified
 if isempty(selected_benchmarks)
   problem_grammar_pairs = all_pairs
 else
@@ -133,13 +134,13 @@ for pair in problem_grammar_pairs[start_problem:end_problem]
       attempt_time = time() - start_time
       total_control_time += attempt_time
 
-      # Update overall best
+      # update overall best
       if attempt_best_score > overall_best_score
         overall_best_score = attempt_best_score
         overall_best_program = attempt_best_program
       end
 
-      # Record this attempt
+      # record this attempt
       push!(control_df, (
         attempt = attempt,
         best_program = isnothing(attempt_best_program) ? "Nothing" : string(rulenode2expr(attempt_best_program, grammar_ctrl)),
@@ -148,7 +149,7 @@ for pair in problem_grammar_pairs[start_problem:end_problem]
         time_seconds = attempt_time
       ))
 
-      # Exit if optimal found or enumeration exhausted
+      # exit if optimal found or enumeration exhausted
       if isnothing(iteration) || attempt_best_score == 1.0
         break
       end
@@ -256,3 +257,56 @@ flush(stdout)
 println("Rank $mpi_rank: Passed barrier, finalizing")
 flush(stdout)
 MPI.Finalize()
+
+
+# This version of the interpret_sygus function was used since the regular implementation
+# did not seem to be evaluating programs correctly, so a slight modification was
+# added to handle base cases. The function was defined in a local clone of the HerbBenchmarks repo.
+
+
+# """
+#     interpret_sygus(prog::AbstractRuleNode, grammar_tags::Dict{Int,Any}, input::Dict{Symbol,Any})
+#
+# Custom intepret function for the SyGuS SLIA benchmark.
+# """
+# function interpret_sygus(prog::AbstractRuleNode, grammar_tags::Dict{Int,Any}, input::Dict{Symbol,Any})
+#     r = get_rule(prog)
+#     c = get_children(prog)
+#
+#     MLStyle.@match grammar_tags[r] begin
+#         :ntString => interpret_sygus(c[1], grammar_tags, input)
+#         :ntInt => interpret_sygus(c[1], grammar_tags, input)
+#         :ntBool => interpret_sygus(c[1], grammar_tags, input)
+#         :Start => interpret_sygus(c[1], grammar_tags, input)
+#         :concat_cvc => concat_cvc(interpret_sygus(c[1], grammar_tags, input), interpret_sygus(c[2], grammar_tags, input))
+#         :replace_cvc => replace_cvc(interpret_sygus(c[1], grammar_tags, input), interpret_sygus(c[2], grammar_tags, input), interpret_sygus(c[3], grammar_tags, input))
+#         :at_cvc => at_cvc(interpret_sygus(c[1], grammar_tags, input), interpret_sygus(c[2], grammar_tags, input))
+#         :int_to_str_cvc => int_to_str_cvc(interpret_sygus(c[1], grammar_tags, input))
+#         :substr_cvc => substr_cvc(interpret_sygus(c[1], grammar_tags, input), interpret_sygus(c[2], grammar_tags, input), interpret_sygus(c[3], grammar_tags, input))
+#         :len_cvc => len_cvc(interpret_sygus(c[1], grammar_tags, input))
+#         :str_to_int_cvc => str_to_int_cvc(interpret_sygus(c[1], grammar_tags, input))
+#         :indexof_cvc => indexof_cvc(interpret_sygus(c[1], grammar_tags, input), interpret_sygus(c[2], grammar_tags, input), interpret_sygus(c[3], grammar_tags, input))
+#         :prefixof_cvc => prefixof_cvc(interpret_sygus(c[1], grammar_tags, input), interpret_sygus(c[2], grammar_tags, input))
+#         :suffixof_cvc => suffixof_cvc(interpret_sygus(c[1], grammar_tags, input), interpret_sygus(c[2], grammar_tags, input))
+#         :contains_cvc => contains_cvc(interpret_sygus(c[1], grammar_tags, input), interpret_sygus(c[2], grammar_tags, input))
+#
+#         :+ => interpret_sygus(c[1], grammar_tags, input) + interpret_sygus(c[2], grammar_tags, input)
+#         :- => interpret_sygus(c[1], grammar_tags, input) - interpret_sygus(c[2], grammar_tags, input)
+#         :(==) => interpret_sygus(c[1], grammar_tags, input) == interpret_sygus(c[2], grammar_tags, input)
+#
+#         :IF => interpret_sygus(c[1], grammar_tags, input) ? interpret_sygus(c[2], grammar_tags, input) : interpret_sygus(c[3], grammar_tags, input)
+#         _ =>
+#             begin
+#                 tag = grammar_tags[r]
+#                 if tag isa Symbol && occursin("_arg_", String(tag))
+#                     # This is an input variable; look it up in the environment
+#                     return input[tag]
+#                 else
+#                     # default behavior
+#                     return tag
+#                 end
+#             end
+#     end
+# end
+
+
