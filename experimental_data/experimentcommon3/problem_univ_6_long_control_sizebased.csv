@@ -1,0 +1,411 @@
+attempt,best_program,program_score,iterations,time_seconds
+1,_arg_2,0.45,10000,0.053025007247924805
+2,"replace_cvc(_arg_2, ""CT"", ""CT"")",0.45,10000,0.07760286331176758
+3,"replace_cvc(""AK"", ""AK"", _arg_2)",0.45,10000,0.051009178161621094
+4,"replace_cvc(""CA"", ""CA"", _arg_2)",0.45,10000,0.051254987716674805
+5,"replace_cvc(""FL"", ""FL"", _arg_2)",0.45,10000,0.051264047622680664
+6,"replace_cvc(""ID"", ""ID"", _arg_2)",0.45,10000,0.05121302604675293
+7,"replace_cvc(""KS"", ""KS"", _arg_2)",0.45,10000,0.05124688148498535
+8,"replace_cvc(""ME"", ""ME"", _arg_2)",0.45,10000,0.0513300895690918
+9,"replace_cvc(""MI"", ""MI"", _arg_2)",0.45,10000,0.05398297309875488
+10,"replace_cvc(""MT"", ""MT"", _arg_2)",0.45,10000,0.05660080909729004
+11,"replace_cvc(""NH"", ""NH"", _arg_2)",0.45,10000,0.05636096000671387
+12,"replace_cvc(""NY"", ""NY"", _arg_2)",0.45,10000,0.07591104507446289
+13,"replace_cvc(""OK"", ""OK"", _arg_2)",0.45,10000,0.05121898651123047
+14,"replace_cvc(""RI"", ""RI"", _arg_2)",0.45,10000,0.05121898651123047
+15,"replace_cvc(""TN"", ""TN"", _arg_2)",0.45,10000,0.05141806602478027
+16,"replace_cvc(""VA"", ""VA"", _arg_2)",0.45,10000,0.05120110511779785
+17,"replace_cvc(""WI"", ""WI"", _arg_2)",0.45,10000,0.07478809356689453
+18,"if false
+    int_to_str_cvc(0)
+else
+    _arg_2
+end",0.45,10000,0.08122515678405762
+19,"at_cvc(concat_cvc(""OR"", ""NH""), 0)",0.0,10000,0.0846099853515625
+20,"at_cvc(prefixof_cvc(""VT"", ""IN""), 1)",0.0,10000,0.09056401252746582
+21,"at_cvc(contains_cvc(""New York"", ""New York""), 2)",0.0,10000,0.0869748592376709
+22,"int_to_str_cvc(indexof_cvc(""CO"", ""RI"", 0))",0.0,10000,0.10382986068725586
+23,"replace_cvc(_arg_2, int_to_str_cvc(0), _arg_1)",0.45,10000,0.06504201889038086
+24,"replace_cvc(_arg_2, int_to_str_cvc(0), int_to_str_cvc(0))",0.45,10000,0.06961178779602051
+25,"if false
+    at_cvc(_arg_1, 0)
+else
+    _arg_2
+end",0.45,10000,0.05858588218688965
+26,"if false
+    at_cvc(""AR"", 2)
+else
+    _arg_2
+end",0.45,10000,0.050540924072265625
+27,"if true
+    concat_cvc(_arg_1, ""TN"")
+else
+    ""PA""
+end",0.0,10000,0.06970405578613281
+28,"if true
+    concat_cvc("","", ""HI"")
+else
+    ""WV""
+end",0.0,10000,0.0738060474395752
+29,"if true
+    concat_cvc(""AR"", ""OH"")
+else
+    ""AR""
+end",0.0,10000,0.056919097900390625
+30,"if true
+    concat_cvc(""DE"", ""AR"")
+else
+    ""IN""
+end",0.0,10000,0.05675101280212402
+31,"if true
+    concat_cvc(""HI"", ""NE"")
+else
+    ""MS""
+end",0.0,10000,0.05669903755187988
+32,"if true
+    concat_cvc(""IN"", ""USA"")
+else
+    ""ND""
+end",0.0,10000,0.059597015380859375
+33,"if true
+    concat_cvc(""LA"", ""ME"")
+else
+    ""UT""
+end",0.0,10000,0.07006311416625977
+34,"if true
+    concat_cvc(""MA"", ""TX"")
+else
+    "" ""
+end",0.0,10000,0.0571291446685791
+35,"if true
+    concat_cvc(""MO"", ""ID"")
+else
+    ""GA""
+end",0.0,10000,0.05667901039123535
+36,"if true
+    concat_cvc(""NV"", ""OH"")
+else
+    ""MD""
+end",0.0,10000,0.0568239688873291
+37,"if true
+    concat_cvc(""NY"", ""AR"")
+else
+    ""NJ""
+end",0.0,10000,0.06734490394592285
+38,"if true
+    concat_cvc(""OH"", ""NE"")
+else
+    ""SC""
+end",0.0,10000,0.05659794807434082
+39,"if true
+    concat_cvc(""PA"", ""USA"")
+else
+    ""USA""
+end",0.0,10000,0.056813955307006836
+40,"if true
+    concat_cvc(""TN"", ""MD"")
+else
+    ""CO""
+end",0.0,10000,0.05662202835083008
+41,"if true
+    concat_cvc(""VT"", ""TX"")
+else
+    ""KS""
+end",0.0,10000,0.0673367977142334
+42,"if true
+    concat_cvc(""WI"", ""ID"")
+else
+    ""MT""
+end",0.0,10000,0.059556007385253906
+43,"if true
+    prefixof_cvc(_arg_2, ""OH"")
+else
+    ""OK""
+end",0.0,10000,0.052680015563964844
+44,"if true
+    prefixof_cvc(""AK"", ""AR"")
+else
+    ""VA""
+end",0.0,10000,0.05178999900817871
+45,"if true
+    prefixof_cvc(""CA"", ""NV"")
+else
+    ""AK""
+end",0.0,10000,0.052024126052856445
+46,"if true
+    prefixof_cvc(""FL"", _arg_1)
+else
+    ""ID""
+end",0.0,10000,0.06264185905456543
+47,"if true
+    prefixof_cvc(""ID"", ""MD"")
+else
+    ""MI""
+end",0.0,10000,0.05175304412841797
+48,"if true
+    prefixof_cvc(""IA"", ""TX"")
+else
+    ""NY""
+end",0.0,10000,0.05209803581237793
+49,"if true
+    prefixof_cvc(""ME"", ""ID"")
+else
+    ""TN""
+end",0.0,10000,0.05215311050415039
+50,"if true
+    prefixof_cvc(""MI"", ""OK"")
+else
+    _arg_2
+end",0.0,10000,0.05196690559387207
+51,"if true
+    prefixof_cvc(""MT"", ""CA"")
+else
+    ""DE""
+end",0.0,10000,0.06291985511779785
+52,"if true
+    prefixof_cvc(""NH"", ""NV"")
+else
+    ""LA""
+end",0.0,10000,0.05178713798522949
+53,"if true
+    prefixof_cvc(""NC"", _arg_1)
+else
+    ""NV""
+end",0.0,10000,0.0517580509185791
+54,"if true
+    prefixof_cvc(""OK"", ""MD"")
+else
+    ""PA""
+end",0.0,10000,0.05177497863769531
+55,"if true
+    prefixof_cvc(""RI"", ""TX"")
+else
+    ""WV""
+end",0.0,10000,0.06266999244689941
+56,"if true
+    prefixof_cvc(""TX"", ""IL"")
+else
+    ""AR""
+end",0.0,10000,0.051699161529541016
+57,"if true
+    prefixof_cvc(""VA"", ""OK"")
+else
+    ""IN""
+end",0.0,10000,0.05184316635131836
+58,"if true
+    prefixof_cvc(""USA"", ""CA"")
+else
+    ""MS""
+end",0.0,10000,0.058077096939086914
+59,"if true
+    suffixof_cvc(""New York"", ""NV"")
+else
+    ""ND""
+end",0.0,10000,0.05202603340148926
+60,"if true
+    suffixof_cvc(""AZ"", _arg_1)
+else
+    ""UT""
+end",0.0,10000,0.06263399124145508
+61,"if true
+    suffixof_cvc(""CO"", ""MA"")
+else
+    "" ""
+end",0.0,10000,0.051985979080200195
+62,"if true
+    suffixof_cvc(""FL"", ""UT"")
+else
+    ""GA""
+end",0.0,10000,0.052056074142456055
+63,"if true
+    suffixof_cvc(""IL"", ""IL"")
+else
+    ""MD""
+end",0.0,10000,0.051963090896606445
+64,"if true
+    suffixof_cvc(""KS"", ""OK"")
+else
+    ""NJ""
+end",0.0,10000,0.05217909812927246
+65,"if true
+    suffixof_cvc(""MD"", ""CA"")
+else
+    ""SC""
+end",0.0,10000,0.06301307678222656
+66,"if true
+    suffixof_cvc(""MN"", ""NV"")
+else
+    ""USA""
+end",0.0,10000,0.05211186408996582
+67,"if true
+    suffixof_cvc(""NE"", _arg_2)
+else
+    ""CO""
+end",0.0,10000,0.05205583572387695
+68,"if true
+    suffixof_cvc(""NJ"", ""MA"")
+else
+    ""KS""
+end",0.0,10000,0.052063941955566406
+69,"if true
+    suffixof_cvc(""NC"", ""UT"")
+else
+    ""MT""
+end",0.0,10000,0.06283903121948242
+70,"if true
+    suffixof_cvc(""OR"", ""IL"")
+else
+    ""OK""
+end",0.0,10000,0.05208897590637207
+71,"if true
+    suffixof_cvc(""SC"", ""OK"")
+else
+    ""VA""
+end",0.0,10000,0.052175045013427734
+72,"if true
+    suffixof_cvc(""UT"", ""CO"")
+else
+    ""AK""
+end",0.0,10000,0.05194711685180664
+73,"if true
+    suffixof_cvc(""WA"", ""NH"")
+else
+    ""ID""
+end",0.0,10000,0.05220818519592285
+74,"if true
+    contains_cvc(_arg_1, _arg_2)
+else
+    ""MI""
+end",0.0,10000,0.07374000549316406
+75,"if true
+    contains_cvc("" "", ""MA"")
+else
+    ""NY""
+end",0.0,10000,0.05371594429016113
+76,"if true
+    contains_cvc(""AZ"", ""UT"")
+else
+    ""TN""
+end",0.0,10000,0.054347991943359375
+77,"if true
+    contains_cvc(""CT"", ""IN"")
+else
+    _arg_2
+end",0.0,10000,0.05437302589416504
+78,"if true
+    contains_cvc(""GA"", ""OR"")
+else
+    ""DE""
+end",0.0,10000,0.054366111755371094
+79,"if true
+    contains_cvc(""IN"", ""CO"")
+else
+    ""LA""
+end",0.0,10000,0.0649709701538086
+80,"if true
+    contains_cvc(""KY"", ""NH"")
+else
+    ""NV""
+end",0.0,10000,0.05428886413574219
+81,"if true
+    contains_cvc(""MA"", _arg_2)
+else
+    ""PA""
+end",0.0,10000,0.054514169692993164
+82,"if true
+    contains_cvc(""MS"", ""MA"")
+else
+    ""WV""
+end",0.0,10000,0.0543370246887207
+83,"if true
+    contains_cvc(""NE"", ""VT"")
+else
+    ""AR""
+end",0.0,10000,0.05452394485473633
+84,"if true
+    contains_cvc(""NM"", ""IN"")
+else
+    ""IN""
+end",0.0,10000,0.06491494178771973
+85,"if true
+    contains_cvc(""ND"", ""OR"")
+else
+    ""MS""
+end",0.0,10000,0.054292917251586914
+86,"if true
+    contains_cvc(""PA"", ""CO"")
+else
+    ""ND""
+end",0.0,10000,0.05432915687561035
+87,"if true
+    contains_cvc(""SD"", ""NH"")
+else
+    ""UT""
+end",0.0,10000,0.05439186096191406
+88,"if true
+    contains_cvc(""VT"", ""New York"")
+else
+    "" ""
+end",0.0,10000,0.06508994102478027
+89,"if false
+    concat_cvc(_arg_1, _arg_1)
+else
+    _arg_2
+end",0.45,10000,0.050727128982543945
+90,"if false
+    concat_cvc(_arg_1, ""VA"")
+else
+    _arg_2
+end",0.45,10000,0.04075479507446289
+91,"if false
+    concat_cvc("","", ""IA"")
+else
+    _arg_2
+end",0.45,10000,0.04067802429199219
+92,"if false
+    concat_cvc(""AR"", ""PA"")
+else
+    _arg_2
+end",0.45,10000,0.04075884819030762
+93,"if false
+    concat_cvc(""DE"", ""CT"")
+else
+    _arg_2
+end",0.45,10000,0.051239967346191406
+94,"if false
+    concat_cvc(""HI"", ""NM"")
+else
+    _arg_2
+end",0.45,10000,0.040657997131347656
+95,"if false
+    concat_cvc(""IA"", "" "")
+else
+    _arg_2
+end",0.45,10000,0.04269289970397949
+96,"if false
+    concat_cvc(""LA"", ""MN"")
+else
+    _arg_2
+end",0.45,10000,0.04262185096740723
+97,"if false
+    concat_cvc(""MA"", ""VA"")
+else
+    _arg_2
+end",0.45,10000,0.04324507713317871
+98,"if false
+    concat_cvc(""MO"", ""IA"")
+else
+    _arg_2
+end",0.45,10000,0.058976173400878906
+99,"if false
+    concat_cvc(""NV"", ""RI"")
+else
+    _arg_2
+end",0.45,10000,0.04096794128417969
+100,"if false
+    concat_cvc(""NY"", ""DE"")
+else
+    _arg_2
+end",0.45,10000,0.0410618782043457
+-1,_arg_2,0.45,-1,5.713638067245483
+-2,Timed out: false,-1.0,-1,0.0

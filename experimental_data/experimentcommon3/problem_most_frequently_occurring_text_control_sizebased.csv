@@ -1,0 +1,12 @@
+attempt,best_program,program_score,iterations,time_seconds
+1,_arg_1,0.75,10000,0.08602094650268555
+2,"replace_cvc(int_to_str_cvc(1), int_to_str_cvc(1), _arg_1)",0.75,10000,0.07465195655822754
+3,"if false
+    substr_cvc("""", 0, -1)
+else
+    _arg_3
+end",0.75,10000,0.06196284294128418
+4,"replace_cvc(_arg_3, _arg_1, replace_cvc("" "", "" "", _arg_1))",0.75,10000,0.06173896789550781
+5,"replace_cvc(_arg_1, replace_cvc(_arg_1, _arg_2, _arg_3), _arg_3)",1.0,2817,0.02041482925415039
+-1,"replace_cvc(_arg_1, replace_cvc(_arg_1, _arg_2, _arg_3), _arg_3)",1.0,-1,0.30478954315185547
+-2,Timed out: false,-1.0,-1,0.0

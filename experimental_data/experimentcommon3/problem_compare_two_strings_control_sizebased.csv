@@ -1,0 +1,3 @@
+attempt,best_program,program_score,iterations,time_seconds
+-1,Nothing,-1.0,-1,0.0
+-2,Timed out: true,-1.0,-1,0.0

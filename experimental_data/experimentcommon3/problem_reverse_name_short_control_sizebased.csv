@@ -1,0 +1,4 @@
+attempt,best_program,program_score,iterations,time_seconds
+1,"replace_cvc(concat_cvc(_arg_2, _arg_1), _arg_1, concat_cvc("" "", _arg_1))",1.0,6985,0.09897708892822266
+-1,"replace_cvc(concat_cvc(_arg_2, _arg_1), _arg_1, concat_cvc("" "", _arg_1))",1.0,-1,0.09897708892822266
+-2,Timed out: false,-1.0,-1,0.0

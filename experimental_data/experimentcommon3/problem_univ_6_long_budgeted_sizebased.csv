@@ -1,0 +1,445 @@
+attempt,best_program,program_score,time,new_updated_rules
+1,_arg_2,0.45,0.055411577224731445,"New Rule: replace_cvc(_arg_2, ""CA"", _arg_1)New Rule: replace_cvc(_arg_2, ""New York"", _arg_1)New Rule: replace_cvc(_arg_2, ""New York"", ""NY"")New Rule: replace_cvc(_arg_2, ""CT"", _arg_1)New Rule: _arg_2"
+2,_arg_2,0.45,0.06469035148620605,No updates
+3,"replace_cvc(_arg_2, _arg_1, _arg_1)",0.45,0.06520867347717285,"New Rule: replace_cvc(_arg_2, ""PA"", _arg_1)New Rule: replace_cvc(_arg_2, ""MI"", _arg_1)New Rule: replace_cvc(_arg_2, ""MA"", _arg_1)"
+4,_arg_2,0.45,0.05327343940734863,No updates
+5,"replace_cvc(_arg_2, _arg_1, _arg_1)",0.45,0.07008242607116699,No updates
+6,"replace_cvc("","", "","", _arg_2)",0.45,0.05846095085144043,No updates
+7,"replace_cvc(""AZ"", ""AZ"", _arg_2)",0.45,0.06065511703491211,No updates
+8,"replace_cvc(""CO"", ""CO"", _arg_2)",0.45,0.07156109809875488,No updates
+9,"replace_cvc(""FL"", ""FL"", _arg_2)",0.45,0.05944108963012695,No updates
+10,"replace_cvc(""HI"", ""HI"", _arg_2)",0.45,0.060573577880859375,No updates
+11,"replace_cvc(""IN"", ""IN"", _arg_2)",0.45,0.060567617416381836,No updates
+12,"replace_cvc(""KS"", ""KS"", _arg_2)",0.45,0.06044793128967285,No updates
+13,"replace_cvc(""ME"", ""ME"", _arg_2)",0.45,0.07098698616027832,No updates
+14,"replace_cvc(""MI"", ""MI"", _arg_2)",0.45,0.06095385551452637,No updates
+15,"replace_cvc(""MS"", ""MS"", _arg_2)",0.45,0.06077742576599121,No updates
+16,"replace_cvc(""NE"", ""NE"", _arg_2)",0.45,0.059525489807128906,No updates
+17,"replace_cvc(""NJ"", ""NJ"", _arg_2)",0.45,0.06062436103820801,No updates
+18,"replace_cvc(""NY"", ""NY"", _arg_2)",0.45,0.060637474060058594,No updates
+19,"replace_cvc(""OH"", ""OH"", _arg_2)",0.45,0.06989598274230957,No updates
+20,"replace_cvc(""PA"", ""PA"", _arg_2)",0.45,0.06064414978027344,No updates
+21,"replace_cvc(""SC"", ""SC"", _arg_2)",0.45,0.06077837944030762,No updates
+22,"replace_cvc(""TX"", ""TX"", _arg_2)",0.45,0.05943799018859863,No updates
+23,"replace_cvc(""VA"", ""VA"", _arg_2)",0.45,0.060744524002075195,No updates
+24,"replace_cvc(""WV"", ""WV"", _arg_2)",0.45,0.06341838836669922,No updates
+25,"replace_cvc(replace_cvc(_arg_2, ""CA"", _arg_1), ""GA"", ""NY"")",0.0,0.09770989418029785,No updates
+26,"replace_cvc(replace_cvc(_arg_2, ""New York"", ""NY""), replace_cvc(_arg_2, ""New York"", _arg_1), ""NV"")",0.0,0.08611869812011719,No updates
+27,"replace_cvc(_arg_2, _arg_1, int_to_str_cvc(0))",0.45,0.09291934967041016,No updates
+28,"if false
+    int_to_str_cvc(0)
+else
+    _arg_2
+end",0.45,0.10905957221984863,No updates
+29,"at_cvc(concat_cvc(""ID"", ""OH""), 0)",0.0,0.0809488296508789,No updates
+30,"at_cvc(prefixof_cvc(""CO"", ""IL""), 1)",0.0,0.09920859336853027,No updates
+31,"at_cvc(suffixof_cvc(""New York"", replace_cvc(_arg_2, ""New York"", _arg_1)), 2)",0.0,0.1003122329711914,No updates
+32,"at_cvc(suffixof_cvc(replace_cvc(_arg_2, ""CT"", _arg_1), ""NM""), 0)",0.0,0.10130119323730469,No updates
+33,"at_cvc(contains_cvc(""WV"", ""FL""), 1)",0.0,0.08574175834655762,No updates
+34,"int_to_str_cvc(indexof_cvc(""SD"", ""WV"", 2))",0.0,0.08556389808654785,No updates
+35,"replace_cvc(_arg_2, int_to_str_cvc(0), _arg_1)",0.45,0.0947275161743164,No updates
+36,"replace_cvc(""MD"", int_to_str_cvc(0), ""MI"")",0.0,0.0752408504486084,No updates
+37,"replace_cvc(_arg_2, int_to_str_cvc(0), int_to_str_cvc(0))",0.45,0.06873559951782227,No updates
+38,"if false
+    at_cvc(_arg_1, 0)
+else
+    _arg_2
+end",0.45,0.05558037757873535,No updates
+39,"if false
+    at_cvc(""PA"", 0)
+else
+    _arg_2
+end",0.45,0.07533788681030273,No updates
+40,"if true
+    concat_cvc(_arg_2, ""RI"")
+else
+    ""SC""
+end",0.0,0.06339073181152344,No updates
+41,"if true
+    concat_cvc("","", ""MD"")
+else
+    ""OK""
+end",0.0,0.06260800361633301,No updates
+42,"if true
+    concat_cvc(""AR"", "","")
+else
+    ""NY""
+end",0.0,0.06092214584350586,No updates
+43,"if true
+    concat_cvc(""CO"", ""TX"")
+else
+    ""NV""
+end",0.0,0.06293058395385742,No updates
+44,"if true
+    concat_cvc(""FL"", ""MS"")
+else
+    ""MS""
+end",0.0,0.07348990440368652,No updates
+45,"if true
+    concat_cvc(""ID"", ""CA"")
+else
+    ""MD""
+end",0.0,0.06083822250366211,No updates
+46,"if true
+    concat_cvc(""IN"", ""WA"")
+else
+    ""KS""
+end",0.0,0.06274247169494629,No updates
+47,"if true
+    concat_cvc(""KY"", ""NV"")
+else
+    ""ID""
+end",0.0,0.06266522407531738,No updates
+48,"if true
+    concat_cvc(""MD"", ""FL"")
+else
+    ""DE""
+end",0.0,0.07191658020019531,No updates
+49,"if true
+    concat_cvc(""MI"", replace_cvc(_arg_2, ""CA"", _arg_1))
+else
+    ""AR""
+end",0.0,0.0625150203704834,No updates
+50,"if true
+    concat_cvc(""MO"", ""NY"")
+else
+    "" ""
+end",0.0,0.06265807151794434,No updates
+51,"if true
+    concat_cvc(""NV"", ""ID"")
+else
+    replace_cvc(_arg_2, ""MA"", _arg_1)
+end",0.0,0.06179451942443848,No updates
+52,"if true
+    concat_cvc(""NJ"", replace_cvc(_arg_2, ""CT"", _arg_1))
+else
+    replace_cvc(_arg_2, ""New York"", ""NY"")
+end",0.0,0.07198667526245117,No updates
+53,"if true
+    concat_cvc(""NC"", ""OH"")
+else
+    ""WI""
+end",0.0,0.06260013580322266,No updates
+54,"if true
+    concat_cvc(""OK"", ""KS"")
+else
+    ""VT""
+end",0.0,0.06270122528076172,No updates
+55,"if true
+    concat_cvc(""RI"", _arg_1)
+else
+    ""SD""
+end",0.0,0.07042360305786133,No updates
+56,"if true
+    concat_cvc(""SD"", ""RI"")
+else
+    ""OR""
+end",0.0,0.06255054473876953,No updates
+57,"if true
+    concat_cvc(""UT"", ""MD"")
+else
+    ""NC""
+end",0.0,0.06260371208190918,No updates
+58,"if true
+    concat_cvc(""WA"", "","")
+else
+    ""NH""
+end",0.0,0.06942486763000488,No updates
+59,"if true
+    concat_cvc(""WI"", ""TX"")
+else
+    ""MO""
+end",0.0,0.08043289184570312,No updates
+60,"if true
+    concat_cvc(replace_cvc(_arg_2, ""New York"", _arg_1), ""MS"")
+else
+    ""MA""
+end",0.0,0.09349489212036133,No updates
+61,"if true
+    concat_cvc(replace_cvc(_arg_2, ""PA"", _arg_1), ""CA"")
+else
+    ""KY""
+end",0.0,0.09392046928405762,No updates
+62,"if true
+    concat_cvc(replace_cvc(_arg_2, ""MA"", _arg_1), ""WA"")
+else
+    ""IL""
+end",0.0,0.0771327018737793,No updates
+63,"if true
+    prefixof_cvc(""New York"", ""NV"")
+else
+    ""FL""
+end",0.0,0.058301687240600586,No updates
+64,"if true
+    prefixof_cvc(""AK"", ""FL"")
+else
+    ""CA""
+end",0.0,0.05667543411254883,No updates
+65,"if true
+    prefixof_cvc(""AR"", replace_cvc(_arg_2, ""CA"", _arg_1))
+else
+    "",""
+end",0.0,0.058423757553100586,No updates
+66,"if true
+    prefixof_cvc(""CT"", ""NY"")
+else
+    _arg_1
+end",0.0,0.05863189697265625,No updates
+67,"if true
+    prefixof_cvc(""GA"", ""ID"")
+else
+    replace_cvc(_arg_2, ""CT"", _arg_1)
+end",0.0,0.06845545768737793,No updates
+68,"if true
+    prefixof_cvc(""ID"", replace_cvc(_arg_2, ""CT"", _arg_1))
+else
+    ""USA""
+end",0.0,0.05747103691101074,No updates
+69,"if true
+    prefixof_cvc(""IA"", ""OH"")
+else
+    ""VA""
+end",0.0,0.05857682228088379,No updates
+70,"if true
+    prefixof_cvc(""LA"", ""KS"")
+else
+    ""TN""
+end",0.0,0.058385372161865234,No updates
+71,"if true
+    prefixof_cvc(""MA"", _arg_1)
+else
+    ""PA""
+end",0.0,0.057074546813964844,No updates
+72,"if true
+    prefixof_cvc(""MN"", ""RI"")
+else
+    ""ND""
+end",0.0,0.0695042610168457,No updates
+73,"if true
+    prefixof_cvc(""MT"", ""MD"")
+else
+    ""NJ""
+end",0.0,0.058641910552978516,No updates
+74,"if true
+    prefixof_cvc(""NH"", "","")
+else
+    ""MT""
+end",0.0,0.0565488338470459,No updates
+75,"if true
+    prefixof_cvc(""NM"", ""TX"")
+else
+    ""MI""
+end",0.0,0.05858945846557617,No updates
+76,"if true
+    prefixof_cvc(""ND"", ""MS"")
+else
+    ""LA""
+end",0.0,0.05860304832458496,No updates
+77,"if true
+    prefixof_cvc(""OR"", ""CA"")
+else
+    ""IN""
+end",0.0,0.06729602813720703,No updates
+78,"if true
+    prefixof_cvc(""RI"", ""WA"")
+else
+    ""GA""
+end",0.0,0.0583653450012207,No updates
+79,"if true
+    prefixof_cvc(""TN"", ""NV"")
+else
+    ""CO""
+end",0.0,0.058531999588012695,No updates
+80,"if true
+    prefixof_cvc(""VT"", ""FL"")
+else
+    ""AK""
+end",0.0,0.0566408634185791,No updates
+81,"if true
+    prefixof_cvc(""WA"", replace_cvc(_arg_2, ""CA"", _arg_1))
+else
+    _arg_2
+end",0.0,0.06924748420715332,No updates
+82,"if true
+    prefixof_cvc(""USA"", ""NM"")
+else
+    replace_cvc(_arg_2, ""PA"", _arg_1)
+end",0.0,0.08832931518554688,No updates
+83,"if true
+    prefixof_cvc(replace_cvc(_arg_2, ""New York"", ""NY""), ""ID"")
+else
+    replace_cvc(_arg_2, ""CA"", _arg_1)
+end",0.0,0.09325981140136719,No updates
+84,"if true
+    prefixof_cvc(replace_cvc(_arg_2, ""PA"", _arg_1), replace_cvc(_arg_2, ""CT"", _arg_1))
+else
+    ""WA""
+end",0.0,0.08606982231140137,No updates
+85,"if true
+    suffixof_cvc(_arg_1, ""OH"")
+else
+    ""TX""
+end",0.0,0.06301259994506836,No updates
+86,"if true
+    suffixof_cvc("" "", ""KS"")
+else
+    ""RI""
+end",0.0,0.06951332092285156,No updates
+87,"if true
+    suffixof_cvc(""AZ"", _arg_1)
+else
+    ""OH""
+end",0.0,0.05693840980529785,No updates
+88,"if true
+    suffixof_cvc(""CA"", ""RI"")
+else
+    ""NM""
+end",0.0,0.058957815170288086,No updates
+89,"if true
+    suffixof_cvc(""DE"", ""MD"")
+else
+    ""NE""
+end",0.0,0.058777570724487305,No updates
+90,"if true
+    suffixof_cvc(""HI"", "","")
+else
+    ""MN""
+end",0.0,0.05712175369262695,No updates
+91,"if true
+    suffixof_cvc(""IL"", ""TX"")
+else
+    ""ME""
+end",0.0,0.06970715522766113,No updates
+92,"if true
+    suffixof_cvc(""KS"", ""MS"")
+else
+    ""IA""
+end",0.0,0.058699607849121094,No updates
+93,"if true
+    suffixof_cvc(""ME"", ""CA"")
+else
+    ""HI""
+end",0.0,0.05689811706542969,No updates
+94,"if true
+    suffixof_cvc(""MA"", ""WA"")
+else
+    ""CT""
+end",0.0,0.05961799621582031,No updates
+95,"if true
+    suffixof_cvc(""MS"", ""NV"")
+else
+    ""AZ""
+end",0.0,0.06968140602111816,No updates
+96,"if true
+    suffixof_cvc(""NE"", ""FL"")
+else
+    ""New York""
+end",0.0,0.05674433708190918,No updates
+97,"if true
+    suffixof_cvc(""NH"", ""USA"")
+else
+    replace_cvc(_arg_2, ""MI"", _arg_1)
+end",0.0,0.05860400199890137,No updates
+98,"if true
+    suffixof_cvc(""NY"", ""NM"")
+else
+    replace_cvc(_arg_2, ""New York"", _arg_1)
+end",0.0,0.05874514579772949,No updates
+99,"if true
+    suffixof_cvc(""OH"", ""ID"")
+else
+    ""WV""
+end",0.0,0.0577695369720459,No updates
+100,"if true
+    suffixof_cvc(""OR"", replace_cvc(_arg_2, ""CT"", _arg_1))
+else
+    ""UT""
+end",0.0,0.06859374046325684,No updates
+101,_arg_2,0.45,6.764055013656616,Final result so no updates
+-1,Final grammar,-1.0,0.0,"1: Start = ntString
+2: ntString = _arg_1
+3: ntString = _arg_2
+4: ntString = New York
+5: ntString =  
+6: ntString = ,
+7: ntString = AK
+8: ntString = AZ
+9: ntString = AR
+10: ntString = CA
+11: ntString = CO
+12: ntString = CT
+13: ntString = DE
+14: ntString = FL
+15: ntString = GA
+16: ntString = HI
+17: ntString = ID
+18: ntString = IL
+19: ntString = IN
+20: ntString = IA
+21: ntString = KS
+22: ntString = KY
+23: ntString = LA
+24: ntString = ME
+25: ntString = MD
+26: ntString = MA
+27: ntString = MI
+28: ntString = MN
+29: ntString = MS
+30: ntString = MO
+31: ntString = MT
+32: ntString = NE
+33: ntString = NV
+34: ntString = NH
+35: ntString = NJ
+36: ntString = NM
+37: ntString = NY
+38: ntString = NC
+39: ntString = ND
+40: ntString = OH
+41: ntString = OK
+42: ntString = OR
+43: ntString = PA
+44: ntString = RI
+45: ntString = SC
+46: ntString = SD
+47: ntString = TN
+48: ntString = TX
+49: ntString = UT
+50: ntString = VT
+51: ntString = VA
+52: ntString = WA
+53: ntString = WV
+54: ntString = WI
+55: ntString = USA
+56: ntString = concat_cvc(ntString, ntString)
+57: ntString = replace_cvc(ntString, ntString, ntString)
+58: ntString = at_cvc(ntString, ntInt)
+59: ntString = int_to_str_cvc(ntInt)
+60: ntString = if ntBool
+    ntString
+else
+    ntString
+end
+61: ntString = substr_cvc(ntString, ntInt, ntInt)
+62: ntInt = 0
+63: ntInt = 1
+64: ntInt = 2
+65: ntInt = ntInt + ntInt
+66: ntInt = ntInt - ntInt
+67: ntInt = len_cvc(ntString)
+68: ntInt = str_to_int_cvc(ntString)
+69: ntInt = indexof_cvc(ntString, ntString, ntInt)
+70: ntBool = true
+71: ntBool = false
+72: ntBool = prefixof_cvc(ntString, ntString)
+73: ntBool = suffixof_cvc(ntString, ntString)
+74: ntBool = contains_cvc(ntString, ntString)
+75: ntString = replace_cvc(_arg_2, ""CA"", _arg_1)
+76: ntString = replace_cvc(_arg_2, ""New York"", _arg_1)
+77: ntString = replace_cvc(_arg_2, ""New York"", ""NY"")
+78: ntString = replace_cvc(_arg_2, ""CT"", _arg_1)
+79: ntString = replace_cvc(_arg_2, ""PA"", _arg_1)
+80: ntString = replace_cvc(_arg_2, ""MI"", _arg_1)
+81: ntString = replace_cvc(_arg_2, ""MA"", _arg_1)
+"
+-2,Timed out: false,-1.0,0.0, 

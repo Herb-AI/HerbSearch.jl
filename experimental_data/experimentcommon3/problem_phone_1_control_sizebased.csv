@@ -1,0 +1,4 @@
+attempt,best_program,program_score,iterations,time_seconds
+1,"substr_cvc(_arg_1, 5, 2 + 5)",1.0,3490,0.04302692413330078
+-1,"substr_cvc(_arg_1, 5, 2 + 5)",1.0,-1,0.04302692413330078
+-2,Timed out: false,-1.0,-1,0.0

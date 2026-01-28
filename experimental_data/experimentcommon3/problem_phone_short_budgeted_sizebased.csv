@@ -1,0 +1,26 @@
+attempt,best_program,program_score,time,new_updated_rules
+1,"substr_cvc(_arg_1, 1, 3)",1.0,0.2847249507904053,"New Rule: substr_cvc(_arg_1, 1, 3)"
+101,"substr_cvc(_arg_1, 1, 3)",1.0,0.2847249507904053,Final result so no updates
+-1,Final grammar,-1.0,0.0,"1: Start = ntString
+2: ntString = _arg_1
+3: ntString =  
+4: ntString = concat_cvc(ntString, ntString)
+5: ntString = replace_cvc(ntString, ntString, ntString)
+6: ntString = at_cvc(ntString, ntInt)
+7: ntString = substr_cvc(ntString, ntInt, ntInt)
+8: ntInt = 0
+9: ntInt = 1
+10: ntInt = 2
+11: ntInt = 3
+12: ntInt = ntInt + ntInt
+13: ntInt = ntInt - ntInt
+14: ntInt = len_cvc(ntString)
+15: ntInt = indexof_cvc(ntString, ntString, ntInt)
+16: ntBool = true
+17: ntBool = false
+18: ntBool = prefixof_cvc(ntString, ntString)
+19: ntBool = suffixof_cvc(ntString, ntString)
+20: ntBool = contains_cvc(ntString, ntString)
+21: ntString = substr_cvc(_arg_1, 1, 3)
+"
+-2,Timed out: false,-1.0,0.0, 

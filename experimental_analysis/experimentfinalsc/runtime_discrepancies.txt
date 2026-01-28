@@ -1,0 +1,88 @@
+================================================================================
+RUNTIME DISCREPANCIES (excluding timed-out runs)
+================================================================================
+
+Total problems compared: 147
+Excluded due to timeout: 0
+Problems where budgeted was faster: 33
+Problems where control was faster: 114
+
+================================================================================
+TOP 5: BUDGETED FASTER THAN CONTROL (by time saved)
+================================================================================
+
+--------------------------------------------------------------------------------
+Problem: problem_phone_5_long_repeat
+  Control runtime:  48.26s
+  Budgeted runtime: 25.05s
+  Time saved:       23.22s (1.93x faster)
+  Final scores:     Control=0.4800, Budgeted=0.4800
+
+--------------------------------------------------------------------------------
+Problem: problem_phone_2_long_repeat
+  Control runtime:  62.54s
+  Budgeted runtime: 41.05s
+  Time saved:       21.49s (1.52x faster)
+  Final scores:     Control=0.0100, Budgeted=0.0100
+
+--------------------------------------------------------------------------------
+Problem: problem_phone_6_long_repeat
+  Control runtime:  46.29s
+  Budgeted runtime: 35.31s
+  Time saved:       10.97s (1.31x faster)
+  Final scores:     Control=0.4800, Budgeted=0.4800
+
+--------------------------------------------------------------------------------
+Problem: problem_phone_2_long
+  Control runtime:  21.08s
+  Budgeted runtime: 12.93s
+  Time saved:       8.15s (1.63x faster)
+  Final scores:     Control=0.0100, Budgeted=0.0100
+
+--------------------------------------------------------------------------------
+Problem: problem_phone_5_long
+  Control runtime:  17.56s
+  Budgeted runtime: 12.70s
+  Time saved:       4.85s (1.38x faster)
+  Final scores:     Control=0.4800, Budgeted=0.4800
+
+================================================================================
+TOP 5: CONTROL FASTER THAN BUDGETED (by time saved)
+================================================================================
+
+--------------------------------------------------------------------------------
+Problem: problem_lastname_long
+  Control runtime:  595.21s
+  Budgeted runtime: 612.65s
+  Time saved:       17.44s (1.03x faster)
+  Final scores:     Control=0.0000, Budgeted=0.0000
+
+--------------------------------------------------------------------------------
+Problem: problem_lastname
+  Control runtime:  569.05s
+  Budgeted runtime: 583.45s
+  Time saved:       14.40s (1.03x faster)
+  Final scores:     Control=0.0000, Budgeted=0.0000
+
+--------------------------------------------------------------------------------
+Problem: problem_lastname_long_repeat
+  Control runtime:  621.05s
+  Budgeted runtime: 635.29s
+  Time saved:       14.25s (1.02x faster)
+  Final scores:     Control=0.0000, Budgeted=0.0000
+
+--------------------------------------------------------------------------------
+Problem: problem_phone_10_long_repeat
+  Control runtime:  45.30s
+  Budgeted runtime: 54.69s
+  Time saved:       9.39s (1.21x faster)
+  Final scores:     Control=0.0000, Budgeted=0.0000
+
+--------------------------------------------------------------------------------
+Problem: problem_most_frequently_occurring_text
+  Control runtime:  0.30s
+  Budgeted runtime: 9.46s
+  Time saved:       9.16s (31.05x faster)
+  Final scores:     Control=1.0000, Budgeted=0.7500
+
+================================================================================

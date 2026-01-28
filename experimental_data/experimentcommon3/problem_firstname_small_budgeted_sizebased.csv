@@ -1,0 +1,31 @@
+attempt,best_program,program_score,time,new_updated_rules
+1,"substr_cvc(_arg_1, 1, 1 + 2)",0.25,0.10317516326904297,"New Rule: substr_cvc(_arg_1, 1, 1 + 2)"
+2,"substr_cvc(_arg_1, 1, 1 + 2)",0.25,0.09988260269165039,No updates
+3,"substr_cvc(concat_cvc(_arg_1, _arg_1), 1, 1 + 2)",0.25,0.09276556968688965,No updates
+4,"replace_cvc(concat_cvc("" "", _arg_1), concat_cvc(_arg_1, substr_cvc(_arg_1, 1, 1 + 2)), substr_cvc(_arg_1, 1, 1 + 2))",0.0,0.13235163688659668,No updates
+5,"replace_cvc(_arg_1, substr_cvc(substr_cvc(_arg_1, 1, 1 + 2), 0, 1), suffixof_cvc(_arg_1, _arg_1))",0.0,0.09818887710571289,No updates
+6,"substr_cvc(replace_cvc(_arg_1, _arg_1, _arg_1), 1, 1 + 2)",0.25,0.0946192741394043,No updates
+7,"substr_cvc(concat_cvc("" "", _arg_1), 2, indexof_cvc(_arg_1, "" "", 0))",1.0,0.0028145313262939453,"New Rule: substr_cvc(concat_cvc("" "", _arg_1), 2, indexof_cvc(_arg_1, "" "", 0))"
+101,"substr_cvc(concat_cvc("" "", _arg_1), 2, indexof_cvc(_arg_1, "" "", 0))",1.0,0.6237976551055908,Final result so no updates
+-1,Final grammar,-1.0,0.0,"1: Start = ntString
+2: ntString = _arg_1
+3: ntString =  
+4: ntString = concat_cvc(ntString, ntString)
+5: ntString = replace_cvc(ntString, ntString, ntString)
+6: ntString = at_cvc(ntString, ntInt)
+7: ntString = substr_cvc(ntString, ntInt, ntInt)
+8: ntInt = 0
+9: ntInt = 1
+10: ntInt = 2
+11: ntInt = ntInt + ntInt
+12: ntInt = ntInt - ntInt
+13: ntInt = len_cvc(ntString)
+14: ntInt = indexof_cvc(ntString, ntString, ntInt)
+15: ntBool = true
+16: ntBool = false
+17: ntBool = prefixof_cvc(ntString, ntString)
+18: ntBool = suffixof_cvc(ntString, ntString)
+19: ntString = substr_cvc(_arg_1, 1, 1 + 2)
+20: ntString = substr_cvc(concat_cvc("" "", _arg_1), 2, indexof_cvc(_arg_1, "" "", 0))
+"
+-2,Timed out: false,-1.0,0.0, 

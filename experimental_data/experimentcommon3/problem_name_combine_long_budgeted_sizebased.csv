@@ -1,0 +1,30 @@
+attempt,best_program,program_score,time,new_updated_rules
+1,_arg_1,0.0,1.4803729057312012,No updates
+2,"replace_cvc(at_cvc("" "", 2), prefixof_cvc("" "", _arg_2), _arg_2)",0.0,0.22664499282836914,No updates
+3,"replace_cvc(concat_cvc(_arg_1, _arg_2), _arg_1, concat_cvc(_arg_1, "" ""))",1.0,0.3659508228302002,"New Rule: replace_cvc(concat_cvc(_arg_1, _arg_2), _arg_1, concat_cvc(_arg_1, "" ""))"
+101,"replace_cvc(concat_cvc(_arg_1, _arg_2), _arg_1, concat_cvc(_arg_1, "" ""))",1.0,2.0729687213897705,Final result so no updates
+-1,Final grammar,-1.0,0.0,"1: Start = ntString
+2: ntString = _arg_1
+3: ntString = _arg_2
+4: ntString =  
+5: ntString = concat_cvc(ntString, ntString)
+6: ntString = replace_cvc(ntString, ntString, ntString)
+7: ntString = at_cvc(ntString, ntInt)
+8: ntString = int_to_str_cvc(ntInt)
+9: ntString = substr_cvc(ntString, ntInt, ntInt)
+10: ntInt = 0
+11: ntInt = 1
+12: ntInt = 2
+13: ntInt = ntInt + ntInt
+14: ntInt = ntInt - ntInt
+15: ntInt = len_cvc(ntString)
+16: ntInt = str_to_int_cvc(ntString)
+17: ntInt = indexof_cvc(ntString, ntString, ntInt)
+18: ntBool = true
+19: ntBool = false
+20: ntBool = prefixof_cvc(ntString, ntString)
+21: ntBool = suffixof_cvc(ntString, ntString)
+22: ntBool = contains_cvc(ntString, ntString)
+23: ntString = replace_cvc(concat_cvc(_arg_1, _arg_2), _arg_1, concat_cvc(_arg_1, "" ""))
+"
+-2,Timed out: false,-1.0,0.0, 

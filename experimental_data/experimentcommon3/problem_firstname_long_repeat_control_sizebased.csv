@@ -1,0 +1,6 @@
+attempt,best_program,program_score,iterations,time_seconds
+1,"substr_cvc(_arg_1, 1, 2 + 2)",0.11764705882352941,10000,0.4151279926300049
+2,"substr_cvc(_arg_1, 2 - 1, 2 + 2)",0.11764705882352941,10000,0.47838306427001953
+3,"substr_cvc(concat_cvc("" "", _arg_1), 2, indexof_cvc(_arg_1, "" "", 0))",1.0,6254,0.2681150436401367
+-1,"substr_cvc(concat_cvc("" "", _arg_1), 2, indexof_cvc(_arg_1, "" "", 0))",1.0,-1,1.1616261005401611
+-2,Timed out: false,-1.0,-1,0.0

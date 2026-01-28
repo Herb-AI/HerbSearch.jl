@@ -1,0 +1,167 @@
+attempt,best_program,program_score,iterations,time_seconds
+1,_arg_1,0.0,10000,0.09247994422912598
+2,"at_cvc(_arg_1, indexof_cvc("" "", "","", -1))",0.0,10000,0.07624411582946777
+3,"replace_cvc(contains_cvc("">"", ""/""), "","", _arg_1)",0.0,10000,0.07524800300598145
+4,"replace_cvc(""/"", concat_cvc(_arg_1, "",""), "">"")",0.0,10000,0.07420802116394043
+5,"replace_cvc("","", ""<"", suffixof_cvc("">"", """"))",0.0,10000,0.08414196968078613
+6,"replace_cvc(suffixof_cvc(""/"", "">""), "">"", int_to_str_cvc(1))",0.0,10000,0.07128405570983887
+7,"if true
+    replace_cvc("" "", "","", _arg_1)
+else
+    "" ""
+end",0.0,10000,0.03649616241455078
+8,"if false
+    _arg_1
+else
+    replace_cvc(_arg_1, ""<"", _arg_1)
+end",0.0,10000,0.09544205665588379
+9,"at_cvc(contains_cvc("" "", ""/""), -1 == 1)",0.0,10000,0.0393068790435791
+10,"replace_cvc(""<"", "","", replace_cvc(""/"", "">"", """"))",0.0,10000,0.03973102569580078
+11,"replace_cvc("" "", _arg_1, if false
+        _arg_1
+    else
+        "",""
+    end)",0.0,10000,0.03711295127868652
+12,"replace_cvc(int_to_str_cvc(0), prefixof_cvc("""", _arg_1), "">"")",0.0,10000,0.048888206481933594
+13,"replace_cvc(replace_cvc(""<"", """", "" ""), """", """")",0.0,10000,0.05199790000915527
+14,"replace_cvc(_arg_1, if false
+        """"
+    else
+        """"
+    end, "","")",0.0,10000,0.05252981185913086
+15,"replace_cvc(_arg_1, replace_cvc(""<"", _arg_1, "" ""), "" "")",0.0,10000,0.03564286231994629
+16,"replace_cvc("">"", replace_cvc("">"", """", "" ""), ""/"")",0.0,10000,0.04941082000732422
+17,"replace_cvc(int_to_str_cvc(1), "","", contains_cvc(""<"", ""<""))",0.0,10000,0.09104084968566895
+18,"replace_cvc(""/"", "">"", substr_cvc("" "", 0, 1))",0.0,10000,0.06869387626647949
+19,"substr_cvc("""", 1, indexof_cvc("""", _arg_1, 0))",0.0,10000,0.04771900177001953
+20,"replace_cvc(if true
+        _arg_1
+    else
+        _arg_1
+    end, ""<"", int_to_str_cvc(-1))",0.0,10000,0.07136702537536621
+21,"if true
+    at_cvc("""", -1)
+else
+    contains_cvc(""<"", """")
+end",0.0,10000,0.05377912521362305
+22,"if true
+    concat_cvc("" "", _arg_1)
+else
+    contains_cvc(""<"", "","")
+end",0.0,10000,0.0274960994720459
+23,"if true
+    prefixof_cvc("" "", "" "")
+else
+    contains_cvc("">"", "" "")
+end",0.0,10000,0.026690959930419922
+24,"if true
+    suffixof_cvc("" "", "">"")
+else
+    contains_cvc("">"", ""/"")
+end",0.0,10000,0.027045011520385742
+25,"if true
+    contains_cvc("" "", ""/"")
+else
+    contains_cvc("","", ""<"")
+end",0.0,10000,0.026890993118286133
+26,"if false
+    concat_cvc(""<"", """")
+else
+    contains_cvc(""/"", _arg_1)
+end",0.0,10000,0.03900313377380371
+27,"if false
+    prefixof_cvc(""<"", ""<"")
+else
+    contains_cvc(""/"", "">"")
+end",0.0,10000,0.02749800682067871
+28,"if false
+    suffixof_cvc(""<"", ""/"")
+else
+    concat_cvc(_arg_1, """")
+end",0.0,10000,0.027259111404418945
+29,"if false
+    contains_cvc("">"", """")
+else
+    concat_cvc(_arg_1, "","")
+end",0.0,10000,0.038537025451660156
+30,"if false
+    prefixof_cvc(""/"", "" "")
+else
+    at_cvc("","", 0)
+end",0.0,10000,0.06607890129089355
+31,"replace_cvc("">"", if false
+        ""<""
+    else
+        ""/""
+    end, int_to_str_cvc(-1))",0.0,10000,0.04145407676696777
+32,"replace_cvc("","", replace_cvc(""<"", _arg_1, """"), int_to_str_cvc(1))",0.0,10000,0.07492303848266602
+33,"at_cvc(replace_cvc(_arg_1, "","", _arg_1), -1 + 0)",0.0,10000,0.0908498764038086
+34,"at_cvc(concat_cvc("""", "">""), indexof_cvc(""<"", ""<"", -1))",0.0,10000,0.0856320858001709
+35,"at_cvc(prefixof_cvc("">"", "" ""), indexof_cvc(""<"", "","", 1))",0.0,10000,0.09412097930908203
+36,"at_cvc(contains_cvc(_arg_1, _arg_1), indexof_cvc(""<"", ""/"", 0))",0.0,10000,0.09177803993225098
+37,"replace_cvc(concat_cvc(_arg_1, _arg_1), prefixof_cvc("" "", _arg_1), "" "")",0.0,10000,0.08282303810119629
+38,"replace_cvc(concat_cvc("""", _arg_1), suffixof_cvc(""<"", _arg_1), ""/"")",0.0,10000,0.0814659595489502
+39,"replace_cvc(concat_cvc("" "", _arg_1), contains_cvc("">"", """"), ""<"")",0.0,10000,0.07731008529663086
+40,"replace_cvc(concat_cvc(""<"", """"), concat_cvc("","", "" ""), _arg_1)",0.0,10000,0.09364485740661621
+41,"replace_cvc(concat_cvc("">"", """"), prefixof_cvc(""/"", "" ""), "">"")",0.0,10000,0.08369588851928711
+42,"replace_cvc(concat_cvc("","", """"), contains_cvc(_arg_1, ""<""), """")",0.0,10000,0.07927393913269043
+43,"replace_cvc(concat_cvc(""/"", "" ""), concat_cvc("""", ""<""), "","")",0.0,10000,0.09627008438110352
+44,"replace_cvc(prefixof_cvc(_arg_1, "" ""), prefixof_cvc("" "", "">""), "" "")",0.0,10000,0.09459400177001953
+45,"replace_cvc(prefixof_cvc("""", "" ""), suffixof_cvc(""<"", "">""), ""/"")",0.0,10000,0.09499382972717285
+46,"replace_cvc(prefixof_cvc("" "", "" ""), contains_cvc("">"", "",""), ""<"")",0.0,10000,0.09727787971496582
+47,"replace_cvc(prefixof_cvc(""<"", ""<""), concat_cvc("","", ""/""), _arg_1)",0.0,10000,0.10494208335876465
+48,"replace_cvc(prefixof_cvc("">"", ""<""), prefixof_cvc(""/"", ""/""), "">"")",0.0,10000,0.0970609188079834
+49,"replace_cvc(prefixof_cvc("","", ""<""), contains_cvc("""", _arg_1), """")",0.0,10000,0.09467697143554688
+50,"replace_cvc(prefixof_cvc(""/"", "">""), concat_cvc("" "", _arg_1), "","")",0.0,10000,0.1060638427734375
+51,"replace_cvc(suffixof_cvc(_arg_1, "">""), prefixof_cvc(""<"", """"), "" "")",0.0,10000,0.09801888465881348
+52,"replace_cvc(suffixof_cvc("""", "">""), suffixof_cvc("">"", """"), ""/"")",0.0,10000,0.0964970588684082
+53,"replace_cvc(suffixof_cvc("" "", "">""), contains_cvc("","", "" ""), ""<"")",0.0,10000,0.09260296821594238
+54,"replace_cvc(suffixof_cvc(""<"", "",""), concat_cvc(""/"", ""<""), _arg_1)",0.0,10000,0.1088109016418457
+55,"replace_cvc(suffixof_cvc("">"", "",""), suffixof_cvc(_arg_1, ""<""), "">"")",0.0,10000,0.09372115135192871
+56,"replace_cvc(suffixof_cvc("","", "",""), contains_cvc("""", "">""), """")",0.0,10000,0.09317684173583984
+57,"replace_cvc(suffixof_cvc(""/"", ""/""), concat_cvc("" "", "">""), "","")",0.0,10000,0.10762786865234375
+58,"replace_cvc(contains_cvc(_arg_1, ""/""), prefixof_cvc(""<"", "",""), "" "")",0.0,10000,0.0918722152709961
+59,"replace_cvc(contains_cvc("""", ""/""), suffixof_cvc("">"", "",""), ""/"")",0.0,10000,0.10192704200744629
+60,"replace_cvc(contains_cvc("" "", ""/""), contains_cvc("","", ""/""), ""<"")",0.0,10000,0.10457682609558105
+61,"replace_cvc(contains_cvc("">"", _arg_1), prefixof_cvc(_arg_1, _arg_1), _arg_1)",0.0,10000,0.1024019718170166
+62,"replace_cvc(contains_cvc("","", _arg_1), suffixof_cvc("""", _arg_1), "">"")",0.0,10000,0.09853696823120117
+63,"replace_cvc(contains_cvc(""/"", _arg_1), contains_cvc("" "", """"), """")",0.0,10000,0.09048295021057129
+64,"replace_cvc(concat_cvc("""", ""<""), at_cvc("" "", -1), "","")",0.0,10000,0.0874640941619873
+65,"replace_cvc(prefixof_cvc("">"", """"), at_cvc(""<"", 1), "" "")",0.0,10000,0.0856180191040039
+66,"replace_cvc(suffixof_cvc(""/"", ""/""), at_cvc(""<"", 1), ""/"")",0.0,10000,0.08610892295837402
+67,"replace_cvc(at_cvc(""/"", 1), at_cvc(""<"", 0), ""<"")",0.0,10000,0.05475783348083496
+68,"replace_cvc(substr_cvc("""", -1, -1), int_to_str_cvc(-1), _arg_1)",0.0,10000,0.04237508773803711
+69,"replace_cvc(int_to_str_cvc(0), replace_cvc(""<"", ""<"", "">""), "">"")",0.0,10000,0.06370210647583008
+70,"replace_cvc(at_cvc("""", 0), "">"", suffixof_cvc("","", """"))",0.0,10000,0.07776498794555664
+71,"replace_cvc(at_cvc(""<"", -1), ""/"", suffixof_cvc("","", "",""))",0.0,10000,0.0896458625793457
+72,"replace_cvc(at_cvc(""/"", 0), """", suffixof_cvc(""/"", "" ""))",0.0,10000,0.0877070426940918
+73,"replace_cvc(concat_cvc(_arg_1, "",""), ""<"", suffixof_cvc(""/"", ""/""))",0.0,10000,0.08757495880126953
+74,"replace_cvc(concat_cvc("""", "",""), "","", contains_cvc(_arg_1, ""<""))",0.0,10000,0.1107940673828125
+75,"replace_cvc(concat_cvc("" "", ""/""), _arg_1, contains_cvc("""", _arg_1))",0.0,10000,0.0839240550994873
+76,"replace_cvc(concat_cvc(""<"", ""/""), "" "", contains_cvc("""", "">""))",0.0,10000,0.08583283424377441
+77,"replace_cvc(concat_cvc("">"", ""/""), "">"", contains_cvc("" "", """"))",0.0,10000,0.0939781665802002
+78,"replace_cvc(concat_cvc("","", ""/""), ""/"", contains_cvc("" "", "",""))",0.0,10000,0.08061003684997559
+79,"replace_cvc(prefixof_cvc(_arg_1, _arg_1), """", contains_cvc(""<"", "" ""))",0.0,10000,0.09377503395080566
+80,"replace_cvc(prefixof_cvc("""", _arg_1), ""<"", contains_cvc(""<"", ""/""))",0.0,10000,0.0988161563873291
+81,"replace_cvc(prefixof_cvc("" "", _arg_1), "","", contains_cvc("">"", ""<""))",0.0,10000,0.11663603782653809
+82,"replace_cvc(prefixof_cvc(""<"", """"), _arg_1, contains_cvc("","", _arg_1))",0.0,10000,0.09769988059997559
+83,"replace_cvc(prefixof_cvc("">"", """"), "" "", contains_cvc("","", "">""))",0.0,10000,0.09635496139526367
+84,"replace_cvc(prefixof_cvc("","", """"), "">"", contains_cvc(""/"", """"))",0.0,10000,0.10441803932189941
+85,"replace_cvc(prefixof_cvc(""/"", """"), ""/"", contains_cvc(""/"", "",""))",0.0,10000,0.09932303428649902
+86,"replace_cvc(suffixof_cvc(_arg_1, "" ""), "" "", concat_cvc(_arg_1, "" ""))",0.0,10000,0.11050891876220703
+87,"replace_cvc(suffixof_cvc("""", "" ""), "">"", concat_cvc(_arg_1, ""/""))",0.0,10000,0.09279608726501465
+88,"replace_cvc(suffixof_cvc("" "", "" ""), ""/"", concat_cvc("""", ""<""))",0.0,10000,0.11508584022521973
+89,"replace_cvc(suffixof_cvc(""<"", ""<""), """", concat_cvc("" "", _arg_1))",0.0,10000,0.10631012916564941
+90,"replace_cvc(suffixof_cvc("">"", ""<""), ""<"", concat_cvc("" "", "">""))",0.0,10000,0.0954599380493164
+91,"replace_cvc(suffixof_cvc("","", ""<""), "","", concat_cvc(""<"", """"))",0.0,10000,0.10327696800231934
+92,"replace_cvc(suffixof_cvc(""/"", "">""), _arg_1, concat_cvc(""<"", "",""))",0.0,10000,0.09719014167785645
+93,"replace_cvc(contains_cvc(_arg_1, "">""), "" "", concat_cvc("">"", "" ""))",0.0,10000,0.09427285194396973
+94,"replace_cvc(contains_cvc("""", "">""), "">"", concat_cvc("">"", ""/""))",0.0,10000,0.0947258472442627
+95,"replace_cvc(contains_cvc("" "", "">""), ""/"", concat_cvc("","", ""<""))",0.0,10000,0.1067190170288086
+96,"replace_cvc(contains_cvc(""<"", "",""), """", concat_cvc(""/"", _arg_1))",0.0,10000,0.09540200233459473
+97,"replace_cvc(contains_cvc("">"", "",""), ""<"", concat_cvc(""/"", "">""))",0.0,10000,0.09482002258300781
+98,"replace_cvc(contains_cvc("","", "",""), "","", prefixof_cvc(_arg_1, """"))",0.0,10000,0.10396099090576172
+99,"replace_cvc(contains_cvc(""/"", ""/""), _arg_1, prefixof_cvc(_arg_1, "",""))",0.0,10000,0.08031892776489258
+100,"replace_cvc(_arg_1, concat_cvc(""/"", "" ""), prefixof_cvc("""", "" ""))",0.0,10000,0.09391093254089355
+-1,_arg_1,0.0,-1,8.052008867263794
+-2,Timed out: false,-1.0,-1,0.0

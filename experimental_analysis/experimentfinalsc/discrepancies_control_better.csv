@@ -1,0 +1,10 @@
+problem_name,control_final_score,budgeted_final_score,num_attempts_better,sum_difference,max_difference,first_better_attempt
+problem_firstname_long,1.0,1.0,1,0.8888888888888888,0.8888888888888888,3
+problem_firstname_long_repeat,1.0,1.0,1,0.8823529411764706,0.8823529411764706,3
+problem_firstname,1.0,1.0,1,0.75,0.75,3
+problem_firstname_small,1.0,1.0,1,0.75,0.75,2
+problem_get_first_word,1.0,1.0,1,0.6666666666666667,0.6666666666666667,63
+problem_remove_characters_from_left,1.0,1.0,1,0.33333333333333337,0.33333333333333337,2
+problem_12948338,0.6666666666666666,0.6666666666666666,1,0.3333333333333333,0.3333333333333333,30
+problem_most_frequently_occurring_text,1.0,0.75,1,0.25,0.25,5
+problem_split_numbers_from_units_of_measure_2,1.0,0.75,1,0.25,0.25,91

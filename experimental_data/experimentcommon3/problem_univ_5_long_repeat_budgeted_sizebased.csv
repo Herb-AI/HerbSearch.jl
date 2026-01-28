@@ -1,0 +1,179 @@
+attempt,best_program,program_score,time,new_updated_rules
+1,_arg_2,0.4,0.0785982608795166,"New Rule: replace_cvc(_arg_2, ""I"", _arg_1)New Rule: replace_cvc(_arg_2, ""P"", _arg_1)New Rule: replace_cvc(_arg_2, ""M"", _arg_1)New Rule: replace_cvc(_arg_2, ""N"", _arg_1)New Rule: _arg_2New Rule: replace_cvc(_arg_2, ""B"", _arg_1)New Rule: replace_cvc(_arg_2, ""New York"", _arg_1)New Rule: replace_cvc(_arg_2, ""H"", _arg_1)New Rule: replace_cvc(_arg_2, ""T"", _arg_1)New Rule: replace_cvc(_arg_2, ""C"", _arg_1)"
+2,_arg_2,0.4,0.08054065704345703,No updates
+3,"replace_cvc("","", "","", _arg_2)",0.4,0.07894635200500488,No updates
+4,"replace_cvc(""F"", ""F"", _arg_2)",0.4,0.07931232452392578,No updates
+5,"replace_cvc(""M"", ""M"", _arg_2)",0.4,0.0908820629119873,No updates
+6,"replace_cvc(""S"", ""S"", _arg_2)",0.4,0.07922911643981934,No updates
+7,"replace_cvc(""Y"", ""Y"", _arg_2)",0.4,0.08417606353759766,No updates
+8,"replace_cvc(replace_cvc(_arg_2, ""B"", _arg_1), ""C"", _arg_1)",0.0,0.0963280200958252,No updates
+9,"at_cvc(concat_cvc(""O"", _arg_1), 0)",0.0,0.10872054100036621,No updates
+10,"replace_cvc(_arg_2, at_cvc(""New York"", 1), ""N"")",0.4,0.09887576103210449,"New Rule: replace_cvc(_arg_2, at_cvc(""New York"", 2), _arg_1)New Rule: replace_cvc(_arg_2, at_cvc(_arg_1, 1), _arg_1)New Rule: replace_cvc(_arg_2, at_cvc(_arg_1, 1), ""U"")New Rule: replace_cvc(_arg_2, at_cvc(_arg_2, 1), ""A"")New Rule: replace_cvc(_arg_2, at_cvc(_arg_2, 1), ""P"")New Rule: replace_cvc(_arg_2, at_cvc(_arg_1, 2), _arg_1)New Rule: replace_cvc(_arg_2, at_cvc(_arg_1, 1), ""P"")New Rule: replace_cvc(_arg_2, at_cvc(_arg_2, 1), ""N"")New Rule: replace_cvc(_arg_2, at_cvc(_arg_1, 1), ""N"")New Rule: replace_cvc(_arg_2, at_cvc(_arg_2, 1), ""C"")New Rule: replace_cvc(_arg_2, at_cvc(_arg_2, 1), ""S"")"
+11,_arg_2,0.4,0.08097624778747559,No updates
+12,"replace_cvc(_arg_2, ""Z"", "","")",0.4,0.08307361602783203,No updates
+13,"replace_cvc(""B"", ""B"", _arg_2)",0.4,0.0828237533569336,No updates
+14,"replace_cvc(""F"", ""F"", _arg_2)",0.4,0.09411787986755371,No updates
+15,"replace_cvc(""I"", ""I"", _arg_2)",0.4,0.08226728439331055,No updates
+16,"replace_cvc(""M"", ""M"", _arg_2)",0.4,0.08200860023498535,No updates
+17,"replace_cvc(""Q"", ""Q"", _arg_2)",0.4,0.08219766616821289,No updates
+18,"replace_cvc(""U"", ""U"", _arg_2)",0.4,0.08233284950256348,No updates
+19,"replace_cvc(""X"", ""X"", _arg_2)",0.4,0.09461021423339844,No updates
+20,"replace_cvc(replace_cvc(_arg_2, ""P"", _arg_1), ""M"", replace_cvc(_arg_2, ""New York"", _arg_1))",0.0,0.0869145393371582,No updates
+21,"replace_cvc(replace_cvc(_arg_2, ""New York"", _arg_1), ""E"", replace_cvc(_arg_2, at_cvc(""New York"", 2), _arg_1))",0.0,0.08706140518188477,No updates
+22,"replace_cvc(replace_cvc(_arg_2, at_cvc(""New York"", 2), _arg_1), _arg_2, replace_cvc(_arg_2, at_cvc(_arg_2, 1), ""P""))",0.0,0.08645319938659668,No updates
+23,"replace_cvc(replace_cvc(_arg_2, at_cvc(_arg_2, 1), ""A""), replace_cvc(_arg_2, at_cvc(_arg_2, 1), ""P""), replace_cvc(_arg_2, at_cvc(_arg_1, 1), ""N""))",0.0,0.08671712875366211,No updates
+24,"replace_cvc(replace_cvc(_arg_2, at_cvc(_arg_2, 1), ""N""), replace_cvc(_arg_2, ""H"", _arg_1), _arg_2)",0.0,0.1068580150604248,No updates
+25,"at_cvc(concat_cvc(""E"", replace_cvc(_arg_2, ""B"", _arg_1)), 2)",0.0,0.09582042694091797,No updates
+26,"at_cvc(prefixof_cvc(""T"", "" ""), 0)",0.0,0.09853768348693848,No updates
+27,"at_cvc(suffixof_cvc(replace_cvc(_arg_2, ""T"", _arg_1), ""Q""), 1)",0.0,0.10605192184448242,No updates
+28,"replace_cvc(_arg_2, at_cvc(""New York"", 1), ""N"")",0.4,0.09600424766540527,No updates
+29,"replace_cvc("" "", at_cvc("" "", 1), _arg_2)",0.4,0.09018325805664062,No updates
+30,"replace_cvc("","", at_cvc("","", 1), _arg_2)",0.4,0.09038305282592773,No updates
+31,"replace_cvc(""A"", at_cvc(""A"", 1), _arg_2)",0.4,0.10163593292236328,No updates
+32,"replace_cvc(""B"", at_cvc(""B"", 1), _arg_2)",0.4,0.0899808406829834,"New Rule: replace_cvc(""C"", at_cvc(_arg_1, 1), _arg_2)"
+33,_arg_2,0.4,0.08009505271911621,No updates
+34,"replace_cvc(_arg_2, ""S"", ""S"")",0.4,0.0840902328491211,No updates
+35,"replace_cvc(""B"", ""B"", _arg_2)",0.4,0.09276080131530762,No updates
+36,"replace_cvc(""E"", ""E"", _arg_2)",0.4,0.08246469497680664,No updates
+37,"replace_cvc(""I"", ""I"", _arg_2)",0.4,0.0828397274017334,No updates
+38,"replace_cvc(""L"", ""L"", _arg_2)",0.4,0.08240699768066406,No updates
+39,"replace_cvc(""P"", ""P"", _arg_2)",0.4,0.08182859420776367,No updates
+40,"replace_cvc(""T"", ""T"", _arg_2)",0.4,0.08286333084106445,No updates
+41,"replace_cvc(""W"", ""W"", _arg_2)",0.4,0.09337949752807617,No updates
+42,"replace_cvc(replace_cvc(_arg_2, ""I"", _arg_1), _arg_2, replace_cvc(_arg_2, at_cvc(""New York"", 2), _arg_1))",0.0,0.08672738075256348,No updates
+43,"replace_cvc(replace_cvc(_arg_2, ""N"", _arg_1), replace_cvc(_arg_2, ""T"", _arg_1), "","")",0.0,0.08664321899414062,No updates
+44,"replace_cvc(replace_cvc(_arg_2, ""T"", _arg_1), ""R"", ""P"")",0.0,0.08681321144104004,No updates
+45,"replace_cvc(replace_cvc(_arg_2, at_cvc(_arg_1, 1), ""U""), ""B"", replace_cvc(_arg_2, ""New York"", _arg_1))",0.0,0.08638715744018555,No updates
+46,"replace_cvc(replace_cvc(_arg_2, at_cvc(_arg_1, 2), _arg_1), replace_cvc(_arg_2, at_cvc(_arg_2, 1), ""A""), _arg_1)",0.0,0.0962975025177002,No updates
+47,"replace_cvc(replace_cvc(_arg_2, at_cvc(_arg_2, 1), ""C""), ""W"", ""L"")",0.0,0.0971837043762207,No updates
+48,"at_cvc(concat_cvc(""Q"", ""F""), 2)",0.0,0.09763193130493164,No updates
+49,"at_cvc(prefixof_cvc(replace_cvc(_arg_2, ""M"", _arg_1), ""L""), 0)",0.0,0.0981760025024414,No updates
+50,"at_cvc(suffixof_cvc(replace_cvc(_arg_2, at_cvc(_arg_1, 2), _arg_1), ""Q""), 1)",0.0,0.10582160949707031,No updates
+51,"replace_cvc(_arg_2, at_cvc(""New York"", 1), ""N"")",0.4,0.09607410430908203,No updates
+52,"replace_cvc("" "", at_cvc("" "", 1), _arg_2)",0.4,0.09093856811523438,No updates
+53,"replace_cvc("","", at_cvc("","", 1), _arg_2)",0.4,0.10071372985839844,No updates
+54,"replace_cvc(""A"", at_cvc(""A"", 1), _arg_2)",0.4,0.0911569595336914,No updates
+55,"replace_cvc(""B"", at_cvc(""B"", 1), _arg_2)",0.4,0.09120368957519531,No updates
+56,"replace_cvc(""C"", at_cvc(""C"", 1), _arg_2)",0.4,0.09051203727722168,No updates
+57,"replace_cvc(""E"", at_cvc(""E"", 1), _arg_2)",0.4,0.10016012191772461,No updates
+58,"replace_cvc(""F"", at_cvc(""F"", 1), _arg_2)",0.4,0.09105443954467773,No updates
+59,"replace_cvc(""G"", at_cvc(""G"", 1), _arg_2)",0.4,0.09136080741882324,No updates
+60,"replace_cvc(""H"", at_cvc(""H"", 1), _arg_2)",0.4,0.09063315391540527,No updates
+61,"replace_cvc(""J"", at_cvc(""J"", 1), _arg_2)",0.4,0.10065817832946777,No updates
+62,"replace_cvc(""K"", at_cvc(""K"", 1), _arg_2)",0.4,0.09091734886169434,No updates
+63,"replace_cvc(""L"", at_cvc(""L"", 1), _arg_2)",0.4,0.0915989875793457,No updates
+64,"replace_cvc(""M"", at_cvc(""M"", 1), _arg_2)",0.4,0.09112787246704102,"New Rule: replace_cvc(""N"", at_cvc(_arg_1, 1), _arg_2)"
+65,_arg_2,0.4,0.09020185470581055,No updates
+66,"replace_cvc(_arg_2, ""M"", ""M"")",0.4,0.08434677124023438,No updates
+67,"replace_cvc(""A"", ""A"", _arg_2)",0.4,0.08231139183044434,No updates
+68,"replace_cvc(""E"", ""E"", _arg_2)",0.4,0.08300089836120605,No updates
+69,"replace_cvc(""H"", ""H"", _arg_2)",0.4,0.08189654350280762,No updates
+70,"replace_cvc(""L"", ""L"", _arg_2)",0.4,0.08304977416992188,No updates
+71,"replace_cvc(""O"", ""O"", _arg_2)",0.4,0.09240508079528809,No updates
+72,"replace_cvc(""S"", ""S"", _arg_2)",0.4,0.08289790153503418,No updates
+73,"replace_cvc(""V"", ""V"", _arg_2)",0.4,0.0826873779296875,No updates
+74,"replace_cvc(""Z"", ""Z"", _arg_2)",0.4,0.08557271957397461,No updates
+75,"replace_cvc(replace_cvc(_arg_2, ""M"", _arg_1), ""N"", replace_cvc(_arg_2, at_cvc(_arg_1, 1), ""U""))",0.0,0.08682608604431152,No updates
+76,"replace_cvc(replace_cvc(_arg_2, ""New York"", _arg_1), replace_cvc(_arg_2, at_cvc(_arg_1, 1), ""N""), ""U"")",0.0,0.09746050834655762,No updates
+77,"replace_cvc(replace_cvc(_arg_2, at_cvc(""New York"", 2), _arg_1), ""U"", ""D"")",0.0,0.08669590950012207,No updates
+78,"replace_cvc(replace_cvc(_arg_2, at_cvc(_arg_2, 1), ""P""), _arg_2, replace_cvc(_arg_2, at_cvc(_arg_2, 1), ""P""))",0.0,0.0886223316192627,No updates
+79,"replace_cvc(replace_cvc(_arg_2, at_cvc(_arg_2, 1), ""N""), replace_cvc(_arg_2, ""I"", _arg_1), ""W"")",0.0,0.08677339553833008,No updates
+80,"replace_cvc(replace_cvc(""C"", at_cvc(_arg_1, 1), _arg_2), ""D"", ""F"")",0.0,0.10849571228027344,No updates
+81,"at_cvc(concat_cvc(""Z"", ""K""), 1)",0.0,0.09909296035766602,No updates
+82,"at_cvc(prefixof_cvc(replace_cvc(_arg_2, at_cvc(""New York"", 2), _arg_1), ""E""), 2)",0.0,0.09841370582580566,No updates
+83,"at_cvc(suffixof_cvc(replace_cvc(_arg_2, at_cvc(_arg_2, 1), ""S""), "",""), 0)",0.0,0.09472298622131348,No updates
+84,"replace_cvc(_arg_2, at_cvc(""New York"", 1), ""N"")",0.4,0.10706400871276855,No updates
+85,"replace_cvc("" "", at_cvc("" "", 1), _arg_2)",0.4,0.09038066864013672,No updates
+86,"replace_cvc("","", at_cvc("","", 1), _arg_2)",0.4,0.08999013900756836,No updates
+87,"replace_cvc(""A"", at_cvc(""A"", 1), _arg_2)",0.4,0.09082388877868652,No updates
+88,"replace_cvc(""B"", at_cvc(""B"", 1), _arg_2)",0.4,0.10187005996704102,No updates
+89,"replace_cvc(""C"", at_cvc(""C"", 1), _arg_2)",0.4,0.09099674224853516,No updates
+90,"replace_cvc(""D"", at_cvc(""D"", 1), _arg_2)",0.4,0.09015226364135742,No updates
+91,"replace_cvc(""F"", at_cvc(""F"", 1), _arg_2)",0.4,0.09061002731323242,No updates
+92,"replace_cvc(""G"", at_cvc(""G"", 1), _arg_2)",0.4,0.10120105743408203,No updates
+93,"replace_cvc(""H"", at_cvc(""H"", 1), _arg_2)",0.4,0.09091591835021973,No updates
+94,"replace_cvc(""I"", at_cvc(""I"", 1), _arg_2)",0.4,0.09163141250610352,No updates
+95,"replace_cvc(""J"", at_cvc(""J"", 1), _arg_2)",0.4,0.09068107604980469,No updates
+96,"replace_cvc(""K"", at_cvc(""K"", 1), _arg_2)",0.4,0.10078215599060059,No updates
+97,"replace_cvc(""M"", at_cvc(""M"", 1), _arg_2)",0.4,0.08978819847106934,No updates
+98,"replace_cvc(""N"", at_cvc(""New York"", 1), _arg_2)",0.4,0.09096360206604004,No updates
+99,"replace_cvc(""O"", at_cvc(""O"", 1), _arg_2)",0.4,0.09097433090209961,No updates
+100,"replace_cvc(""P"", at_cvc(""P"", 1), _arg_2)",0.4,0.10161352157592773,"New Rule: replace_cvc(""P"", at_cvc(_arg_1, 1), _arg_2)"
+101,_arg_2,0.4,9.071052551269531,Final result so no updates
+-1,Final grammar,-1.0,0.0,"1: Start = ntString
+2: ntString = _arg_1
+3: ntString = _arg_2
+4: ntString = New York
+5: ntString =  
+6: ntString = ,
+7: ntString = A
+8: ntString = B
+9: ntString = C
+10: ntString = D
+11: ntString = E
+12: ntString = F
+13: ntString = G
+14: ntString = H
+15: ntString = I
+16: ntString = J
+17: ntString = K
+18: ntString = L
+19: ntString = M
+20: ntString = N
+21: ntString = O
+22: ntString = P
+23: ntString = Q
+24: ntString = R
+25: ntString = S
+26: ntString = T
+27: ntString = U
+28: ntString = V
+29: ntString = W
+30: ntString = X
+31: ntString = Y
+32: ntString = Z
+33: ntString = concat_cvc(ntString, ntString)
+34: ntString = replace_cvc(ntString, ntString, ntString)
+35: ntString = at_cvc(ntString, ntInt)
+36: ntString = if ntBool
+    ntString
+else
+    ntString
+end
+37: ntString = substr_cvc(ntString, ntInt, ntInt)
+38: ntInt = 0
+39: ntInt = 1
+40: ntInt = 2
+41: ntInt = ntInt + ntInt
+42: ntInt = ntInt - ntInt
+43: ntInt = len_cvc(ntString)
+44: ntInt = indexof_cvc(ntString, ntString, ntInt)
+45: ntBool = true
+46: ntBool = false
+47: ntBool = prefixof_cvc(ntString, ntString)
+48: ntBool = suffixof_cvc(ntString, ntString)
+49: ntString = replace_cvc(_arg_2, ""I"", _arg_1)
+50: ntString = replace_cvc(_arg_2, ""P"", _arg_1)
+51: ntString = replace_cvc(_arg_2, ""M"", _arg_1)
+52: ntString = replace_cvc(_arg_2, ""N"", _arg_1)
+53: ntString = replace_cvc(_arg_2, ""B"", _arg_1)
+54: ntString = replace_cvc(_arg_2, ""New York"", _arg_1)
+55: ntString = replace_cvc(_arg_2, ""H"", _arg_1)
+56: ntString = replace_cvc(_arg_2, ""T"", _arg_1)
+57: ntString = replace_cvc(_arg_2, ""C"", _arg_1)
+58: ntString = replace_cvc(_arg_2, at_cvc(""New York"", 2), _arg_1)
+59: ntString = replace_cvc(_arg_2, at_cvc(_arg_1, 1), _arg_1)
+60: ntString = replace_cvc(_arg_2, at_cvc(_arg_1, 1), ""U"")
+61: ntString = replace_cvc(_arg_2, at_cvc(_arg_2, 1), ""A"")
+62: ntString = replace_cvc(_arg_2, at_cvc(_arg_2, 1), ""P"")
+63: ntString = replace_cvc(_arg_2, at_cvc(_arg_1, 2), _arg_1)
+64: ntString = replace_cvc(_arg_2, at_cvc(_arg_1, 1), ""P"")
+65: ntString = replace_cvc(_arg_2, at_cvc(_arg_2, 1), ""N"")
+66: ntString = replace_cvc(_arg_2, at_cvc(_arg_1, 1), ""N"")
+67: ntString = replace_cvc(_arg_2, at_cvc(_arg_2, 1), ""C"")
+68: ntString = replace_cvc(_arg_2, at_cvc(_arg_2, 1), ""S"")
+69: ntString = replace_cvc(""C"", at_cvc(_arg_1, 1), _arg_2)
+70: ntString = replace_cvc(""N"", at_cvc(_arg_1, 1), _arg_2)
+71: ntString = replace_cvc(""P"", at_cvc(_arg_1, 1), _arg_2)
+"
+-2,Timed out: false,-1.0,0.0, 

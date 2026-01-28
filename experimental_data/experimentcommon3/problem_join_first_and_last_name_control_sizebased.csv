@@ -1,0 +1,24 @@
+attempt,best_program,program_score,iterations,time_seconds
+1,_arg_1,0.0,10000,0.14080309867858887
+2,"if true
+    int_to_str_cvc(0)
+else
+    prefixof_cvc("""", _arg_2)
+end",0.0,10000,0.05114293098449707
+3,"replace_cvc(_arg_2, if false
+        """"
+    else
+        _arg_2
+    end, _arg_1)",0.0,10000,0.06636595726013184
+4,"replace_cvc(int_to_str_cvc(1), concat_cvc(_arg_2, _arg_2), int_to_str_cvc(0))",0.0,10000,0.04887509346008301
+5,"if false
+    suffixof_cvc(_arg_2, "" "")
+else
+    contains_cvc(_arg_2, _arg_1)
+end",0.0,10000,0.06298208236694336
+6,"at_cvc(replace_cvc(_arg_1, "" "", _arg_2), 0 - 0)",0.0,10000,0.1317310333251953
+7,"replace_cvc(prefixof_cvc(_arg_1, "" ""), prefixof_cvc("""", _arg_2), _arg_1)",0.0,10000,0.09396815299987793
+8,"replace_cvc(contains_cvc("""", """"), prefixof_cvc("" "", _arg_2), _arg_1)",0.0,10000,0.06852293014526367
+9,"replace_cvc(concat_cvc(_arg_1, _arg_2), _arg_1, concat_cvc(_arg_1, "" ""))",1.0,1952,0.015430927276611328
+-1,"replace_cvc(concat_cvc(_arg_1, _arg_2), _arg_1, concat_cvc(_arg_1, "" ""))",1.0,-1,0.6798222064971924
+-2,Timed out: false,-1.0,-1,0.0

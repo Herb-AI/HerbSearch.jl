@@ -1,0 +1,4 @@
+attempt,best_program,program_score,iterations,time_seconds
+1,"replace_cvc(_arg_1, ""-"", ""."")",1.0,78,0.004678010940551758
+-1,"replace_cvc(_arg_1, ""-"", ""."")",1.0,-1,0.004678010940551758
+-2,Timed out: false,-1.0,-1,0.0

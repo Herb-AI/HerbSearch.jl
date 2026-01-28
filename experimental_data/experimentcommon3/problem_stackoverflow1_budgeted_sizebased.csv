@@ -1,0 +1,250 @@
+attempt,best_program,program_score,time,new_updated_rules
+1,_arg_1,0.0,0.08307790756225586,No updates
+2,"at_cvc(_arg_1, indexof_cvc("" "", "","", -1))",0.0,0.09456229209899902,No updates
+3,"replace_cvc(_arg_1, concat_cvc("" "", ""Inc""), """")",0.3333333333333333,0.09623336791992188,"New Rule: replace_cvc(_arg_1, concat_cvc("" "", ""Inc""), """")"
+4,_arg_1,0.0,0.09725069999694824,No updates
+5,"if false
+    prefixof_cvc("" "", """")
+else
+    "".""
+end",0.0,0.07894253730773926,No updates
+6,"replace_cvc(prefixof_cvc(_arg_1, "" ""), """", """")",0.0,0.09795594215393066,No updates
+7,"replace_cvc(_arg_1, concat_cvc("" "", ""Inc""), """")",0.3333333333333333,0.09966206550598145,No updates
+8,"replace_cvc(""Inc"", concat_cvc("" "", "",""), """")",0.0,0.11461710929870605,No updates
+9,"replace_cvc(replace_cvc(_arg_1, concat_cvc("" "", ""Inc""), """"), contains_cvc(""LLC"", replace_cvc(_arg_1, concat_cvc("" "", ""Inc""), """")), """")",0.0,0.11097359657287598,No updates
+10,"replace_cvc(""."", _arg_1, suffixof_cvc(_arg_1, """"))",0.0,0.11171388626098633,No updates
+11,"substr_cvc(concat_cvc("" "", "".""), 0, -1)",0.0,0.11110663414001465,No updates
+12,"replace_cvc(contains_cvc("","", _arg_1), ""Inc"", int_to_str_cvc(1))",0.0,0.08274650573730469,No updates
+13,"if true
+    if true
+        _arg_1
+    else
+        ""Inc""
+    end
+else
+    """"
+end",0.0,0.04076719284057617,No updates
+14,"if false
+    replace_cvc(replace_cvc(_arg_1, concat_cvc("" "", ""Inc""), """"), ""."", "","")
+else
+    """"
+end",0.0,0.0582122802734375,No updates
+15,"if false
+    """"
+else
+    replace_cvc("""", replace_cvc(_arg_1, concat_cvc("" "", ""Inc""), """"), ""LLC"")
+end",0.0,0.09207391738891602,No updates
+16,"at_cvc(prefixof_cvc(_arg_1, replace_cvc(_arg_1, concat_cvc("" "", ""Inc""), """")), -1 - -1)",0.0,0.09297728538513184,No updates
+17,"replace_cvc("""", """", replace_cvc(""LLC"", ""Inc"", ""LLC""))",0.0,0.0681610107421875,No updates
+18,"replace_cvc(""Inc"", "","", replace_cvc("" "", "","", ""LLC""))",0.0,0.07518863677978516,No updates
+19,"replace_cvc(""LLC"", _arg_1, replace_cvc(""LLC"", replace_cvc(_arg_1, concat_cvc("" "", ""Inc""), """"), ""LLC""))",0.0,0.08208560943603516,No updates
+20,"replace_cvc("""", _arg_1, if true
+        _arg_1
+    else
+        ""LLC""
+    end)",0.0,0.062073707580566406,No updates
+21,"replace_cvc(if true
+        "",""
+    else
+        ""Inc""
+    end, ""."", _arg_1)",0.0,0.08936619758605957,No updates
+22,"replace_cvc(int_to_str_cvc(-1), concat_cvc(replace_cvc(_arg_1, concat_cvc("" "", ""Inc""), """"), ""LLC""), _arg_1)",0.0,0.08821535110473633,No updates
+23,"replace_cvc(replace_cvc("" "", _arg_1, "".""), _arg_1, _arg_1)",0.0,0.06888961791992188,No updates
+24,"replace_cvc(replace_cvc(""."", ""."", _arg_1), "" "", _arg_1)",0.0,0.06273031234741211,No updates
+25,"replace_cvc(replace_cvc(""LLC"", replace_cvc(_arg_1, concat_cvc("" "", ""Inc""), """"), "".""), ""."", _arg_1)",0.0,0.08643651008605957,No updates
+26,"replace_cvc(""."", if false
+        replace_cvc(_arg_1, concat_cvc("" "", ""Inc""), """")
+    else
+        ""LLC""
+    end, _arg_1)",0.0,0.08833527565002441,No updates
+27,"replace_cvc(_arg_1, replace_cvc(_arg_1, ""Inc"", _arg_1), _arg_1)",0.0,0.06638455390930176,No updates
+28,"replace_cvc("" "", replace_cvc(""Inc"", replace_cvc(_arg_1, concat_cvc("" "", ""Inc""), """"), "" ""), _arg_1)",0.0,0.08260416984558105,No updates
+29,"replace_cvc(""."", replace_cvc(replace_cvc(_arg_1, concat_cvc("" "", ""Inc""), """"), ""Inc"", "".""), _arg_1)",0.0,0.09791707992553711,No updates
+30,"replace_cvc(replace_cvc(_arg_1, concat_cvc("" "", ""Inc""), """"), replace_cvc("" "", replace_cvc(_arg_1, concat_cvc("" "", ""Inc""), """"), ""LLC""), _arg_1)",0.0,0.09971141815185547,No updates
+31,"replace_cvc(int_to_str_cvc(0), ""Inc"", concat_cvc(_arg_1, _arg_1))",0.0,0.10794401168823242,No updates
+32,"replace_cvc(_arg_1, replace_cvc(_arg_1, concat_cvc("" "", ""Inc""), """"), substr_cvc("" "", -1, 1))",0.0,0.08552360534667969,No updates
+33,"substr_cvc(if true
+        ""LLC""
+    else
+        ""LLC""
+    end, -1, 0)",0.0,0.09889554977416992,No updates
+34,"substr_cvc(""."", -1, indexof_cvc(""LLC"", _arg_1, -1))",0.0,0.09378886222839355,No updates
+35,"replace_cvc(replace_cvc("","", "" "", _arg_1), _arg_1, int_to_str_cvc(1))",0.0,0.07483315467834473,No updates
+36,"replace_cvc(int_to_str_cvc(0), prefixof_cvc(_arg_1, "",""), int_to_str_cvc(0))",0.0,0.1035318374633789,No updates
+37,"if true
+    at_cvc("","", 1)
+else
+    concat_cvc("""", _arg_1)
+end",0.0,0.06808924674987793,No updates
+38,"if true
+    concat_cvc(_arg_1, ""LLC"")
+else
+    concat_cvc(""Inc"", _arg_1)
+end",0.0,0.04588747024536133,No updates
+39,"if true
+    concat_cvc("","", "","")
+else
+    concat_cvc("","", _arg_1)
+end",0.0,0.04836869239807129,No updates
+40,"if true
+    prefixof_cvc("" "", ""."")
+else
+    concat_cvc(replace_cvc(_arg_1, concat_cvc("" "", ""Inc""), """"), _arg_1)
+end",0.0,0.060266971588134766,No updates
+41,"if true
+    prefixof_cvc(replace_cvc(_arg_1, concat_cvc("" "", ""Inc""), """"), ""Inc"")
+else
+    prefixof_cvc("""", _arg_1)
+end",0.0,0.048334360122680664,No updates
+42,"if true
+    suffixof_cvc(""."", "" "")
+else
+    prefixof_cvc(""Inc"", _arg_1)
+end",0.0,0.060094594955444336,No updates
+43,"if true
+    contains_cvc("""", """")
+else
+    prefixof_cvc("","", _arg_1)
+end",0.0,0.04517340660095215,No updates
+44,"if true
+    contains_cvc(""LLC"", _arg_1)
+else
+    prefixof_cvc(replace_cvc(_arg_1, concat_cvc("" "", ""Inc""), """"), _arg_1)
+end",0.0,0.05875587463378906,No updates
+45,"if false
+    concat_cvc("" "", replace_cvc(_arg_1, concat_cvc("" "", ""Inc""), """"))
+else
+    suffixof_cvc("""", _arg_1)
+end",0.0,0.04708242416381836,No updates
+46,"if false
+    concat_cvc(replace_cvc(_arg_1, concat_cvc("" "", ""Inc""), """"), ""LLC"")
+else
+    suffixof_cvc(""Inc"", _arg_1)
+end",0.0,0.05966758728027344,No updates
+47,"if false
+    prefixof_cvc(""."", "","")
+else
+    suffixof_cvc("","", _arg_1)
+end",0.0,0.04518580436706543,No updates
+48,"if false
+    suffixof_cvc("""", ""."")
+else
+    suffixof_cvc(replace_cvc(_arg_1, concat_cvc("" "", ""Inc""), """"), _arg_1)
+end",0.0,0.04526853561401367,No updates
+49,"if false
+    suffixof_cvc(""LLC"", ""Inc"")
+else
+    contains_cvc("""", _arg_1)
+end",0.0,0.06531214714050293,No updates
+50,"if false
+    contains_cvc(""Inc"", "" "")
+else
+    contains_cvc(""Inc"", _arg_1)
+end",0.0,0.053435325622558594,No updates
+51,"if true
+    concat_cvc("" "", ""."")
+else
+    at_cvc("" "", -1)
+end",0.0,0.064239501953125,No updates
+52,"if false
+    suffixof_cvc(""LLC"", "","")
+else
+    at_cvc(_arg_1, 1)
+end",0.0,0.09467220306396484,No updates
+53,"if true
+    int_to_str_cvc(-1)
+else
+    if true
+        _arg_1
+    else
+        _arg_1
+    end
+end",0.0,0.06665229797363281,No updates
+54,"replace_cvc(_arg_1, replace_cvc(""LLC"", """", "" ""), int_to_str_cvc(-1))",0.0,0.09407329559326172,No updates
+55,"replace_cvc(replace_cvc(_arg_1, concat_cvc("" "", ""Inc""), """"), replace_cvc("" "", "" "", _arg_1), int_to_str_cvc(1))",0.0,0.16789698600769043,No updates
+56,"at_cvc(at_cvc(""LLC"", 1), indexof_cvc("""", "","", 0))",0.0,0.137711763381958,No updates
+57,"at_cvc(replace_cvc("","", """", """"), 0 + -1)",0.0,0.13271856307983398,No updates
+58,"at_cvc(concat_cvc(""Inc"", "" ""), indexof_cvc(""Inc"", _arg_1, 1))",0.0,0.12016987800598145,No updates
+59,"at_cvc(prefixof_cvc("""", ""LLC""), indexof_cvc(""Inc"", "","", 0))",0.0,0.1277320384979248,No updates
+60,"at_cvc(suffixof_cvc(_arg_1, "" ""), indexof_cvc(""."", "" "", -1))",0.0,0.12246322631835938,No updates
+61,"at_cvc(suffixof_cvc(""LLC"", ""LLC""), indexof_cvc("","", _arg_1, 1))",0.0,0.1028139591217041,No updates
+62,"replace_cvc(concat_cvc(_arg_1, """"), concat_cvc("" "", ""Inc""), """")",0.3333333333333333,0.09440970420837402,No updates
+63,"replace_cvc(concat_cvc(_arg_1, """"), concat_cvc("","", "",""), _arg_1)",0.0,0.12080669403076172,No updates
+64,"replace_cvc(concat_cvc("""", _arg_1), concat_cvc("" "", ""Inc""), """")",0.3333333333333333,0.10232067108154297,No updates
+65,"replace_cvc(concat_cvc("""", "" ""), contains_cvc(""LLC"", """"), _arg_1)",0.0,0.10947585105895996,No updates
+66,"replace_cvc(concat_cvc("""", replace_cvc(_arg_1, concat_cvc("" "", ""Inc""), """")), contains_cvc("" "", ""Inc""), _arg_1)",0.0,0.10869169235229492,No updates
+67,"replace_cvc(concat_cvc("" "", "".""), suffixof_cvc(""LLC"", "",""), _arg_1)",0.0,0.09909701347351074,No updates
+68,"replace_cvc(concat_cvc(""Inc"", """"), suffixof_cvc("" "", replace_cvc(_arg_1, concat_cvc("" "", ""Inc""), """")), _arg_1)",0.0,0.11179828643798828,No updates
+69,"replace_cvc(concat_cvc(""Inc"", ""LLC""), prefixof_cvc(replace_cvc(_arg_1, concat_cvc("" "", ""Inc""), """"), """"), _arg_1)",0.0,0.09459853172302246,No updates
+70,"replace_cvc(concat_cvc(""."", ""Inc""), prefixof_cvc(""Inc"", ""Inc""), _arg_1)",0.0,0.11127614974975586,No updates
+71,"replace_cvc(concat_cvc("","", _arg_1), concat_cvc(replace_cvc(_arg_1, concat_cvc("" "", ""Inc""), """"), "",""), _arg_1)",0.0,0.10884261131286621,No updates
+72,"replace_cvc(concat_cvc("","", "",""), concat_cvc(""Inc"", replace_cvc(_arg_1, concat_cvc("" "", ""Inc""), """")), _arg_1)",0.0,0.11214804649353027,No updates
+73,"replace_cvc(concat_cvc(""LLC"", "" ""), concat_cvc(_arg_1, """"), _arg_1)",0.0,0.1036839485168457,No updates
+74,"replace_cvc(concat_cvc(""LLC"", ""LLC""), contains_cvc(""."", ""Inc""), _arg_1)",0.0,0.13022255897521973,No updates
+75,"replace_cvc(concat_cvc(replace_cvc(_arg_1, concat_cvc("" "", ""Inc""), """"), ""Inc""), contains_cvc(_arg_1, "",""), _arg_1)",0.0,0.10496735572814941,No updates
+76,"replace_cvc(prefixof_cvc(_arg_1, _arg_1), suffixof_cvc(""."", replace_cvc(_arg_1, concat_cvc("" "", ""Inc""), """")), _arg_1)",0.0,0.14136552810668945,No updates
+77,"replace_cvc(prefixof_cvc(_arg_1, "",""), suffixof_cvc("""", """"), _arg_1)",0.0,0.11507272720336914,No updates
+78,"replace_cvc(prefixof_cvc("""", "" ""), prefixof_cvc("","", ""Inc""), _arg_1)",0.0,0.10982561111450195,No updates
+79,"replace_cvc(prefixof_cvc("""", replace_cvc(_arg_1, concat_cvc("" "", ""Inc""), """")), prefixof_cvc("""", "",""), _arg_1)",0.0,0.1076517105102539,No updates
+80,"replace_cvc(prefixof_cvc("" "", "".""), concat_cvc("","", replace_cvc(_arg_1, concat_cvc("" "", ""Inc""), """")), _arg_1)",0.0,0.13466763496398926,No updates
+81,"replace_cvc(prefixof_cvc(""Inc"", """"), concat_cvc("" "", """"), _arg_1)",0.0,0.1062159538269043,No updates
+82,"replace_cvc(prefixof_cvc(""Inc"", "",""), contains_cvc(""LLC"", ""Inc""), _arg_1)",0.0,0.1102452278137207,No updates
+83,"replace_cvc(prefixof_cvc(""."", "" ""), contains_cvc("" "", "",""), _arg_1)",0.0,0.10748434066772461,No updates
+84,"replace_cvc(prefixof_cvc(""."", replace_cvc(_arg_1, concat_cvc("" "", ""Inc""), """")), suffixof_cvc(""LLC"", replace_cvc(_arg_1, concat_cvc("" "", ""Inc""), """")), _arg_1)",0.0,0.12440776824951172,No updates
+85,"replace_cvc(prefixof_cvc("","", "".""), suffixof_cvc(""Inc"", """"), _arg_1)",0.0,0.12131834030151367,No updates
+86,"replace_cvc(prefixof_cvc(""LLC"", """"), prefixof_cvc(replace_cvc(_arg_1, concat_cvc("" "", ""Inc""), """"), ""Inc""), _arg_1)",0.0,0.11529707908630371,No updates
+87,"replace_cvc(prefixof_cvc(""LLC"", ""LLC""), prefixof_cvc(""Inc"", "",""), _arg_1)",0.0,0.11321067810058594,No updates
+88,"replace_cvc(prefixof_cvc(replace_cvc(_arg_1, concat_cvc("" "", ""Inc""), """"), ""Inc""), concat_cvc(replace_cvc(_arg_1, concat_cvc("" "", ""Inc""), """"), replace_cvc(_arg_1, concat_cvc("" "", ""Inc""), """")), _arg_1)",0.0,0.1255323886871338,No updates
+89,"replace_cvc(suffixof_cvc(_arg_1, _arg_1), concat_cvc(""."", """"), _arg_1)",0.0,0.1292405128479004,No updates
+90,"replace_cvc(suffixof_cvc(_arg_1, "",""), concat_cvc(_arg_1, ""Inc""), _arg_1)",0.0,0.12719082832336426,No updates
+91,"replace_cvc(suffixof_cvc("""", """"), contains_cvc(""."", "",""), _arg_1)",0.0,0.11916565895080566,No updates
+92,"replace_cvc(suffixof_cvc("""", ""LLC""), contains_cvc(_arg_1, replace_cvc(_arg_1, concat_cvc("" "", ""Inc""), """")), _arg_1)",0.0,0.11229252815246582,No updates
+93,"replace_cvc(suffixof_cvc("" "", ""Inc""), suffixof_cvc("","", """"), _arg_1)",0.0,0.10480666160583496,No updates
+94,"replace_cvc(suffixof_cvc(""Inc"", _arg_1), suffixof_cvc("""", ""Inc""), _arg_1)",0.0,0.13660669326782227,No updates
+95,"replace_cvc(suffixof_cvc(""Inc"", "",""), prefixof_cvc("","", "",""), _arg_1)",0.0,0.11274933815002441,No updates
+96,"replace_cvc(suffixof_cvc(""."", "" ""), prefixof_cvc("""", replace_cvc(_arg_1, concat_cvc("" "", ""Inc""), """")), _arg_1)",0.0,0.11020278930664062,No updates
+97,"replace_cvc(suffixof_cvc(""."", replace_cvc(_arg_1, concat_cvc("" "", ""Inc""), """")), concat_cvc(""LLC"", """"), _arg_1)",0.0,0.14640212059020996,No updates
+98,"replace_cvc(suffixof_cvc("","", "".""), concat_cvc("" "", ""Inc""), _arg_1)",0.0,0.10512042045593262,No updates
+99,"replace_cvc(suffixof_cvc(""LLC"", _arg_1), contains_cvc(""LLC"", "",""), _arg_1)",0.0,0.10843634605407715,No updates
+100,"replace_cvc(suffixof_cvc(""LLC"", "",""), contains_cvc("" "", replace_cvc(_arg_1, concat_cvc("" "", ""Inc""), """")), _arg_1)",0.0,0.12606525421142578,No updates
+101,"replace_cvc(_arg_1, concat_cvc("" "", ""Inc""), """")",0.3333333333333333,9.610469102859497,Final result so no updates
+-1,Final grammar,-1.0,0.0,"1: Start = ntString
+2: ntString = _arg_1
+3: ntString = 
+4: ntString =  
+5: ntString = Inc
+6: ntString = .
+7: ntString = ,
+8: ntString = LLC
+9: ntString = concat_cvc(ntString, ntString)
+10: ntString = replace_cvc(ntString, ntString, ntString)
+11: ntString = at_cvc(ntString, ntInt)
+12: ntString = int_to_str_cvc(ntInt)
+13: ntString = if ntBool
+    ntString
+else
+    ntString
+end
+14: ntString = substr_cvc(ntString, ntInt, ntInt)
+15: ntInt = 1
+16: ntInt = 0
+17: ntInt = -1
+18: ntInt = ntInt + ntInt
+19: ntInt = ntInt - ntInt
+20: ntInt = len_cvc(ntString)
+21: ntInt = str_to_int_cvc(ntString)
+22: ntInt = if ntBool
+    ntInt
+else
+    ntInt
+end
+23: ntInt = indexof_cvc(ntString, ntString, ntInt)
+24: ntBool = true
+25: ntBool = false
+26: ntBool = ntInt == ntInt
+27: ntBool = prefixof_cvc(ntString, ntString)
+28: ntBool = suffixof_cvc(ntString, ntString)
+29: ntBool = contains_cvc(ntString, ntString)
+30: ntString = replace_cvc(_arg_1, concat_cvc("" "", ""Inc""), """")
+"
+-2,Timed out: false,-1.0,0.0, 

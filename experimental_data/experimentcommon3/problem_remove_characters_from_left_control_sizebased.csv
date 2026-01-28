@@ -1,0 +1,5 @@
+attempt,best_program,program_score,iterations,time_seconds
+1,"replace_cvc(_arg_1, at_cvc(_arg_1, _arg_2), """")",0.6666666666666666,10000,0.12503814697265625
+2,"replace_cvc(_arg_1, substr_cvc(_arg_1, 1, _arg_2), """")",1.0,4409,0.03183388710021973
+-1,"replace_cvc(_arg_1, substr_cvc(_arg_1, 1, _arg_2), """")",1.0,-1,0.15687203407287598
+-2,Timed out: false,-1.0,-1,0.0

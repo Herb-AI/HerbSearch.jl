@@ -1,0 +1,42 @@
+======================================================================
+EXPERIMENT STATISTICS
+======================================================================
+
+CONTROL RUNS
+----------------------------------------
+Files found:              147 / 204
+Runs missing:             57
+Runs completed:           147
+Passed (score >= 0.2):    71
+Solved perfectly (1.0):   36
+Timed out:                0
+Not timed out:            147
+Average score:            0.3638
+Median score:             0.1429
+Std dev score:            0.4139
+Average runtime (s):      23.32
+Total runtime (s):        3428.01
+
+BUDGETED RUNS
+----------------------------------------
+Files found:              147 / 204
+Runs missing:             57
+Runs completed:           147
+Passed (score >= 0.2):    71
+Solved perfectly (1.0):   34
+Timed out:                0
+Not timed out:            147
+Average score:            0.3604
+Median score:             0.1429
+Std dev score:            0.4097
+Average runtime (s):      24.01
+Total runtime (s):        3529.06
+
+COMPARISON
+----------------------------------------
+Common benchmarks:        147
+Budgeted better:          0
+Control better:           2
+Ties:                     145
+
+======================================================================

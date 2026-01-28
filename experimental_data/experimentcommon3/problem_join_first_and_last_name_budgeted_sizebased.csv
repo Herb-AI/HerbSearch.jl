@@ -1,0 +1,60 @@
+attempt,best_program,program_score,time,new_updated_rules
+1,_arg_1,0.0,0.14391279220581055,No updates
+2,"if true
+    int_to_str_cvc(0)
+else
+    prefixof_cvc("""", _arg_2)
+end",0.0,0.0536346435546875,No updates
+3,"replace_cvc(_arg_2, if false
+        """"
+    else
+        _arg_2
+    end, _arg_1)",0.0,0.0661323070526123,No updates
+4,"replace_cvc(int_to_str_cvc(1), concat_cvc(_arg_2, _arg_2), int_to_str_cvc(0))",0.0,0.042584896087646484,No updates
+5,"if false
+    suffixof_cvc(_arg_2, "" "")
+else
+    contains_cvc(_arg_2, _arg_1)
+end",0.0,0.059356689453125,No updates
+6,"at_cvc(replace_cvc(_arg_1, "" "", _arg_2), 0 - 0)",0.0,0.09861350059509277,No updates
+7,"replace_cvc(prefixof_cvc(_arg_1, "" ""), prefixof_cvc("""", _arg_2), _arg_1)",0.0,0.12050318717956543,No updates
+8,"replace_cvc(contains_cvc("""", """"), prefixof_cvc("" "", _arg_2), _arg_1)",0.0,0.07437968254089355,No updates
+9,"replace_cvc(concat_cvc(_arg_1, _arg_2), _arg_1, concat_cvc(_arg_1, "" ""))",1.0,0.29159069061279297,"New Rule: replace_cvc(concat_cvc(_arg_1, _arg_2), _arg_1, concat_cvc(_arg_1, "" ""))"
+101,"replace_cvc(concat_cvc(_arg_1, _arg_2), _arg_1, concat_cvc(_arg_1, "" ""))",1.0,0.9507083892822266,Final result so no updates
+-1,Final grammar,-1.0,0.0,"1: Start = ntString
+2: ntString = _arg_1
+3: ntString = _arg_2
+4: ntString = 
+5: ntString =  
+6: ntString = concat_cvc(ntString, ntString)
+7: ntString = replace_cvc(ntString, ntString, ntString)
+8: ntString = at_cvc(ntString, ntInt)
+9: ntString = int_to_str_cvc(ntInt)
+10: ntString = if ntBool
+    ntString
+else
+    ntString
+end
+11: ntString = substr_cvc(ntString, ntInt, ntInt)
+12: ntInt = 1
+13: ntInt = 0
+14: ntInt = -1
+15: ntInt = ntInt + ntInt
+16: ntInt = ntInt - ntInt
+17: ntInt = len_cvc(ntString)
+18: ntInt = str_to_int_cvc(ntString)
+19: ntInt = if ntBool
+    ntInt
+else
+    ntInt
+end
+20: ntInt = indexof_cvc(ntString, ntString, ntInt)
+21: ntBool = true
+22: ntBool = false
+23: ntBool = ntInt == ntInt
+24: ntBool = prefixof_cvc(ntString, ntString)
+25: ntBool = suffixof_cvc(ntString, ntString)
+26: ntBool = contains_cvc(ntString, ntString)
+27: ntString = replace_cvc(concat_cvc(_arg_1, _arg_2), _arg_1, concat_cvc(_arg_1, "" ""))
+"
+-2,Timed out: false,-1.0,0.0, 

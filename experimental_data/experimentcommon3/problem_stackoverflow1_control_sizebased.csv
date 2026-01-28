@@ -1,0 +1,167 @@
+attempt,best_program,program_score,iterations,time_seconds
+1,_arg_1,0.0,10000,0.06538820266723633
+2,"at_cvc(_arg_1, indexof_cvc("" "", "","", -1))",0.0,10000,0.07248687744140625
+3,"replace_cvc(_arg_1, concat_cvc("" "", ""Inc""), """")",0.3333333333333333,10000,0.08418488502502441
+4,"replace_cvc(""LLC"", concat_cvc(_arg_1, "",""), ""."")",0.0,10000,0.07226705551147461
+5,"replace_cvc("","", ""Inc"", suffixof_cvc(""."", """"))",0.0,10000,0.07367897033691406
+6,"replace_cvc(suffixof_cvc(""LLC"", "".""), ""."", int_to_str_cvc(1))",0.0,10000,0.06042599678039551
+7,"if true
+    replace_cvc("" "", "","", _arg_1)
+else
+    "" ""
+end",0.0,10000,0.040641069412231445
+8,"if false
+    _arg_1
+else
+    replace_cvc(_arg_1, ""Inc"", _arg_1)
+end",0.0,10000,0.0650320053100586
+9,"at_cvc(contains_cvc("" "", ""LLC""), -1 == 1)",0.0,10000,0.03924989700317383
+10,"replace_cvc(""Inc"", "","", replace_cvc(""LLC"", ""."", """"))",0.0,10000,0.04682803153991699
+11,"replace_cvc("" "", _arg_1, if false
+        _arg_1
+    else
+        "",""
+    end)",0.0,10000,0.03592085838317871
+12,"replace_cvc(int_to_str_cvc(0), prefixof_cvc("""", _arg_1), ""."")",0.0,10000,0.046582937240600586
+13,"replace_cvc(replace_cvc(""Inc"", """", "" ""), """", """")",0.0,10000,0.042874813079833984
+14,"replace_cvc(_arg_1, if false
+        """"
+    else
+        """"
+    end, "","")",0.0,10000,0.051048994064331055
+15,"replace_cvc(_arg_1, replace_cvc(""Inc"", _arg_1, "" ""), "" "")",0.0,10000,0.03258991241455078
+16,"replace_cvc(""."", replace_cvc(""."", """", "" ""), ""LLC"")",0.0,10000,0.05589604377746582
+17,"replace_cvc(int_to_str_cvc(1), "","", contains_cvc(""Inc"", ""Inc""))",0.0,10000,0.07213401794433594
+18,"replace_cvc(""LLC"", ""."", substr_cvc("" "", 0, 1))",0.0,10000,0.06676197052001953
+19,"substr_cvc("""", 1, indexof_cvc("""", _arg_1, 0))",0.0,10000,0.053642988204956055
+20,"replace_cvc(if true
+        _arg_1
+    else
+        _arg_1
+    end, ""Inc"", int_to_str_cvc(-1))",0.0,10000,0.06943297386169434
+21,"if true
+    at_cvc("""", -1)
+else
+    contains_cvc(""Inc"", """")
+end",0.0,10000,0.07096099853515625
+22,"if true
+    concat_cvc("" "", _arg_1)
+else
+    contains_cvc(""Inc"", "","")
+end",0.0,10000,0.0267181396484375
+23,"if true
+    prefixof_cvc("" "", "" "")
+else
+    contains_cvc(""."", "" "")
+end",0.0,10000,0.02634882926940918
+24,"if true
+    suffixof_cvc("" "", ""."")
+else
+    contains_cvc(""."", ""LLC"")
+end",0.0,10000,0.026428937911987305
+25,"if true
+    contains_cvc("" "", ""LLC"")
+else
+    contains_cvc("","", ""Inc"")
+end",0.0,10000,0.027882099151611328
+26,"if false
+    concat_cvc(""Inc"", """")
+else
+    contains_cvc(""LLC"", _arg_1)
+end",0.0,10000,0.034149169921875
+27,"if false
+    prefixof_cvc(""Inc"", ""Inc"")
+else
+    contains_cvc(""LLC"", ""."")
+end",0.0,10000,0.03450918197631836
+28,"if false
+    suffixof_cvc(""Inc"", ""LLC"")
+else
+    concat_cvc(_arg_1, """")
+end",0.0,10000,0.046823978424072266
+29,"if false
+    contains_cvc(""."", """")
+else
+    concat_cvc(_arg_1, "","")
+end",0.0,10000,0.03538799285888672
+30,"if false
+    prefixof_cvc(""LLC"", "" "")
+else
+    at_cvc("","", 0)
+end",0.0,10000,0.052388906478881836
+31,"replace_cvc(""."", if false
+        ""Inc""
+    else
+        ""LLC""
+    end, int_to_str_cvc(-1))",0.0,10000,0.0409090518951416
+32,"replace_cvc("","", replace_cvc(""Inc"", _arg_1, """"), int_to_str_cvc(1))",0.0,10000,0.08383297920227051
+33,"at_cvc(replace_cvc(_arg_1, "","", _arg_1), -1 + 0)",0.0,10000,0.07621908187866211
+34,"at_cvc(concat_cvc("""", "".""), indexof_cvc(""Inc"", ""Inc"", -1))",0.0,10000,0.08098411560058594
+35,"at_cvc(prefixof_cvc(""."", "" ""), indexof_cvc(""Inc"", "","", 1))",0.0,10000,0.10149097442626953
+36,"at_cvc(contains_cvc(_arg_1, _arg_1), indexof_cvc(""Inc"", ""LLC"", 0))",0.0,10000,0.07728099822998047
+37,"replace_cvc(concat_cvc(_arg_1, """"), concat_cvc("" "", ""Inc""), """")",0.3333333333333333,10000,0.07774901390075684
+38,"replace_cvc(concat_cvc("""", _arg_1), suffixof_cvc(""Inc"", _arg_1), ""LLC"")",0.0,10000,0.08646488189697266
+39,"replace_cvc(concat_cvc("" "", _arg_1), contains_cvc(""."", """"), ""Inc"")",0.0,10000,0.07526302337646484
+40,"replace_cvc(concat_cvc(""Inc"", """"), concat_cvc("","", "" ""), _arg_1)",0.0,10000,0.07626199722290039
+41,"replace_cvc(concat_cvc(""."", """"), prefixof_cvc(""LLC"", "" ""), ""."")",0.0,10000,0.08616995811462402
+42,"replace_cvc(concat_cvc("","", """"), contains_cvc(_arg_1, ""Inc""), """")",0.0,10000,0.07662701606750488
+43,"replace_cvc(concat_cvc(""LLC"", "" ""), concat_cvc("""", ""Inc""), "","")",0.0,10000,0.08116316795349121
+44,"replace_cvc(prefixof_cvc(_arg_1, "" ""), prefixof_cvc("" "", "".""), "" "")",0.0,10000,0.09987711906433105
+45,"replace_cvc(prefixof_cvc("""", "" ""), suffixof_cvc(""Inc"", "".""), ""LLC"")",0.0,10000,0.09030795097351074
+46,"replace_cvc(prefixof_cvc("" "", "" ""), contains_cvc(""."", "",""), ""Inc"")",0.0,10000,0.08988308906555176
+47,"replace_cvc(prefixof_cvc(""Inc"", ""Inc""), concat_cvc("","", ""LLC""), _arg_1)",0.0,10000,0.09877395629882812
+48,"replace_cvc(prefixof_cvc(""."", ""Inc""), prefixof_cvc(""LLC"", ""LLC""), ""."")",0.0,10000,0.09143209457397461
+49,"replace_cvc(prefixof_cvc("","", ""Inc""), contains_cvc("""", _arg_1), """")",0.0,10000,0.11169004440307617
+50,"replace_cvc(prefixof_cvc(""LLC"", "".""), concat_cvc("" "", _arg_1), "","")",0.0,10000,0.11234188079833984
+51,"replace_cvc(suffixof_cvc(_arg_1, "".""), prefixof_cvc(""Inc"", """"), "" "")",0.0,10000,0.0946509838104248
+52,"replace_cvc(suffixof_cvc("""", "".""), suffixof_cvc(""."", """"), ""LLC"")",0.0,10000,0.09129214286804199
+53,"replace_cvc(suffixof_cvc("" "", "".""), contains_cvc("","", "" ""), ""Inc"")",0.0,10000,0.10722112655639648
+54,"replace_cvc(suffixof_cvc(""Inc"", "",""), concat_cvc(""LLC"", ""Inc""), _arg_1)",0.0,10000,0.11443495750427246
+55,"replace_cvc(suffixof_cvc(""."", "",""), suffixof_cvc(_arg_1, ""Inc""), ""."")",0.0,10000,0.10780191421508789
+56,"replace_cvc(suffixof_cvc("","", "",""), contains_cvc("""", "".""), """")",0.0,10000,0.1016380786895752
+57,"replace_cvc(suffixof_cvc(""LLC"", ""LLC""), concat_cvc("" "", "".""), "","")",0.0,10000,0.11433100700378418
+58,"replace_cvc(contains_cvc(_arg_1, ""LLC""), prefixof_cvc(""Inc"", "",""), "" "")",0.0,10000,0.12601399421691895
+59,"replace_cvc(contains_cvc("""", ""LLC""), suffixof_cvc(""."", "",""), ""LLC"")",0.0,10000,0.09778118133544922
+60,"replace_cvc(contains_cvc("" "", ""LLC""), contains_cvc("","", ""LLC""), ""Inc"")",0.0,10000,0.09820890426635742
+61,"replace_cvc(contains_cvc(""."", _arg_1), prefixof_cvc(_arg_1, _arg_1), _arg_1)",0.0,10000,0.11791801452636719
+62,"replace_cvc(contains_cvc("","", _arg_1), suffixof_cvc("""", _arg_1), ""."")",0.0,10000,0.11011815071105957
+63,"replace_cvc(contains_cvc(""LLC"", _arg_1), contains_cvc("" "", """"), """")",0.0,10000,0.09921717643737793
+64,"replace_cvc(concat_cvc("""", ""Inc""), at_cvc("" "", -1), "","")",0.0,10000,0.10182404518127441
+65,"replace_cvc(prefixof_cvc(""."", """"), at_cvc(""Inc"", 1), "" "")",0.0,10000,0.08536291122436523
+66,"replace_cvc(suffixof_cvc(""LLC"", ""LLC""), at_cvc(""Inc"", 1), ""LLC"")",0.0,10000,0.09431600570678711
+67,"replace_cvc(at_cvc(""LLC"", 1), at_cvc(""Inc"", 0), ""Inc"")",0.0,10000,0.03767800331115723
+68,"replace_cvc(substr_cvc("""", -1, -1), int_to_str_cvc(-1), _arg_1)",0.0,10000,0.04100990295410156
+69,"replace_cvc(int_to_str_cvc(0), replace_cvc(""Inc"", ""Inc"", "".""), ""."")",0.0,10000,0.08547711372375488
+70,"replace_cvc(at_cvc("""", 0), ""."", suffixof_cvc("","", """"))",0.0,10000,0.09086894989013672
+71,"replace_cvc(at_cvc(""Inc"", -1), ""LLC"", suffixof_cvc("","", "",""))",0.0,10000,0.08770108222961426
+72,"replace_cvc(at_cvc(""LLC"", 0), """", suffixof_cvc(""LLC"", "" ""))",0.0,10000,0.10159611701965332
+73,"replace_cvc(concat_cvc(_arg_1, "",""), ""Inc"", suffixof_cvc(""LLC"", ""LLC""))",0.0,10000,0.08786606788635254
+74,"replace_cvc(concat_cvc("""", "",""), "","", contains_cvc(_arg_1, ""Inc""))",0.0,10000,0.10595989227294922
+75,"replace_cvc(concat_cvc("" "", ""LLC""), _arg_1, contains_cvc("""", _arg_1))",0.0,10000,0.09489107131958008
+76,"replace_cvc(concat_cvc(""Inc"", ""LLC""), "" "", contains_cvc("""", "".""))",0.0,10000,0.08925890922546387
+77,"replace_cvc(concat_cvc(""."", ""LLC""), ""."", contains_cvc("" "", """"))",0.0,10000,0.10303497314453125
+78,"replace_cvc(concat_cvc("","", ""LLC""), ""LLC"", contains_cvc("" "", "",""))",0.0,10000,0.0898439884185791
+79,"replace_cvc(prefixof_cvc(_arg_1, _arg_1), """", contains_cvc(""Inc"", "" ""))",0.0,10000,0.11618304252624512
+80,"replace_cvc(prefixof_cvc("""", _arg_1), ""Inc"", contains_cvc(""Inc"", ""LLC""))",0.0,10000,0.11850094795227051
+81,"replace_cvc(prefixof_cvc("" "", _arg_1), "","", contains_cvc(""."", ""Inc""))",0.0,10000,0.10062599182128906
+82,"replace_cvc(prefixof_cvc(""Inc"", """"), _arg_1, contains_cvc("","", _arg_1))",0.0,10000,0.11310696601867676
+83,"replace_cvc(prefixof_cvc(""."", """"), "" "", contains_cvc("","", "".""))",0.0,10000,0.12134599685668945
+84,"replace_cvc(prefixof_cvc("","", """"), ""."", contains_cvc(""LLC"", """"))",0.0,10000,0.12121391296386719
+85,"replace_cvc(prefixof_cvc(""LLC"", """"), ""LLC"", contains_cvc(""LLC"", "",""))",0.0,10000,0.10830187797546387
+86,"replace_cvc(suffixof_cvc(_arg_1, "" ""), "" "", concat_cvc(_arg_1, "" ""))",0.0,10000,0.09795284271240234
+87,"replace_cvc(suffixof_cvc("""", "" ""), ""."", concat_cvc(_arg_1, ""LLC""))",0.0,10000,0.10358905792236328
+88,"replace_cvc(suffixof_cvc("" "", "" ""), ""LLC"", concat_cvc("""", ""Inc""))",0.0,10000,0.11525702476501465
+89,"replace_cvc(suffixof_cvc(""Inc"", ""Inc""), """", concat_cvc("" "", _arg_1))",0.0,10000,0.10597610473632812
+90,"replace_cvc(suffixof_cvc(""."", ""Inc""), ""Inc"", concat_cvc("" "", "".""))",0.0,10000,0.12434697151184082
+91,"replace_cvc(suffixof_cvc("","", ""Inc""), "","", concat_cvc(""Inc"", """"))",0.0,10000,0.10864615440368652
+92,"replace_cvc(suffixof_cvc(""LLC"", "".""), _arg_1, concat_cvc(""Inc"", "",""))",0.0,10000,0.09876799583435059
+93,"replace_cvc(contains_cvc(_arg_1, "".""), "" "", concat_cvc(""."", "" ""))",0.0,10000,0.11299800872802734
+94,"replace_cvc(contains_cvc("""", "".""), ""."", concat_cvc(""."", ""LLC""))",0.0,10000,0.1066749095916748
+95,"replace_cvc(contains_cvc("" "", "".""), ""LLC"", concat_cvc("","", ""Inc""))",0.0,10000,0.10884594917297363
+96,"replace_cvc(contains_cvc(""Inc"", "",""), """", concat_cvc(""LLC"", _arg_1))",0.0,10000,0.10650897026062012
+97,"replace_cvc(contains_cvc(""."", "",""), ""Inc"", concat_cvc(""LLC"", "".""))",0.0,10000,0.09986090660095215
+98,"replace_cvc(contains_cvc("","", "",""), "","", prefixof_cvc(_arg_1, """"))",0.0,10000,0.10657000541687012
+99,"replace_cvc(_arg_1, concat_cvc("" "", ""Inc""), concat_cvc("""", """"))",0.3333333333333333,10000,0.0894918441772461
+100,"replace_cvc(_arg_1, concat_cvc(""LLC"", "" ""), prefixof_cvc("""", "" ""))",0.0,10000,0.10239481925964355
+-1,"replace_cvc(_arg_1, concat_cvc("" "", ""Inc""), """")",0.3333333333333333,-1,8.307866096496582
+-2,Timed out: false,-1.0,-1,0.0

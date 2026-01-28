@@ -1,0 +1,84 @@
+================================================================================
+INTERMEDIATE SCORE DISCREPANCIES
+================================================================================
+
+Total problems compared: 147
+Problems where budgeted was better at some attempt: 0
+Problems where control was better at some attempt: 9
+
+================================================================================
+TOP 5: BUDGETED BETTER THAN CONTROL (by sum of score differences)
+================================================================================
+
+No cases found where budgeted outperformed control.
+
+================================================================================
+TOP 5: CONTROL BETTER THAN BUDGETED (by sum of score differences)
+================================================================================
+
+--------------------------------------------------------------------------------
+Problem: problem_firstname_long
+  Control file:  problem_firstname_long_control_sizebased.csv
+  Budgeted file: problem_firstname_long_budgeted_sizebased.csv
+  Final scores:  Control=1.0000, Budgeted=1.0000
+  Attempts where control was better: 1
+  Sum of score differences: 0.8889
+  Max score difference: 0.8889
+  First better at attempt: 3
+
+  Attempt-by-attempt details (control > budgeted):
+    Attempt   3: Control=1.0000, Budgeted=0.1111, Diff=+0.8889
+
+--------------------------------------------------------------------------------
+Problem: problem_firstname_long_repeat
+  Control file:  problem_firstname_long_repeat_control_sizebased.csv
+  Budgeted file: problem_firstname_long_repeat_budgeted_sizebased.csv
+  Final scores:  Control=1.0000, Budgeted=1.0000
+  Attempts where control was better: 1
+  Sum of score differences: 0.8824
+  Max score difference: 0.8824
+  First better at attempt: 3
+
+  Attempt-by-attempt details (control > budgeted):
+    Attempt   3: Control=1.0000, Budgeted=0.1176, Diff=+0.8824
+
+--------------------------------------------------------------------------------
+Problem: problem_firstname
+  Control file:  problem_firstname_control_sizebased.csv
+  Budgeted file: problem_firstname_budgeted_sizebased.csv
+  Final scores:  Control=1.0000, Budgeted=1.0000
+  Attempts where control was better: 1
+  Sum of score differences: 0.7500
+  Max score difference: 0.7500
+  First better at attempt: 3
+
+  Attempt-by-attempt details (control > budgeted):
+    Attempt   3: Control=1.0000, Budgeted=0.2500, Diff=+0.7500
+
+--------------------------------------------------------------------------------
+Problem: problem_firstname_small
+  Control file:  problem_firstname_small_control_sizebased.csv
+  Budgeted file: problem_firstname_small_budgeted_sizebased.csv
+  Final scores:  Control=1.0000, Budgeted=1.0000
+  Attempts where control was better: 1
+  Sum of score differences: 0.7500
+  Max score difference: 0.7500
+  First better at attempt: 2
+
+  Attempt-by-attempt details (control > budgeted):
+    Attempt   2: Control=1.0000, Budgeted=0.2500, Diff=+0.7500
+
+--------------------------------------------------------------------------------
+Problem: problem_get_first_word
+  Control file:  problem_get_first_word_control_sizebased.csv
+  Budgeted file: problem_get_first_word_budgeted_sizebased.csv
+  Final scores:  Control=1.0000, Budgeted=1.0000
+  Attempts where control was better: 1
+  Sum of score differences: 0.6667
+  Max score difference: 0.6667
+  First better at attempt: 63
+
+  Attempt-by-attempt details (control > budgeted):
+    Attempt  63: Control=1.0000, Budgeted=0.3333, Diff=+0.6667
+
+================================================================================

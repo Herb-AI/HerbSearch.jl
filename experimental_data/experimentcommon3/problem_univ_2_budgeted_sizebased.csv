@@ -1,0 +1,282 @@
+attempt,best_program,program_score,time,new_updated_rules
+1,_arg_1,0.0,0.06052279472351074,No updates
+2,"if false
+    concat_cvc(""PA"", _arg_1)
+else
+    "",""
+end",0.0,0.03430938720703125,No updates
+3,"if false
+    ""USA""
+else
+    contains_cvc(_arg_1, "","")
+end",0.0,0.058023929595947266,No updates
+4,"replace_cvc(concat_cvc(_arg_1, ""NY""), ""CT"", _arg_2)",0.0,0.04495072364807129,No updates
+5,"replace_cvc(prefixof_cvc(_arg_1, ""NY""), ""CT"", _arg_2)",0.0,0.11087632179260254,No updates
+6,"replace_cvc(suffixof_cvc(_arg_1, ""NY""), ""CT"", _arg_2)",0.0,0.09746766090393066,No updates
+7,"replace_cvc(contains_cvc(_arg_1, ""NY""), ""CT"", _arg_2)",0.0,0.09373259544372559,No updates
+8,"replace_cvc(at_cvc("","", 0), ""CT"", _arg_2)",0.0,0.08472776412963867,No updates
+9,"replace_cvc(_arg_2, contains_cvc(""NY"", ""CT""), _arg_2)",0.0,0.07882952690124512,No updates
+10,"replace_cvc(""USA"", prefixof_cvc(""NY"", ""CT""), _arg_2)",0.0,0.0851593017578125,No updates
+11,"replace_cvc(""CT"", contains_cvc(""NY"", ""CT""), _arg_2)",0.0,0.08535003662109375,No updates
+12,"replace_cvc(""NY"", prefixof_cvc(""NY"", ""CT""), _arg_2)",0.0,0.07856249809265137,No updates
+13,"replace_cvc(_arg_2, "" "", concat_cvc(""CA"", _arg_2))",0.0,0.08307218551635742,No updates
+14,"replace_cvc("","", ""CA"", concat_cvc(""CA"", _arg_2))",0.0,0.08906364440917969,No updates
+15,"replace_cvc(""CT"", "" "", concat_cvc(""CA"", _arg_2))",0.0,0.0827031135559082,No updates
+16,"replace_cvc(""MD"", ""CA"", concat_cvc(""CA"", _arg_2))",0.0,0.07581853866577148,No updates
+17,"substr_cvc(suffixof_cvc(_arg_1, ""CA""), 2, 2)",0.0,0.08471512794494629,No updates
+18,"replace_cvc(suffixof_cvc(_arg_2, "",""), "","", int_to_str_cvc(0))",0.0,0.09594440460205078,No updates
+19,"replace_cvc("","", suffixof_cvc(""CT"", ""CT""), int_to_str_cvc(1))",0.0,0.08468222618103027,No updates
+20,"substr_cvc("" "", 1, indexof_cvc(""NY"", ""NY"", 2))",0.0,0.04495358467102051,No updates
+21,"if true
+    replace_cvc(_arg_1, ""CT"", ""CA"")
+else
+    "" ""
+end",0.0,0.04121541976928711,No updates
+22,"if false
+    replace_cvc(_arg_1, ""CT"", ""CA"")
+else
+    "" ""
+end",0.0,0.02736353874206543,No updates
+23,"if true
+    if true
+        ""CT""
+    else
+        ""CA""
+    end
+else
+    "" ""
+end",0.0,0.03171133995056152,No updates
+24,"if true
+    _arg_2
+else
+    replace_cvc(""PA"", _arg_2, "" "")
+end",0.0,0.034018516540527344,No updates
+25,"if false
+    _arg_2
+else
+    replace_cvc(""PA"", _arg_2, "" "")
+end",0.0,0.0377960205078125,No updates
+26,"if false
+    ""CT""
+else
+    substr_cvc(""MD"", 0, 0)
+end",0.0,0.04212331771850586,No updates
+27,"replace_cvc("" "", ""MD"", if false
+        _arg_2
+    else
+        "" ""
+    end)",0.0,0.03509879112243652,No updates
+28,"replace_cvc(""CA"", ""MD"", if false
+        _arg_2
+    else
+        "" ""
+    end)",0.0,0.06534910202026367,No updates
+29,"at_cvc(suffixof_cvc(""MD"", ""CA""), 2 + 0)",0.0,0.08913254737854004,No updates
+30,"replace_cvc(_arg_1, ""CA"", replace_cvc(""NY"", ""CA"", "" ""))",0.0,0.04925966262817383,No updates
+31,"replace_cvc(_arg_2, ""CA"", replace_cvc(""NY"", ""CA"", "" ""))",0.0,0.042114973068237305,No updates
+32,"replace_cvc("" "", ""CA"", replace_cvc(""NY"", ""CA"", "" ""))",0.0,0.04352617263793945,No updates
+33,"replace_cvc("","", ""CA"", replace_cvc(""NY"", ""CA"", "" ""))",0.0,0.04867076873779297,No updates
+34,"replace_cvc(""USA"", ""CA"", replace_cvc(""NY"", ""CA"", "" ""))",0.0,0.049607038497924805,No updates
+35,"replace_cvc(""PA"", ""CA"", replace_cvc(""NY"", ""CA"", "" ""))",0.0,0.06121969223022461,No updates
+36,"replace_cvc(""CT"", ""CA"", replace_cvc(""NY"", ""CA"", "" ""))",0.0,0.041262149810791016,No updates
+37,"replace_cvc(""CA"", ""CA"", replace_cvc(""NY"", ""CA"", "" ""))",0.0,0.040529727935791016,No updates
+38,"replace_cvc(""MD"", ""CA"", replace_cvc(""NY"", ""CA"", "" ""))",0.0,0.041451215744018555,No updates
+39,"replace_cvc(""NY"", ""CA"", replace_cvc(""NY"", ""CA"", "" ""))",0.0,0.06639719009399414,No updates
+40,"replace_cvc(substr_cvc(""CA"", 2, 1), ""CA"", "" "")",0.0,0.04905223846435547,No updates
+41,"replace_cvc(replace_cvc(_arg_1, ""MD"", _arg_1), ""CA"", "" "")",0.0,0.052400827407836914,No updates
+42,"replace_cvc(replace_cvc(_arg_2, ""MD"", _arg_1), ""CA"", "" "")",0.0,0.05010795593261719,No updates
+43,"replace_cvc(replace_cvc("" "", ""MD"", _arg_1), ""CA"", "" "")",0.0,0.04007411003112793,No updates
+44,"replace_cvc(replace_cvc("","", ""MD"", _arg_1), ""CA"", "" "")",0.0,0.040390729904174805,No updates
+45,"replace_cvc(replace_cvc(""USA"", ""MD"", _arg_1), ""CA"", "" "")",0.0,0.04746246337890625,No updates
+46,"replace_cvc(replace_cvc(""PA"", ""MD"", _arg_1), ""CA"", "" "")",0.0,0.04039120674133301,No updates
+47,"replace_cvc(replace_cvc(""CT"", ""MD"", _arg_1), ""CA"", "" "")",0.0,0.04282116889953613,No updates
+48,"replace_cvc(replace_cvc(""CA"", ""MD"", _arg_1), ""CA"", "" "")",0.0,0.049401044845581055,No updates
+49,"replace_cvc(replace_cvc(""MD"", ""MD"", _arg_1), ""CA"", "" "")",0.0,0.0407717227935791,No updates
+50,"replace_cvc(replace_cvc(""NY"", ""MD"", _arg_1), ""CA"", "" "")",0.0,0.08405208587646484,No updates
+51,"replace_cvc(int_to_str_cvc(2), concat_cvc(_arg_1, ""CA""), "" "")",0.0,0.056392669677734375,No updates
+52,"replace_cvc(if true
+        ""CT""
+    else
+        _arg_1
+    end, ""CA"", "" "")",0.0,0.03607583045959473,No updates
+53,"replace_cvc(if false
+        ""CT""
+    else
+        _arg_1
+    end, ""CA"", "" "")",0.0,0.051770925521850586,No updates
+54,"replace_cvc(_arg_1, replace_cvc(""PA"", _arg_2, ""CA""), "" "")",0.0,0.048532724380493164,No updates
+55,"replace_cvc(_arg_2, replace_cvc(""PA"", _arg_2, ""CA""), "" "")",0.0,0.05094480514526367,No updates
+56,"replace_cvc("" "", replace_cvc(""PA"", _arg_2, ""CA""), "" "")",0.0,0.040979623794555664,No updates
+57,"replace_cvc("","", replace_cvc(""PA"", _arg_2, ""CA""), "" "")",0.0,0.04100179672241211,No updates
+58,"replace_cvc(""USA"", replace_cvc(""PA"", _arg_2, ""CA""), "" "")",0.0,0.04712677001953125,No updates
+59,"replace_cvc(""PA"", replace_cvc(""PA"", _arg_2, ""CA""), "" "")",0.0,0.04100179672241211,No updates
+60,"replace_cvc(""CT"", replace_cvc(""PA"", _arg_2, ""CA""), "" "")",0.0,0.04815840721130371,No updates
+61,"replace_cvc(""CA"", replace_cvc(""PA"", _arg_2, ""CA""), "" "")",0.0,0.04113912582397461,No updates
+62,"replace_cvc(""MD"", replace_cvc(""PA"", _arg_2, ""CA""), "" "")",0.0,0.04114103317260742,No updates
+63,"replace_cvc(""NY"", replace_cvc(""PA"", _arg_2, ""CA""), "" "")",0.0,0.056488990783691406,No updates
+64,"replace_cvc(prefixof_cvc(""USA"", "" ""), int_to_str_cvc(1), "" "")",0.0,0.08646392822265625,No updates
+65,"replace_cvc(_arg_2, if true
+        "" ""
+    else
+        ""CA""
+    end, "" "")",0.0,0.04341888427734375,No updates
+66,"replace_cvc(""CT"", if true
+        "" ""
+    else
+        ""CA""
+    end, "" "")",0.0,0.04473066329956055,No updates
+67,"replace_cvc("" "", substr_cvc(""PA"", 0, 2), "" "")",0.0,0.07625317573547363,No updates
+68,"replace_cvc(int_to_str_cvc(0), ""MD"", concat_cvc(""CA"", "" ""))",0.0,0.0855417251586914,No updates
+69,"replace_cvc(_arg_2, int_to_str_cvc(0), concat_cvc(""CA"", "" ""))",0.0,0.08506917953491211,No updates
+70,"replace_cvc(""NY"", int_to_str_cvc(1), concat_cvc(""CA"", "" ""))",0.0,0.07066750526428223,No updates
+71,"replace_cvc(int_to_str_cvc(0), ""NY"", at_cvc(_arg_1, 2))",0.0,0.08256244659423828,No updates
+72,"substr_cvc(""NY"", indexof_cvc(""USA"", _arg_2, 1), 0)",0.0,0.07001137733459473,No updates
+73,"substr_cvc(replace_cvc(""NY"", ""CT"", "" ""), 1, 1)",0.0,0.06537723541259766,No updates
+74,"substr_cvc(prefixof_cvc(_arg_2, "" ""), 1, 1 - 2)",0.0,0.11127090454101562,No updates
+75,"substr_cvc(suffixof_cvc(""NY"", ""CA""), 2, 2 + 0)",0.0,0.08452725410461426,No updates
+76,"replace_cvc(if true
+        ""USA""
+    else
+        _arg_2
+    end, "","", int_to_str_cvc(1))",0.0,0.05806875228881836,No updates
+77,"replace_cvc(replace_cvc(_arg_2, ""CA"", ""USA""), ""CT"", int_to_str_cvc(2))",0.0,0.048799991607666016,No updates
+78,"replace_cvc(replace_cvc(""PA"", _arg_1, ""MD""), _arg_1, int_to_str_cvc(0))",0.0,0.0552210807800293,No updates
+79,"replace_cvc(replace_cvc(""MD"", ""USA"", _arg_2), "","", int_to_str_cvc(1))",0.0,0.06276679039001465,No updates
+80,"replace_cvc(int_to_str_cvc(2), concat_cvc(""USA"", ""CT""), int_to_str_cvc(2))",0.0,0.06562662124633789,No updates
+81,"if true
+    at_cvc(""USA"", 2)
+else
+    contains_cvc(""CA"", _arg_1)
+end",0.0,0.042809486389160156,No updates
+82,"if false
+    at_cvc("","", 0)
+else
+    contains_cvc(""CA"", _arg_1)
+end",0.0,0.03408622741699219,No updates
+83,"if true
+    concat_cvc(_arg_1, ""USA"")
+else
+    contains_cvc(""CA"", _arg_1)
+end",0.0,0.041290998458862305,No updates
+84,"if true
+    concat_cvc("" "", ""NY"")
+else
+    contains_cvc(""CA"", _arg_1)
+end",0.0,0.032746315002441406,No updates
+85,"if true
+    concat_cvc(""PA"", ""USA"")
+else
+    contains_cvc(""CA"", _arg_1)
+end",0.0,0.038721323013305664,No updates
+86,"if true
+    concat_cvc(""CA"", ""NY"")
+else
+    contains_cvc(""CA"", _arg_1)
+end",0.0,0.03309988975524902,No updates
+87,"if true
+    prefixof_cvc(_arg_1, ""USA"")
+else
+    contains_cvc(""CA"", _arg_1)
+end",0.0,0.03923630714416504,No updates
+88,"if true
+    prefixof_cvc("" "", ""NY"")
+else
+    contains_cvc(""CA"", _arg_1)
+end",0.0,0.031150102615356445,No updates
+89,"if true
+    prefixof_cvc(""PA"", ""USA"")
+else
+    contains_cvc(""CA"", _arg_1)
+end",0.0,0.031060457229614258,No updates
+90,"if true
+    prefixof_cvc(""CA"", ""NY"")
+else
+    contains_cvc(""CA"", _arg_1)
+end",0.0,0.038393497467041016,No updates
+91,"if true
+    suffixof_cvc(_arg_1, ""USA"")
+else
+    contains_cvc(""CA"", _arg_1)
+end",0.0,0.03298830986022949,No updates
+92,"if true
+    suffixof_cvc("" "", ""NY"")
+else
+    contains_cvc(""CA"", _arg_1)
+end",0.0,0.031804800033569336,No updates
+93,"if true
+    suffixof_cvc(""PA"", ""USA"")
+else
+    contains_cvc(""CA"", _arg_1)
+end",0.0,0.03728294372558594,No updates
+94,"if true
+    suffixof_cvc(""CA"", ""NY"")
+else
+    contains_cvc(""CA"", _arg_1)
+end",0.0,0.032370567321777344,No updates
+95,"if true
+    contains_cvc(_arg_1, ""USA"")
+else
+    contains_cvc(""CA"", _arg_1)
+end",0.0,0.04302859306335449,No updates
+96,"if true
+    contains_cvc("" "", ""NY"")
+else
+    contains_cvc(""CA"", _arg_1)
+end",0.0,0.032091379165649414,No updates
+97,"if true
+    contains_cvc(""PA"", ""USA"")
+else
+    contains_cvc(""CA"", _arg_1)
+end",0.0,0.03201484680175781,No updates
+98,"if true
+    contains_cvc(""CA"", ""NY"")
+else
+    contains_cvc(""CA"", _arg_1)
+end",0.0,0.038632869720458984,No updates
+99,"if false
+    concat_cvc(_arg_1, ""USA"")
+else
+    contains_cvc(""CA"", _arg_1)
+end",0.0,0.033190011978149414,No updates
+100,"if false
+    concat_cvc("" "", ""NY"")
+else
+    contains_cvc(""CA"", _arg_1)
+end",0.0,0.039653778076171875,No updates
+101,Nothing,0.0,5.491022825241089,Final result so no updates
+-1,Final grammar,-1.0,0.0,"1: Start = ntString
+2: ntString = _arg_1
+3: ntString = _arg_2
+4: ntString =  
+5: ntString = ,
+6: ntString = USA
+7: ntString = PA
+8: ntString = CT
+9: ntString = CA
+10: ntString = MD
+11: ntString = NY
+12: ntString = concat_cvc(ntString, ntString)
+13: ntString = replace_cvc(ntString, ntString, ntString)
+14: ntString = at_cvc(ntString, ntInt)
+15: ntString = int_to_str_cvc(ntInt)
+16: ntString = if ntBool
+    ntString
+else
+    ntString
+end
+17: ntString = substr_cvc(ntString, ntInt, ntInt)
+18: ntInt = 0
+19: ntInt = 1
+20: ntInt = 2
+21: ntInt = ntInt + ntInt
+22: ntInt = ntInt - ntInt
+23: ntInt = len_cvc(ntString)
+24: ntInt = str_to_int_cvc(ntString)
+25: ntInt = indexof_cvc(ntString, ntString, ntInt)
+26: ntBool = true
+27: ntBool = false
+28: ntBool = prefixof_cvc(ntString, ntString)
+29: ntBool = suffixof_cvc(ntString, ntString)
+30: ntBool = contains_cvc(ntString, ntString)
+"
+-2,Timed out: false,-1.0,0.0, 
