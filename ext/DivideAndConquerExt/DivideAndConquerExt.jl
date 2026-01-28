@@ -44,7 +44,7 @@ function HerbSearch.divide_and_conquer(problem::Problem,
 	mod::Module = Main,
 )
 	start_time = time()
-	grammar = get_grammar(iterator.solver)
+	grammar = get_grammar(iterator)
 	symboltable = grammar2symboltable(grammar, mod)
 
 	# Divide problem into sub-problems 

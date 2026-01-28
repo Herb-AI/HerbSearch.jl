@@ -165,7 +165,7 @@ Sorts the indices within a domain, that is grammar rules, by decreasing log_prob
 This will invert the enumeration order if probabilities are equal.
 """
 function derivation_heuristic(iter::MLFSIterator, domain::Vector{Int})
-    log_probs = get_grammar(iter.solver).log_probabilities
+    log_probs = get_grammar(iter).log_probabilities
     return sort(domain, by=i -> log_probs[i], rev=true) # have highest log_probability first
 end
 
@@ -209,12 +209,12 @@ function Base.iterate(iter::TopDownIterator)
     # Priority queue with `SolverState`s (for variable shaped trees) and `UniformIterator`s (for fixed shaped trees)
     pq::PriorityQueue{Union{SolverState,UniformIterator},Union{Real,Tuple{Vararg{Real}}}} = PriorityQueue()
 
-    solver = iter.solver
+    solver = get_solver(iter)
 
     if isfeasible(solver)
         push!(pq, get_state(solver) => priority_function(iter, get_grammar(solver), get_tree(solver), 0, false))
     end
-    return _find_next_complete_tree(iter.solver, pq, iter)
+    return _find_next_complete_tree(get_solver(iter), pq, iter)
 end
 
 """
@@ -223,19 +223,19 @@ end
 Describes the iteration for a given [`TopDownIterator`](@ref) and a [`PriorityQueue`](@ref) over the grammar without enqueueing new items to the priority queue. Recursively returns the result for the priority queue.
 """
 function Base.iterate(iter::TopDownIterator, tup::Tuple{Vector{<:AbstractRuleNode},DataStructures.PriorityQueue})
-    @timeit_debug iter.solver.statistics "#CompleteTrees (by FixedShapedIterator)" begin end
+    @timeit_debug get_solver(iter).statistics "#CompleteTrees (by FixedShapedIterator)" begin end
     # iterating over fixed shaped trees using the FixedShapedIterator
     if !isempty(tup[1])
         return (pop!(tup[1]), tup)
     end
 
-    return _find_next_complete_tree(iter.solver, tup[2], iter)
+    return _find_next_complete_tree(get_solver(iter), tup[2], iter)
 end
 
 
 function Base.iterate(iter::TopDownIterator, pq::DataStructures.PriorityQueue)
-    @timeit_debug iter.solver.statistics "#CompleteTrees (by UniformSolver)" begin end
-    return _find_next_complete_tree(iter.solver, pq, iter)
+    @timeit_debug get_solver(iter).statistics "#CompleteTrees (by UniformSolver)" begin end
+    return _find_next_complete_tree(get_solver(iter), pq, iter)
 end
 
 """
@@ -266,7 +266,7 @@ function _find_next_complete_tree(
 
             hole_res = hole_heuristic(iter, get_tree(solver), get_max_depth(solver))
             if hole_res ≡ already_complete
-                @timeit_debug iter.solver.statistics "#FixedShapedTrees" begin end
+                @timeit_debug get_solver(iter).statistics "#FixedShapedTrees" begin end
                 # Always use the Uniform Solver
                 uniform_solver = UniformSolver(get_grammar(solver), get_tree(solver), with_statistics=solver.statistics)
                 uniform_iterator = UniformIterator(uniform_solver, iter)

@@ -4,15 +4,10 @@ import HerbConstraints: get_grammar, get_starting_symbol, get_max_size,
 """
     abstract type ProgramIterator
 
-Generic iterator for all possible search strategies.    
-All iterators are expected to have the following fields:
+Abstract iterator type for all search strategies.
 
-- `grammar::ContextSensitiveGrammar`: the grammar to search over
-- `sym::Symbol`: defines the start symbol from which the search should be started 
-- `max_depth::Int`: maximum depth of program trees
-- `max_size::Int`: maximum number of [`AbstractRuleNode`](@ref)s of program trees
-- `max_time::Int`: maximum time the iterator may take
-- `max_enumerations::Int`: maximum number of enumerations
+See [`@programiterator`](@ref) for details on constructing iterators or
+defining new strategies.
 """
 abstract type ProgramIterator end
 
@@ -45,8 +40,6 @@ root of each of the programs returned from the iterator will have the same
 type, and this will match the symbol returned by [`get_starting_symbol`](@ref).
 
 ```jldoctest
-julia> using HerbGrammar, HerbConstraints;
-
 julia> g = @csgrammar begin
            Int = length(List)
            Int = Int + Int
@@ -55,19 +48,20 @@ julia> g = @csgrammar begin
 
 julia> it = BFSIterator(g, :Int; max_depth=4);
 
-julia> root_rules = get_rule.(it);
-
-julia> [g.types[idx] for idx in root_rules]
-5-element Vector{Symbol}:
- :Int
- :Int
- :Int
- :Int
- :Int
+julia> programs = rulenode2expr.((freeze_state(p) for p in it), (g,))
+5-element Vector{Expr}:
+ :(length(x))
+ :(length(x) + length(x))
+ :(length(x) + (length(x) + length(x)))
+ :((length(x) + length(x)) + length(x))
+ :((length(x) + length(x)) + (length(x) + length(x)))
 
 julia> get_starting_symbol(it)
 :Int
 ```
+
+Note that all of the programs will return an `Int`, matching the type returned
+by `get_starting_symbol(it)`.
 """
 function HerbConstraints.get_starting_symbol(pi::ProgramIterator)
     return get_starting_symbol(get_solver(pi))
@@ -95,12 +89,13 @@ Base.IteratorSize(::ProgramIterator) = Base.SizeUnknown()
 
 Base.eltype(::ProgramIterator) = Union{RuleNode,StateHole}
 
-
 """
     Base.length(iter::ProgramIterator)    
 
 Counts and returns the number of possible programs without storing all the programs.
-!!! warning: modifies and exhausts the iterator
+
+!!! warning
+    Modifies and exhausts the iterator
 """
 function Base.length(iter::ProgramIterator)
     l = 0
@@ -110,26 +105,47 @@ function Base.length(iter::ProgramIterator)
     return l
 end
 
+const RESERVERD_ARG_NAMES = [:solver, :start_symbol, :initial_node, :grammar, :max_depth, :max_size]
 
 """
     @programiterator
 
-Canonical way of creating a program iterator.
-The macro automatically declares the expected fields listed in the `ProgramIterator` documentation.
-Syntax accepted by the macro is as follows (anything enclosed in square brackets is optional):
-    ```
-    @programiterator [mutable] <IteratorName>(
-        <arg₁>,
-        ...,
-        <argₙ>
-    ) [<: <SupertypeIterator>]
-    ```
-Note that the macro emits an assertion that the `SupertypeIterator` 
-is a subtype of `ProgramIterator` which otherwise throws an ArgumentError.
-If no supertype is given, the new iterator extends `ProgramIterator` directly.
-Each <argᵢ> may be (almost) any expression valid in a struct declaration, and they must be comma separated.
-One known exception is that an inner constructor must always be given using the extended `function <name>(...) ... end` syntax.
+Create a new type `T<:ProgramIterator` that includes the common fields of
+[`ProgramIterator`](@ref)s and some useful constructors.
+
+## Fields
+
+$(join(("""
+    - $a
+    """ for a in RESERVERD_ARG_NAMES)))
+
+Syntax accepted by the macro is as follows (anything enclosed in square
+brackets is optional):
+
+```julia
+@programiterator [mutable] <IteratorName>(
+<arg₁>,
+...,
+<argₙ>
+) [<: <SupertypeIterator>]
+```
+
 The `mutable` keyword determines whether the declared struct is mutable.
+`SupertypeIterator` must be an abstract type `<:ProgramIterator`. If no
+supertype is given, the new iterator extends `ProgramIterator` directly. Each
+<argᵢ> may be (almost) any expression valid in a struct declaration, and they
+must be comma separated.
+
+!!! warning
+    An inner constructor must always be given using the extended `function
+    <name>(...) ... end` syntax.
+
+# Example
+```jldoctest
+julia> abstract type SomeIteratorFamily<:ProgramIterator end
+
+julia> @programiterator mutable SomeCustomIterator(a_param::Int) <: SomeIteratorFamily;
+```
 """
 macro programiterator(mut, ex)
     if mut == :mutable
@@ -168,16 +184,19 @@ _processdecl(mod::Module, mut::Bool, decl::Expr, super=nothing) = @match decl be
         field_names = map(_extract_name_from_argument, extrafields)
 
         # throw an error if user used one of the reserved arg names 
-        RESERVERD_ARG_NAMES = [:solver, :start_symbol, :initial_node, :grammar, :max_depth, :max_size]
-        for field_name ∈ field_names
-            if field_name ∈ RESERVERD_ARG_NAMES
-                throw(ArgumentError(
-                    "When using the @programiterator macro you are not allowed to use any of the $RESERVERD_ARG_NAMES field names.
-                     This is because there would be conflicting names in the function signature. 
-                     However, '$field_name' was found as an argument name. 
-                     Please change the name of the field argument to not collide with the reserved argument names above.
-                    "))
-            end
+        colliding_field_names = intersect(field_names, RESERVERD_ARG_NAMES)
+        if !isempty(colliding_field_names)
+            throw(ArgumentError(
+                """You have provided field(s) to the `@programiterator` macro \
+                that collide with the defaults.
+
+                You provided: $colliding_field_names
+
+                Defaults: $RESERVERD_ARG_NAMES
+
+                Please change the name(s) of the field argument(s) to not collide \
+                with the default fields above."""
+            ))
         end
 
         field_names = map(esc, field_names)
