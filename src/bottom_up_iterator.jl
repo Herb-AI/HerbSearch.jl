@@ -1,5 +1,11 @@
 import HerbGrammar.return_type
 
+const MAX_SKETCH_ENQUEUE = 10
+const MAX_UNIFORM_PER_SKETCH = 50
+const PROGS_FROM_SKETCHES = Ref(0)
+const SKETCH_HASH_REJECTED = Ref(0)
+
+
 """
     abstract type BottomUpIterator <: ProgramIterator
 
@@ -46,7 +52,11 @@ abstract type AbstractBankEntry end
 mutable struct BankEntry <: AbstractBankEntry
     program::AbstractRuleNode
     is_new::Bool
+    is_sketch_new::Bool 
 end
+
+is_new(entry::BankEntry) = entry.is_new
+get_program(entry::BankEntry) = entry.program
 
 
 """
@@ -141,6 +151,7 @@ struct AccessAddress{M,I<:Integer} <: AbstractAddress
     depth::Int64
     size::Int64
     new_shape::Bool
+    
 end
 
 AccessAddress(t::Tuple) = AccessAddress(t...)
@@ -244,6 +255,16 @@ function get_children(c::CombineAddress)
     c.addrs
 end
 
+abstract type WorkItem end
+
+struct AddressItem <: WorkItem
+    addr::AbstractAddress
+end
+
+struct ProgramItem <: WorkItem
+    program::AbstractRuleNode
+end
+
 """
     function Base.collect(iter::BottomUpIterator)
 
@@ -299,17 +320,29 @@ $(FIELDS)
 """
 mutable struct GenericBUState <: BottomUpState
     "A vector of program combinations to construct new programs from"
-    combinations::PriorityQueue{AbstractAddress, Number}
+    combinations::PriorityQueue{WorkItem, Number}
     "The state that the [`combine`](@ref) function can manipulate."
     combine_stage_tracker
     "The current uniform iterator that the bottom-up search is iterating through"
-    current_uniform_iterator::Union{UniformIterator,Nothing}
+    sketch_uniform_iterator::Union{UniformIterator, Nothing}
+    normal_uniform_iterator::Union{UniformIterator, Nothing}
     "The starting node of the search"
     starting_node
     "The last horizon that was considered. Gives a lower bound on solutions to enumerate."
     last_horizon::Float64
     "The current horizon, enumerating only programs with measure strictly smaller than the new horizon."
     new_horizon::Float64
+    "Learned structural sketches (anti-unified shapes)"
+    sketches::Vector{AbstractRuleNode}
+
+    sketch_queue::PriorityQueue{WorkItem, Float64}
+
+    from_sketch::Bool 
+
+    seen_outputs::Set{UInt64}
+
+    uniform_from_sketch_count::Int 
+
 end
 
 
@@ -343,7 +376,7 @@ function populate_bank!(iter::BottomUpIterator)
         term_mask = grammar.isterminal .& grammar.domains[t]
         if any(term_mask)
             uh = UniformHole(term_mask, [])
-            push!(get_entries(bank, t, calc_measure(iter, uh)), BankEntry(uh, true))
+            push!(get_entries(bank, t, calc_measure(iter, uh)), BankEntry(uh, true, true))
         end
     end
 
@@ -464,6 +497,334 @@ function compute_new_horizon(iter::BottomUpIterator)
     return best_resulting_measure
 end
 
+"""
+    address_stream(iter; only_new = false)
+
+Lazy generator of AccessAddress.
+"""
+function address_stream(iter::BottomUpIterator; only_new::Bool)
+    bank = get_bank(iter)
+
+    return (
+        begin
+            entry = get_entries(bank, t, m)[i]
+            prog  = entry.program
+            AccessAddress(
+                t, m, i,
+                depth(prog),
+                length(prog),
+                entry.is_new
+            )
+        end
+        for t in get_types(bank)
+        for m in get_measures(bank, t)
+        for i in eachindex(get_entries(bank, t, m))
+        if (!only_new || get_entries(bank, t, m)[i].is_new)
+    )
+end
+
+function typed_stream(iter, T; only_new=false)
+    return (
+        a for a in address_stream(iter; only_new=only_new)
+        if get_return_type(a) == T
+    )
+end
+
+function typed_stream_for_sketch(iter, T; only_new=false)
+    bank = get_bank(iter)
+
+    return (
+        AccessAddress(
+            T, m, i,
+            depth(entry.program),
+            length(entry.program),
+            entry.is_new && entry.is_sketch_new
+        )
+        for m in get_measures(bank, T)
+        for (i, entry) in enumerate(get_entries(bank, T, m))
+        if !only_new || (entry.is_new && entry.is_sketch_new)
+    )
+end
+
+"""
+    $(TYPEDSIGNATURES)
+
+Traverse a RuleNode (or UniformHole) AST and collect all `UniformHole`s
+appearing anywhere in the tree.
+
+This is used for sketch-based enumeration, where UniformHoles represent
+unconstrained parts of a program that should be filled during bottom-up
+combination (similarly to nonterminal grammar shapes).
+"""
+function collect_uniform_holes_from_sketch(node)::Vector{UniformHole}
+    holes = UniformHole[]
+
+    function visit(n)
+        if n isa UniformHole
+            push!(holes, n)
+        elseif n isa RuleNode
+            for c in HerbCore.get_children(n)
+                visit(c)
+            end
+        end
+    end
+
+    visit(node)
+    return holes
+end
+
+
+"""
+    fill_sketch(sketch, hole_children)
+"""
+function fill_sketch(
+    sketch::AbstractRuleNode,
+    hole_children,
+    iter::BottomUpIterator
+)::AbstractRuleNode
+
+    grammar = iter.solver.grammar
+    bank    = get_bank(iter)
+
+    hole_iter = Iterators.Stateful(hole_children)
+
+    function rebuild(node)
+        if node isa UniformHole
+            # Replace hole with concrete program from bank
+            return retrieve(iter, popfirst!(hole_iter))
+        elseif node isa RuleNode
+            new_children = map(rebuild, HerbCore.get_children(node))
+            return RuleNode(get_rule(node), new_children)
+        end
+    end
+    return rebuild(sketch)
+end
+
+function sketch_size(node::AbstractRuleNode)
+    children = HerbCore.get_children(node)
+    isempty(children) && return 1
+    return 1 + sum(sketch_size(c) for c in children)
+end
+
+function sketch_depth(node::AbstractRuleNode)
+    if node isa UniformHole
+        return 0
+    elseif node isa RuleNode
+        return isempty(HerbCore.get_children(node)) ? 1 :
+               1 + maximum(sketch_depth.(HerbCore.get_children(node)))
+    end
+end
+
+function has_any_new(iter, T)
+    for _ in typed_stream(iter, T; only_new=true)
+        return true
+    end
+    return false
+end
+
+function has_any_new_sketch(iter, T)
+    bank = get_bank(iter)
+    for m in get_measures(bank, T)
+        for entry in get_entries(bank, T, m)
+            if entry.is_new && entry.is_sketch_new
+                return true
+            end
+        end
+    end
+    return false
+end
+
+
+
+
+@inline function random_address(
+    iter::BottomUpIterator,
+    T::Symbol,
+    max_tries::Int64
+)::Union{AccessAddress,Nothing}
+
+    bank = get_bank(iter)
+    measures = get_measures(bank, T)
+    isempty(measures) && return nothing
+
+    for _ in 1:max_tries
+        m = rand(measures)
+        entries = get_entries(bank, T, m)
+        isempty(entries) && continue
+
+        i = rand(1:length(entries))
+        entry = entries[i]
+
+        return AccessAddress(
+            T, m, i,
+            depth(entry.program),
+            length(entry.program),
+            entry.is_new
+        )
+    end
+
+    return nothing
+end
+
+struct RandomNonNewStream
+    iter::BottomUpIterator
+    T::Symbol
+    max_tries::Int64
+end
+
+Base.iterate(s::RandomNonNewStream) =
+    (random_address(s.iter, s.T, s.max_tries), nothing)
+
+Base.iterate(s::RandomNonNewStream, _) =
+    (random_address(s.iter, s.T, s.max_tries), nothing)
+
+
+"""
+    enqueue_sketch_expansions!(iter, state)
+
+Enumerate concrete programs obtained by filling sketches stored in `state.sketches`
+using programs from the iterator's bank.
+
+Results are enqueued into `state.sketch_queue` as `ProgramItem`s.
+This function is independent of bottom-up `combine`.
+"""
+function enqueue_sketch_expansions!(
+    iter::BottomUpIterator,
+    state::GenericBUState
+)
+    isempty(state.sketches) && return state
+
+
+
+    bank    = get_bank(iter)
+    grammar = get_grammar(iter.solver)
+
+    MAX_PER_SKETCH = ceil(Int, MAX_SKETCH_ENQUEUE / length(state.sketches))
+
+    # ---- helpers ----
+
+    hole_type(hole::UniformHole) =
+        grammar.types[findfirst(hole.domain)]
+
+    function sketch_is_feasible(iter, sketch, child_tuple)
+        base_d = sketch_depth(sketch)
+        base_s = sketch_size(sketch)
+
+
+
+        final_depth = base_d + maximum(depth.(child_tuple))
+        final_size  = base_s - length(child_tuple) + sum(size.(child_tuple))
+
+
+        return final_depth <= get_max_depth(iter) &&
+               final_size  <= get_max_size(iter)
+    end
+
+    is_well_typed = child_types ->
+        children -> child_types == get_return_type.(children)
+
+    typed_cache = Dict{Tuple{Symbol,Bool}, Function}()
+    get_stream(T, only_new) =
+        get!(typed_cache, (T, only_new)) do
+            () -> typed_stream_for_sketch(iter, T; only_new=only_new)
+        end
+
+    count = 0
+    stop_all = false
+
+    for sketch in state.sketches
+        sketch_count = 0
+        stop_sketch = false
+
+        holes = collect_uniform_holes_from_sketch(sketch)
+        isempty(holes) && continue
+
+        if length(holes) > 5
+            continue
+        end
+
+        child_types = Tuple(hole_type(h) for h in holes)
+        arity       = length(child_types)
+        typed_ok    = is_well_typed(child_types)
+
+        for new_pos in 1:arity
+            stop_sketch && break
+            stop_all && break
+
+            Tnew = child_types[new_pos]
+            has_any_new_sketch(iter, Tnew) || continue
+
+
+            streams = Vector{Any}(undef, arity)
+
+            for i in 1:arity
+                Ti = child_types[i]
+                streams[i] =
+                    i == new_pos ?
+                    Iterators.take(get_stream(Ti, true)(), MAX_PER_SKETCH) :
+                    Iterators.take(
+                        RandomNonNewStream(iter, Ti, MAX_PER_SKETCH),
+                        MAX_PER_SKETCH 
+                    ) 
+            end
+
+
+    
+            for child_tuple in Iterators.product(streams...)
+
+
+
+                typed_ok(child_tuple) || continue
+            
+                sketch_is_feasible(iter, sketch, child_tuple) || continue
+              
+
+
+                first_new = findfirst(a -> a.new_shape, child_tuple)
+                first_new == new_pos || continue
+             
+                child_measure = _calc_measure(iter, child_tuple)
+                resulting_measure = sketch_size(sketch) - length(child_tuple) + child_measure
+                resulting_measure > get_measure_limit(iter) && continue
+             
+ 
+                program = fill_sketch(sketch, child_tuple, iter)
+                
+                
+                enqueue!(
+                    state.sketch_queue,
+                    ProgramItem(program),
+                    resulting_measure
+                )
+
+                sketch_count += 1
+                count += 1
+
+                if sketch_count >= MAX_PER_SKETCH
+                    stop_sketch = true
+                    break
+                end
+
+                if count >= MAX_SKETCH_ENQUEUE
+                    stop_all = true
+                    break
+                end
+            end
+        end
+
+        stop_all && break
+    end
+
+    count > 0 && println("ADDED $(count) NEW programs from sketches")
+
+    empty!(state.sketches)
+    flush(stdout)
+
+    return state
+end
+
+
+
 
 """
     $(TYPEDSIGNATURES)
@@ -485,31 +846,33 @@ function combine(iter::BottomUpIterator, state::GenericBUState)
     nonterminals_mask  = .~terminals_mask
     nonterminal_shapes = UniformHole.(partition(Hole(nonterminals_mask), grammar), ([],))
 
-    # Recompute horizons
-    state.last_horizon = state.new_horizon
-    new_horizon = compute_new_horizon(iter) 
-    state.new_horizon  = min(new_horizon == typemax(Int) ? state.last_horizon : new_horizon, get_measure_limit(iter))
+    old_last = state.last_horizon
+    old_new  = state.new_horizon
+
+    candidate = compute_new_horizon(iter)
+
+    if isfinite(candidate)
+        candidate = min(candidate, get_measure_limit(iter))
+
+        if candidate > old_new
+            state.last_horizon = old_new
+            state.new_horizon  = candidate
+        end
+    end
 
     # If we exceeded global measure limit, stop early
     if state.last_horizon > get_measure_limit(iter)
         return nothing, nothing
     end
 
-    # Build a lazy stream of AccessAddresses
-    # Tag each address with new_shape=true iff its BANK ENTRY is marked new.
-    address_stream = (begin
-            entry = get_entries(bank, ret_type, measure)[idx] # BankEntry
-            prog = entry.program
-            AccessAddress(
-            ret_type, measure, idx,
-            depth(prog), length(prog),
-            entry.is_new
-            )
+    typed_cache = Dict{Tuple{Symbol,Bool}, Function}()
+
+    get_stream(T, only_new) =
+        get!(typed_cache, (T, only_new)) do
+            () -> typed_stream(iter, T; only_new=only_new)
         end
-        for ret_type in get_types(bank)
-        for measure in get_measures(bank, ret_type)
-        for idx in eachindex(get_entries(bank, ret_type, measure))
-        )
+
+    is_well_typed = child_types -> (children -> child_types == get_return_type.(children))
 
     # Enqueue candidates into the PQ window [last_horizon, new_horizon)
     # Checking solver limits
@@ -517,7 +880,7 @@ function combine(iter::BottomUpIterator, state::GenericBUState)
         maximum(depth.(children)) < get_max_depth(iter) &&
         sum(size.(children)) < get_max_size(iter)
     end
-    is_well_typed = child_types -> (children -> child_types == get_return_type.(children))
+ 
 
     # Iterate over possible shapes
     for shape in nonterminal_shapes
@@ -525,24 +888,46 @@ function combine(iter::BottomUpIterator, state::GenericBUState)
         arity        = length(child_types)
         typed_filter = is_well_typed(child_types)
 
-        # All tuples of addresses for this arity
-        candidate_combinations = Iterators.product(Iterators.repeated(address_stream, arity)...)
-        candidate_combinations = Iterators.filter(typed_filter, candidate_combinations)
-        candidate_combinations = Iterators.filter(is_feasible, candidate_combinations)
 
-        # Windowed insertion into the priority queue
-        for child_tuple in candidate_combinations
-            any_new = any(a -> a.new_shape, child_tuple)
-            any_new || continue
+        for new_pos in 1:arity
+            Tnew = child_types[new_pos]
 
-            resulting_measure = 1 + _calc_measure(iter, child_tuple)
+            # If no new programs of this type exist → skip
+            has_new = has_any_new(iter, Tnew)
+            has_new || continue
 
-            # resulting_measure < state.last_horizon && continue  # below window
-            resulting_measure > get_measure_limit(iter) && continue # exceeds cap
+            streams = Vector{Any}(undef, arity)
 
-            enqueue!(state.combinations, CombineAddress(shape, child_tuple), resulting_measure)
+            for i in 1:arity
+                Ti = child_types[i]
+                streams[i] =
+                    (i == new_pos) ?
+                    get_stream(Ti, true)() :
+                    get_stream(Ti, false)()
+            end
+
+            candidate_combinations = Iterators.product(streams...)
+            candidate_combinations = Iterators.filter(is_feasible, candidate_combinations)
+
+            for child_tuple in candidate_combinations
+                
+                # ≥1 new child is GUARANTEED by construction
+                first_new = findfirst(a -> a.new_shape, child_tuple)
+                first_new == new_pos || continue
+
+                # cheap pruning
+                resulting_measure = 1 + _calc_measure(iter, child_tuple)
+                resulting_measure > get_measure_limit(iter) && continue
+            
+                enqueue!(
+                    state.combinations,
+                    AddressItem(CombineAddress(shape, child_tuple)),
+                    resulting_measure
+                )
+            end
         end
     end
+
 
     # @TODO consume only enumerated shapes, not iterate over the entire bank
     for t in get_types(bank)
@@ -553,8 +938,11 @@ function combine(iter::BottomUpIterator, state::GenericBUState)
         end
     end
 
+
+
     return state.combinations, state
 end
+
 
 
 """
@@ -586,9 +974,47 @@ function add_to_bank!(
     end
 
     program_type = return_type(get_grammar(iter.solver), program)
-    push!(get_entries(bank, program_type, prog_measure), BankEntry(program, true))
+    push!(get_entries(bank, program_type, prog_measure), BankEntry(program, true, true))
     return true
 end
+
+"""
+    add_to_bank!(iter, shape, measure) -> Bool
+
+Add a **uniform shape** (`UniformHole` / `AbstractRuleNode`) to the bank of `iter`
+at the given `measure`.
+
+This method is used for sketch-generated shapes, where the program is already
+abstracted and no `CombineAddress` exists.
+
+Returns `true` if the shape was added, `false` otherwise.
+"""
+function add_to_bank!(
+    iter::BottomUpIterator,
+    shape::AbstractRuleNode
+)::Bool
+    bank = get_bank(iter)
+
+    measure = calc_measure(iter, shape)
+
+    # Global limits
+    if measure > get_measure_limit(iter) ||
+       depth(shape) >= get_max_depth(iter) ||
+       length(shape) >= get_max_size(iter)
+        return false
+    end
+
+    grammar = get_grammar(iter.solver)
+    shape_type = return_type(grammar, shape)
+
+    push!(
+        get_entries(bank, shape_type, measure),
+        BankEntry(shape, true, true)
+    )
+
+    return true
+end
+
 
 
 """
@@ -664,6 +1090,10 @@ Return the next program to explore and the updated [`BottomUpState`](@ref).
 - Otherwise, it calls the [`combine`](@ref) function again, and processes the first returned program.
 """
 function get_next_program(iter::BottomUpIterator, state::GenericBUState)
+
+    if !isempty(state.sketch_queue)
+        return dequeue!(state.sketch_queue), state
+    end
     # Dequeue all elements from the current horizon window if last and new horizon are equal
     # OR dequeue if within horizon bounds.
     if !isempty(state.combinations)
@@ -737,9 +1167,9 @@ function Base.iterate(iter::BottomUpIterator)
     addrs = populate_bank!(iter)
 
     # Priority queue keyed by address, prioritized by its measure
-    pq = PriorityQueue{AbstractAddress, Number}(DataStructures.FasterForward())
+    pq = PriorityQueue{WorkItem, Number}(DataStructures.FasterForward())
     for acc in addrs
-        enqueue!(pq, acc, get_measure(acc))
+        enqueue!(pq, AddressItem(acc), get_measure(acc))
     end
 
     return Base.iterate(
@@ -748,11 +1178,37 @@ function Base.iterate(iter::BottomUpIterator)
             pq,
             init_combine_structure(iter),
             nothing,
+            nothing,
             starting_node,
             -Inf, # last_horizon
-            0 # new_horizon
+            0, # new_horizon
+            AbstractRuleNode[],
+            PriorityQueue{WorkItem,Float64}(DataStructures.FasterForward()),
+            false,
+            Set{UInt64}(),
+            0
         )
     )
+end
+
+function program_to_uniform_shape(node::AbstractRuleNode, grammar)
+
+    if node isa UniformHole
+        return node
+    elseif node isa RuleNode
+        rule = get_rule(node)
+
+        mask = falses(length(grammar.isterminal))
+        mask[rule] = true
+
+        children = map(
+            c -> program_to_uniform_shape(c, grammar),
+            HerbCore.get_children(node)
+        )
+        return UniformHole(mask, children)
+    else
+        error("Unsupported node type: $(typeof(node))")
+    end
 end
 
 
@@ -769,38 +1225,182 @@ The second call to iterate uses [`get_next_program`](@ref) to retrive the next p
         - if it is not added to the bank, e.g., because of observational equivalence, then it calls itself again with the new state
 """
 function Base.iterate(iter::BottomUpIterator, state::GenericBUState)
-    # Drain current uniform iterator if present
-    if !isnothing(state.current_uniform_iterator)
-        next_solution = next_solution!(state.current_uniform_iterator)
-        if isnothing(next_solution)
-            state.current_uniform_iterator = nothing
+
+    grammar = iter.solver.grammar
+
+    # =========================================================
+    # 1. START ONE SKETCH BURST (IF GATE OPEN)
+    # =========================================================
+    if isnothing(state.sketch_uniform_iterator) &&
+       !isempty(state.sketch_queue)
+
+        item = dequeue!(state.sketch_queue)
+        @assert item isa ProgramItem
+        program = item.program
+
+        if is_subdomain(program, state.starting_node)
+            state.sketch_uniform_iterator =
+                UniformIterator(
+                    UniformSolver(grammar, program;
+                        with_statistics=iter.solver.statistics),
+                    iter
+                )
+            state.uniform_from_sketch_count = 0
         else
-            return next_solution, state
+            return Base.iterate(iter, state)
         end
     end
 
-    solver = get_solver(iter)
+    # =========================================================
+    # 2. SKETCH UNIFORM ENUMERATION
+    # =========================================================
+    if !isnothing(state.sketch_uniform_iterator)
+        sol = next_solution!(state.sketch_uniform_iterator)
 
-    next_program_address, new_state = get_next_program(iter, state)
+        if isnothing(sol)
+            state.sketch_uniform_iterator = nothing
+        else
+            frozen = freeze_state(sol)
+            h = hash(frozen)
 
-    while !isnothing(next_program_address)
-        program = retrieve(iter, next_program_address)
-        keep = add_to_bank!(iter, next_program_address, program)
+            if h ∈ state.seen_outputs
+                SKETCH_HASH_REJECTED[] += 1
+                return Base.iterate(iter, state)
+            end
 
-        if is_subdomain(program, state.starting_node)
-            uniform_solver = UniformSolver(get_grammar(solver), program, with_statistics=solver.statistics)
-            new_state.current_uniform_iterator = UniformIterator(uniform_solver, iter)
-            next_solution = next_solution!(new_state.current_uniform_iterator)
+            push!(state.seen_outputs, h)
+            PROGS_FROM_SKETCHES[] += 1
+            state.uniform_from_sketch_count += 1
 
-            if isnothing(next_solution)
-                new_state.current_uniform_iterator = nothing
-            else
-                return next_solution, new_state
+            # println("EXPLORE SKETCH : ",
+            #     rulenode2expr(frozen, grammar))
+
+            if state.uniform_from_sketch_count >= MAX_UNIFORM_PER_SKETCH
+                state.sketch_uniform_iterator = nothing
+
+            end
+
+            return frozen, state
+        end
+    end
+
+    # =========================================================
+    # 3. NORMAL UNIFORM ENUMERATION
+    # =========================================================
+    if !isnothing(state.normal_uniform_iterator)
+        sol = next_solution!(state.normal_uniform_iterator)
+
+        if isnothing(sol)
+            state.normal_uniform_iterator = nothing
+        else
+            frozen = freeze_state(sol)
+            h = hash(frozen)
+
+            if h ∈ state.seen_outputs
+                return Base.iterate(iter, state)
+            end
+
+            push!(state.seen_outputs, h)
+            return frozen, state
+        end
+    end
+
+    # =========================================================
+    # 4. FETCH NEXT PROGRAM (BOTTOM-UP)
+    # =========================================================
+    item, state = get_next_program(iter, state)
+
+    while !isnothing(item)
+
+        # ------------------ SKETCH PROGRAM -------------------
+        if item isa ProgramItem
+            program = item.program
+
+            if is_subdomain(program, state.starting_node)
+                state.sketch_uniform_iterator = UniformIterator(
+                    UniformSolver(grammar, program;
+                        with_statistics=iter.solver.statistics),
+                    iter
+                )
+
+                sol = next_solution!(state.sketch_uniform_iterator)
+                if isnothing(sol)
+                    # no solutions
+                else
+                    frozen = freeze_state(sol)
+                    h = hash(frozen)
+
+                    if h ∈ state.seen_outputs
+                        SKETCH_HASH_REJECTED[] += 1
+                        return Base.iterate(iter, state)
+                    end
+
+                    push!(state.seen_outputs, h)
+                    PROGS_FROM_SKETCHES[] += 1
+
+
+                    state.uniform_from_sketch_count = 1
+
+                    return frozen, state
+                end
+            end
+
+        # ------------------ NORMAL PROGRAM -------------------
+        elseif item isa AddressItem
+            addr = item.addr
+            program = retrieve(iter, addr)
+            add_to_bank!(iter, addr, program)
+
+            if is_subdomain(program, state.starting_node)
+                state.normal_uniform_iterator = UniformIterator(
+                    UniformSolver(grammar, program;
+                        with_statistics=iter.solver.statistics),
+                    iter
+                )
+
+                sol = next_solution!(state.normal_uniform_iterator)
+
+                if isnothing(sol)
+                    state.normal_uniform_iterator = nothing
+                else
+                    frozen = freeze_state(sol)
+                    h = hash(frozen)
+
+                    if h ∈ state.seen_outputs
+                        return Base.iterate(iter, state)
+                    end
+
+                    push!(state.seen_outputs, h)
+                    return frozen, state
+                end
             end
         end
 
-        next_program_address, new_state = get_next_program(iter, new_state)
+        item, state = get_next_program(iter, state)
     end
 
     return nothing
+end
+
+
+
+"""
+    print_sketch_stats(; reset=false)
+
+Print how many programs were generated via sketch expansion.
+Optionally reset the counter.
+"""
+function print_sketch_stats()
+    println("Programs generated from sketches: ", PROGS_FROM_SKETCHES[])
+    return  PROGS_FROM_SKETCHES[]
+end
+
+function print_hash_rejection_stats()
+    println("Hash-rejected programs (from sketches): ", SKETCH_HASH_REJECTED[])
+    return  SKETCH_HASH_REJECTED[]
+end
+
+function reset_sketch_counters!()
+    PROGS_FROM_SKETCHES[] = 0
+    SKETCH_HASH_REJECTED[] = 0
 end

@@ -40,17 +40,17 @@ include("genetic_search_iterator.jl")
 
 include("random_iterator.jl")
 
-
-include("budgeted_search.jl")
-
 include("sketch_learning/anti_unify.jl")
 include("sketch_learning/anti_unify_utils.jl")
+include("sketch_learning/terminal_hole_iterator.jl")
 
 include("bottom_up_iterators/observational_equivalence.jl")
 include("bottom_up_iterator.jl")
 include("bottom_up_iterators/costbased_bus.jl")
 include("bottom_up_iterators/shapebased_bus.jl")
+# include("sketch_iterator.jl")
 
+include("budgeted_search.jl")
 
 # include("divide_conquer_functions/divide.jl")
 # include("divide_conquer_functions/decide.jl")
@@ -63,7 +63,7 @@ export
     @programiterator, heuristic_leftmost,
     heuristic_rightmost,
     heuristic_random,
-    heuristic_smallest_domain, derivation_heuristic, synth, synth_multi, get_solver,
+    heuristic_smallest_domain, derivation_heuristic, synth, synth_multi, synth_multi_with_state, get_solver,
     SynthResult,
     optimal_program,
     suboptimal_program, UniformIterator,
@@ -87,6 +87,8 @@ export
     BudgetedSearchController,
     run_budget_search,
 
+    interpret_sygus_fn,
+
     anti_unify,
     collect_subtrees,
     count_nonhole_nodes,
@@ -94,9 +96,8 @@ export
     passes_hole_thresholds,
     all_pairwise_anti_unification,
     anti_unify_patterns_and_tree,
-    multi_MST_unify
-
-    EvaluationError,
+    multi_MST_unify,
+    anti_unify_programs,
 
     # Bottom-up Searches
     BottomUpState,
@@ -119,5 +120,13 @@ export
     new_address,
     retrieve,
     init_combine_structure,
-    get_bank
+    get_bank,
+    enqueue_sketch_expansions!,
+    print_sketch_stats,
+    print_hash_rejection_stats,
+    reset_sketch_counters!,
+    
+
+    TerminalHoleIterator,
+    TerminalHoleSolver
 end # module HerbSearch
