@@ -24,4 +24,16 @@
         @test length(bfs_programs) == 6
         @test all(p ∈ bfs_programs for p ∈ answer_programs)
     end
+
+    @testset "DFS ASP Iterator" begin
+        g1 = @csgrammar begin
+            Real = 1 | 2
+            Real = Real * Real
+        end
+
+        dfs_programs = [freeze_state(p) for p ∈ DFSIterator(g1, :Real, max_depth=2)]
+
+        @test length(dfs_programs) == 6
+        @test all(p ∈ dfs_programs for p ∈ answer_programs)
+    end
 end
