@@ -40,6 +40,9 @@ include("genetic_search_iterator.jl")
 
 include("random_iterator.jl")
 
+include("budgeted_search.jl")
+include("herb-probe/probe-methods.jl")
+
 include("bottom_up_iterator.jl")
 include("bottom_up_iterators/costbased_bus.jl")
 include("bottom_up_iterators/shapebased_bus.jl")
@@ -100,5 +103,20 @@ export
 
     divide_and_conquer,
     EvaluationError,
-    get_solver
+    get_solver,
+    BudgetedSearchController,
+    run_budget_search,
+    decide_probe,
+    create_probe_synth_fn,
+    probe_selector_all,
+    probe_selector_best,
+    probe_selector_non_trivial,
+    probe_stop_checker,
+    modify_grammar_probe_iterative!,
+    modify_grammar_probe_original!,
+    modify_grammar_probe_hybrid!,
+    get_promising_programs_with_fitness,
+    create_probe_updater_iterative,
+    create_probe_updater_original,
+    create_probe_updater_hybrid
 end # module HerbSearch
