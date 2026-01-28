@@ -4,6 +4,8 @@ Branch = Tuple{StateHole, Int}
 #Shared reference to an empty vector to reduce memory allocations.
 NOBRANCHES = Vector{Branch}()
 
+abstract type AbstractUniformIterator <: ProgramIterator end
+
 """
     mutable struct UniformIterator
 
@@ -13,7 +15,7 @@ Inner iterator that enumerates all candidate programs of a uniform tree.
 - `unvisited_branches`: for each search-node from the root to the current search-node, a list of unvisited branches.
 - `nsolutions`: number of solutions found so far.
 """
-mutable struct UniformIterator
+mutable struct UniformIterator <: AbstractUniformIterator
     solver::UniformSolver
     outeriter::Union{ProgramIterator, Nothing}
     unvisited_branches::Stack{Vector{Branch}}

@@ -13,7 +13,7 @@ Inner iterator that enumerates all candidate programs of a uniform tree.
 - `unvisited_branches`: for each search-node from the root to the current search-node, a list of unvisited branches.
 - `nsolutions`: number of solutions found so far.
 """
-mutable struct UniformASPIterator
+mutable struct UniformASPIterator <: AbstractUniformIterator
     solver::ASPSolver
     outeriter::Union{ProgramIterator,Nothing}
     unvisited_branches::Stack{Vector{Branch}}

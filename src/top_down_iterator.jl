@@ -170,17 +170,20 @@ function derivation_heuristic(iter::MLFSIterator, domain::Vector{Int})
 end
 
 """
-    @enum ExpandFailureReason limit_reached=1 already_complete=2
+    ExpandFailureReason
 
-Representation of the different reasons why expanding a partial tree failed. 
+Abstract type representing the different reasons why expanding a partial tree failed. 
+
 Currently, there are two possible causes of the expansion failing:
 
-- `limit_reached`: The depth limit or the size limit of the partial tree would 
+- [`LimitReached`](@ref): The depth limit or the size limit of the partial tree would 
    be violated by the expansion
-- `already_complete`: There is no hole left in the tree, so nothing can be 
+- [`AlreadyComplete`](@ref): There is no hole left in the tree, so nothing can be 
    expanded.
 """
-@enum ExpandFailureReason limit_reached = 1 already_complete = 2
+abstract type ExpandFailureReason end
+struct LimitReached <: ExpandFailureReason end
+struct AlreadyComplete <: ExpandFailureReason end
 
 
 """
@@ -251,56 +254,100 @@ function _find_next_complete_tree(
 )
     while length(pq) ≠ 0
         (item, priority_value) = popfirst!(pq)
-        if item isa UniformIterator
-            #the item is a fixed shaped solver, we should get the next solution and re-enqueue it with a new priority value
-            uniform_iterator = item
-            solution = next_solution!(uniform_iterator)
-            if !isnothing(solution)
-                push!(pq, uniform_iterator => priority_function(iter, get_grammar(solver), solution, priority_value, true))
-                return (solution, pq)
-            end
-        elseif item isa SolverState
-            #the item is a solver state, we should find a variable shaped hole to branch on
-            state = item
-            load_state!(solver, state)
-
-            hole_res = hole_heuristic(iter, get_tree(solver), get_max_depth(solver))
-            if hole_res ≡ already_complete
-                @timeit_debug get_solver(iter).statistics "#FixedShapedTrees" begin end
-                # Always use the Uniform Solver
-                uniform_solver = UniformSolver(get_grammar(solver), get_tree(solver), with_statistics=solver.statistics)
-                uniform_iterator = UniformIterator(uniform_solver, iter)
-                solution = next_solution!(uniform_iterator)
-                if !isnothing(solution)
-                    push!(pq, uniform_iterator => priority_function(iter, get_grammar(solver), solution, priority_value, true))
-                    return (solution, pq)
-                end
-            elseif hole_res ≡ limit_reached
-                # The maximum depth is reached
-                continue
-            elseif hole_res isa HoleReference
-                # Variable Shaped Hole was found
-                (; hole, path) = hole_res
-
-                partitioned_domains = partition(hole, get_grammar(solver))
-                number_of_domains = length(partitioned_domains)
-                for (i, domain) ∈ enumerate(partitioned_domains)
-                    if i < number_of_domains
-                        state = save_state!(solver)
-                    end
-                    @assert isfeasible(solver) "Attempting to expand an infeasible tree: $(get_tree(solver))"
-                    remove_all_but!(solver, path, domain)
-                    if isfeasible(solver)
-                        push!(pq, get_state(solver) => priority_function(iter, get_grammar(solver), get_tree(solver), priority_value, false))
-                    end
-                    if i < number_of_domains
-                        load_state!(solver, state)
-                    end
-                end
-            end
-        else
-            throw("BadArgument: PriorityQueue contains an item of unexpected type '$(typeof(item))'")
+        solution_or_nothing = _find_next_complete_tree(solver, pq, iter, item, priority_value)
+        if !isnothing(solution_or_nothing)
+            return solution_or_nothing
         end
     end
     return nothing
+end
+
+function _find_next_complete_tree(
+    solver::Solver,
+    pq::PriorityQueue,
+    iter::TopDownIterator,
+    item::AbstractUniformIterator,
+    priority_value
+)
+    #the item is a fixed shaped solver, we should get the next solution and re-enqueue it with a new priority value
+    uniform_iterator = item
+    solution = next_solution!(uniform_iterator)
+    if !isnothing(solution)
+        push!(pq, uniform_iterator => priority_function(iter, get_grammar(solver), solution, priority_value, true))
+        return (solution, pq)
+    end
+end
+
+function _find_next_complete_tree(
+    solver::Solver,
+    pq::PriorityQueue,
+    iter::TopDownIterator,
+    item::SolverState,
+    priority_value
+)
+    #the item is a solver state, we should find a variable shaped hole to branch on
+    state = item
+    load_state!(solver, state)
+
+    hole_res = hole_heuristic(iter, get_tree(solver), get_max_depth(solver))
+    return _decide_hole(solver, pq, iter, item, priority_value, hole_res)
+end
+
+function _decide_hole(
+    solver::Solver,
+    pq::PriorityQueue,
+    iter::TopDownIterator,
+    ::SolverState,
+    priority_value,
+    ::AlreadyComplete
+)
+    @timeit_debug get_solver(iter).statistics "#FixedShapedTrees" begin end
+    # Always use the Uniform Solver
+    uniform_solver = UniformSolver(get_grammar(solver), get_tree(solver), with_statistics=solver.statistics)
+    uniform_iterator = UniformIterator(uniform_solver, iter)
+    solution = next_solution!(uniform_iterator)
+    if !isnothing(solution)
+        push!(pq, uniform_iterator => priority_function(iter, get_grammar(solver), solution, priority_value, true))
+        return (solution, pq)
+    end
+end
+
+function _decide_hole(
+    ::Solver,
+    ::PriorityQueue,
+    ::TopDownIterator,
+    ::SolverState,
+    ::Any,
+    ::LimitReached
+)
+    # The maximum depth is reached
+    return nothing
+end
+
+function _decide_hole(
+    solver::Solver,
+    pq::PriorityQueue,
+    iter::TopDownIterator,
+    ::SolverState,
+    priority_value,
+    hole_res::HoleReference
+)
+    # Variable Shaped Hole was found
+    (; hole, path) = hole_res
+
+    partitioned_domains = partition(hole, get_grammar(solver))
+    number_of_domains = length(partitioned_domains)
+    for (i, domain) ∈ enumerate(partitioned_domains)
+        if i < number_of_domains
+            state = save_state!(solver)
+        end
+        @assert isfeasible(solver) "Attempting to expand an infeasible tree: $(get_tree(solver))"
+        remove_all_but!(solver, path, domain)
+        if isfeasible(solver)
+            push!(pq, get_state(solver) => priority_function(iter, get_grammar(solver), get_tree(solver), priority_value, false))
+        end
+        if i < number_of_domains
+            load_state!(solver, state)
+        end
+    end
 end
