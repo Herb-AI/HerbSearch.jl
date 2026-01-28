@@ -124,6 +124,19 @@ Creates a breadth-first search iterator for traversing given a grammar, starting
 """ BFSIterator
 @programiterator BFSIterator() <: AbstractBFSIterator
 
+Base.@doc """
+    @programiterator BFSASPIterator() <: AbstractBFSIterator
+
+Creates a breadth-first search iterator for traversing given a grammar,
+starting from the given symbol. The iterator returns trees in the grammar in
+increasing order of size.
+
+Constraints on uniform trees are enforced in ASP, making use of Clingo.
+Behavior should otherwise match that of [`AbstractBFSIterator`](@ref)s.
+""" BFSASPIterator
+@programiterator BFSASPIterator() <: AbstractBFSIterator
+constraint_style(::BFSASPIterator) = ASPStyle()
+
 """
     AbstractDFSIterator <: TopDownIterator
 
@@ -131,6 +144,7 @@ This is the supertype for all depth-first search iterators. It inherits all stop
 implemented to perform a depth-first search.
 """
 abstract type AbstractDFSIterator <: TopDownIterator end
+
 
 """
     priority_function(::AbstractDFSIterator, g::AbstractGrammar, tree::AbstractRuleNode, parent_value::Union{Real, Tuple{Vararg{Real}}}, isrequeued::Bool)
@@ -156,6 +170,19 @@ Base.@doc """
 Creates a depth-first search iterator for traversing a given a grammar, starting from a given symbol. The iterator returns trees in the grammar in decreasing order of size. 
 """ DFSIterator
 @programiterator DFSIterator() <: AbstractDFSIterator
+
+Base.@doc """
+    @programiterator DFSASPIterator() <: AbstractDFSIterator
+
+Creates a depth-first search iterator for traversing given a grammar,
+starting from the given symbol. The iterator returns trees in the grammar in
+decreasing order of size.
+
+Constraints on uniform trees are enforced in ASP, making use of Clingo.
+Behavior should otherwise match that of [`AbstractDFSIterator`](@ref)s.
+""" DFSASPIterator
+@programiterator DFSASPIterator() <: AbstractDFSIterator
+constraint_style(::DFSASPIterator) = ASPStyle()
 
 Base.@doc """
     @programiterator MLFSIterator() <: TopDownIterator
