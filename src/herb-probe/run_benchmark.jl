@@ -1,3 +1,12 @@
+import Pkg
+println("Julia: ", VERSION)
+println("Active project: ", Base.active_project())
+Pkg.status()
+
+using Pkg
+Pkg.activate(".")
+Pkg.instantiate()
+
 using JSON3
 using HerbBenchmarks
 using HerbBenchmarks.PBE_SLIA_Track_2019
@@ -43,6 +52,7 @@ function run_one_problem(suffix::String; attempts::Int=3, max_enum::Int=10_000)
     grammar, problem = load_slia(suffix)
 
     eval(make_interpreter(grammar))
+    
     tags = HerbBenchmarks.get_relevant_tags(grammar)
 
     iter0 = MLFSIterator(grammar, :ntString)
@@ -53,7 +63,7 @@ function run_one_problem(suffix::String; attempts::Int=3, max_enum::Int=10_000)
         maximum_time = typemax(Int),
     )
 
-    updater = create_probe_updater(MLFSIterator, :ntString)
+    updater = create_probe_updater_original(MLFSIterator, :ntString)
 
     ctrl = BudgetedSearchController(
         problem = problem,
@@ -61,7 +71,7 @@ function run_one_problem(suffix::String; attempts::Int=3, max_enum::Int=10_000)
         synth_fn = synth_fn,
         stop_checker = probe_stop_checker,
         attempts = attempts,
-        selector = probe_selector,
+        selector = probe_selector_best,
         updater = updater,
     )
 
@@ -110,15 +120,15 @@ end
 suffixes = slia_problem_suffixes()
 n = length(suffixes)
 
-chunk_size = parse(Int, get(ENV, "CHUNK_SIZE", "3"))
+chunk_size = parse(Int, get(ENV, "CHUNK_SIZE", "205"))
 chunk = parse(Int, get(ENV, "CHUNK", "1"))
 (lo, hi) = chunk_bounds(n, chunk_size, chunk)
 my_suffixes = suffixes[lo:hi]
 
-attempts = parse(Int, get(ENV, "ATTEMPTS", "3"))
-max_enum  = parse(Int, get(ENV, "MAX_ENUM", "1000"))
+attempts = parse(Int, get(ENV, "ATTEMPTS", "1"))
+max_enum  = parse(Int, get(ENV, "MAX_ENUM", "400000"))
 
-out_path = get(ENV, "OUT", "slia_probe_chunk$(chunk)_$(lo)-$(hi).jsonl")
+out_path = get(ENV, "OUT", "slia_1000000_enums$(chunk)_$(lo)-$(hi).jsonl")
 
 println("Running chunk=$chunk indices $lo-$hi (", length(my_suffixes), " problems)")
 println("Writing to $out_path")

@@ -6,17 +6,6 @@ using HerbSpecification
 using HerbInterpret
 using HerbConstraints
 
-# iterator::ProgramIterator
-
-# synth_fn::Function
-
-# stop_checker::Function = (timed_solution) -> Bool
-
-# selector::Function = results -> results
-# updater::Function = (selected, iter) -> iter
-    # Pkg.develop(path="C:/Users/chris/.julia/dev/HerbSearch")
-
-
 """
     $(TYPEDSIGNATURES)
 
@@ -33,7 +22,6 @@ function get_promising_programs_with_fitness(
         max_enumerations = typemax(Int),
         interpreter::Function,
         tags
-# )::Tuple{Set{Tuple{AbstractRuleNode, Real}}, SynthResult}
 )::Tuple{Set{Tuple{AbstractRuleNode, Real}}, SynthResult}
     start_time = time()
     grammar = HerbConstraints.get_grammar(iterator.solver)
@@ -67,9 +55,9 @@ end
 """
     $(TYPEDSIGNATURES)
 
-# Decide whether to keep a program, or discard it, based on the specification. 
-# Returns the portion of solved examples.
-# """
+Decide whether to keep a program, or discard it, based on the specification. 
+ Returns the portion of solved examples.
+ """
 function decide_probe(program::AbstractRuleNode,
                     problem::Problem,
                     grammar::ContextSensitiveGrammar,
@@ -79,20 +67,27 @@ function decide_probe(program::AbstractRuleNode,
     correct = 0
     for ex in problem.spec
         out = try
-            interpreter(program, tags, ex.in)
+            Base.invokelatest(interpreter, program, tags, ex.in)
         catch
             return 0.0
         end
         correct += (out == ex.out)
-        # println(out)
     end
-    # println("expr = ", rulenode2expr(program, grammar))
-    # println("Cyclecomplete")
-    # println(correct/length(problem.spec))
     return correct / length(problem.spec)
 end
 
+"""
 
+    $(TYPEDSIGNATURES)
+
+
+Construct a synthesis function compatible with the shared `BudgetedSearchController`.
+
+The returned function has signature `(problem::Problem, iterator::ProgramIterator) -> (promising, status)` and
+runs `get_promising_programs_with_fitness` using the provided `interpreter` and `tags`.
+
+A closure suitable to be passed as `synth_fn` to the controller.
+"""
 function create_probe_synth_fn(
         interpreter::Function,
         tags;
@@ -109,104 +104,243 @@ function create_probe_synth_fn(
     end
 end
 
-function probe_selector(variable) 
+"""
+
+    $(TYPEDSIGNATURES)
+
+Selector policy that keeps *all* promising programs produced by the synth function.
+
+This expects `variable` to be the value returned by `synth_fn`, i.e. a tuple
+`(promising_set, status)` where `promising_set` is a set of `(program, fitness)` pairs.
+"""
+function probe_selector_all(variable) 
     return variable[1]
 end
 
+"""
+
+    $(TYPEDSIGNATURES)
+    
+Selector policy that keeps only the promising program with the higest fitness produced by the synth function.
+
+This expects `variable` to be the value returned by `synth_fn`, i.e. a tuple
+`(promising_set, status)` where `promising_set` is a set of `(program, fitness)` pairs.
+"""
+function probe_selector_best(variable)
+    promising = variable[1]
+    isempty(promising) && return Set{Tuple{AbstractRuleNode, Real}}()
+
+    best = reduce((a,b) -> (a[2] >= b[2] ? a : b), promising)
+
+    out = Set{Tuple{AbstractRuleNode, Real}}()
+    push!(out, (best[1], best[2]))
+    return out
+end
+
+"""
+
+    $(TYPEDSIGNATURES)
+    
+Selector policy that keeps all promising programs produced by the synth function that have a fitness > 0.2.
+
+This expects `variable` to be the value returned by `synth_fn`, i.e. a tuple
+`(promising_set, status)` where `promising_set` is a set of `(program, fitness)` pairs.
+"""
+function probe_selector_non_trivial(variable)
+    promising = variable[1]
+    
+    return filter(p -> p[2] > 0.2, promising)
+end
+
+
+"""
+    $(TYPEDSIGNATURES)
+
+This is designed to be used with `@timed synth_fn(...)` output passed by the controller
+(i.e., a `Timed` object-like value), and checks:
+
+- Stop if the synth result status indicates an optimal program was found, or
+- Stop if no promising programs were found.
+
+Concretely, it expects:
+- `variable.value[1]` is the set of promising programs
+- `variable.value[2]` is a `SynthResult` (e.g., `optimal_program`, `suboptimal_program`)
+"""
 function probe_stop_checker(variable)
-    return variable.value[2] == optimal_program
+    return variable.value[2] == optimal_program || isempty(variable.value[1])
 end
 
 """
     $(TYPEDSIGNATURES)
 
 Modify the grammar based on the programs kept during the `decide` step.
+Uses the probabilities of the current grammar to do so in an *iterative* fashion.
 Takes a set of programs and their fitnesses, which describe how useful the respective program is.
 Updates a rules probability based on the highest program fitness the rule occurred in. 
 The update function is taken from the Probe paper. Instead of introducing a normalization value, we just call `normalize!` instead.
 """
-function modify_grammar_probe!(
+function modify_grammar_probe_iterative!(
         saved_program_fitness::Set{Tuple{<:AbstractRuleNode, Real}},
         grammar::AbstractGrammar
 )::AbstractGrammar 
-    # orig_probs = exp.(grammar.log_probabilities)
-    # println(length(orig_probs))
-    # borig = copy(orig_probs)
-
-
-
-    # println("new cycle")
-    # before = copy(grammar.log_probabilities)
-    # # println(before)
-    # # println(length(before))
-
-    
-    # for i in 1:length(grammar.log_probabilities)
-    #     max_fitness = 0
-
-    #     # Find maximum fitness for programs with that rule among saved programs
-    #     for (program, fitness) in saved_program_fitness
-    #         if !isempty(rulesoftype(program, Set(i))) && fitness > max_fitness
-    #             max_fitness = fitness                
-    #         end
-    #     end
-
-    #     # Update the probability according to Probe's formula
-    #     prob = log_probability(grammar, i)
-    #     orig_probs[i] = log(exp(prob)^(1-max_fitness))
-
-    # end
-    # aorig = copy(orig_probs)
-    # println(any(borig .!= aorig))
-    # grammar.log_probabilities .= orig_probs
-
-    # # Normalize probabilities after the update
-    # normalize!(grammar)
-
-    # # after = copy(grammar.log_probabilities)
-    # # println(length(after))
-
-    # # println(after)
-
-    # println(any(before .!= grammar.log_probabilities))
-
-    # return grammar
-
     logps = copy(grammar.log_probabilities)
-    # logps2 = copy(grammar.log_probabilities)
 
-    # println(grammar.log_probabilities)
-
-
-for i in eachindex(logps)
-    max_fitness = 0.0
-    for (program, fitness) in saved_program_fitness
-        if fitness > max_fitness && !isempty(rulesoftype(program, Set(i)))
-            max_fitness = float(fitness)
+    for i in eachindex(logps)
+        max_fitness = 0.0
+        for (program, fitness) in saved_program_fitness
+            if fitness > max_fitness && !isempty(rulesoftype(program, Set(i)))
+                max_fitness = float(fitness)
+            end
         end
+
+        # your formula simplifies to:
+        # log(exp(logp)^(1-max_fitness)) == (1-max_fitness) * logp
+        logps[i] = (1 - max_fitness) * logps[i]
     end
 
-    # your formula simplifies to:
-    # log(exp(logp)^(1-max_fitness)) == (1-max_fitness) * logp
-    logps[i] = (1 - max_fitness) * logps[i]
-end
+    grammar.log_probabilities .= logps
+    normalize!(grammar)
 
-grammar.log_probabilities .= logps
-normalize!(grammar)
-
-# println(grammar.log_probabilities)
-# println(any(logps2 .!= grammar.log_probabilities))
-
-
-
-return grammar
+    return grammar
 
 end
 
-function create_probe_updater(iterator_ctor, starting_sym::Symbol; kwargs...)
+"""
+    $(TYPEDSIGNATURES)
+
+Modify the grammar based on the programs kept during the `decide` step.
+Uses the a fresh uniform distribution of probabilities do so in the *original* implementation.
+Takes a set of programs and their fitnesses, which describe how useful the respective program is.
+Updates a rules probability based on the highest program fitness the rule occurred in. 
+The update function is taken from the Probe paper. Instead of introducing a normalization value, we just call `normalize!` instead.
+"""
+function modify_grammar_probe_original!(
+        saved_program_fitness::Set{Tuple{<:AbstractRuleNode, Real}},
+        grammar::AbstractGrammar
+)::AbstractGrammar 
+    logps = copy(grammar.log_probabilities)
+
+    for i in eachindex(logps)
+        max_fitness = 0.0
+        for (program, fitness) in saved_program_fitness
+            if fitness > max_fitness && !isempty(rulesoftype(program, Set(i)))
+                max_fitness = float(fitness)
+            end
+        end
+
+        # your formula simplifies to:
+        # log(exp(logp)^(1-max_fitness)) == (1-max_fitness) * logp
+        logps[i] = (1 - max_fitness) * -log(length(logps))
+    end
+
+    grammar.log_probabilities .= logps
+    normalize!(grammar)
+
+    return grammar
+
+end
+
+"""
+    $(TYPEDSIGNATURES)
+
+Modify the grammar based on the programs kept during the `decide` step.
+Uses the a fresh grammar of probabilities do so in but one that is *normalized*.
+Takes a set of programs and their fitnesses, which describe how useful the respective program is.
+Updates a rules probability based on the highest program fitness the rule occurred in. 
+The update function is taken from the Probe paper. Instead of introducing a normalization value, we just call `normalize!` instead.
+"""
+function modify_grammar_probe_hybrid!(
+        saved_program_fitness::Set{Tuple{<:AbstractRuleNode, Real}},
+        grammar::AbstractGrammar
+)::AbstractGrammar 
+    gcopy = deepcopy(grammar)
+    normalize!(gcopy)
+
+    logps = copy(gcopy.log_probabilities)
+
+    for i in eachindex(logps)
+        max_fitness = 0.0
+        for (program, fitness) in saved_program_fitness
+            if fitness > max_fitness && !isempty(rulesoftype(program, Set(i)))
+                max_fitness = float(fitness)
+            end
+        end
+
+        # your formula simplifies to:
+        # log(exp(logp)^(1-max_fitness)) == (1-max_fitness) * logp
+        logps[i] = (1 - max_fitness) * logps[i]
+    end
+
+    grammar.log_probabilities .= logps
+    normalize!(grammar)
+
+    return grammar
+
+end
+
+"""
+Create an updater closure implementing the *iterative* Probe-style grammar update.
+
+The returned updater has signature `(promising, old_iter::ProgramIterator) -> ProgramIterator`:
+1. Extracts the grammar from `old_iter`,
+2. Updates it in-place using `modify_grammar_probe_iterative!`,
+3. Constructs a fresh iterator via `iterator_ctor(updated_grammar, starting_sym; kwargs...)`.
+
+# Arguments
+- `iterator_ctor`: A constructor that builds a new `ProgramIterator` from a grammar and start symbol.
+- `starting_sym`: Grammar start symbol for enumeration.
+- `kwargs...`: Passed through to `iterator_ctor`.
+"""
+function create_probe_updater_iterative(iterator_ctor, starting_sym::Symbol; kwargs...)
     return (promising, old_iter::ProgramIterator) -> begin
         g = HerbConstraints.get_grammar(old_iter.solver)
-        modify_grammar_probe!(promising, g)
+        modify_grammar_probe_iterative!(promising, g)
+        return iterator_ctor(g, starting_sym; kwargs...)
+    end
+end
+
+"""
+Create an updater closure implementing the *original/reset-like* Probe grammar update.
+
+The returned updater has signature `(promising, old_iter::ProgramIterator) -> ProgramIterator`:
+1. Extracts the grammar from `old_iter`,
+2. Updates it in-place using `modify_grammar_probe_original!`,
+3. Constructs a fresh iterator via `iterator_ctor(updated_grammar, starting_sym; kwargs...)`.
+
+# Arguments
+- `iterator_ctor`: A constructor that builds a new `ProgramIterator` from a grammar and start symbol.
+- `starting_sym`: Grammar start symbol for enumeration.
+- `kwargs...`: Passed through to `iterator_ctor`.
+"""
+function create_probe_updater_original(iterator_ctor, starting_sym::Symbol; kwargs...)
+    return (promising, old_iter::ProgramIterator) -> begin
+        g = HerbConstraints.get_grammar(old_iter.solver)
+        modify_grammar_probe_original!(promising, g)
+        return iterator_ctor(g, starting_sym; kwargs...)
+    end
+end
+
+"""
+Create an updater closure implementing the *hybrid* Probe grammar update.
+
+Unlike the iterative/original variants that update the grammar extracted from the iterator,
+the hybrid updater:
+1. Starts from a deep copy of the provided `og_grammar` each cycle,
+2. Applies `modify_grammar_probe_hybrid!` using the selected promising programs,
+3. Constructs a new iterator from this updated copy.
+
+This can reduce “drift” or lock-in effects by re-centering updates around an original grammar.
+
+# Arguments
+- `iterator_ctor`: A constructor that builds a new `ProgramIterator` from a grammar and start symbol.
+- `starting_sym`: Grammar start symbol for enumeration.
+- `og_grammar`: Reference grammar used as the baseline each cycle (copied before updating).
+- `kwargs...`: Passed through to `iterator_ctor`.
+"""
+function create_probe_updater_hybrid(iterator_ctor, starting_sym::Symbol, og_grammar::AbstractGrammar; kwargs...)
+    return (promising, old_iter::ProgramIterator) -> begin
+        g = deepcopy(og_grammar)
+        modify_grammar_probe_hybrid!(promising, g)
         return iterator_ctor(g, starting_sym; kwargs...)
     end
 end
