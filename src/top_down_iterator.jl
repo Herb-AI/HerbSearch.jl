@@ -11,6 +11,30 @@ Concrete iterators may overload the following methods:
 abstract type TopDownIterator <: ProgramIterator end
 
 """
+    ConstraintStyle
+
+Abstract type representing the family of constraint styles present in Herb.
+
+There are currently two styles, namely:
+
+- [`HerbStyle`](@ref): The default, this corresponds to iterators that enforce
+    constraints using the propagation implemented in `HerbConstraints`. 
+- [`ASPStyle`](@ref): Corresponds to iterators that enforce constraints using ASP via Clingo.
+
+See [`constraint_style`](@ref).
+"""
+abstract type ConstraintStyle end
+struct ASPStyle <: ConstraintStyle end
+struct HerbStyle <: ConstraintStyle end
+
+"""
+    constraint_style(it)
+
+Get the constraint style of an iterator.
+"""
+constraint_style(::ProgramIterator) = HerbStyle()
+
+"""
     priority_function(::TopDownIterator, g::AbstractGrammar, tree::AbstractRuleNode, parent_value::Union{Real, Tuple{Vararg{Real}}}, isrequeued::Bool)
 
 Assigns a priority value to a `tree` that needs to be considered later in the search. Trees with the lowest priority value are considered first.
@@ -210,7 +234,7 @@ Describes the iteration for a given [`TopDownIterator`](@ref) over the grammar. 
 """
 function Base.iterate(iter::TopDownIterator)
     # Priority queue with `SolverState`s (for variable shaped trees) and `UniformIterator`s (for fixed shaped trees)
-    pq::PriorityQueue{Union{SolverState,UniformIterator},Union{Real,Tuple{Vararg{Real}}}} = PriorityQueue()
+    pq = _init_pq(iter)
 
     solver = get_solver(iter)
 
@@ -218,6 +242,24 @@ function Base.iterate(iter::TopDownIterator)
         push!(pq, get_state(solver) => priority_function(iter, get_grammar(solver), get_tree(solver), 0, false))
     end
     return _find_next_complete_tree(get_solver(iter), pq, iter)
+end
+
+function _init_pq(iter::TopDownIterator)
+    _init_pq(constraint_style(iter))
+end
+
+function _init_pq(::HerbStyle)
+    return PriorityQueue{
+        Union{SolverState,UniformIterator},
+        Union{Real,Tuple{Vararg{Real}}}
+    }()
+end
+
+function _init_pq(::ASPStyle)
+    return PriorityQueue{
+        Union{SolverState,UniformASPIterator},
+        Union{Real,Tuple{Vararg{Real}}}
+    }()
 end
 
 """
@@ -303,13 +345,26 @@ function _decide_hole(
 )
     @timeit_debug get_solver(iter).statistics "#FixedShapedTrees" begin end
     # Always use the Uniform Solver
-    uniform_solver = UniformSolver(get_grammar(solver), get_tree(solver), with_statistics=solver.statistics)
-    uniform_iterator = UniformIterator(uniform_solver, iter)
+    uniform_iterator = _make_uniform_iterator(solver, iter)
     solution = next_solution!(uniform_iterator)
     if !isnothing(solution)
         push!(pq, uniform_iterator => priority_function(iter, get_grammar(solver), solution, priority_value, true))
         return (solution, pq)
     end
+end
+
+function _make_uniform_iterator(solver::Solver, iter::TopDownIterator)
+    return _make_uniform_iterator(constraint_style(iter), solver, iter)
+end
+
+function _make_uniform_iterator(::HerbStyle, solver::Solver, iter::TopDownIterator)
+    uniform_solver = UniformSolver(get_grammar(solver), get_tree(solver), with_statistics=solver.statistics)
+    return UniformIterator(uniform_solver, iter)
+end
+
+function _make_uniform_iterator(::ASPStyle, solver::Solver, iter::TopDownIterator)
+    uniform_solver = HerbConstraints.ASPSolver(get_grammar(solver), get_tree(solver), with_statistics=solver.statistics)
+    return UniformASPIterator(uniform_solver, iter)
 end
 
 function _decide_hole(
