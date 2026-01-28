@@ -1,4 +1,4 @@
-using ..HerbSearch: ProgramIterator
+using ..HerbSearch: ProgramIterator, GenericBUState
 using ..HerbGrammar
 using ..HerbCore
 using ..HerbSpecification: Problem 
@@ -13,14 +13,17 @@ and adapts the grammar/problem between attempts.
     problem:: Problem
 
     iterator::ProgramIterator
+    state::Union{GenericBUState, Nothing} = nothing
 
     synth_fn::Function
 
     stop_checker::Function = (timed_solution) -> Bool
+    update_solution::Function = (timed_solution, best_solution, best_score) -> (AbstractRuleNode, Float64)
+    extract_state::Function
     
     attempts::Int
-    selector::Function = results -> results
-    updater::Function = (selected, iter) -> iter
+    selector::Function
+    updater::Function = (selected, iter) -> (iter)
 end
 
 """
@@ -42,23 +45,34 @@ Returns:
   - total_time :: Float      (sum of all attempt durations)
 """
 function run_budget_search(ctrl::BudgetedSearchController)
-    results = []
     times = []
 
     time_count = 0
 
+    best_solution= nothing
+    best_score = nothing
+    best_program_enumeration_step = nothing
+
     for att in 1:ctrl.attempts
-        solution = @timed ctrl.synth_fn(ctrl.problem, ctrl.iterator)
+
+        println("BUDGETED ATTEMPT $(att)")
+
+        solution = @timed ctrl.synth_fn(ctrl.problem, ctrl.iterator; iterator_state=ctrl.state)
         time_count += solution.time
+
+    
         push!(times, solution.time)
-        push!(results, solution.value)
+        # push!(results, solution.value)
+
+        best_solution, best_score, best_program_enumeration_step = ctrl.update_solution(solution, best_solution, best_score, best_program_enumeration_step)
 
         ctrl.stop_checker(solution) && break
 
-        selected = ctrl.selector(solution.value)
-        ctrl.iterator = ctrl.updater(selected, ctrl.iterator)
+        selected = ctrl.selector(solution.value, ctrl.iterator, ctrl.problem)
+        # ctrl.iterator = ctrl.updater(selected, ctrl.iterator)
+        ctrl.iterator, ctrl.state = ctrl.extract_state(solution.value, selected, ctrl.iterator)
     end
 
-    return results, times, time_count
+    return best_solution, best_score, best_program_enumeration_step, times, time_count
 
 end
