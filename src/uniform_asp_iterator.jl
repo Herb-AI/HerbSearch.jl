@@ -130,7 +130,7 @@ function fill_hole!(
             tree.domain[mapping[current_index]] = 1
         end
     end
-    for child in get_children(tree)
+    for child in tree.children
         current_index += 1
         fill_hole!(iter, child, mapping, current_index)
     end
@@ -141,7 +141,7 @@ end
 Converts an AST and replaces each hole with a filled domain (one rule is true) to a RuleNode
 """
 function convert_to_rulenode!(tree::AbstractRuleNode)::AbstractRuleNode
-    children = get_children(tree)
+    children = tree.children
     new_children = Vector{AbstractRuleNode}()
     for child in children
         push!(new_children, convert_to_rulenode!(child))
