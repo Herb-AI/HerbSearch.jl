@@ -16,6 +16,7 @@ include("sampling_grammar.jl")
 
 include("program_iterator.jl")
 include("uniform_iterator.jl")
+include("uniform_asp_iterator.jl")
 
 include("heuristics.jl")
 
@@ -63,6 +64,7 @@ export
     optimal_program,
     suboptimal_program, UniformIterator,
     next_solution!, TopDownIterator,
+	UniformASPIterator,
     RandomIterator,
     BFSIterator,
     DFSIterator,
