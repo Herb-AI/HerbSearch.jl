@@ -54,8 +54,9 @@ iterator = BeamIterator(grammar, :Int,
     interpreter = interp,
 )
 
-for (i, p) in enumerate(iterator)
-    c = heuristic_cost(p)
+for (i, entry) in enumerate(iterator)
+    p = entry.program
+    c = entry.cost
     @show i, c, p
 
     if i == 1000

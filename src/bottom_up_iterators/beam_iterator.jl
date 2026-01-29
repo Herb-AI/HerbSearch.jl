@@ -35,10 +35,12 @@ One can specify the following parameters:
 
 Describes an entry in a [`beam`](@ref).
 Holds the program, its associated cost and whether this program has already been expanded.
+Extensions are also stored as BeamEntry's, but as they might not have the right type, a cost cannot always be computed, hence the Nothing type for the cost.
+Also caches the depth and size for easy, making computing these for combined programs efficient.
 """
 mutable struct BeamEntry
     program::AbstractRuleNode
-    cost::Number
+    cost::Union{Number,Nothing}
     has_been_expanded::Bool
     depth::Int
     size::Int
@@ -51,8 +53,12 @@ Compares two BeamEntry's based on their associated costs.
 """
 Base.isless(a::BeamEntry, b::BeamEntry) = a.cost < b.cost
 
-# TODO: doc
-Base.:(==)(a::BeamEntry, b::BeamEntry) = a.cost == b.cost && a.program == b.program
+"""
+    Base.:(==)(a::BeamEntry, b::BeamEntry)
+
+Returns whether two BeamEntries are equal.
+"""
+Base.:(==)(a::BeamEntry, b::BeamEntry) = a.cost == b.cost && a.depth == b.depth && a.size == b.size && a.program == b.program
 
 get_program(beam_entry::BeamEntry) = beam_entry.program
 HerbCore.depth(beam_entry::BeamEntry) = beam_entry.depth
@@ -95,9 +101,9 @@ function clear!(beam::Beam)
 end
 
 """
-    Base.push!(beam::Beam, program::RuleNode)
+    Base.push!(beam::Beam, beam_entry::BeamEntry)
 
-Adds a program to the beam, ensuring that the beam size is not exceeded and only the best program is kept.
+Adds a BeamEntry to the beam, ensuring that the beam size is not exceeded and only the best N programs are kept.
 """
 function Base.push!(beam::Beam, beam_entry::BeamEntry)
     # If the program heap is nothing, the beam has been concretized
@@ -127,14 +133,18 @@ end
     get_expandable_entries(beam::Beam)::Vector{BeamEntry}
 
 Returns all BeamEntry that have not been expanded yet.
+Avoid this computation as nuch as possible; it cannot be done efficiently.
 """
 function get_expandable_entries(beam::Beam)::Vector{BeamEntry}
+    # Extract all entries from the heap
     entries = extract_all!(beam.programs)
 
+    # Put them back in the heap
     for entry in entries
         push!(beam.programs, entry)
     end
     
+    # Return
     return [e for e in entries if !e.has_been_expanded]
 end
 
@@ -180,6 +190,7 @@ function initialize!(iter::AbstractBeamIterator)
             else
                 cost = nothing
             end
+
             beam_entry = BeamEntry(extension, cost, false, depth(extension), length(extension))
 
             # If it is a terminal with the correct output type, add it to the first beam
@@ -335,5 +346,5 @@ function Base.iterate(iter::AbstractBeamIterator, state::BeamState)
     end
     
     # Pop the next program from the queue and return
-    return pop!(state.queue).program, state
+    return pop!(state.queue), state
 end
