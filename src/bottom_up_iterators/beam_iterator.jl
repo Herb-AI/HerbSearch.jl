@@ -1,20 +1,3 @@
-#=
-
-Does not use the bottom-up interface as that is fine tuned for
-
-Maintain:
-- beam
-- terminals
-
-
-Each iteration:
- 1. Drain current iterator if present, otherwise continue
- 2. Expand each program in the beam with simple terminal extensions
- 3. Replace the beam with the N-best programs
- 4. Set the current iterator to the N-best programs
-
-=#
-
 """
     abstract type AbstractBeamIterator <: ProgramIterator end
 
@@ -34,22 +17,29 @@ Each iteration this iterator perform the following:
 The central datastructure that makes this iterator work is a beam. Given heuristic cost function, a beam is a collection of program such that:
 - The beam size never exceeds a set amount of programs
 - When adding a program to a full beam, the lowest cost program according to the heuristic cost function is kept
-- The beam never contains duplicate programs
 - Adding programs is O(1)
-- Once no more programs will be added to the beam, it can be concretized (O(n log n)) to efficiently iterate over the beam in order O(n)
+- The beam may contains duplicate programs
+
+
+One can specify the following parameters:
+- `beam_size::Int=Inf`: the maximum amount of programs contained in the beam
+- `max_extension_depth::Int=1`: the maximum depth of subprogram that programs from the beam get extended from
+- `program_to_cost::Function`: the heuristic cost function taking an AbstractRuleNode and outputted a number
+- `clear_beam_before_expansion::Bool=false`: if this is set to true, the beam is cleared before expansion, such that the beam is only filled with extended programs
+- `stop_expanding_beam_once_replaced::Bool=true`: stop expanding beam programs once the entire beam has been replaced with better ones
 
 """ BeamIterator
-
 
 """
     $(TYPEDEF)
 
 Describes an entry in a [`beam`](@ref).
-Holds the program and its associated cost.
+Holds the program, its associated cost and whether this program has already been expanded.
 """
-struct BeamEntry
-    program::RuleNode
+mutable struct BeamEntry
+    program::AbstractRuleNode
     cost::Number
+    has_been_expanded::Bool
 end
 
 """
@@ -59,37 +49,33 @@ Compares two BeamEntry's based on their associated costs.
 """
 Base.isless(a::BeamEntry, b::BeamEntry) = a.cost < b.cost
 
+Base.:(==)(a::BeamEntry, b::BeamEntry) = a.cost == b.cost && a.program == b.program
+
+
 """
    struct Beam
 
 A beam that contains at most N programs, only keeping the best.
-One can push programs to a beam and this object ensures that the best N unique programs are kept.
-Once a beam is completed, one can concretize it in order to efficiently iterate over the programs in order of increasing cost
+One can push programs to a beam and this object ensures that the best N programs are kept.
+Note that on expansion programs can be created that already exist in the beam, making the beam not necissarily unique.
 
 This struct contains:
 - Beam size: the maximum number of programs in the beam
 - Heuristic cost function: given a program, computes its associated cost
 - Program heap: contains the program, ensuring that the highest cost can be obtained efficiently
-- Program set: a set representation of all the programs in the heap, ensuring that membership can be tested efficiently to make the beam's program unique
-- Sorted program: can be created once the beam is such that we can iterate over program in order of increasing cost
-
-Note that before concretization the sorted program list is set to nothing, and after concretization the program heap is set to nothing.
-After concretization no programs can be added to the beam.
 """
-mutable struct Beam
+struct Beam
     beam_size::Number
     program_to_cost::Function
-    programs::Union{MutableBinaryMaxHeap{BeamEntry},Nothing}
-    program_set::Set{RuleNode}
-    sorted_programs::Union{Vector{BeamEntry},Nothing}
+    programs::Union{MutableBinaryMaxHeap{BeamEntry}}
 end
 
 """
-    Beam(beam_size::Number, program_to_cost::Function)
+    Beam(beam_size::Number, program_to_cost::Function)::Beam
 
 Creates a new empty beam given its size and heuristic cost function.
 """
-Beam(beam_size::Number, program_to_cost::Function) = Beam(beam_size, program_to_cost, MutableBinaryMaxHeap{BeamEntry}(), Set{RuleNode}(), nothing)
+Beam(beam_size::Number, program_to_cost::Function)::Beam = Beam(beam_size, program_to_cost, MutableBinaryMaxHeap{BeamEntry}())
 
 """
     clear!(beam::Beam)
@@ -98,8 +84,7 @@ Resets the beam, removing all programs from it.
 """
 function clear!(beam::Beam)
     beam.programs = MutableBinaryMaxHeap{BeamEntry}()
-    beam.program_set = Set()
-    beam.sorted_programs = nothing
+    return nothing
 end
 
 """
@@ -107,105 +92,103 @@ end
 
 Adds a program to the beam, ensuring that the beam size is not exceeded and only the best program is kept.
 """
-function Base.push!(beam::Beam, program::RuleNode)
+function Base.push!(beam::Beam, program::AbstractRuleNode)
     # If the program heap is nothing, the beam has been concretized
     # This ensures that no programs are pushed to a concretized beam
     @assert !isnothing(beam.programs)
 
-    # Abort of the beam already contains this program
-    if program in beam.program_set
-        return
-    end
-
+    # Compute cost and create beam entry
     cost = beam.program_to_cost(program)
-    beam_entry = BeamEntry(program, cost)
+    beam_entry = BeamEntry(program, cost, false)
 
     # If the beam has not been filled yet, add the program to the beam
     if length(beam.programs) < beam.beam_size
         push!(beam.programs, beam_entry)
-        push!(beam.program_set, program)
-
-    # Otherwise, check if the new program is better than the worst program in the beam
-    elseif cost < first(beam.programs).cost
-        # In that case, remove the worst program from the beam and add the new program
-        removed = pop!(beam.programs)
-        delete!(beam.program_set, removed.program)
-
-        push!(beam.programs, beam_entry)
-        push!(beam.program_set, program)
+        return nothing
     end
+
+    # Most programs we attempt to add to the beam have a higher cost than the worst
+    # Check this first to avoid costly dictionary lookups
+    if cost >= first(beam.programs).cost
+        return nothing
+    end
+
+    # Otherwise, pop the worst program and add the new one to the beam
+    pop!(beam.programs)
+    push!(beam.programs, beam_entry)
+
+    return nothing
 end
 
 """
-    concretize!(beam::Beam)
+    get_expandable_entries(beam::Beam)::Vector{BeamEntry}
 
-Makes the beam concrete by filling the sorted_programs list such that one can iterate of the beam in order of increasing cost efficiently.
-Note that after concretization no more programs can be added to the beam.
+Returns all BeamEntry that have not been expanded yet.
 """
-function concretize!(beam::Beam)
-    beam.sorted_programs = extract_all_rev!(beam.programs)
-    beam.programs = nothing
+function get_expandable_entries(beam::Beam)::Vector{BeamEntry}
+    entries = extract_all!(beam.programs)
+
+    for entry in entries
+        push!(beam.programs, entry)
+    end
+    
+    return [e for e in entries if !e.has_been_expanded]
 end
 
-#=
-    @programiterator BeamIterator(...)
-
-A BeamIterator is constructed by providing the beam size and heuristic cost function.
-Two beams are maintained:
-- One dynamically containing the N best program
-- One statically containing all terminals to expand programs with
-=#
 @programiterator BeamIterator(
     beam_size::Int=Inf,
-    program_to_cost::Function= _ -> 0,
+    max_extension_depth::Int=1,
+    max_extension_size::Int=1,
+    program_to_cost::Union{Function,Nothing}=nothing,
+    clear_beam_before_expansion::Bool=false,
+    stop_expanding_beam_once_replaced::Bool=true,
+    interpreter::Union{Function,Nothing}=nothing,
     beam=Beam(beam_size, program_to_cost),
-    terminals=Beam(Inf, _ -> 0),
+    extensions::Vector{AbstractRuleNode}=AbstractRuleNode[],
 ) <: AbstractBeamIterator
-
-
-"""
-    mutable struct BeamState
-
-The iterator state for a beam iterator only maintains a pointer to the list of programs in beam sorted on heuristic cost.
-"""
-mutable struct BeamState
-    current_beam_index::Int
-end
 
 """
     initialize!(iter::AbstractBeamIterator)
 
-Initializes the beam iterator by finding all terminals, adding these to the terminal beam and adding the N best terminals as intial beam.
+Initializes the iterator by creating all extensions and setting the first beam.
 """
 function initialize!(iter::AbstractBeamIterator)
     grammar = get_grammar(iter.solver)
 
-    # Iterate over each terminal rule
-    for rule_idx in eachindex(grammar.isterminal)
-        grammar.isterminal[rule_idx] || continue # skip non-terminals
+    # Iterate over all grammar types
+    for type in unique(grammar.types)
+        # Itertate over all extensions of that type up to the specified depth and size
+        extensions = BFSIterator(grammar, type, 
+            max_depth=iter.max_extension_depth,
+            max_size=iter.max_extension_size)
 
-        # Obtain the RuleNode and type
-        prog = RuleNode(rule_idx)
-        type = grammar.types[rule_idx]
+        for extension in extensions
+            extension = freeze_state(extension)
 
-        # Always push a terminal to the terminal beam
-        push!(iter.terminals, prog)
+            # If an interpreter is defined, set the _val of the rulenode
+            if !isnothing(iter.interpreter)
+                extension._val = iter.interpreter(extension)
+            end
 
-        # If the type of the terminal is the starting symbol, also add it the initial beam
-        if type == get_starting_symbol(iter.solver)
-            push!(iter.beam, prog)
+            # If it is a terminal with the correct output type, add it to the first beam
+            if type == get_starting_symbol(iter.solver) && length(extension) == 1
+                push!(iter.beam, extension)
+            end
+
+            # Always add it to the set of extensions
+            push!(iter.extensions, extension)
         end
     end
 
-    # As both beams are completed, concretize them
-    concretize!(iter.beam)
-    concretize!(iter.terminals)
+    @show length(iter.extensions)
+
+    return nothing
 end
 
 """
     combine!(iter::AbstractBeamIterator)
 
-Creates new programs by expanding all programs in the beam with all possible terminals.
+Creates new programs by expanding all programs in the beam with all possible extensions.
 Only selects the N best programs of these to create the new beam.
 """
 function combine!(iter::AbstractBeamIterator)
@@ -217,51 +200,83 @@ function combine!(iter::AbstractBeamIterator)
     nonterminal_shapes = UniformHole.(partition(Hole(nonterminals_mask), grammar), ([],))
 
     # Computes whether a combination exceed the maximum depth or size
-    is_feasible = function(children::Tuple{Vararg{BeamEntry}})
-        children = [c.program for c in children]
-        maximum(depth.(children)) < get_max_depth(iter) &&
-        sum(length.(children)) < get_max_size(iter)
+    is_feasible = function(children::Tuple{Vararg{AbstractRuleNode}})
+        (get_max_depth(iter) == typemax(Int) || maximum(depth.(children)) < get_max_depth(iter)) &&
+        (get_max_size(iter) == typemax(Int) || sum(length.(children)) < get_max_size(iter))
     end
 
     # Gives a BeamEntry's return type
-    get_return_type(entry::BeamEntry) = grammar.types[get_rule(entry.program)]
+    get_return_type(program::AbstractRuleNode) = grammar.types[get_rule(program)]
 
     # Given the types of children, creates a filter to obtain well typed expressions
     is_well_typed = child_types -> (children -> child_types == get_return_type.(children))
 
     # Obtain the sorted programs from the beam and clear it for the new programs
-    old_beam = iter.beam.sorted_programs
-    clear!(iter.beam)
+    old_beam = get_expandable_entries(iter.beam)
+    best_old_beam_cost = last(old_beam).cost
 
-    # Iterate over all shapes to expand with and obtain their types, arity and type filter
-    for shape in nonterminal_shapes
-        child_types  = Tuple(grammar.childtypes[findfirst(shape.domain)])
-        arity        = length(child_types)
-        typed_filter = is_well_typed(child_types)
+    # Clear the beam if specified
+    if iter.clear_beam_before_expansion
+        clear!(iter.beam)
+    end
 
-        # A program from the beam can in be one of the child positions
-        for beam_index in 1:arity
-            # Children only can be terminals, execpt for the position where we place programs from the beam
-            potential_children = collect(Iterators.repeated(iter.terminals.sorted_programs, arity))
-            potential_children[beam_index] = old_beam
+    # Iterate over all programs in the beam and expand them
+    for beam_entry in old_beam
+        # Optimization if enabled: once the whole beam has been replaced with new programs, terminate expansion
+        # This is the case if the worst program in the new beam is better than the best in the old beam
+        # Note that if `clear_beam_before_expansion`, the beam must be full before checking this
+        if iter.stop_expanding_beam_once_replaced && length(iter.beam.programs) == iter.beam_size && first(iter.beam.programs).cost < best_old_beam_cost
+            break
+        end
 
-            # Obtain all possible combinations that are well typed and feasible in the depth and size limit
-            candidate_combinations = Iterators.product(potential_children...)
-            candidate_combinations = Iterators.filter(typed_filter, candidate_combinations)
-            candidate_combinations = Iterators.filter(is_feasible, candidate_combinations)
+        # Iterate over all shapes to expand with and obtain their types, arity and type filter
+        for shape in nonterminal_shapes
+            child_types  = Tuple(grammar.childtypes[findfirst(shape.domain)])
+            arity        = length(child_types)
+            typed_filter = is_well_typed(child_types)
 
-            # Iterate over all possible programs and add them to the beam
-            for child_tuple in candidate_combinations
-                for rule_idx in findall(shape.domain)
-                    program = RuleNode(rule_idx, [c.program for c in child_tuple])
-                    push!(iter.beam, program)
+            # A program from the beam can in be one of the child positions
+            for beam_index in 1:arity
+                # Children only can be from the extension set, execpt at the beam index where we place the beam program
+                potential_children = collect(Iterators.repeated(iter.extensions, arity))
+                potential_children[beam_index] = [beam_entry.program]
+
+                # Obtain all possible combinations that are well typed and feasible in the depth and size limit
+                candidate_combinations = Iterators.product(potential_children...)
+                candidate_combinations = Iterators.filter(typed_filter, candidate_combinations)
+                candidate_combinations = Iterators.filter(is_feasible, candidate_combinations)
+
+                # Iterate over all possible programs and add them to the beam
+                for child_tuple in candidate_combinations
+                    for rule_idx in findall(shape.domain)
+                        entry = RuleNode(rule_idx, collect(child_tuple))
+
+                        # If an interpreter is defined, set the _val of the rulenode
+                        if !isnothing(iter.interpreter)
+                            entry._val = iter.interpreter(entry)
+                        end
+
+                        push!(iter.beam, entry)
+                    end
                 end
             end
         end
+
+        # Set the current beam entry has been expanded, change that field
+        beam_entry.has_been_expanded = true
     end
 
-    # Expanding is done; the beam can be concretized
-    concretize!(iter.beam)
+    # Only return programs that have not been expanded yet, otherwise they are already iterated over
+    return get_expandable_entries(iter.beam)
+end
+
+"""
+    mutable struct BeamState
+
+The iterator state for a beam iterator contains a queue that is a copy of the programs in the beam sorted on increasing cost.
+"""
+mutable struct BeamState
+    queue::Vector{BeamEntry}
 end
 
 """
@@ -274,7 +289,7 @@ function Base.iterate(iter::AbstractBeamIterator)
 
     return Base.iterate(
         iter,
-        BeamState(1)
+        BeamState(get_expandable_entries(iter.beam))
     )
 end
 
@@ -287,21 +302,19 @@ Iterative call to the iterator. Perform the following:
 3. Otherwise, return the next program from the beam and increment the pointer.
 """
 function Base.iterate(iter::AbstractBeamIterator, state::BeamState)
-    # Check if all programs from the current beam have been returned
-    if state.current_beam_index > length(iter.beam.sorted_programs)
+    # If the current queue is drained, new programs must be created
+    if isempty(state.queue)
         # If so, expand the current beam and reset the pointer
-        combine!(iter)
-        state.current_beam_index = 1
+        state.queue = combine!(iter)
+
+        println("\n\nCombined")
     end
 
-    # If the beam is empty, the iterator is exhausted; kill it
-    if isnothing(iter.beam.sorted_programs) || isempty(iter.beam.sorted_programs)
+    # Stop the iterator if the queue is empty; the iterator is exhausted
+    if isempty(state.queue)
         return nothing
     end
     
-    # Otherwise, obtain the next program, increment the pointer and return that program.
-    next_program = iter.beam.sorted_programs[state.current_beam_index].program
-    state.current_beam_index += 1
-
-    return next_program, state
+    # Pop the next program from the queue and return
+    return pop!(state.queue).program, state
 end

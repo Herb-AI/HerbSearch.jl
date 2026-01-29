@@ -5,7 +5,15 @@ using HerbInterpret
 using HerbSearch
 using HerbSpecification
 
+using Profile, ProfileView
+
+Profile.clear()
+
 function interp(program::AbstractRuleNode)
+    if !isnothing(program._val)
+        return program._val
+    end
+
     r = get_rule(program)
     cs = get_children(program)
 
@@ -40,36 +48,19 @@ grammar = @cfgrammar begin
 end
 
 iterator = BeamIterator(grammar, :Int,
-    beam_size = 3,
+    beam_size = 10,
     program_to_cost = heuristic_cost,
+    max_extension_depth = 2,
+    clear_beam_before_expansion = false,
+    stop_expanding_beam_once_replaced = true,
+    interpreter = interp,
 )
 
 for (i, p) in enumerate(iterator)
-    @show p
+    c = heuristic_cost(p)
+    @show i, c, p
 
-    if i == 60
+    if i == 1000000
         break
     end
 end
-
-# println("\n\n\n")
-# @show get_bank(iterator)
-# println("\n\n\n")
-
-# for (i, p) in enumerate(iterator)
-#     v = interp(p)
-#     c = heuristic_cost(p)
-#     p = rulenode2expr(p, grammar)
-
-#     println()
-#     # @show get_bank(iterator)
-#     @show i
-#     @show p
-#     @show v
-#     @show c
-#     println()
-
-#     if i == 30
-#         break
-#     end
-# end
