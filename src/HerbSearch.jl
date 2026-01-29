@@ -85,6 +85,7 @@ export
     DepthBasedBottomUpIterator,
     CostBasedBottomUpIterator,
     BeamIterator,
+    BeamEntry,
     AccessAddress,
     CombineAddress,
     remaining_combinations,

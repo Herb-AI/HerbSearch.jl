@@ -27,12 +27,10 @@ function interp(program::AbstractRuleNode)
         return interp(cs[1]) - interp(cs[2])
     elseif r == 7
         return - interp(cs[1])
-    elseif r == 8
-        return interp(cs[1]) ^ interp(cs[2])
     end
 end
 
-function heuristic_cost(program::AbstractRuleNode)
+function heuristic_cost(program::AbstractRuleNode, children::Union{Vector{BeamEntry},Nothing})
     v = interp(program)
     t = -100
     return abs(v - t)
@@ -60,7 +58,7 @@ for (i, p) in enumerate(iterator)
     c = heuristic_cost(p)
     @show i, c, p
 
-    if i == 1000000
+    if i == 1000
         break
     end
 end

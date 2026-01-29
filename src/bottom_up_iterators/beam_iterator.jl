@@ -40,6 +40,8 @@ mutable struct BeamEntry
     program::AbstractRuleNode
     cost::Number
     has_been_expanded::Bool
+    depth::Int
+    size::Int
 end
 
 """
@@ -49,7 +51,12 @@ Compares two BeamEntry's based on their associated costs.
 """
 Base.isless(a::BeamEntry, b::BeamEntry) = a.cost < b.cost
 
+# TODO: doc
 Base.:(==)(a::BeamEntry, b::BeamEntry) = a.cost == b.cost && a.program == b.program
+
+get_program(beam_entry::BeamEntry) = beam_entry.program
+HerbCore.depth(beam_entry::BeamEntry) = beam_entry.depth
+Base.size(beam_entry::BeamEntry) = beam_entry.size
 
 
 """
@@ -92,14 +99,10 @@ end
 
 Adds a program to the beam, ensuring that the beam size is not exceeded and only the best program is kept.
 """
-function Base.push!(beam::Beam, program::AbstractRuleNode)
+function Base.push!(beam::Beam, beam_entry::BeamEntry)
     # If the program heap is nothing, the beam has been concretized
     # This ensures that no programs are pushed to a concretized beam
     @assert !isnothing(beam.programs)
-
-    # Compute cost and create beam entry
-    cost = beam.program_to_cost(program)
-    beam_entry = BeamEntry(program, cost, false)
 
     # If the beam has not been filled yet, add the program to the beam
     if length(beam.programs) < beam.beam_size
@@ -109,7 +112,7 @@ function Base.push!(beam::Beam, program::AbstractRuleNode)
 
     # Most programs we attempt to add to the beam have a higher cost than the worst
     # Check this first to avoid costly dictionary lookups
-    if cost >= first(beam.programs).cost
+    if beam_entry.cost >= first(beam.programs).cost
         return nothing
     end
 
@@ -144,7 +147,7 @@ end
     stop_expanding_beam_once_replaced::Bool=true,
     interpreter::Union{Function,Nothing}=nothing,
     beam=Beam(beam_size, program_to_cost),
-    extensions::Vector{AbstractRuleNode}=AbstractRuleNode[],
+    extensions::Vector{BeamEntry}=BeamEntry[],
 ) <: AbstractBeamIterator
 
 """
@@ -170,13 +173,22 @@ function initialize!(iter::AbstractBeamIterator)
                 extension._val = iter.interpreter(extension)
             end
 
+            # Create beam entry
+            # Cost can only be computed if the extension type is the output type
+            if type == get_starting_symbol(iter.solver)
+                cost = iter.program_to_cost(extension, nothing)
+            else
+                cost = nothing
+            end
+            beam_entry = BeamEntry(extension, cost, false, depth(extension), length(extension))
+
             # If it is a terminal with the correct output type, add it to the first beam
             if type == get_starting_symbol(iter.solver) && length(extension) == 1
-                push!(iter.beam, extension)
+                push!(iter.beam, beam_entry)
             end
 
             # Always add it to the set of extensions
-            push!(iter.extensions, extension)
+            push!(iter.extensions, beam_entry)
         end
     end
 
@@ -197,16 +209,17 @@ function combine!(iter::AbstractBeamIterator)
     # Finds all nonterminal shapes to combine the beam and termianls with
     terminals_mask     = grammar.isterminal
     nonterminals_mask  = .~terminals_mask
-    nonterminal_shapes = UniformHole.(partition(Hole(nonterminals_mask), grammar), ([],))
+    return_type_mask   = grammar.types .== get_starting_symbol(iter.solver)
+    nonterminal_shapes = UniformHole.(partition(Hole(nonterminals_mask .& return_type_mask), grammar), ([],))
 
     # Computes whether a combination exceed the maximum depth or size
-    is_feasible = function(children::Tuple{Vararg{AbstractRuleNode}})
+    is_feasible = function(children::Tuple{Vararg{BeamEntry}})
         (get_max_depth(iter) == typemax(Int) || maximum(depth.(children)) < get_max_depth(iter)) &&
-        (get_max_size(iter) == typemax(Int) || sum(length.(children)) < get_max_size(iter))
+        (get_max_size(iter) == typemax(Int) || sum(size.(children)) < get_max_size(iter))
     end
 
     # Gives a BeamEntry's return type
-    get_return_type(program::AbstractRuleNode) = grammar.types[get_rule(program)]
+    get_return_type(beam_entry::BeamEntry) = grammar.types[get_rule(beam_entry.program)]
 
     # Given the types of children, creates a filter to obtain well typed expressions
     is_well_typed = child_types -> (children -> child_types == get_return_type.(children))
@@ -239,7 +252,7 @@ function combine!(iter::AbstractBeamIterator)
             for beam_index in 1:arity
                 # Children only can be from the extension set, execpt at the beam index where we place the beam program
                 potential_children = collect(Iterators.repeated(iter.extensions, arity))
-                potential_children[beam_index] = [beam_entry.program]
+                potential_children[beam_index] = [beam_entry]
 
                 # Obtain all possible combinations that are well typed and feasible in the depth and size limit
                 candidate_combinations = Iterators.product(potential_children...)
@@ -249,14 +262,20 @@ function combine!(iter::AbstractBeamIterator)
                 # Iterate over all possible programs and add them to the beam
                 for child_tuple in candidate_combinations
                     for rule_idx in findall(shape.domain)
-                        entry = RuleNode(rule_idx, collect(child_tuple))
+                        children = collect(child_tuple)
+                        program = RuleNode(rule_idx, get_program.(children))
 
                         # If an interpreter is defined, set the _val of the rulenode
                         if !isnothing(iter.interpreter)
-                            entry._val = iter.interpreter(entry)
+                            program._val = iter.interpreter(program)
                         end
 
-                        push!(iter.beam, entry)
+                        cost = iter.program_to_cost(program, children)
+                        entry_depth = maximum(depth.(children)) + 1
+                        entry_size = sum(size.(children)) + 1
+                        new_entry = BeamEntry(program, cost, false, entry_depth, entry_size)
+
+                        push!(iter.beam, new_entry)
                     end
                 end
             end
