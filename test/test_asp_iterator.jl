@@ -1,6 +1,6 @@
 @testset "ASP Iterators" begin
     using HerbCore
-    using HerbSearch: BFSASPIterator
+    using HerbSearch: BFSASPIterator, DFSASPIterator
     using Clingo_jll
 
     answer_programs = [
@@ -31,7 +31,7 @@
             Real = Real * Real
         end
 
-        dfs_programs = [freeze_state(p) for p ∈ DFSIterator(g1, :Real, max_depth=2)]
+        dfs_programs = [freeze_state(p) for p ∈ DFSASPIterator(g1, :Real, max_depth=2)]
 
         @test length(dfs_programs) == 6
         @test all(p ∈ dfs_programs for p ∈ answer_programs)
