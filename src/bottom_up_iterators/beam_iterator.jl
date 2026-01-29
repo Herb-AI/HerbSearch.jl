@@ -203,8 +203,6 @@ function initialize!(iter::AbstractBeamIterator)
         end
     end
 
-    @show length(iter.extensions)
-
     return nothing
 end
 
@@ -336,8 +334,6 @@ function Base.iterate(iter::AbstractBeamIterator, state::BeamState)
     if isempty(state.queue)
         # If so, expand the current beam and reset the pointer
         state.queue = combine!(iter)
-
-        println("\n\nCombined")
     end
 
     # Stop the iterator if the queue is empty; the iterator is exhausted
