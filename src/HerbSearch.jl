@@ -105,17 +105,12 @@ export
 
     divide_and_conquer,
     EvaluationError,
-    get_solver
+    get_solver,
 
-      divide_and_conquer,
-	EvaluationError, 
-  
-  #refactorings
-  refactor_grammar,
-
-  aulile,
-  synth_with_aux,
-  AuxFunction,
-  SearchStats,
-  default_aux
+    aulile,
+    refactor_grammar,
+    synth_with_aux,
+    AuxFunction,
+    SearchStats,
+    default_aux
 end # module HerbSearch

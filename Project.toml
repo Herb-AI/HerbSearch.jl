@@ -19,7 +19,9 @@ StatsBase = "2913bbd2-ae8a-5f71-8c99-4fb6c76f3a91"
 TimerOutputs = "a759f4b9-e2f1-59dc-863e-4aeb61b1ea8f"
 
 [weakdeps]
+Clingo_jll = "e1d4ad0e-dc8b-5d2d-8155-e9a55b531f08"
 DecisionTree = "7806a523-6efd-50cb-b5f6-3fa6f1930dbb"
+JSON = "682c06a0-de6a-54ab-a142-c8b1cf79cde6"
 
 [extensions]
 CompressionExt = ["Clingo_jll", "JSON"]

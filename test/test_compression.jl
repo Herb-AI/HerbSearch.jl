@@ -1,6 +1,8 @@
 CompressionExt = Base.get_extension(HerbSearch, :CompressionExt)
 using .CompressionExt: refactor_grammar
 using Test
+using JSON
+using Clingo_jll
 
 grammar = @csgrammar begin
     Int = 1
