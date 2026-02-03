@@ -30,23 +30,41 @@ function print_time_test_end(start_time::DateTime; end_time::DateTime=Dates.now(
     return duration
 end
 
+function check_program(program::RuleNode, score::Number, optimal_score::Number, 
+        grammar::AbstractGrammar, start_time::DateTime, end_time::DateTime) :: Bool
+    passed = score <= optimal_score
+    if passed
+        print_time_test_end(start_time, end_time=end_time)
+    else
+        println("Suboptimal program")
+        print_time_test_end(start_time, end_time=end_time, test_passed=false)
+    end
+    if !isnothing(program)
+        println(rulenode2expr(program, grammar))
+    end
+    return passed
+end
+
 """
     Prints debugging information and returns whether the test passed
 """
 function is_test_passed_and_debug(test_res::SearchStats, grammar::AbstractGrammar,
     optimal_score::Number, start_time::DateTime, end_time::DateTime=Dates.now())::Bool
-    if !isnothing(test_res)
-        passed = test_res.score <= optimal_score && !isa(test_res.program, Nothing)
-        if passed
-            print_time_test_end(start_time, end_time=end_time)
-        else
-            println("Suboptimal program")
-            print_time_test_end(start_time, end_time=end_time, test_passed=false)
-        end
-        if !isa(test_res.program, Nothing)
-            println(rulenode2expr(test_res.program, grammar))
-        end
-        return passed
+    if !isnothing(test_res) && length(test_res.programs) >= 1
+        check_program(test_res.programs[1], test_res.score, optimal_score, grammar, start_time, end_time)
+    else
+        print_time_test_end(start_time, end_time=end_time, test_passed=false)
+        return false
+    end
+end
+
+"""
+    Prints debugging information and returns whether the test passed
+"""
+function is_test_passed_and_debug(test_res::AulileStats, grammar::AbstractGrammar,
+    optimal_score::Number, start_time::DateTime, end_time::DateTime=Dates.now())::Bool
+    if !isnothing(test_res) && !isnothing(test_res.program)
+        check_program(test_res.program, test_res.score, optimal_score, grammar, start_time, end_time)
     else
         print_time_test_end(start_time, end_time=end_time, test_passed=false)
         return false

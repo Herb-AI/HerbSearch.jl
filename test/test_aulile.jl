@@ -65,7 +65,7 @@ end
         IOExample(Dict(:x => "978.654.0299"), "9786540299")
     ])
     test_result = aulile(problem, BFSIterator, simple_grammar, :String, :String,
-        levenshtein_aux, max_depth=2, print_debug=true)
+        levenshtein_aux, programs_per_iteration=2, max_depth=2, print_debug=true)
     @test !(test_result.program isa Nothing)
     @test test_result.score == levenshtein_aux.best_value
     program = rulenode2expr(test_result.program, simple_grammar)
