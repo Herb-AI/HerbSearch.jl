@@ -4,22 +4,26 @@ Branch = Tuple{StateHole, Int}
 #Shared reference to an empty vector to reduce memory allocations.
 NOBRANCHES = Vector{Branch}()
 
+abstract type AbstractUniformIterator <: ProgramIterator end
+
 """
     mutable struct UniformIterator
 
 Inner iterator that enumerates all candidate programs of a uniform tree.
 - `solver`: the uniform solver.
 - `outeriter`: outer iterator that is responsible for producing uniform trees. This field is used to dispatch on the [`derivation_heuristic`](@ref).
-- `unvisited_branches`: for each search-node from the root to the current search-node, a list of unviisted branches.
+- `unvisited_branches`: for each search-node from the root to the current search-node, a list of unvisited branches.
 - `nsolutions`: number of solutions found so far.
 """
-mutable struct UniformIterator
+mutable struct UniformIterator <: AbstractUniformIterator
     solver::UniformSolver
     outeriter::Union{ProgramIterator, Nothing}
     unvisited_branches::Stack{Vector{Branch}}
     stateholes::Vector{StateHole}
     nsolutions::Int
 end
+
+get_solver(iter::UniformIterator) = iter.solver
 
 """
     UniformIterator(solver::UniformSolver, outeriter::ProgramIterator)
@@ -92,7 +96,7 @@ Searches for the next unvisited solution.
 Returns nothing if all solutions have been found already.
 """
 function next_solution!(iter::UniformIterator)::Union{RuleNode, StateHole, Nothing}
-    solver = iter.solver
+    solver = get_solver(iter)
     if iter.nsolutions == 1000000 @warn "UniformSolver is iterating over more than 1000000 solutions..." end
     if iter.nsolutions > 0
         # backtrack from the previous solution
@@ -101,7 +105,7 @@ function next_solution!(iter::UniformIterator)::Union{RuleNode, StateHole, Nothi
     while length(iter.unvisited_branches) > 0
         branches = first(iter.unvisited_branches)
         if length(branches) > 0
-            # current depth has unvisted branches, pick a branch to explore
+            # current depth has unvisited branches, pick a branch to explore
             (hole, rule) = pop!(branches)
             save_state!(solver)
             remove_all_but!(solver, solver.node_to_path[hole], rule)
@@ -111,16 +115,16 @@ function next_solution!(iter::UniformIterator)::Union{RuleNode, StateHole, Nothi
                 if length(branches) == 0
                     # search node is a solution leaf node, return the solution
                     iter.nsolutions += 1
-                    @timeit_debug iter.solver.statistics "#CompleteTrees" begin end
+                    @timeit_debug get_solver(iter).statistics "#CompleteTrees" begin end
                     return solver.tree
                 else
                     # search node is an (non-root) internal node, store the branches to visit
-                    @timeit_debug iter.solver.statistics "#InternalSearchNodes" begin end
+                    @timeit_debug get_solver(iter).statistics "#InternalSearchNodes" begin end
                     push!(iter.unvisited_branches, branches)
                 end
             else
                 # search node is an infeasible leaf node, backtrack
-                @timeit_debug iter.solver.statistics "#InfeasibleTrees" begin end
+                @timeit_debug get_solver(iter).statistics "#InfeasibleTrees" begin end
                 restore!(solver)
             end
         else
@@ -134,7 +138,7 @@ function next_solution!(iter::UniformIterator)::Union{RuleNode, StateHole, Nothi
         if _isfilledrecursive(solver.tree)
             # search node is the root and the only solution, return the solution.
             iter.nsolutions += 1
-            @timeit_debug iter.solver.statistics "#CompleteTrees" begin end
+            @timeit_debug get_solver(iter).statistics "#CompleteTrees" begin end
             return solver.tree
         end
     end

@@ -1,4 +1,16 @@
-@testset verbose=true "Context-free iterators" begin
+@testset verbose = true "Context-free iterators" begin
+    @testset "getters for ProgramIterators" begin
+        g1 = @csgrammar begin
+            Real = |(1:9)
+        end
+
+        bfs = BFSIterator(g1, :Real, max_depth=1, max_size=1)
+        @test get_grammar(bfs) == g1
+        @test get_solver(bfs) isa HerbConstraints.Solver
+        @test get_max_depth(bfs) == 1
+        @test get_max_size(bfs) == 1
+        @test get_starting_symbol(bfs) == :Real
+    end
     @testset "length on single Real grammar" begin
         g1 = @csgrammar begin
             Real = |(1:9)
@@ -15,7 +27,7 @@
     @testset "length on grammar with multiplication" begin
         g1 = @csgrammar begin
             Real = 1 | 2
-            Real = Real * Real 
+            Real = Real * Real
         end
         # Expressions: [1, 2]  
         @test length(BFSIterator(g1, :Real, max_depth=1)) == 2
@@ -29,44 +41,44 @@
     @testset "length on different arithmetic operators" begin
         g1 = @csgrammar begin
             Real = 1
-            Real = Real * Real 
+            Real = Real * Real
         end
 
         g2 = @csgrammar begin
             Real = 1
-            Real = Real / Real 
+            Real = Real / Real
         end
 
         g3 = @csgrammar begin
             Real = 1
-            Real = Real + Real 
-        end 
+            Real = Real + Real
+        end
 
         g4 = @csgrammar begin
             Real = 1
-            Real = Real - Real 
-        end 
-        
+            Real = Real - Real
+        end
+
         g5 = @csgrammar begin
             Real = 1
-            Real = Real % Real 
-        end 
+            Real = Real % Real
+        end
 
         g6 = @csgrammar begin
             Real = 1
-            Real = Real \ Real 
-        end 
+            Real = Real \ Real
+        end
 
         g7 = @csgrammar begin
             Real = 1
-            Real = Real ^ Real 
-        end 
+            Real = Real^Real
+        end
 
         g8 = @csgrammar begin
             Real = 1
-            Real = -Real * Real 
+            Real = -Real * Real
         end
-        
+
         # E.q for multiplication: [1, 1 * 1, 1 * (1 * 1), (1 * 1) * 1, (1 * 1) * (1 * 1)] 
         @test length(BFSIterator(g1, :Real, max_depth=3)) == 5
         @test length(BFSIterator(g2, :Real, max_depth=3)) == 5
@@ -110,7 +122,7 @@
         RuleNode(3, [RuleNode(1), RuleNode(2)]),
         RuleNode(3, [RuleNode(2), RuleNode(1)]),
         RuleNode(3, [RuleNode(2), RuleNode(2)])
-        ]
+    ]
 
     @testset "BFSIterator test" begin
         g1 = @csgrammar begin
@@ -130,18 +142,18 @@
             Real = 1 | 2
             Real = Real * Real
         end
-    
+
         dfs_programs = [freeze_state(p) for p ∈ DFSIterator(g1, :Real, max_depth=2)]
-        
+
         @test length(dfs_programs) == 6
         @test all(p ∈ dfs_programs for p ∈ answer_programs)
     end
 
-    @testset verbose=true "MLFSIterator tests" begin
+    @testset verbose = true "MLFSIterator tests" begin
         g = @pcsgrammar begin
-            0.2 : Real = 1
-            0.3 : Real = 2
-            0.5 : Real = Real * Real
+            0.2:Real = 1
+            0.3:Real = 2
+            0.5:Real = Real * Real
         end
 
         log_p(p) = rulenode_log_probability(p, g)
