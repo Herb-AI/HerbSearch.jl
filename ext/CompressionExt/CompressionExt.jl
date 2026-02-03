@@ -26,8 +26,8 @@ include("clingo_io.jl")
 - `rules`: a list of new rules.
 """
 function HerbSearch.refactor_grammar(
-    programs::AbstractVector{RuleNode}, 
-    grammar::AbstractGrammar, 
+    programs::AbstractVector{AbstractRuleNode}, 
+    grammar::AbstractGrammar;
     k::Int = 1,
     max_compression_nodes::Int = 10, 
     time_limit_sec::Int = 60, 
