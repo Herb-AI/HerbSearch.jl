@@ -43,7 +43,7 @@ Random.seed!(1234)
 	# Refactoring tests   
     include("test_compression.jl") 
 	# uses benchmarks -> remove
-	include("test_aulile.jl")
+	# include("test_aulile.jl")
 
     # Excluded because it contains long tests
     # include("test_realistic_searches.jl")

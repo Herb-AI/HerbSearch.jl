@@ -53,7 +53,7 @@ include("bottom_up_iterators/shapebased_bus.jl")
 # include("divide_conquer_functions/conquer.jl")
 
 function divide_and_conquer end
-function refactor_grammar end
+function compress_programs end
 
 export
     ProgramIterator,
@@ -108,7 +108,7 @@ export
     get_solver,
 
     aulile,
-    refactor_grammar,
+    compress_programs,
     synth_with_aux,
     AuxFunction,
     SearchStats,

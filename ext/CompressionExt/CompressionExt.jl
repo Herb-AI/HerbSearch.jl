@@ -22,11 +22,10 @@ include("clingo_io.jl")
     in which case best compression found so far is used. 
     
 # Returns
-- `grammar`: input grammar updated with new rules, extracted from the programs.
 - `rules`: a list of new rules.
 """
-function HerbSearch.refactor_grammar(
-    programs::AbstractVector{AbstractRuleNode}, 
+function HerbSearch.compress_programs(
+    programs::AbstractVector{<:AbstractRuleNode},
     grammar::AbstractGrammar;
     k::Int = 1,
     max_compression_nodes::Int = 10, 
@@ -61,25 +60,15 @@ function HerbSearch.refactor_grammar(
     
     # if no solution was found due to timeout or because theere are no subtree to be extracted, return the old grammar.
     if isnothing(best_values)
-        return grammar, []
+        return []
     end
 
     node_assignments::Vector{String} = best_values
     (comp_trees, node2rule) = parse_compressed_subtrees(node_assignments)
     
     best_compressions = construct_subtrees(grammar, comp_trees, node2rule)
-
-    new_grammar = deepcopy(grammar)
-    for new_rule in best_compressions
-        comp_rule = merge_nonbranching_elements(new_rule, grammar)
-        try
-            add_rule!(new_grammar, comp_rule)
-        catch err
-            @error "Rule $(comp_rule) could not be added. \n$(err)" 
-        end
-    end
-
-    return new_grammar, best_compressions
+    new_rules = merge_nonbranching_elements.(best_compressions, (grammar,))
+    return new_rules
 end
 
 """
@@ -96,6 +85,6 @@ function _get_max_children(grammar::AbstractGrammar)::Int
 end
 
 export 
-    refactor_grammar
+    compress_programs
 
 end
