@@ -104,14 +104,11 @@ export
 
     divide_and_conquer,
     EvaluationError,
-    get_solver
+    get_solver,
 
-      divide_and_conquer,
-	EvaluationError, 
-
-  aulile,
-  synth_with_aux,
-  AuxFunction,
-  SearchStats,
-  default_aux
+    aulile,
+    synth_with_aux,
+    AuxFunction,
+    SearchStats,
+    default_aux
 end # module HerbSearch
