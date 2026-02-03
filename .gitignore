@@ -27,3 +27,5 @@ experiments/comparison_results/**
 experiments/comparison_plots/**
 !experiments/comparison_results/.gitkeep
 !experiments/comparison_plots/.gitkeep
+/statprof
+/.vscode
