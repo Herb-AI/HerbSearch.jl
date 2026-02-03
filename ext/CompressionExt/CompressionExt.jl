@@ -22,7 +22,7 @@ include("clingo_io.jl")
     in which case best compression found so far is used. 
     
 # Returns
-- `gramamr`: input grammar updated with new rules, extracted from the programs.
+- `grammar`: input grammar updated with new rules, extracted from the programs.
 - `rules`: a list of new rules.
 """
 function HerbSearch.refactor_grammar(
@@ -31,7 +31,7 @@ function HerbSearch.refactor_grammar(
     k::Int = 1,
     max_compression_nodes::Int = 10, 
     time_limit_sec::Int = 60, 
-    ASP_PATH::String = "compressoin.lp")
+    ASP_PATH::String = "compression.lp")
 
     # Parse programs into a Clingo model
     model = parse_programs(programs)
@@ -85,12 +85,12 @@ end
 """
     $(TYPEDSIGNATURES)
 
-Returns the maximum amount of childern among the rules of the grammar.
+Returns the maximum amount of children among the rules of the grammar.
 """
-function _get_max_children(gramamr::AbstractGrammar)::Int
+function _get_max_children(grammar::AbstractGrammar)::Int
     res = -1
-    for i in eachindex(gramamr.rules)
-        res = max(res, nchildren(gramamr, i)) 
+    for i in eachindex(grammar.rules)
+        res = max(res, nchildren(grammar, i)) 
     end
     return res
 end
