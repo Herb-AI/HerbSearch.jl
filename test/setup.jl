@@ -2,6 +2,8 @@ using DecisionTree: Leaf, Node
 using Test
 using Aqua
 
+using JSON
+using Clingo_jll
 using HerbCore
 using HerbSearch
 using HerbGrammar

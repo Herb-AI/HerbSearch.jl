@@ -53,6 +53,7 @@ include("bottom_up_iterators/shapebased_bus.jl")
 # include("divide_conquer_functions/conquer.jl")
 
 function divide_and_conquer end
+function refactor_grammar end
 
 export
     ProgramIterator,
@@ -108,6 +109,9 @@ export
 
       divide_and_conquer,
 	EvaluationError, 
+  
+  #refactorings
+  refactor_grammar,
 
   aulile,
   synth_with_aux,
