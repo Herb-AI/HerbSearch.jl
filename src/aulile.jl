@@ -120,7 +120,7 @@ end
     - `max_enumerations`: Maximum number of candidate programs to try per iteration.
     - `print_debug`: Whether to print debug info.
 
-    Returns a `SearchStats` struct with the best program found, its score, number of iterations and enumerations.
+    Returns an `AulileStats` struct with the best program found, its score, number of iterations and enumerations.
 """
 function aulile(
     problem::Problem{<:AbstractVector{<:IOExample}},
@@ -189,7 +189,7 @@ function aulile(
             if best_score <= aux.best_value
                 return AulileStats(best_program, best_score, i, total_enumerations)
             else
-                for i in 1:min(programs_per_iteration, length(stats.programs))
+                for j in 1:min(programs_per_iteration, length(stats.programs))
                     program = pop!(stats.programs)
                     program_expr = rulenode2expr(program, grammar)
                     add_rule!(grammar, :($new_rules_symbol = $program_expr))
@@ -231,7 +231,8 @@ end
     - `max_enumerations`: Maximum number of candidate programs to try.
     - `print_debug`: If true, print debug output.
 
-    Returns a `SearchStats` object with the best program found (if any), its score, and number of enumerations.
+    Returns a `SearchStats` object containing the best programs found (sorted best-first), 
+    the iterator state, the best score, and the number of enumerations.
 """
 function synth_with_aux(
     problem::Problem{<:AbstractVector{<:IOExample}},
@@ -289,25 +290,22 @@ function synth_with_aux(
             break
         end
     end
-    # Turn max heap into a list (best to worst order)
+    # Turn max heap into a list (best-to-worst order)
     top_programs = Vector{RuleNode}()
-    best_found_score = best_score # Set to the upper bound
+    best_found_score = best_score
     while !isempty(best_programs)
-        program = pop!(best_programs)
-        push!(top_programs, program[2])
-        # Update best found score
-        if program[1] < best_found_score
-            best_found_score = program[1]
-        end
+        score, program = pop!(best_programs)
+        push!(top_programs, program)
+        best_found_score = score
     end
-    top_programs = reverse(top_programs)
+    reverse!(top_programs)
     # Debug
-    if length(best_programs) == 0 && print_debug
+    if length(top_programs) == 0 && print_debug
         println("Did not find a better program")
     elseif print_debug
         println("Found a suboptimal program with distance: $(best_found_score)")
     end
-    # The enumeration exhausted, but an optimal problem was not found
+    # The enumeration exhausted, but an optimal program was not found
     return SearchStats(top_programs, iter_state, best_found_score, loop_enumerations)
 end
 
