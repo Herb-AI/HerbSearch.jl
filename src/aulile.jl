@@ -159,9 +159,23 @@ function aulile(
             max_enumerations=max_enumerations, print_debug=print_debug)
         iter_state = stats.iter_state
         total_enumerations += stats.enumerations
-        # Best program is from previous iterations 
+        # Better program not found with cached state
         if length(stats.programs) == 0
-            return AulileStats(best_program, stats.score, i, total_enumerations)
+            # Try again with a fresh state
+            stats_retry = synth_with_aux(problem, iter, grammar, aux,
+                new_rules_decoding, best_score,
+                interpret=interpret, iter_state=nothing,
+                allow_evaluation_errors=allow_evaluation_errors,
+                num_returned_programs=programs_per_iteration,
+                max_enumerations=max_enumerations, print_debug=print_debug)
+            iter_state = stats_retry.iter_state
+            total_enumerations += stats_retry.enumerations
+            # Best program is from previous iterations
+            if length(stats_retry.programs) == 0
+                return AulileStats(best_program, stats_retry.score, i, total_enumerations)
+            else
+                stats = stats_retry
+            end
         else
             if best_score > 0
                 @assert stats.score < best_score
