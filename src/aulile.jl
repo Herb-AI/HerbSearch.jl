@@ -20,7 +20,7 @@ end
     Holds statistics about the aulile search process.
 
     - `program`::RuleNode: The best program found.
-    - `score`::Int: The score of the best program attained.
+    - `score`::Number: The score of the best program attained.
     - `iterations::Int`: The number of iterations performed during the search.
     - `enumerations::Int`: The number of enumerations performed during the search.
 """
@@ -36,9 +36,9 @@ end
 
     Holds statistics about a search process.
 
-    - `programs`::Vector{RuleNode}: The best programs found sorted descending.
-    - `score`::Int: The score of the best program attained.
-    - `iterations::Int`: The number of iterations performed during the search.
+    - `programs`::Vector{RuleNode}: Best programs found, sorted from best to worst.
+    - `iter_state`: Iterator state after the search.
+    - `score`::Number: Best score found.
     - `enumerations::Int`: The number of enumerations performed during the search.
 """
 struct SearchStats
@@ -101,7 +101,7 @@ end
     aulile(problem::Problem, iter_t::Type{<:ProgramIterator}, grammar::AbstractGrammar, start_symbol::Symbol, 
         new_rules_symbol::Symbol, aux::AuxFunction; interpret=default_interpreter, allow_evaluation_errors=false,
         max_iterations=10000, programs_per_iteration=1, max_depth=10, max_enumerations=100000, print_debug=false) 
-            -> Union{Tuple{RuleNode, SynthResult}, Nothing}
+            -> AulileStats
 
     Performs iterative library learning (Aulile) by enumerating programs using a grammar and synthesizing programs that 
         minimize the auxiliary scoring function across `IOExample`s.
@@ -138,6 +138,7 @@ function aulile(
     print_debug=false,
 )::AulileStats
     iter = iter_t(grammar, start_symbol, max_depth=max_depth)
+    iter_state = nothing
     best_program = nothing
     # Get initial distance of input and output
     best_score = aux.initial_score(problem)
@@ -196,7 +197,6 @@ function aulile(
                         old_grammar_size = length(grammar.rules)
                         new_rules_decoding[old_grammar_size] = deepcopy(program)
                     end
-                    iter = iter_t(grammar, start_symbol, max_depth=max_depth)
                 end
             end
             if print_debug
@@ -211,8 +211,8 @@ end
 """
     synth_with_aux(problem::Problem, iterator::ProgramIterator, grammar::AbstractGrammar, 
         aux::AuxFunction, new_rules_decoding::Dict{Int, AbstractRuleNode}, best_score::Number;
-        interpret=default_interpreter, allow_evaluation_errors=false, max_time=typemax(Int), 
-        max_enumerations=typemax(Int), print_debug=false) -> Union{Tuple{RuleNode, Int}, Nothing}
+        interpret=default_interpreter, iter_state=nothing, allow_evaluation_errors=false, 
+        max_time=typemax(Int), max_enumerations=typemax(Int), print_debug=false) -> SearchStats
 
     Searches for the best program that minimizes the score defined by the auxiliary function.
 
@@ -224,13 +224,14 @@ end
         used when interpreting newly added grammar rules.
     - `best_score`: Current best score to beat.
     - `interpret`: Interpreter function for the grammar (defaults to `default_interpreter`).
+    - `iter_state`: Optional iterator state to continue from.
     - `allow_evaluation_errors`: Whether to tolerate runtime exceptions during evaluation.
     - `num_returned_programs`: Number of best programs returned. 
     - `max_time`: Maximum allowed runtime for the synthesis loop.
     - `max_enumerations`: Maximum number of candidate programs to try.
     - `print_debug`: If true, print debug output.
 
-    Returns a `SearchStats` object with the best program found (if any), its score, number of iterations and enumerations.
+    Returns a `SearchStats` object with the best program found (if any), its score, and number of enumerations.
 """
 function synth_with_aux(
     problem::Problem{<:AbstractVector{<:IOExample}},
