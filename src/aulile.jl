@@ -40,12 +40,15 @@ end
     - `iter_state`: Iterator state after the search.
     - `score`::Number: Best score found.
     - `enumerations::Int`: The number of enumerations performed during the search.
+    - `exhausted_start::Bool`: Whether the iterator was fully exhausted at the start of this search. 
+        NOTE: This is a workaround due to the fact that we cannot directly check iterator's exhaustion without consumption.
 """
 struct SearchStats
     programs::Vector{RuleNode}
     iter_state::Any
     score::Number
     enumerations::Int
+    exhausted_start::Bool
 end
 
 # Make `AuxFunction` behave like a regular callable function.
@@ -131,7 +134,7 @@ function aulile(
     aux::AuxFunction;
     interpret::Function=default_interpreter,
     allow_evaluation_errors::Bool=false,
-    max_iterations=10000,
+    max_iterations=5,
     programs_per_iteration=1,
     max_depth=10,
     max_enumerations=100000,
@@ -150,7 +153,9 @@ function aulile(
     new_rules_decoding = Dict{Int,AbstractRuleNode}()
     old_grammar_size = length(grammar.rules)
     total_enumerations = 0
-    for i in 1:max_iterations
+    i = 0
+    while i < max_iterations
+        # Run synth
         stats = synth_with_aux(problem, iter, grammar, aux,
             new_rules_decoding, best_score,
             interpret=interpret, iter_state=iter_state,
@@ -159,24 +164,17 @@ function aulile(
             max_enumerations=max_enumerations, print_debug=print_debug)
         iter_state = stats.iter_state
         total_enumerations += stats.enumerations
-        # Better program not found with cached state
+        # Best program is from previous iterations
         if length(stats.programs) == 0
-            # Try again with a fresh state
-            stats_retry = synth_with_aux(problem, iter, grammar, aux,
-                new_rules_decoding, best_score,
-                interpret=interpret, iter_state=nothing,
-                allow_evaluation_errors=allow_evaluation_errors,
-                num_returned_programs=programs_per_iteration,
-                max_enumerations=max_enumerations, print_debug=print_debug)
-            iter_state = stats_retry.iter_state
-            total_enumerations += stats_retry.enumerations
-            # Best program is from previous iterations
-            if length(stats_retry.programs) == 0
-                return AulileStats(best_program, stats_retry.score, i, total_enumerations)
+            # Reset iterator if exhausted
+            if stats.exhausted_start
+                iter_state = nothing
+                iter = iter_t(grammar, start_symbol, max_depth=max_depth)
             else
-                stats = stats_retry
+                return AulileStats(best_program, best_score, i, total_enumerations)
             end
         else
+            i += 1
             if best_score > 0
                 @assert stats.score < best_score
             else
@@ -201,7 +199,7 @@ function aulile(
             end
             if print_debug
                 println("Grammar after step $(i):")
-                print_new_grammar_rules(grammar, max(init_grammar_size, length(grammar.rules) - 3))
+                print_new_grammar_rules(grammar, init_grammar_size)
             end
         end
     end
@@ -255,10 +253,18 @@ function synth_with_aux(
     ord = Base.Order.ReverseOrdering(Base.Order.By(t -> first(t)))
     best_programs = BinaryHeap{Tuple{Int,RuleNode}}(ord)
     worst_score = typemax(Int)
+    iterator_exhausted_start = false
 
     while true
         next_item = isnothing(iter_state) ? iterate(iterator) : iterate(iterator, iter_state)
         if isnothing(next_item)
+            if print_debug
+                println("Iterator exhausted.")
+            end
+            # Only track if the iterator was exhausted to begin with
+            if loop_enumerations == 0
+                iterator_exhausted_start = true
+            end
             break
         end
         candidate_program, iter_state = next_item
@@ -273,7 +279,7 @@ function synth_with_aux(
             if print_debug
                 println("Found an optimal program!")
             end
-            return SearchStats([candidate_program], iter_state, aux.best_value, loop_enumerations)
+            return SearchStats([candidate_program], iter_state, aux.best_value, loop_enumerations, false)
         elseif score < best_score
             candidate_program = freeze_state(candidate_program)
             if length(best_programs) < num_returned_programs
@@ -301,12 +307,12 @@ function synth_with_aux(
     reverse!(top_programs)
     # Debug
     if length(top_programs) == 0 && print_debug
-        println("Did not find a better program")
+        println("Did not find a better program.")
     elseif print_debug
         println("Found a suboptimal program with distance: $(best_found_score)")
     end
     # The enumeration exhausted, but an optimal program was not found
-    return SearchStats(top_programs, iter_state, best_found_score, loop_enumerations)
+    return SearchStats(top_programs, iter_state, best_found_score, loop_enumerations, iterator_exhausted_start)
 end
 
 """
