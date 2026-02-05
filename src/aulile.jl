@@ -45,7 +45,6 @@ struct SearchStats
     programs::Vector{RuleNode}
     iter_state::Any
     score::Number
-    iterations::Int
     enumerations::Int
 end
 
@@ -251,8 +250,9 @@ function synth_with_aux(
     start_time = time()
     loop_enumerations = 0
 
-    ord = Base.Order.By(t -> first(t))
-    best_programs = BinaryHeap{Tuple{Int, RuleNode}}(ord)
+    ord = Base.Order.ReverseOrdering(Base.Order.By(t -> first(t)))
+    best_programs = BinaryHeap{Tuple{Int,RuleNode}}(ord)
+    worst_score = typemax(Int)
 
     while true
         next_item = isnothing(iter_state) ? iterate(iterator) : iterate(iterator, iter_state)
@@ -274,31 +274,38 @@ function synth_with_aux(
             return SearchStats([candidate_program], iter_state, aux.best_value, loop_enumerations)
         elseif score < best_score
             candidate_program = freeze_state(candidate_program)
-            push!(best_programs, (score, candidate_program))
+            if length(best_programs) < num_returned_programs
+                push!(best_programs, (score, candidate_program))
+                worst_score = first(first(best_programs))
+            elseif score < worst_score
+                pop!(best_programs)
+                push!(best_programs, (score, candidate_program))
+                worst_score = first(first(best_programs))
+            end
         end
         # Check stopping criteria
-        if i >= max_enumerations || time() - start_time > max_time
+        if loop_enumerations >= max_enumerations || time() - start_time > max_time
             break
         end
     end
+    # Turn max heap into a list (best to worst order)
+    top_programs = Vector{RuleNode}()
+    best_found_score = best_score # Set to the upper bound
+    while !isempty(best_programs)
+        program = pop!(best_programs)
+        push!(top_programs, program[2])
+        # Update best found score
+        if program[1] < best_found_score
+            best_found_score = program[1]
+        end
+    end
+    top_programs = reverse(top_programs)
+    # Debug
     if length(best_programs) == 0 && print_debug
         println("Did not find a better program")
     elseif print_debug
-        best_prog_score = first(first(best_programs))
-        println("Found a suboptimal program with distance: $(best_prog_score)")
+        println("Found a suboptimal program with distance: $(best_found_score)")
     end
-
-    top_programs = Vector{RuleNode}()
-    if length(best_programs) > 0
-        best_found_score = first(first(best_programs))
-    else
-        best_found_score = best_score # Set to the upper bound
-    end
-    
-    for i in 1:min(num_returned_programs, length(best_programs))
-        push!(top_programs, pop!(best_programs)[2])
-    end
-
     # The enumeration exhausted, but an optimal problem was not found
     return SearchStats(top_programs, iter_state, best_found_score, loop_enumerations)
 end
