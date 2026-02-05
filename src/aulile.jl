@@ -43,6 +43,7 @@ end
 """
 struct SearchStats
     programs::Vector{RuleNode}
+    iter_state::Any
     score::Number
     iterations::Int
     enumerations::Int
@@ -152,9 +153,11 @@ function aulile(
     for i in 1:max_iterations
         stats = synth_with_aux(problem, iter, grammar, aux,
             new_rules_decoding, best_score,
-            interpret=interpret, allow_evaluation_errors=allow_evaluation_errors,
+            interpret=interpret, iter_state=iter_state,
+            allow_evaluation_errors=allow_evaluation_errors,
             num_returned_programs=programs_per_iteration,
             max_enumerations=max_enumerations, print_debug=print_debug)
+        iter_state = stats.iter_state
         total_enumerations += stats.enumerations
         # Best program is from previous iterations 
         if length(stats.programs) == 0
@@ -224,6 +227,7 @@ function synth_with_aux(
     new_rules_decoding::Dict{Int,AbstractRuleNode},
     best_score::Number;
     interpret::Function=default_interpreter,
+    iter_state=nothing,
     allow_evaluation_errors::Bool=false,
     num_returned_programs=1,
     max_time=typemax(Int),
@@ -236,8 +240,13 @@ function synth_with_aux(
     ord = Base.Order.By(t -> first(t))
     best_programs = BinaryHeap{Tuple{Int, RuleNode}}(ord)
 
-    for (i, candidate_program) ∈ enumerate(iterator)
-        loop_enumerations = i
+    while true
+        next_item = isnothing(iter_state) ? iterate(iterator) : iterate(iterator, iter_state)
+        if isnothing(next_item)
+            break
+        end
+        candidate_program, iter_state = next_item
+        loop_enumerations += 1
         # Evaluate the program
         score = evaluate_with_aux(problem, candidate_program, grammar, aux,
             new_rules_decoding, interpret=interpret,
@@ -248,7 +257,7 @@ function synth_with_aux(
             if print_debug
                 println("Found an optimal program!")
             end
-            return SearchStats([candidate_program], aux.best_value, 1, i)
+            return SearchStats([candidate_program], iter_state, aux.best_value, loop_enumerations)
         elseif score < best_score
             candidate_program = freeze_state(candidate_program)
             push!(best_programs, (score, candidate_program))
@@ -277,7 +286,7 @@ function synth_with_aux(
     end
 
     # The enumeration exhausted, but an optimal problem was not found
-    return SearchStats(top_programs, best_found_score, 1, loop_enumerations)
+    return SearchStats(top_programs, iter_state, best_found_score, loop_enumerations)
 end
 
 """
