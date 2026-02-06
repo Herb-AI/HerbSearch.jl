@@ -24,6 +24,7 @@ include("top_down_iterator.jl")
 
 include("evaluate.jl")
 
+include("aulile_utils.jl")
 include("aulile.jl")
 
 include("search_procedure.jl")
@@ -57,7 +58,7 @@ function compress_programs end
 
 export
     ProgramIterator,
-    @programiterator, 
+    @programiterator,
     get_solver,
     heuristic_leftmost,
     heuristic_rightmost,
@@ -67,7 +68,7 @@ export
     optimal_program,
     suboptimal_program, UniformIterator,
     next_solution!, TopDownIterator,
-	UniformASPIterator,
+    UniformASPIterator,
     RandomIterator,
     BFSIterator,
     DFSIterator,
@@ -103,15 +104,18 @@ export
     init_combine_structure,
     get_bank,
 
+    # Divide and conquer
     divide_and_conquer,
     EvaluationError,
     get_solver,
 
-    aulile,
+    # Aulile and compression
     compress_programs,
+    aulile,
     synth_with_aux,
     AuxFunction,
     SearchStats,
     AulileStats,
-    default_aux
+    default_aux,
+    default_interpreter
 end # module HerbSearch

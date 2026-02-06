@@ -40,10 +40,9 @@ Random.seed!(1234)
     include("test_uniform_asp_iterator.jl")
     include("test_asp_iterator.jl")
 
-	# Refactoring tests   
-    include("test_compression.jl") 
-	# uses benchmarks -> remove
-	# include("test_aulile.jl")
+    include("test_compression.jl")
+
+    include("test_aulile.jl")
 
     # Excluded because it contains long tests
     # include("test_realistic_searches.jl")
