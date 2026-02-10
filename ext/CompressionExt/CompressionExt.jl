@@ -7,7 +7,7 @@ using HerbSearch
 using Clingo_jll
 
 include("clingo_io.jl")
-include("add_to_grammar.jl")
+include("refactor_holes.jl")
 
 """
     $(TYPEDSIGNATURES)
