@@ -17,37 +17,33 @@ function aulile(
     options::AulileOptions
 )::AulileStats
     evaluateOptions = options.synthOptions.evaluateOptions
-    iter = iter_t(grammar, start_symbol, max_depth=options.max_depth)
-    iter_state = nothing
-    best_program = nothing
-    
-    # Get initial distance of input and output
     best_score = evaluateOptions.aux.initial_score(evaluateOptions.problem)
-    if options.print_debug
+    if options.synthOptions.print_debug
         println("Initial Distance: $(best_score)")
     end
-    init_grammar_size = length(grammar.rules)
-    # Main loop
+    
+    iter = iter_t(grammar, start_symbol, max_depth=options.max_depth)
     new_rules_decoding = Dict{Int,AbstractRuleNode}()
-    old_grammar_size = length(grammar.rules)
+    grammar_size = length(grammar.rules)
+    iter_state = nothing
+    best_program = nothing
     total_enumerations = 0
-    i = 0
-    while i < options.max_iterations
+    for i in 1:options.max_iterations
+        iter = options.restart_iterator ? iter_t(grammar, start_symbol, max_depth=options.max_depth) : iter
         stats = synth_with_aux(iter, grammar, new_rules_decoding, best_score,
             options.synthOptions, iter_state)
-        iter_state = stats.iter_state
+        iter_state = options.restart_iterator ? nothing : stats.iter_state
         total_enumerations += stats.enumerations
-        # Best program is from previous iterations
+
         if length(stats.programs) == 0
-            # Reset iterator if exhausted
-            if stats.exhausted_start
+            if options.restart_iterator && stats.exhausted_start
+                # Reset iterator if exhausted
                 iter_state = nothing
                 iter = iter_t(grammar, start_symbol, max_depth=options.max_depth)
             else
                 return AulileStats(best_program, best_score, i, total_enumerations)
             end
         else
-            i += 1
             if best_score > 0
                 @assert stats.score < best_score
             else
@@ -64,15 +60,16 @@ function aulile(
                     program = stats.programs[j]
                     program_expr = rulenode2expr(program, grammar)
                     add_rule!(grammar, :($new_rules_symbol = $program_expr))
-                    if length(grammar.rules) > old_grammar_size
-                        old_grammar_size = length(grammar.rules)
-                        new_rules_decoding[old_grammar_size] = deepcopy(program)
+                    if length(grammar.rules) > grammar_size
+                        grammar_size = length(grammar.rules)
+                        new_rules_decoding[grammar_size] = deepcopy(program)
                     end
                 end
             end
-            if options.print_debug
+            if options.synthOptions.print_debug
                 println("Grammar after step $(i):")
-                print_new_grammar_rules(grammar, init_grammar_size)
+                print_new_grammar_rules(grammar, max(0, 
+                    grammar_size - options.synthOptions.num_returned_programs))
             end
         end
     end

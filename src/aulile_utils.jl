@@ -148,7 +148,7 @@ Base.@kwdef struct AulileOptions
 
     max_iterations=10000
     max_depth=10
-    print_debug=false
+    restart_iterator=true
 end
 
 
