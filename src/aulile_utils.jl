@@ -24,8 +24,6 @@ end
     - `iter_state`: Iterator state after the search.
     - `score`::Number: Best score found.
     - `enumerations::Int`: The number of enumerations performed during the search.
-    - `exhausted_start::Bool`: Whether the iterator was fully exhausted at the start of this search. 
-        NOTE: This is a workaround due to the fact that we cannot directly check iterator's exhaustion without consumption.
 """
 struct SearchStats
     programs::Vector{RuleNode}
@@ -38,8 +36,6 @@ end
 
 
 """
-    default_interpreter(program::Any, grammar::AbstractGrammar, example::IOExample, _)
-
     Default interpreter implementation that follows the execute_on_input pattern.
     This is used when no custom interpreter is provided to synth_with_aux.
 """
@@ -52,8 +48,6 @@ end
 
 
 """
-    print_new_grammar_rules(grammar::AbstractGrammar, init_grammar_size::Int)
-
     Prints the new grammar rules added after a specific point in the grammar.
 
     - `grammar::AbstractGrammar`: The grammar object containing rules and types.
@@ -68,8 +62,6 @@ function print_new_grammar_rules(grammar::AbstractGrammar, init_grammar_size::In
 end
 
 """
-	AuxFunction(func::Function, initial_score::Function, best_value::Number)
-
     A wrapper struct for auxiliary evaluation functions used in the Aulile learning loop.
 
     - `func`: A function that returns a score based on an `IOExample` and the candidate output.
@@ -104,9 +96,8 @@ default_aux = AuxFunction(
 )
 
 """
-    Evaluation Argument Constants
+    A wrapper struct for evaluation arguments
 
-    - `problem`: The problem definition with IO examples.
     - `aux`: An `AuxFunction` used to compute the score between expected and actual output.
     - `interpret`: Interpreter function for program evaluation (defaults to `default_interpreter`).
     - `allow_evaluation_errors`: Whether evaluation errors should be tolerated or raise an exception.
@@ -120,12 +111,13 @@ Base.@kwdef struct EvaluateOptions
 end
 
 """
-    Synth Argument Constants
+    A wrapper struct for synth arguments
 
     - `num_returned_programs`: Number of best programs returned.
     - `max_enumerations`: Maximum number of candidate programs to try.
     - `max_time`: Maximum allowed runtime for the synthesis loop.
     - `print_debug`: If true, print debug output.
+    - `eval_opts`: Options for evaluation.
 """
 Base.@kwdef struct SynthOptions
     evaluateOptions::EvaluateOptions
@@ -137,11 +129,12 @@ Base.@kwdef struct SynthOptions
 end
 
 """
-    Aulile Argument Constants
+    A wrapper struct for Aulile arguments
 
     - `max_iterations`: Maximum number of learning iterations to perform.
     - `max_depth`: Maximum depth for program enumeration.
     - `print_debug`: Whether to print debug info.
+    - `synth_opts`: Options for synthesis.
 """
 Base.@kwdef struct AulileOptions
     synthOptions::SynthOptions
@@ -158,7 +151,7 @@ end
 
     - `heap`: The heap containing the best programs, ordered from worst to best
 """
-function heap_to_vec(heap::BinaryHeap{Tuple{Int,RuleNode}})::Tuple{Vector{RuleNode}, Int}
+function heap_to_vec(heap::BinaryHeap{Tuple{Int,RuleNode}})::Tuple{Vector{RuleNode},Int}
     top_programs = Vector{RuleNode}()
     best_found_score = typemax(Int)
     while !isempty(heap)

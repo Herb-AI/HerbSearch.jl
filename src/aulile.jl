@@ -2,10 +2,12 @@
     Performs iterative library learning (Aulile) by enumerating programs using a grammar and synthesizing programs that 
         minimize the auxiliary scoring function across `IOExample`s.
 
+    - `problem`: The problem definition with IO examples.
     - `iter_t`: Type of program iterator to use (must be constructible with grammar and symbol).
     - `grammar`: The grammar used to generate candidate programs.
     - `start_symbol`: The non-terminal symbol representing the start of the grammar.
     - `new_rules_symbol`: A symbol used to add new rules to the grammar as library learning.
+    - `opts`: A list of additional arguments
 
     Returns an `AulileStats` struct with the best program found, its score, number of iterations and enumerations.
 """
@@ -79,12 +81,13 @@ end
 """
     Searches for the best program that minimizes the score defined by the auxiliary function.
 
+    - `problem`: The problem definition with IO examples.
     - `iterator`: Program enumeration iterator.
     - `grammar`: Grammar used to generate and interpret programs.
     - `new_rules_decoding`: A dictionary mapping rule indices to their original `RuleNode`s, 
         used when interpreting newly added grammar rules.
     - `score_upper_bound`: Current best score to beat.
-    - `options`: A list of additional arguments.
+    - `opts`: A list of additional arguments.
     - `iter_state`: Optional iterator state to continue from.
 
     Returns a `SearchStats` object containing the best programs found (sorted best-first), 
@@ -160,10 +163,11 @@ end
 """
     Evaluates a candidate program over all examples in a problem using the auxiliary evaluation function.
 
+    - `problem`: The problem definition with IO examples.
     - `program`: The candidate program to evaluate.
     - `grammar`: Grammar used to generate and interpret programs.
     - `new_rules_decoding`: A dictionary mapping grammar rule indices to `RuleNode`s for decoding during interpretation.
-    - `options`: A list of additional arguments.
+    - `opts`: A list of additional arguments.
 
     Returns the total distance score. If evaluation errors are disallowed and one occurs, an `EvaluationError` is thrown.
 """
