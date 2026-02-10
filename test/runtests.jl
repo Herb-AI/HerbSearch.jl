@@ -50,5 +50,5 @@ Random.seed!(1234)
         include("test_divide_conquer.jl")
         include("test_divide_conquer_example.jl")
     end
-    # doctest(HerbSearch; manual=false)
+    doctest(HerbSearch; manual=false)
 end
