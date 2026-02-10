@@ -36,4 +36,13 @@
         @test length(dfs_programs) == 6
         @test all(p ∈ dfs_programs for p ∈ answer_programs)
     end
+
+    @testset "Issue 175: Invalid mapping" begin
+        g = @csgrammar begin
+            Int = Int + Int
+            Int = 1 | 2
+        end
+        iter = BFSASPIterator(g, :Int, max_depth=3)
+        @test length(collect(iter)) > 0
+    end
 end

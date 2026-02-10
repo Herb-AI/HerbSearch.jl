@@ -1,6 +1,6 @@
 name = "HerbSearch"
 uuid = "3008d8e8-f9aa-438a-92ed-26e9c7b4829f"
-version = "1.0.0"
+version = "1.0.1"
 authors = ["Sebastijan Dumancic <s.dumancic@tudelft.nl>", "Jaap de Jong <J.deJong-18@student.tudelft.nl>", "Nicolae Filat <N.Filat@student.tudelft.nl>", "Piotr Cichoń <gitlab@gitlab.ewi.tudelft.nl>", "Tilman Hinnerichs <t.r.hinnerichs@tudelft.nl>"]
 
 [deps]

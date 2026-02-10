@@ -106,34 +106,48 @@ function next_solution!(iter::UniformASPIterator)
 end
 
 """
-	update_rule_indices!(iter::UniformASPIterator,tree::Union{RuleNode,UniformHole,StateHole}, mapping::Dict{Int64,Int64}, current_index::Int64)
+    fill_hole!(iter::UniformASPIterator,tree::Union{RuleNode,UniformHole,StateHole}, mapping::Dict{Int64,Int64}, current_index::Int64)
 
-Iterates through the tree, and updates the domains of UniformHoles according to the updates given in mapping (node_index => rule_index). 
+Iterates through the tree, and updates the domains of UniformHoles according to the updates given in mapping (`asp_node_index => grammar_rule_index`). 
+
 Use `current_index` to traverse through the tree and update the correct nodes.
 """
 function fill_hole!(
     iter::UniformASPIterator,
     tree::AbstractRuleNode,
-    mapping::Dict{Int64,Int64},
-    current_index::Int64
-)
-    if tree isa UniformHole
-        if haskey(mapping, current_index)
-            # Check if rule to be assigned exists in grammar
-            if mapping[current_index] > length(iter.solver.grammar.rules)
-                error("The mapping from ASP would assign a rule index ($(mapping[current_index])) that is not a valid index in the current grammar (N rules: $(length(iter.solver.grammar.rules)))")
-            end
-            if mapping[current_index] ∉ findall(tree.domain)
-                error("The mapping would assign a rule index ($(mapping[current_index])) that is not within the current uniform hole's domain ($(tree.domain))")
-            end
-            tree.domain = falses(length(tree.domain))
-            tree.domain[mapping[current_index]] = 1
+    mapping::Dict{Int,Int},
+    current_index::Int
+)::Int
+    return _fill_children!(iter, tree, mapping, current_index)
+end
+
+function fill_hole!(
+    iter::UniformASPIterator,
+    tree::UniformHole,
+    mapping::Dict{Int,Int},
+    current_index::Int
+)::Int
+    if haskey(mapping, current_index)
+        # Check if rule to be assigned exists in grammar
+        if mapping[current_index] > length(iter.solver.grammar.rules)
+            error("The mapping from ASP would assign a rule index ($(mapping[current_index])) that is not a valid index in the current grammar (N rules: $(length(iter.solver.grammar.rules)))")
         end
+        if mapping[current_index] ∉ findall(tree.domain)
+            error("The mapping would assign a rule index ($(mapping[current_index])) that is not within the current uniform hole's domain ($(tree.domain))")
+        end
+        tree.domain = falses(length(tree.domain))
+        tree.domain[mapping[current_index]] = 1
     end
+
+    return _fill_children!(iter, tree, mapping, current_index)
+end
+
+function _fill_children!(iter, tree, mapping, current_index)
     for child in tree.children
-        current_index += 1
-        fill_hole!(iter, child, mapping, current_index)
+        current_index = fill_hole!(iter, child, mapping, current_index + 1)
     end
+
+    return current_index
 end
 
 """
