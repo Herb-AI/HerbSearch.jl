@@ -141,43 +141,44 @@ function synth_with_aux(
     iter_state=nothing,
     allow_evaluation_errors::Bool=false,
     num_returned_programs=1,
-    max_time=typemax(Int),
+    max_time=typemax(Float64),
     max_enumerations=typemax(Int),
     print_debug=false
 )::SearchStats
-    start_time = time()
-    loop_enumerations = 0
-
     ord = Base.Order.ReverseOrdering(Base.Order.By(t -> first(t)))
     best_programs = BinaryHeap{Tuple{Int,RuleNode}}(ord)
     worst_score = typemax(Int)
     iterator_exhausted_start = false
 
-    while true
+    start_time = time()
+    loop_enumerations = 1
+    for loop_enumerations in 1:max_enumerations
+        if time() - start_time > max_time
+            break
+        end
+
         next_item = isnothing(iter_state) ? iterate(iterator) : iterate(iterator, iter_state)
         if isnothing(next_item)
             if print_debug
                 println("Iterator exhausted.")
             end
             # Only track if the iterator was exhausted to begin with
-            if loop_enumerations == 0
-                iterator_exhausted_start = true
-            end
+            iterator_exhausted_start = loop_enumerations == 1
             break
         end
+
         candidate_program, iter_state = next_item
-        loop_enumerations += 1
-        # Evaluate the program
         score = evaluate_with_aux(problem, candidate_program, grammar, aux,
             new_rules_decoding, interpret=interpret,
             allow_evaluation_errors=allow_evaluation_errors)
-        # Update score if better
+
         if score == aux.best_value
             candidate_program = freeze_state(candidate_program)
             if print_debug
                 println("Found an optimal program!")
             end
-            return SearchStats([candidate_program], iter_state, aux.best_value, loop_enumerations, false)
+            return SearchStats([candidate_program], iter_state, aux.best_value, 
+                loop_enumerations, time() - start_time, false)
         elseif score < best_score
             candidate_program = freeze_state(candidate_program)
             if length(best_programs) < num_returned_programs
@@ -189,28 +190,17 @@ function synth_with_aux(
                 worst_score = first(first(best_programs))
             end
         end
-        # Check stopping criteria
-        if loop_enumerations >= max_enumerations || time() - start_time > max_time
-            break
-        end
     end
-    # Turn max heap into a list (best-to-worst order)
-    top_programs = Vector{RuleNode}()
-    best_found_score = best_score
-    while !isempty(best_programs)
-        score, program = pop!(best_programs)
-        push!(top_programs, program)
-        best_found_score = score
-    end
-    reverse!(top_programs)
-    # Debug
+    
+    top_programs, best_found_score = heap_to_vec(best_programs)
     if length(top_programs) == 0 && print_debug
         println("Did not find a better program.")
     elseif print_debug
         println("Found a suboptimal program with distance: $(best_found_score)")
     end
-    # The enumeration exhausted, but an optimal program was not found
-    return SearchStats(top_programs, iter_state, best_found_score, loop_enumerations, iterator_exhausted_start)
+
+    return SearchStats(top_programs, iter_state, best_found_score, 
+        loop_enumerations, time() - start_time, iterator_exhausted_start)
 end
 
 """

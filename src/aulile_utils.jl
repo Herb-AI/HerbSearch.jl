@@ -32,6 +32,7 @@ struct SearchStats
     iter_state::Any
     score::Number
     enumerations::Int
+    time::Float64
     exhausted_start::Bool
 end
 
@@ -101,3 +102,21 @@ default_aux = AuxFunction(
     problem::Problem -> length(problem.spec),
     0
 )
+
+"""
+    Turns a max heap into a vector (best-to-worst order).
+    Also returns the best found score.
+
+    - `heap`: The heap containing the best programs, ordered from worst to best
+"""
+function heap_to_vec(heap::BinaryHeap{Tuple{Int,RuleNode}})::Tuple{Vector{RuleNode}, Int}
+    top_programs = Vector{RuleNode}()
+    best_found_score = typemax(Int)
+    while !isempty(heap)
+        score, program = pop!(heap)
+        push!(top_programs, program)
+        best_found_score = score
+    end
+    reverse!(top_programs)
+    return top_programs, best_found_score
+end
