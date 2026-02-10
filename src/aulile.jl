@@ -85,8 +85,8 @@ function aulile(
             if best_score <= aux.best_value
                 return AulileStats(best_program, best_score, i, total_enumerations)
             else
-                for j in 1:min(programs_per_iteration, length(stats.programs))
-                    program = pop!(stats.programs)
+                for j in 1:length(stats.programs)
+                    program = stats.programs[j]
                     program_expr = rulenode2expr(program, grammar)
                     add_rule!(grammar, :($new_rules_symbol = $program_expr))
                     if length(grammar.rules) > old_grammar_size
