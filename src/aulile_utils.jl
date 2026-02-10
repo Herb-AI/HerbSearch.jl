@@ -31,7 +31,6 @@ struct SearchStats
     score::Number
     enumerations::Int
     time::Float64
-    exhausted_start::Bool
 end
 
 
@@ -103,11 +102,9 @@ default_aux = AuxFunction(
     - `allow_evaluation_errors`: Whether evaluation errors should be tolerated or raise an exception.
 """
 Base.@kwdef struct EvaluateOptions
-    problem::Problem{<:AbstractVector{<:IOExample}}
-
-    aux::AuxFunction=default_aux
-    interpret::Function=default_interpreter
-    allow_evaluation_errors::Bool=false
+    aux::AuxFunction = default_aux
+    interpret::Function = default_interpreter
+    allow_evaluation_errors = false
 end
 
 """
@@ -120,12 +117,11 @@ end
     - `eval_opts`: Options for evaluation.
 """
 Base.@kwdef struct SynthOptions
-    evaluateOptions::EvaluateOptions
-
-    num_returned_programs=1
-    max_enumerations=typemax(Int)
-    max_time=typemax(Float64)
-    print_debug=false
+    num_returned_programs = 1
+    max_enumerations = typemax(Int)
+    max_time = typemax(Float64)
+    print_debug = false
+    eval_opts = EvaluateOptions()
 end
 
 """
@@ -137,11 +133,10 @@ end
     - `synth_opts`: Options for synthesis.
 """
 Base.@kwdef struct AulileOptions
-    synthOptions::SynthOptions
-
-    max_iterations=10000
-    max_depth=10
-    restart_iterator=true
+    max_iterations = 5
+    max_depth = 10
+    restart_iterator = true
+    synth_opts = SynthOptions()
 end
 
 

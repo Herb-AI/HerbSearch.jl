@@ -76,9 +76,8 @@ end
         IOExample(Dict(:x => "2"), "2."),
         IOExample(Dict(:x => "3"), "3.")
     ])
-    options = AulileOptions(synthOptions=SynthOptions(
-        evaluateOptions=EvaluateOptions(problem=problem, aux=levenshtein_aux)))
-    test_result = aulile(BFSIterator, simple_grammar, :String, :String, options)
+    opts = AulileOptions(synth_opts=SynthOptions(eval_opts=EvaluateOptions(aux=levenshtein_aux)))
+    test_result = aulile(problem, BFSIterator, simple_grammar, :String, :String, opts=opts)
     @test !(test_result.program isa Nothing)
     @test test_result.score == levenshtein_aux.best_value
     program = rulenode2expr(test_result.program, simple_grammar)
@@ -90,9 +89,8 @@ end
         IOExample(Dict(:x => "2."), "2"),
         IOExample(Dict(:x => "3."), "3")
     ])
-    options = AulileOptions(synthOptions=SynthOptions(
-        evaluateOptions=EvaluateOptions(problem=problem, aux=levenshtein_aux)))
-    test_result = aulile(BFSIterator, simple_grammar, :String, :String, options)
+    opts = AulileOptions(synth_opts=SynthOptions(eval_opts=EvaluateOptions(aux=levenshtein_aux)))
+    test_result = aulile(problem, BFSIterator, simple_grammar, :String, :String, opts=opts)
     @test !(test_result.program isa Nothing)
     @test test_result.score == levenshtein_aux.best_value
     program = rulenode2expr(test_result.program, simple_grammar)
@@ -104,10 +102,9 @@ end
         IOExample(Dict(:x => "<978> 654-0299"), "9786540299"),
         IOExample(Dict(:x => "978.654.0299"), "9786540299")
     ])
-    options = AulileOptions(synthOptions=SynthOptions(
-        evaluateOptions=EvaluateOptions(problem=problem, aux=levenshtein_aux),
-        num_returned_programs=2),max_depth=2)
-    test_result = aulile(BFSIterator, simple_grammar, :String, :String, options)
+    opts = AulileOptions(max_depth=2,
+        synth_opts=SynthOptions(eval_opts=EvaluateOptions(aux=levenshtein_aux), num_returned_programs=2))
+    test_result = aulile(problem, BFSIterator, simple_grammar, :String, :String, opts=opts)
     @test !(test_result.program isa Nothing)
     @test test_result.score == levenshtein_aux.best_value
     program = rulenode2expr(test_result.program, simple_grammar)

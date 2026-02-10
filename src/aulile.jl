@@ -12,51 +12,43 @@
     Returns an `AulileStats` struct with the best program found, its score, number of iterations and enumerations.
 """
 function aulile(
+    problem::Problem{<:AbstractVector{<:IOExample}},
     iter_t::Type{<:ProgramIterator},
     grammar::AbstractGrammar,
     start_symbol::Symbol,
-    new_rules_symbol::Symbol,
-    options::AulileOptions
+    new_rules_symbol::Symbol;
+    opts::AulileOptions=AulileOptions()
 )::AulileStats
-    evaluateOptions = options.synthOptions.evaluateOptions
-    best_score = evaluateOptions.aux.initial_score(evaluateOptions.problem)
-    if options.synthOptions.print_debug
+    aux = opts.synth_opts.eval_opts.aux
+    best_score = aux.initial_score(problem)
+    if opts.synth_opts.print_debug
         println("Initial Distance: $(best_score)")
     end
-    
-    iter = iter_t(grammar, start_symbol, max_depth=options.max_depth)
+
+    iter = iter_t(grammar, start_symbol, max_depth=opts.max_depth)
+    iter_state = nothing
     new_rules_decoding = Dict{Int,AbstractRuleNode}()
     grammar_size = length(grammar.rules)
-    iter_state = nothing
+
     best_program = nothing
-    total_enumerations = 0
-    for i in 1:options.max_iterations
-        iter = options.restart_iterator ? iter_t(grammar, start_symbol, max_depth=options.max_depth) : iter
-        stats = synth_with_aux(iter, grammar, new_rules_decoding, best_score,
-            options.synthOptions, iter_state)
-        iter_state = options.restart_iterator ? nothing : stats.iter_state
-        total_enumerations += stats.enumerations
+    total_enums = 0
+    for i in 1:opts.max_iterations
+        stats = synth_with_aux(problem, iter, grammar, new_rules_decoding, best_score;
+            opts=opts.synth_opts, iter_state=iter_state)
+        iter_state = stats.iter_state
+        total_enums += stats.enumerations
 
         if length(stats.programs) == 0
-            if options.restart_iterator && stats.exhausted_start
-                # Reset iterator if exhausted
-                iter_state = nothing
-                iter = iter_t(grammar, start_symbol, max_depth=options.max_depth)
-            else
-                return AulileStats(best_program, best_score, i, total_enumerations)
-            end
+            return AulileStats(best_program, best_score, i, total_enums)
         else
-            if best_score > 0
-                @assert stats.score < best_score
-            else
-                # In the case where the distance is optimal from the start
-                @assert stats.score <= best_score
-            end
-            best_program = stats.programs[1]
+            # Iteration must improve the score
+            @assert stats.score <= best_score
             best_score = stats.score
-            # Program is optimal
-            if best_score <= evaluateOptions.aux.best_value
-                return AulileStats(best_program, best_score, i, total_enumerations)
+
+            best_program = stats.programs[1]
+            if best_score <= aux.best_value
+                # Program is optimal
+                return AulileStats(best_program, best_score, i, total_enums)
             else
                 for j in 1:length(stats.programs)
                     program = stats.programs[j]
@@ -68,14 +60,18 @@ function aulile(
                     end
                 end
             end
-            if options.synthOptions.print_debug
+            if opts.synth_opts.print_debug
                 println("Grammar after step $(i):")
-                print_new_grammar_rules(grammar, max(0, 
-                    grammar_size - options.synthOptions.num_returned_programs))
+                print_new_grammar_rules(grammar, grammar_size - opts.synth_opts.num_returned_programs)
             end
         end
+
+        if opts.restart_iterator
+            iter = iter_t(grammar, start_symbol, max_depth=opts.max_depth)
+            iter_state = nothing
+        end
     end
-    return AulileStats(best_program, best_score, max_iterations, total_enumerations)
+    return AulileStats(best_program, best_score, max_iterations, total_enums)
 end
 
 """
@@ -94,70 +90,62 @@ end
     the iterator state, the best score, and the number of enumerations.
 """
 function synth_with_aux(
+    problem::Problem{<:AbstractVector{<:IOExample}},
     iterator::ProgramIterator,
     grammar::AbstractGrammar,
     new_rules_decoding::Dict{Int,AbstractRuleNode},
-    score_upper_bound::Number,
-    options::SynthOptions,
+    score_upper_bound::Number;
+    opts::SynthOptions=SynthOptions(),
     iter_state=nothing,
 )::SearchStats
-    aux = options.evaluateOptions.aux
+    aux_bestval = opts.eval_opts.aux.best_value
+    # Max-heap to store minimal number of programs
     ord = Base.Order.ReverseOrdering(Base.Order.By(t -> first(t)))
     best_programs = BinaryHeap{Tuple{Int,RuleNode}}(ord)
     worst_score = typemax(Int)
-    iterator_exhausted_start = false
 
     start_time = time()
-    loop_enumerations = 1
-    for loop_enumerations in 1:options.max_enumerations
-        if time() - start_time > options.max_time
+    loop_enums = 1
+    for loop_enums in 1:opts.max_enumerations
+        if time() - start_time > opts.max_time
             break
         end
 
         next_item = isnothing(iter_state) ? iterate(iterator) : iterate(iterator, iter_state)
         if isnothing(next_item)
-            if options.print_debug
+            if opts.print_debug
                 println("Iterator exhausted.")
             end
-            # Only track if the iterator was exhausted to begin with
-            iterator_exhausted_start = loop_enumerations == 1
             break
         end
 
         candidate_program, iter_state = next_item
-        score = evaluate_with_aux(candidate_program, grammar,
-            new_rules_decoding, options.evaluateOptions)
+        score = evaluate_with_aux(problem, candidate_program, grammar, new_rules_decoding;
+            opts=opts.eval_opts)
 
-        if score == aux.best_value
+        if score == aux_bestval
             candidate_program = freeze_state(candidate_program)
-            if options.print_debug
+            if opts.print_debug
                 println("Found an optimal program!")
             end
-            return SearchStats([candidate_program], iter_state, aux.best_value, 
-                loop_enumerations, time() - start_time, false)
-        elseif score < score_upper_bound
+            return SearchStats([candidate_program], iter_state, aux_bestval, loop_enums, time() - start_time)
+        elseif score >= score_upper_bound
+            continue
+        elseif length(best_programs) < opts.num_returned_programs || score < worst_score
             candidate_program = freeze_state(candidate_program)
-            if length(best_programs) < options.num_returned_programs
-                push!(best_programs, (score, candidate_program))
-                worst_score = first(first(best_programs))
-            elseif score < worst_score
-                pop!(best_programs)
-                push!(best_programs, (score, candidate_program))
-                worst_score = first(first(best_programs))
-            end
+            push!(best_programs, (score, candidate_program))
+            length(best_programs) > opts.num_returned_programs && pop!(best_programs)
+            worst_score = first(first(best_programs))
         end
     end
-    
     top_programs, best_found_score = heap_to_vec(best_programs)
-    if length(top_programs) == 0 && options.print_debug
+    if length(top_programs) == 0 && opts.print_debug
         println("Did not find a better program.")
-    elseif options.print_debug
+    elseif opts.print_debug
         println("Found a suboptimal program with distance: $(best_found_score)")
     end
-
-    # The enumeration exhausted, but an optimal program was not found
-    return SearchStats(top_programs, iter_state, best_found_score, 
-        loop_enumerations, time() - start_time, iterator_exhausted_start)
+    # The enumerations are exhausted, but an optimal program was not found
+    return SearchStats(top_programs, iter_state, best_found_score, loop_enums, time() - start_time)
 end
 
 """
@@ -172,32 +160,28 @@ end
     Returns the total distance score. If evaluation errors are disallowed and one occurs, an `EvaluationError` is thrown.
 """
 function evaluate_with_aux(
+    problem::Problem{<:AbstractVector{<:IOExample}},
     program::Any,
     grammar::AbstractGrammar,
-    new_rules_decoding::Dict{Int,AbstractRuleNode},
-    options::EvaluateOptions
+    new_rules_decoding::Dict{Int,AbstractRuleNode};
+    opts::EvaluateOptions=EvaluateOptions()
 )::Number
     distance_in_examples = 0
     crashed = false
-    for example ∈ options.problem.spec
+    for example ∈ problem.spec
         try
             # Use the interpreter to get the output
-            output = options.interpret(program, grammar, example, new_rules_decoding)
-            distance_in_examples += options.aux(example, output)
+            output = opts.interpret(program, grammar, example, new_rules_decoding)
+            distance_in_examples += opts.aux(example, output)
         catch e
             # You could also decide to handle less severe errors (such as index out of range) differently,
             # for example by just increasing the error value and keeping the program as a candidate.
             crashed = true
             # Throw the error again if evaluation errors aren't allowed
-            # eval_error = EvaluationError(expr, example.in, e)
-            # allow_evaluation_errors || throw(eval_error)
-            allow_evaluation_errors || throw(e)
+            eval_error = EvaluationError(expr, example.in, e)
+            allow_evaluation_errors || throw(eval_error)
             break
         end
     end
-    if crashed
-        return typemax(Int)
-    else
-        return distance_in_examples
-    end
+    return crashed ? typemax(Int) : distance_in_examples
 end
