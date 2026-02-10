@@ -1,7 +1,7 @@
 """
     AulileStats
 
-    Holds statistics about the aulile search process.
+    Holds statistics returned from the aulile search process.
 
     - `program`::RuleNode: The best program found.
     - `score`::Number: The score of the best program attained.
@@ -18,7 +18,7 @@ end
 """
     SearchStats
 
-    Holds statistics about a search process.
+    Holds statistics returned from the search process.
 
     - `programs`::Vector{RuleNode}: Best programs found, sorted from best to worst.
     - `iter_state`: Iterator state after the search.
@@ -102,6 +102,55 @@ default_aux = AuxFunction(
     problem::Problem -> length(problem.spec),
     0
 )
+
+"""
+    Evaluation Argument Constants
+
+    - `problem`: The problem definition with IO examples.
+    - `aux`: An `AuxFunction` used to compute the score between expected and actual output.
+    - `interpret`: Interpreter function for program evaluation (defaults to `default_interpreter`).
+    - `allow_evaluation_errors`: Whether evaluation errors should be tolerated or raise an exception.
+"""
+Base.@kwdef struct EvaluateOptions
+    problem::Problem{<:AbstractVector{<:IOExample}}
+
+    aux::AuxFunction=default_aux
+    interpret::Function=default_interpreter
+    allow_evaluation_errors::Bool=false
+end
+
+"""
+    Synth Argument Constants
+
+    - `num_returned_programs`: Number of best programs returned.
+    - `max_enumerations`: Maximum number of candidate programs to try.
+    - `max_time`: Maximum allowed runtime for the synthesis loop.
+    - `print_debug`: If true, print debug output.
+"""
+Base.@kwdef struct SynthOptions
+    evaluateOptions::EvaluateOptions
+
+    num_returned_programs=1
+    max_enumerations=typemax(Int)
+    max_time=typemax(Float64)
+    print_debug=false
+end
+
+"""
+    Aulile Argument Constants
+
+    - `max_iterations`: Maximum number of learning iterations to perform.
+    - `max_depth`: Maximum depth for program enumeration.
+    - `print_debug`: Whether to print debug info.
+"""
+Base.@kwdef struct AulileOptions
+    synthOptions::SynthOptions
+
+    max_iterations=10000
+    max_depth=10
+    print_debug=false
+end
+
 
 """
     Turns a max heap into a vector (best-to-worst order).

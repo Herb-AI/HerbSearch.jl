@@ -76,8 +76,9 @@ end
         IOExample(Dict(:x => "2"), "2."),
         IOExample(Dict(:x => "3"), "3.")
     ])
-    test_result = aulile(problem, BFSIterator, simple_grammar, :String, :String,
-        levenshtein_aux, print_debug=false)
+    options = AulileOptions(synthOptions=SynthOptions(
+        evaluateOptions=EvaluateOptions(problem=problem, aux=levenshtein_aux)))
+    test_result = aulile(BFSIterator, simple_grammar, :String, :String, options)
     @test !(test_result.program isa Nothing)
     @test test_result.score == levenshtein_aux.best_value
     program = rulenode2expr(test_result.program, simple_grammar)
@@ -89,8 +90,9 @@ end
         IOExample(Dict(:x => "2."), "2"),
         IOExample(Dict(:x => "3."), "3")
     ])
-    test_result = aulile(problem, BFSIterator, simple_grammar, :String, :String,
-        levenshtein_aux, print_debug=false)
+    options = AulileOptions(synthOptions=SynthOptions(
+        evaluateOptions=EvaluateOptions(problem=problem, aux=levenshtein_aux)))
+    test_result = aulile(BFSIterator, simple_grammar, :String, :String, options)
     @test !(test_result.program isa Nothing)
     @test test_result.score == levenshtein_aux.best_value
     program = rulenode2expr(test_result.program, simple_grammar)
@@ -102,8 +104,10 @@ end
         IOExample(Dict(:x => "<978> 654-0299"), "9786540299"),
         IOExample(Dict(:x => "978.654.0299"), "9786540299")
     ])
-    test_result = aulile(problem, BFSIterator, simple_grammar, :String, :String,
-        levenshtein_aux, programs_per_iteration=2, max_depth=2, print_debug=false)
+    options = AulileOptions(synthOptions=SynthOptions(
+        evaluateOptions=EvaluateOptions(problem=problem, aux=levenshtein_aux),
+        num_returned_programs=2),max_depth=2)
+    test_result = aulile(BFSIterator, simple_grammar, :String, :String, options)
     @test !(test_result.program isa Nothing)
     @test test_result.score == levenshtein_aux.best_value
     program = rulenode2expr(test_result.program, simple_grammar)
