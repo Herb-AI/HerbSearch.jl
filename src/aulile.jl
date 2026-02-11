@@ -17,7 +17,8 @@ function aulile(
     grammar::AbstractGrammar,
     start_symbol::Symbol,
     new_rules_symbol::Symbol;
-    opts::AulileOptions=AulileOptions()
+    opts::AulileOptions=AulileOptions(),
+    compression::Function=default_compression
 )::AulileStats
     aux = opts.synth_opts.eval_opts.aux
     best_score = aux.initial_score(problem)
@@ -50,7 +51,8 @@ function aulile(
                 # Program is optimal
                 return AulileStats(best_program, best_score, i, total_enums)
             else
-                for j in 1:length(stats.programs)
+                compressed_programs = compression(stats.programs, grammar; k=opts.synth_opts.num_returned_programs)
+                for j in 1:length(compressed_programs)
                     program = stats.programs[j]
                     program_expr = rulenode2expr(program, grammar)
                     add_rule!(grammar, :($new_rules_symbol = $program_expr))
@@ -124,12 +126,14 @@ function synth_with_aux(
             opts=opts.eval_opts)
 
         if score == aux_bestval
+            # Optimal program
             candidate_program = freeze_state(candidate_program)
             if opts.print_debug
                 println("Found an optimal program!")
             end
             return SearchStats([candidate_program], iter_state, aux_bestval, loop_enums, time() - start_time)
         elseif score >= score_upper_bound
+            # Worse program that is not worth considering
             continue
         elseif length(best_programs) < opts.num_returned_programs || score < worst_score
             candidate_program = freeze_state(candidate_program)

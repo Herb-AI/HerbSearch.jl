@@ -20,13 +20,14 @@ end
 
     Holds statistics returned from the search process.
 
-    - `programs`::Vector{RuleNode}: Best programs found, sorted from best to worst.
+    - `programs`::AbstractVector{<:AbstractRuleNode}: Best programs found, sorted from best to worst.
     - `iter_state`: Iterator state after the search.
     - `score`::Number: Best score found.
     - `enumerations::Int`: The number of enumerations performed during the search.
+    - `time::Float64`: How long the search process took.
 """
 struct SearchStats
-    programs::Vector{RuleNode}
+    programs::AbstractVector{<:AbstractRuleNode}
     iter_state::Any
     score::Number
     enumerations::Int
@@ -45,6 +46,13 @@ function default_interpreter(program::Any, grammar::AbstractGrammar, example::IO
     return execute_on_input(symboltable, expr, example.in)
 end
 
+"""
+    Default compression function that serves as a noop.
+    This is used when no custom compression function is provided to aulile.
+"""
+function default_compression(programs::AbstractVector{<:AbstractRuleNode}, grammar::AbstractGrammar; kwargs...)
+    return programs
+end
 
 """
     Prints the new grammar rules added after a specific point in the grammar.

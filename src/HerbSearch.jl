@@ -120,5 +120,6 @@ export
     AulileStats,
     SearchStats,
     default_aux,
-    default_interpreter
+    default_interpreter,
+    default_compression
 end # module HerbSearch

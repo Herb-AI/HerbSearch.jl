@@ -2,7 +2,7 @@ module CompressionExt
 
 using DocStringExtensions
 using HerbCore
-using HerbGrammar 
+using HerbGrammar
 using HerbSearch
 using Clingo_jll
 
@@ -14,7 +14,7 @@ include("clingo_io.jl")
 # Arguments
 - `programs`: programs as ASTs from which the subtrees will be extracted.
 - `grammar`: grammar that will be extended with new rules
-- `k`: number of subprogtrams that will be extacted. default=1
+- `k`: number of subprogtrams that will be extracted. default=1
 - `max_compression_tokens`, def=10: maximum number of tokens (or nodes in ATSs) among the extracted subtrees. 
 - `time_limit_sec`, def=60: maximum amount of time the clingo model will run for. If optimal solution is not found, then the best solution found so far is returned.
 - `ASP_PATH`, def="compression.lp": path to the file wiht the Clingo model.
@@ -27,10 +27,10 @@ include("clingo_io.jl")
 function HerbSearch.compress_programs(
     programs::AbstractVector{<:AbstractRuleNode},
     grammar::AbstractGrammar;
-    k::Int = 1,
-    max_compression_nodes::Int = 10, 
-    time_limit_sec::Int = 60, 
-    ASP_PATH::String = "compression.lp")
+    k::Int=1,
+    max_compression_nodes::Int=10,
+    time_limit_sec::Int=60,
+    ASP_PATH::String="compression.lp")
 
     # Parse programs into a Clingo model
     model = parse_programs(programs)
@@ -52,12 +52,12 @@ function HerbSearch.compress_programs(
     command = `$(clingo()) $(model_location) - --outf=2 --time-limit=$time_limit_sec`
     output = IOBuffer()
     run(pipeline(ignorestatus(command), stdin=IOBuffer(model), stdout=output))
-    
+
     data = String(take!(output))
-    
+
     # Convert result into grammar rule
     _, _, best_values = read_last_witness_from_json(data)
-    
+
     # if no solution was found due to timeout or because theere are no subtree to be extracted, return the old grammar.
     if isnothing(best_values)
         return []
@@ -65,7 +65,7 @@ function HerbSearch.compress_programs(
 
     node_assignments::Vector{String} = best_values
     (comp_trees, node2rule) = parse_compressed_subtrees(node_assignments)
-    
+
     best_compressions = construct_subtrees(grammar, comp_trees, node2rule)
     new_rules = merge_nonbranching_elements.(best_compressions, (grammar,))
     return new_rules
@@ -79,12 +79,12 @@ Returns the maximum amount of children among the rules of the grammar.
 function _get_max_children(grammar::AbstractGrammar)::Int
     res = -1
     for i in eachindex(grammar.rules)
-        res = max(res, nchildren(grammar, i)) 
+        res = max(res, nchildren(grammar, i))
     end
     return res
 end
 
-export 
+export
     compress_programs
 
 end
