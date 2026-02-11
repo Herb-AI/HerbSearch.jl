@@ -1,6 +1,6 @@
 name = "HerbSearch"
 uuid = "3008d8e8-f9aa-438a-92ed-26e9c7b4829f"
-version = "1.0.1"
+version = "1.0.2"
 authors = ["Sebastijan Dumancic <s.dumancic@tudelft.nl>", "Jaap de Jong <J.deJong-18@student.tudelft.nl>", "Nicolae Filat <N.Filat@student.tudelft.nl>", "Piotr Cichoń <gitlab@gitlab.ewi.tudelft.nl>", "Tilman Hinnerichs <t.r.hinnerichs@tudelft.nl>"]
 
 [deps]
@@ -26,7 +26,7 @@ DivideAndConquerExt = "DecisionTree"
 DataStructures = "0.19"
 DecisionTree = "0.12"
 DocStringExtensions = "0.9"
-HerbConstraints = "1"
+HerbConstraints = "1.1"
 HerbCore = "1"
 HerbGrammar = "1"
 HerbInterpret = "1"
