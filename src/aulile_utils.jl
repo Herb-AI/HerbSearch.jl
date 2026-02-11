@@ -138,12 +138,14 @@ end
     - `max_iterations`: Maximum number of learning iterations to perform.
     - `max_depth`: Maximum depth for program enumeration.
     - `print_debug`: Whether to print debug info.
+    - `compression`: A compression function before adding newfound programs to the grammar
     - `synth_opts`: Options for synthesis.
 """
 Base.@kwdef struct AulileOptions
     max_iterations = 5
     max_depth = 10
     restart_iterator = true
+    compression::Function = default_compression
     synth_opts = SynthOptions()
 end
 

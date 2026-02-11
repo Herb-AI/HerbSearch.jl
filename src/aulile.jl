@@ -9,7 +9,7 @@
     - `new_rules_symbol`: A symbol used to add new rules to the grammar as library learning.
     - `opts`: A list of additional arguments
 
-    Returns an `AulileStats` struct with the best program found, its score, number of iterations and enumerations.
+    Returns an `AulileStats` struct with the best program found, its score, and aulile metrics.
 """
 function aulile(
     problem::Problem{<:AbstractVector{<:IOExample}},
@@ -17,8 +17,7 @@ function aulile(
     grammar::AbstractGrammar,
     start_symbol::Symbol,
     new_rules_symbol::Symbol;
-    opts::AulileOptions=AulileOptions(),
-    compression::Function=default_compression
+    opts::AulileOptions=AulileOptions()
 )::AulileStats
     aux = opts.synth_opts.eval_opts.aux
     best_score = aux.initial_score(problem)
@@ -51,7 +50,7 @@ function aulile(
                 # Program is optimal
                 return AulileStats(best_program, best_score, i, total_enums)
             else
-                compressed_programs = compression(stats.programs, grammar; k=opts.synth_opts.num_returned_programs)
+                compressed_programs = opts.compression(stats.programs, grammar; k=opts.synth_opts.num_returned_programs)
                 for j in 1:length(compressed_programs)
                     program = stats.programs[j]
                     program_expr = rulenode2expr(program, grammar)
@@ -89,7 +88,7 @@ end
     - `iter_state`: Optional iterator state to continue from.
 
     Returns a `SearchStats` object containing the best programs found (sorted best-first), 
-    the iterator state, the best score, and the number of enumerations.
+    the iterator state, and search metrics.
 """
 function synth_with_aux(
     problem::Problem{<:AbstractVector{<:IOExample}},
