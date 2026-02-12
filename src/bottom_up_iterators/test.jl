@@ -5,9 +5,9 @@ using HerbInterpret
 using HerbSearch
 using HerbSpecification
 
-using Profile, ProfileView
+# using Profile, ProfileView
 
-Profile.clear()
+# Profile.clear()
 
 function interp(program::AbstractRuleNode)
     if !isnothing(program._val)
@@ -32,7 +32,7 @@ end
 
 function heuristic_cost(program::AbstractRuleNode, children::Union{Vector{BeamEntry},Nothing})
     v = interp(program)
-    t = -100
+    t = 10000
     return abs(v - t)
 end
 
@@ -46,9 +46,9 @@ grammar = @cfgrammar begin
 end
 
 iterator = BeamIterator(grammar, :Int,
-    beam_size = 10,
+    beam_size = 30,
     program_to_cost = heuristic_cost,
-    max_extension_depth = 2,
+    max_extension_depth = 4,
     clear_beam_before_expansion = false,
     stop_expanding_beam_once_replaced = true,
     interpreter = interp,
@@ -59,7 +59,9 @@ for (i, entry) in enumerate(iterator)
     c = entry.cost
     @show i, c, p
 
-    if i == 1000
+    # @show [e.cost for e in iterator.beam.programs]
+
+    if i == 20000
         break
     end
 end

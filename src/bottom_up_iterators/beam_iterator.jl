@@ -11,15 +11,13 @@ abstract type AbstractBeamIterator <: ProgramIterator end
 An iterator that implements beam search. Given a heuristic cost function, beam seach works by maintaining a beam of the best N programs and expanding the beam sequentially.
 Each iteration this iterator perform the following:
 1. Return the next program from the beam that has not yet been returned
-2. If the whole beam has been iterated over, create new programs by expanding each program from the beam with every possible terminal
+2. If the whole beam has been iterated over, create new programs by expanding each program from the beam with every possible extension
 3. From the newly created programs, select the best N and replace the beam with these
 
-The central datastructure that makes this iterator work is a beam. Given heuristic cost function, a beam is a collection of program such that:
-- The beam size never exceeds a set amount of programs
-- When adding a program to a full beam, the lowest cost program according to the heuristic cost function is kept
-- Adding programs is O(1)
-- The beam may contains duplicate programs
-
+The central datastructure that makes this iterator work is a beam. A beam is a collection of program such that:
+- The beam never exceeds a certain size
+- When adding a program to a full beam, the highest cost program is removed
+- The beam never contains duplicates
 
 One can specify the following parameters:
 - `beam_size::Int=Inf`: the maximum amount of programs contained in the beam
@@ -36,7 +34,7 @@ One can specify the following parameters:
 Describes an entry in a [`beam`](@ref).
 Holds the program, its associated cost and whether this program has already been expanded.
 Extensions are also stored as BeamEntry's, but as they might not have the right type, a cost cannot always be computed, hence the Nothing type for the cost.
-Also caches the depth and size for easy, making computing these for combined programs efficient.
+Also caches the depth and size for easy computation of these for composite programs.
 """
 mutable struct BeamEntry
     program::AbstractRuleNode
@@ -46,107 +44,10 @@ mutable struct BeamEntry
     size::Int
 end
 
-"""
-    Base.isless(a::BeamEntry, b::BeamEntry)
-
-Compares two BeamEntry's based on their associated costs.
-"""
-Base.isless(a::BeamEntry, b::BeamEntry) = a.cost < b.cost
-
-"""
-    Base.:(==)(a::BeamEntry, b::BeamEntry)
-
-Returns whether two BeamEntries are equal.
-"""
-Base.:(==)(a::BeamEntry, b::BeamEntry) = a.cost == b.cost && a.depth == b.depth && a.size == b.size && a.program == b.program
-
 get_program(beam_entry::BeamEntry) = beam_entry.program
 HerbCore.depth(beam_entry::BeamEntry) = beam_entry.depth
 Base.size(beam_entry::BeamEntry) = beam_entry.size
 
-
-"""
-   struct Beam
-
-A beam that contains at most N programs, only keeping the best.
-One can push programs to a beam and this object ensures that the best N programs are kept.
-Note that on expansion programs can be created that already exist in the beam, making the beam not necissarily unique.
-
-This struct contains:
-- Beam size: the maximum number of programs in the beam
-- Heuristic cost function: given a program, computes its associated cost
-- Program heap: contains the program, ensuring that the highest cost can be obtained efficiently
-"""
-struct Beam
-    beam_size::Number
-    program_to_cost::Function
-    programs::Union{MutableBinaryMaxHeap{BeamEntry}}
-end
-
-"""
-    Beam(beam_size::Number, program_to_cost::Function)::Beam
-
-Creates a new empty beam given its size and heuristic cost function.
-"""
-Beam(beam_size::Number, program_to_cost::Function)::Beam = Beam(beam_size, program_to_cost, MutableBinaryMaxHeap{BeamEntry}())
-
-"""
-    clear!(beam::Beam)
-
-Resets the beam, removing all programs from it. 
-"""
-function clear!(beam::Beam)
-    beam.programs = MutableBinaryMaxHeap{BeamEntry}()
-    return nothing
-end
-
-"""
-    Base.push!(beam::Beam, beam_entry::BeamEntry)
-
-Adds a BeamEntry to the beam, ensuring that the beam size is not exceeded and only the best N programs are kept.
-"""
-function Base.push!(beam::Beam, beam_entry::BeamEntry)
-    # If the program heap is nothing, the beam has been concretized
-    # This ensures that no programs are pushed to a concretized beam
-    @assert !isnothing(beam.programs)
-
-    # If the beam has not been filled yet, add the program to the beam
-    if length(beam.programs) < beam.beam_size
-        push!(beam.programs, beam_entry)
-        return nothing
-    end
-
-    # Most programs we attempt to add to the beam have a higher cost than the worst
-    # Check this first to avoid costly dictionary lookups
-    if beam_entry.cost >= first(beam.programs).cost
-        return nothing
-    end
-
-    # Otherwise, pop the worst program and add the new one to the beam
-    pop!(beam.programs)
-    push!(beam.programs, beam_entry)
-
-    return nothing
-end
-
-"""
-    get_expandable_entries(beam::Beam)::Vector{BeamEntry}
-
-Returns all BeamEntry that have not been expanded yet.
-Avoid this computation as nuch as possible; it cannot be done efficiently.
-"""
-function get_expandable_entries(beam::Beam)::Vector{BeamEntry}
-    # Extract all entries from the heap
-    entries = extract_all!(beam.programs)
-
-    # Put them back in the heap
-    for entry in entries
-        push!(beam.programs, entry)
-    end
-    
-    # Return
-    return [e for e in entries if !e.has_been_expanded]
-end
 
 @programiterator BeamIterator(
     beam_size::Int=Inf,
@@ -156,9 +57,52 @@ end
     clear_beam_before_expansion::Bool=false,
     stop_expanding_beam_once_replaced::Bool=true,
     interpreter::Union{Function,Nothing}=nothing,
-    beam=Beam(beam_size, program_to_cost),
+    beam::Vector{BeamEntry}=BeamEntry[],
     extensions::Vector{BeamEntry}=BeamEntry[],
 ) <: AbstractBeamIterator
+
+
+highest_cost(iter::AbstractBeamIterator) = iter.beam[end].cost
+lowest_cost(iter::AbstractBeamIterator) = iter.beam[begin].cost
+
+"""
+    Base.push_to_beam!(iter::AbstractBeamIterator, beam_entry::BeamEntry)
+
+Adds a BeamEntry to the beam, ensuring that the beam size is not exceeded and only the best N programs are kept.
+"""
+function push_to_beam!(iter::AbstractBeamIterator, beam_entry::BeamEntry)
+    # If the beam is full and the new entry has a higher cost than the worst in the beam, we can abort
+    if length(iter.beam) >= iter.beam_size && beam_entry.cost >= highest_cost(iter)
+        return nothing
+    end
+
+    # Otherwise, add the program to the beam
+    # First, find the possible indices to add the new entry:
+    #  - The last index in the array that has a lower cost
+    #  - The first index in the array that has a higher cost
+    first_index = searchsortedfirst([e.cost for e in iter.beam], beam_entry.cost)
+    last_index = searchsortedlast([e.cost for e in iter.beam], beam_entry.cost)
+
+    # To avoid duplicates, we need to check each entry placed in this range and abort if the program is already present
+    # If the cost was not present yet, last_index > first_index
+    if first_index <= last_index
+        for i in first_index:last_index
+            if iter.beam[i].program == beam_entry.program
+                return nothing
+            end
+        end
+    end
+
+    # Otherwise, insert the new entry
+    insert!(iter.beam, first_index, beam_entry)
+
+    # If that exceeded the beam size, pop the worst entry
+    if length(iter.beam) > iter.beam_size
+        pop!(iter.beam)
+    end
+
+    return nothing
+end
 
 """
     initialize!(iter::AbstractBeamIterator)
@@ -195,7 +139,7 @@ function initialize!(iter::AbstractBeamIterator)
 
             # If it is a terminal with the correct output type, add it to the first beam
             if type == get_starting_symbol(iter.solver) && length(extension) == 1
-                push!(iter.beam, beam_entry)
+                push_to_beam!(iter, beam_entry)
             end
 
             # Always add it to the set of extensions
@@ -234,12 +178,12 @@ function combine!(iter::AbstractBeamIterator)
     is_well_typed = child_types -> (children -> child_types == get_return_type.(children))
 
     # Obtain the sorted programs from the beam and clear it for the new programs
-    old_beam = get_expandable_entries(iter.beam)
-    best_old_beam_cost = last(old_beam).cost
+    best_old_beam_cost = lowest_cost(iter)
+    old_beam = copy(iter.beam)
 
     # Clear the beam if specified
     if iter.clear_beam_before_expansion
-        clear!(iter.beam)
+        iter.beam = []
     end
 
     # Iterate over all programs in the beam and expand them
@@ -247,7 +191,7 @@ function combine!(iter::AbstractBeamIterator)
         # Optimization if enabled: once the whole beam has been replaced with new programs, terminate expansion
         # This is the case if the worst program in the new beam is better than the best in the old beam
         # Note that if `clear_beam_before_expansion`, the beam must be full before checking this
-        if iter.stop_expanding_beam_once_replaced && length(iter.beam.programs) == iter.beam_size && first(iter.beam.programs).cost < best_old_beam_cost
+        if iter.stop_expanding_beam_once_replaced && length(iter.beam) == iter.beam_size && lowest_cost(iter) < best_old_beam_cost
             break
         end
 
@@ -284,7 +228,7 @@ function combine!(iter::AbstractBeamIterator)
                         entry_size = sum(size.(children)) + 1
                         new_entry = BeamEntry(program, cost, false, entry_depth, entry_size)
 
-                        push!(iter.beam, new_entry)
+                        push_to_beam!(iter, new_entry)
                     end
                 end
             end
@@ -295,7 +239,7 @@ function combine!(iter::AbstractBeamIterator)
     end
 
     # Only return programs that have not been expanded yet, otherwise they are already iterated over
-    return get_expandable_entries(iter.beam)
+    return [entry for entry in copy(iter.beam) if !entry.has_been_expanded]
 end
 
 """
@@ -317,7 +261,7 @@ function Base.iterate(iter::AbstractBeamIterator)
 
     return Base.iterate(
         iter,
-        BeamState(get_expandable_entries(iter.beam))
+        BeamState(copy(iter.beam))
     )
 end
 
@@ -341,6 +285,6 @@ function Base.iterate(iter::AbstractBeamIterator, state::BeamState)
         return nothing
     end
     
-    # Pop the next program from the queue and return
-    return pop!(state.queue), state
+    # Pop the first program from the queue and return
+    return popfirst!(state.queue), state
 end
