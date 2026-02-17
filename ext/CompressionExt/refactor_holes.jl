@@ -66,7 +66,6 @@ function create_new_exprs(rule::Union{UniformHole, RuleNode}, g::AbstractGrammar
     if isprobabilistic(g)
         head_rule = :($(SMALL_COST) : $rule_type = $new_type)
     end
-    head_rule = :($(SMALL_COST) : $rule_type = $new_type) 
     new_expressions = [head_rule]
     for expr in splits
         if isprobabilistic(g)

@@ -63,7 +63,7 @@ function HerbSearch.compress_programs(
     if isnothing(best_values)
         return []
     end
-
+new_rules_symbol
     node_assignments::Vector{String} = best_values
     (comp_trees, node2rule) = parse_compressed_subtrees(node_assignments)
 
