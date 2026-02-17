@@ -112,7 +112,7 @@ default_aux = AuxFunction(
 Base.@kwdef struct EvaluateOptions
     aux::AuxFunction = default_aux
     interpret::Function = default_interpreter
-    allow_evaluation_errors = false
+    allow_evaluation_errors = true
 end
 
 """
