@@ -37,7 +37,7 @@ end
 
 Splits a rule node s.t. the resulting splits have no holes
 """
-function split_hole(hole::Union{UniformHole, RuleNode}, g)::Vector{AbstractRuleNode}
+function split_hole(hole::AbstractRuleNode, g::AbstractGrammar)::Vector{AbstractRuleNode}
     splits = _split_hole(hole, g)
     return splits
 end

@@ -19,6 +19,7 @@ function aulile(
     opts::AulileOptions=AulileOptions()
 )::AulileStats
     SMALL_COST = 1
+    VERY_SMALL_COST = 0.000001
     aux = opts.synth_opts.eval_opts.aux
     best_score = aux.initial_score(problem)
     if opts.synth_opts.print_debug
@@ -53,13 +54,22 @@ function aulile(
                 compressed_programs = opts.compression(stats.programs, grammar; k=opts.synth_opts.num_returned_programs)
                 # wrapped compression returns ::Vector{Vector{Expr}}. Each of those expressions needs to be added to the grammar.
                 # the 1st expresison in each list must have a small nonzero cost, other expressions must have a cost of 0.
-                for (i, new_rule) in enumerate(compressed_programs)
-                    expr = Expr(:(=), grammar.types[get_rule(new_rule)], rulenode2expr(new_rule, grammar))
-                    add_rule!(grammar, expr)
-                    new_rules_decoding[length(grammar.rules)] = new_rule
-                    grammar_size = length(grammar.rules)
-
-                    # TODO: assure that after restart each program uses ANY of the new rules
+                for new_rule in compressed_programs
+                    fixed_rules = split_hole(new_rule, grammar)
+                    for rule in fixed_rules
+                        rule_type = return_type(grammar, rule)
+                        new_expr = rulenode2expr(rule, grammar)
+                        to_add = :($rule_type = $(new_expr))
+                        if isprobabilistic(grammar)
+                            add_rule!(grammar, SMALL_COST, to_add)
+                        else
+                            add_rule!(grammar, to_add)
+                        end
+                        if length(grammar.rules) > grammar_size
+                            grammar_size = length(grammar.rules)
+                            new_rules_decoding[grammar_size] = rule                            
+                        end
+                    end
                 end
             end
             if opts.synth_opts.print_debug
