@@ -114,8 +114,12 @@ export
     aulile,
     synth_with_aux,
     AuxFunction,
-    SearchStats,
+    AulileOptions,
+    SynthOptions,
+    EvaluateOptions,
     AulileStats,
+    SearchStats,
     default_aux,
-    default_interpreter
+    default_interpreter,
+    default_compression
 end # module HerbSearch
