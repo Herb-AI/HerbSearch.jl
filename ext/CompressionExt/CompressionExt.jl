@@ -96,5 +96,5 @@ end
 export
     compress_programs,
     create_new_exprs, 
-    compress_to_expressions
+    split_hole
 end
