@@ -19,6 +19,7 @@ function aulile(
     new_rules_symbol::Symbol;
     opts::AulileOptions=AulileOptions()
 )::AulileStats
+    SMALL_COST = 1
     aux = opts.synth_opts.eval_opts.aux
     best_score = aux.initial_score(problem)
     if opts.synth_opts.print_debug
@@ -51,14 +52,14 @@ function aulile(
                 return AulileStats(best_program, best_score, i, total_enums)
             else
                 compressed_programs = opts.compression(stats.programs, grammar; k=opts.synth_opts.num_returned_programs)
-                for j in 1:length(compressed_programs)
-                    program = stats.programs[j]
-                    program_expr = rulenode2expr(program, grammar)
-                    add_rule!(grammar, :($new_rules_symbol = $program_expr))
+                # wrapped compression returns ::Vector{Vector{Expr}}. Each of those expressions needs to be added to the grammar.
+                # the 1st expresison in each list must have a small nonzero cost, other expressions must have a cost of 0.
+                for (i, new_rule) in enumerate(compressed_programs)
+                    add_rule!(grammar, new_rule)
+                    new_rules_decoding[length(grammar)] = expr2rulenode(grammar.rules[length(grammar)], grammar)
                     if length(grammar.rules) > grammar_size
-                        grammar_size = length(grammar.rules)
-                        new_rules_decoding[grammar_size] = deepcopy(program)
                     end
+                    grammar_size = length(grammar.rules)
                 end
             end
             if opts.synth_opts.print_debug
