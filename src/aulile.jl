@@ -162,7 +162,7 @@ end
 """
 function evaluate_with_aux(
     problem::Problem{<:AbstractVector{<:IOExample}},
-    program::Any,
+    program::AbstractRuleNode,
     grammar::AbstractGrammar,
     new_rules_decoding::Dict{Int,AbstractRuleNode};
     opts::EvaluateOptions=EvaluateOptions()
@@ -179,7 +179,7 @@ function evaluate_with_aux(
             # for example by just increasing the error value and keeping the program as a candidate.
             crashed = true
             # Throw the error again if evaluation errors aren't allowed
-            eval_error = EvaluationError(expr, example.in, e)
+            eval_error = EvaluationError(rulenode2expr(program, grammar), example.in, e)
             allow_evaluation_errors || throw(eval_error)
             break
         end
