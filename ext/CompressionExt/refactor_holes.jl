@@ -1,5 +1,7 @@
 using DocStringExtensions
 
+SMALL_COST = 1
+VERY_SMALL_COST = 0.0001
 function _needs_splitting(hole::UniformHole, g)
     !isempty(hole.children) && return true
     hole_type = g.types[findfirst(==(1), hole.domain)]
@@ -47,18 +49,31 @@ New_type = ...
 
 The *Main_Rule* is the 1st element of the returned rules.
 """
-function create_new_exprs(rule::Union{UniformHole, RuleNode}, g, iter_id::Int, rule_num::Int)
+function create_new_exprs(rule::Union{UniformHole, RuleNode}, g::AbstractGrammar, id::Int)
+    isprobabilistic(g) || @warn "The grammar is not probabilistic."
     splits = split_hole(rule, g)
     rule_type = return_type(g, rule)
-    if length(splits) == 1 
-        return [:($rule_type = $(only(splits)))]
+    if length(splits) == 1
+        if isprobabilistic(g)
+            return [:($(SMALL_COST) : $rule_type = $(only(splits)))]
+        else 
+            return [:($rule_type = $(only(splits)))]
+        end
     end
-    
-    new_type = Symbol("_Rule_$(iter_id)_$(rule_num)")
+    g_length = length(g.rules)
+    new_type = Symbol("_Rule_$(g_length+1)_$(id)")
     head_rule = :($rule_type = $new_type) 
+    if isprobabilistic(g)
+        head_rule = :($(SMALL_COST) : $rule_type = $new_type)
+    end
+    head_rule = :($(SMALL_COST) : $rule_type = $new_type) 
     new_expressions = [head_rule]
     for expr in splits
-        push!(new_expressions, :($new_type = $expr))
+        if isprobabilistic(g)
+            push!(new_expressions, :($VERY_SMALL_COST : $new_type = $expr))
+        else
+            push!(new_expressions, :($new_type = $expr))
+        end
     end
     return new_expressions
 end

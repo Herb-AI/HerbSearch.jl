@@ -72,6 +72,14 @@ function HerbSearch.compress_programs(
     return new_rules
 end
 
+function HerbSearch.compress_to_expressions(
+    programs::AbstractVector{<:AbstractRuleNode},
+    grammar::AbstractGrammar; 
+    kwargs...)::Vector{Expr}
+    new_rules = HerbSearch.compress_programs(programs, grammar; kwargs...)
+    return vcat([create_new_exprs(nr, grammar, i) for (i, nr) in enumerate(new_rules)]...)
+end
+
 """
     $(TYPEDSIGNATURES)
 
@@ -87,5 +95,6 @@ end
 
 export
     compress_programs,
-    create_new_exprs
+    create_new_exprs, 
+    compress_to_expressions
 end

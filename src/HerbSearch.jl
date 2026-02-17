@@ -55,6 +55,7 @@ include("bottom_up_iterators/shapebased_bus.jl")
 
 function divide_and_conquer end
 function compress_programs end
+function compress_to_expressions end
 
 export
     ProgramIterator,

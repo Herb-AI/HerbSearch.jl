@@ -40,13 +40,13 @@ end
 @testset "make_new_rules" begin
     @testset "leave same" begin
         no_holes = RuleNode(4, [RuleNode(1), RuleNode(2)])
-        new_exprs = create_new_exprs(no_holes, grammar, 1, 1)
+        new_exprs = create_new_exprs(no_holes, grammar, 1)
         @test only(new_exprs) == :(Op = 1 + 2)
     end
 
     @testset "operation hole" begin
         hole_rule = UniformHole([0, 0, 0, 1, 1], [RuleNode(1), RuleNode(2)])
-        new_exprs = create_new_exprs(hole_rule, grammar, 1, 1)
+        new_exprs = create_new_exprs(hole_rule, grammar, 1)
         @test length(new_exprs) == 3
         @test new_exprs[1] == :(Op = _Rule_1_1)
         @test new_exprs[2] == :(_Rule_1_1 = 1 + 2)
