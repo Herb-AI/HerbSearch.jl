@@ -180,7 +180,7 @@ function evaluate_with_aux(
             crashed = true
             # Throw the error again if evaluation errors aren't allowed
             eval_error = EvaluationError(rulenode2expr(program, grammar), example.in, e)
-            allow_evaluation_errors || throw(eval_error)
+            opts.allow_evaluation_errors || throw(eval_error)
             break
         end
     end
