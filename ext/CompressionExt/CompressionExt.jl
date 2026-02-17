@@ -7,6 +7,7 @@ using HerbSearch
 using Clingo_jll
 
 include("clingo_io.jl")
+include("refactor_holes.jl")
 
 """
     $(TYPEDSIGNATURES)
@@ -85,6 +86,6 @@ function _get_max_children(grammar::AbstractGrammar)::Int
 end
 
 export
-    compress_programs
-
+    compress_programs,
+    create_new_exprs
 end
