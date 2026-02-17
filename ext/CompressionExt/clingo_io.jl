@@ -215,7 +215,7 @@ function _construct_rule(comp_tree::TreeNode, grammar::AbstractGrammar, node2rul
     for i in eachindex(child_types)
         if !(i in keys(comp_tree.children))
             # child is NOT in the compressed AST, make a hole
-            hole = Hole(get_domain(grammar, grammar.bytype[child_types[i]]))
+            hole = UniformHole(get_domain(grammar, grammar.bytype[child_types[i]]))
             push!(children, 
             hole)
         else
