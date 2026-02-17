@@ -57,6 +57,7 @@ Base.size(beam_entry::BeamEntry) = beam_entry.size
     clear_beam_before_expansion::Bool=false,
     stop_expanding_beam_once_replaced::Bool=true,
     interpreter::Union{Function,Nothing}=nothing,
+    observation_equivalance::Bool=false,
     beam::Vector{BeamEntry}=BeamEntry[],
     extensions::Vector{BeamEntry}=BeamEntry[],
 ) <: AbstractBeamIterator
@@ -83,11 +84,17 @@ function push_to_beam!(iter::AbstractBeamIterator, beam_entry::BeamEntry)
     first_index = searchsortedfirst([e.cost for e in iter.beam], beam_entry.cost)
     last_index = searchsortedlast([e.cost for e in iter.beam], beam_entry.cost)
 
-    # To avoid duplicates, we need to check each entry placed in this range and abort if the program is already present
+    # To avoid duplicates or observational equivalance, we need to check each entry placed in this range and abort if the program or outputs are already present
     # If the cost was not present yet, last_index > first_index
     if first_index <= last_index
         for i in first_index:last_index
+            # Check if the programs are equal
             if iter.beam[i].program == beam_entry.program
+                return nothing
+            end
+
+            # Check if the outputs are equal
+            if !isnothing(iter.interpreter) && iter.observation_equivalance && iter.beam[i].program._val == beam_entry.program._val
                 return nothing
             end
         end
@@ -110,7 +117,10 @@ end
 Initializes the iterator by creating all extensions and setting the first beam.
 """
 function initialize!(iter::AbstractBeamIterator)
-    grammar = get_grammar(iter.solver)
+    # Copy the grammar to clear constraints
+    original_grammar = get_grammar(iter.solver)
+    grammar = deepcopy(original_grammar)
+    clearconstraints!(grammar)
 
     # Iterate over all grammar types
     for type in unique(grammar.types)
@@ -137,8 +147,8 @@ function initialize!(iter::AbstractBeamIterator)
 
             beam_entry = BeamEntry(extension, cost, false, depth(extension), length(extension))
 
-            # If it is a terminal with the correct output type, add it to the first beam
-            if type == get_starting_symbol(iter.solver) && length(extension) == 1
+            # If it is a terminal with the correct output type and feasible with the original grammar constraints, add it to the first beam
+            if type == get_starting_symbol(iter.solver) && length(extension) == 1 && isfeasible(UniformSolver(original_grammar, extension))
                 push_to_beam!(iter, beam_entry)
             end
 
@@ -218,6 +228,11 @@ function combine!(iter::AbstractBeamIterator)
                         children = collect(child_tuple)
                         program = RuleNode(rule_idx, get_program.(children))
 
+                        # Check if the program is feasible with the constraints
+                        if !isfeasible(UniformSolver(grammar, program))
+                            continue
+                        end
+
                         # If an interpreter is defined, set the _val of the rulenode
                         if !isnothing(iter.interpreter)
                             program._val = iter.interpreter(program)
@@ -277,6 +292,7 @@ function Base.iterate(iter::AbstractBeamIterator, state::BeamState)
     # If the current queue is drained, new programs must be created
     if isempty(state.queue)
         # If so, expand the current beam and reset the pointer
+        println("\n-=-=-=-=-=-=-=-=-=-=-=-\n New Beam \n-=-=-=-=-=-=-=-=-=-=-=-\n")
         state.queue = combine!(iter)
     end
 

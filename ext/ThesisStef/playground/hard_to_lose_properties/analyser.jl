@@ -76,6 +76,48 @@ function score_properties(;
     return property_scores
 end
 
+function score_property_extension_pairs(;
+    program_grammar,
+    program_starting_symbol,
+    max_program_depth,
+    property_grammar,
+    property_starting_symbol,
+    max_property_depth,
+    max_extension_depth,
+)
+    scores = DefaultDict(() -> [0.0, 0.0])
+    programs = collect(BFSIterator(program_grammar, program_starting_symbol, max_depth=max_program_depth))
+    properties = create_properties(property_grammar, property_starting_symbol, max_property_depth)
+    extensions = create_extensions(program_grammar, program_starting_symbol, max_extension_depth)
+
+    @show length(programs)
+    @show length(properties)
+    @show length(extensions)
+
+    for program in programs
+        program_output = interp(program, Dict())
+        
+        for property in properties
+            property_value_program = interp(property, Dict(:_arg_1 => program_output))
+
+            for extension in extensions
+                extended_program_output = interp(extension(program), Dict())
+                property_value_extended_program = interp(property, Dict(:_arg_1 => extended_program_output))
+
+                if !property_value_program && property_value_extended_program
+                    scores[(property, extension)][1] += 1 / length(programs)
+                end
+
+                if property_value_program && !property_value_extended_program
+                    scores[(property, extension)][2] += 1 / length(programs)
+                end
+            end
+        end
+    end
+    
+    return scores
+end
+
 function show_scored_properties(property_scores)
     sorted_property_scores = sort(collect(property_scores), by = last, rev = true)
 
@@ -86,5 +128,28 @@ function show_scored_properties(property_scores)
         println("")
         @show e
         @show s
+    end
+end
+
+function show_scored_property_extension_pairs(property_extension_scores, grammar, starting_symbol)
+    sorted_property_scores = sort(collect(property_extension_scores), by = x -> last(x)[1] - last(x)[2], rev = false)
+
+    for ((property, extension), ns) in sorted_property_scores
+        n01 = ns[1]
+        n10 = ns[2]
+        if abs(n01 - n10) < 0.5
+            continue
+        end
+
+        hole = Hole([t == starting_symbol for t in grammar.types])
+        
+        p = rulenode2expr(property, grammar)
+        e = rulenode2expr(extension(hole), grammar)
+
+        println("")
+        @show p
+        @show e
+        @show n01
+        @show n10
     end
 end

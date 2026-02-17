@@ -42,14 +42,26 @@ interp = (rulenode, args) -> begin
     end
 end
 
-property_scores = score_properties(;
+# property_scores = score_properties(;
+#     program_grammar = int_grammar,
+#     program_starting_symbol = :Int,
+#     max_program_depth = 2,
+#     property_grammar = prop_grammar,
+#     property_starting_symbol = :Bool,
+#     max_property_depth = 2,
+#     max_extension_depth = 2,
+# )
+
+# show_scored_properties(property_scores)
+
+scores = score_property_extension_pairs(;
     program_grammar = int_grammar,
     program_starting_symbol = :Int,
     max_program_depth = 2,
     property_grammar = prop_grammar,
     property_starting_symbol = :Bool,
     max_property_depth = 2,
-    max_extension_depth = 2,
+    max_extension_depth = 1,
 )
 
-show_scored_properties(property_scores)
+show_scored_property_extension_pairs(scores, prop_grammar, :Int)
