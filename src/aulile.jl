@@ -15,8 +15,7 @@ function aulile(
     problem::Problem{<:AbstractVector{<:IOExample}},
     iter_t::Type{<:ProgramIterator},
     grammar::AbstractGrammar,
-    start_symbol::Symbol,
-    new_rules_symbol::Symbol;
+    start_symbol::Symbol;
     opts::AulileOptions=AulileOptions()
 )::AulileStats
     SMALL_COST = 1
