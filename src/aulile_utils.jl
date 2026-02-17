@@ -51,11 +51,7 @@ end
     This is used when no custom compression function is provided to aulile.
 """
 function default_compression(programs::AbstractVector{<:AbstractRuleNode}, grammar::AbstractGrammar; kwargs...)
-    # For a lot of complicated reasons that I will not explain here, the compression function needs to return a list
-    # of tuples containing for each rule the type (left hand side) as a symbol and the expression (right hand side)
-    # as a rulenode.
-
-    return [(grammar.types[get_rule(program)], program) for program in programs]
+    return programs
 end
 
 """
