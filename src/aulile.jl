@@ -55,6 +55,7 @@ function aulile(
                 # the 1st expresison in each list must have a small nonzero cost, other expressions must have a cost of 0.
                 for (i, new_rule) in enumerate(compressed_programs)
                     add_rule!(grammar, new_rule)
+                    @show grammar.rules[end]
                     new_rules_decoding[length(grammar.rules)] = expr2rulenode(grammar.rules[end], grammar)
                     grammar_size = length(grammar.rules)
                 end
