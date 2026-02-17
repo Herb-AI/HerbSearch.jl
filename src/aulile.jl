@@ -54,9 +54,10 @@ function aulile(
                 # wrapped compression returns ::Vector{Vector{Expr}}. Each of those expressions needs to be added to the grammar.
                 # the 1st expresison in each list must have a small nonzero cost, other expressions must have a cost of 0.
                 for (i, new_rule) in enumerate(compressed_programs)
-                    add_rule!(grammar, new_rule)
+                    expr = Expr(:(=), grammar.types[get_rule(new_rule)], rulenode2expr(new_rule, grammar))
+                    add_rule!(grammar, expr)
                     @show grammar.rules[end]
-                    new_rules_decoding[length(grammar.rules)] = expr2rulenode(grammar.rules[end], grammar)
+                    new_rules_decoding[length(grammar.rules)] = new_rule
                     grammar_size = length(grammar.rules)
                 end
             end
