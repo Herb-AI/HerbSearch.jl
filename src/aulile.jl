@@ -55,7 +55,7 @@ function aulile(
                 # wrapped compression returns ::Vector{Vector{Expr}}. Each of those expressions needs to be added to the grammar.
                 # the 1st expresison in each list must have a small nonzero cost, other expressions must have a cost of 0.
                 for new_rule in compressed_programs
-                    fixed_rules = split_hole(new_rule, grammar)
+                    fixed_rules = CompressionExt.split_hole(new_rule, grammar)
                     for rule in fixed_rules
                         rule_type = return_type(grammar, rule)
                         new_expr = rulenode2expr(rule, grammar)
