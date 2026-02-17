@@ -48,9 +48,9 @@ end
         hole_rule = UniformHole([0, 0, 0, 1, 1], [RuleNode(1), RuleNode(2)])
         new_exprs = create_new_exprs(hole_rule, grammar, 1)
         @test length(new_exprs) == 3
-        @test new_exprs[1] == :(Op = _Rule_1_1)
-        @test new_exprs[2] == :(_Rule_1_1 = 1 + 2)
-        @test new_exprs[3] == :(_Rule_1_1 = 1 - 2)
+        @test new_exprs[1] == :(Op = _Rule_6_1)
+        @test new_exprs[2] == :(_Rule_6_1 = 1 + 2)
+        @test new_exprs[3] == :(_Rule_6_1 = 1 - 2)
     end
 
 end
