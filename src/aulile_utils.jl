@@ -51,7 +51,9 @@ end
     This is used when no custom compression function is provided to aulile.
 """
 function default_compression(programs::AbstractVector{<:AbstractRuleNode}, grammar::AbstractGrammar; kwargs...)
-    return programs
+    to_expr(program) = Expr(:(=), grammar.types[get_rule(program)], rulenode2expr(programs, grammar))
+
+    return [to_expr(p) for p in programs]
 end
 
 """
