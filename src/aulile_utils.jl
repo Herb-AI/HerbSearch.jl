@@ -55,7 +55,7 @@ function default_compression(programs::AbstractVector{<:AbstractRuleNode}, gramm
     # of tuples containing for each rule the type (left hand side) as a symbol and the expression (right hand side)
     # as a rulenode.
 
-    return [(grammar.types[get_rule(new_rule)], program) for program in programs]
+    return [(grammar.types[get_rule(program)], program) for program in programs]
 end
 
 """
