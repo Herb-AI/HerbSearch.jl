@@ -1,6 +1,6 @@
 using HerbCore, HerbGrammar, HerbSearch, HerbBenchmarks, HerbConstraints
 
-include("string_functions.jl")
+include("../string_functions.jl")
 
 benchmark = HerbBenchmarks.PBE_SLIA_Track_2019
 problem = benchmark.problem_name_combine_2

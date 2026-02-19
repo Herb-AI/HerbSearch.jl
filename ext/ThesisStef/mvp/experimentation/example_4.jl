@@ -1,6 +1,6 @@
 using HerbCore, HerbGrammar, HerbSearch, HerbBenchmarks, HerbConstraints
 
-include("string_functions.jl")
+include("../string_functions.jl")
 
 benchmark = HerbBenchmarks.PBE_SLIA_Track_2019
 problem = benchmark.problem_clean_and_reformat_telephone_numbers
@@ -21,24 +21,20 @@ addconstraint!(grammar, Contains(2))
 =#
 
 properties = [
+    (1, (x, y) -> length(y) < length(x[:_arg_1])),
+    (1, (x, y) -> length(y) > 1),
+    (1, (x, y) -> length(y) > 2),
     (1, (x, y) -> !occursin("-", y)),
     (1, (x, y) -> !occursin("<", y)),
     (1, (x, y) -> !occursin(">", y)),
     (1, (x, y) -> !occursin(" ", y)),
     (1, (x, y) -> !occursin(".", y)),
     (1, (x, y) -> !occursin(",", y)),
-    (1, (x, y) -> length(y) >= 10),
-    (1, (x, y) -> length(y) < length(x[:_arg_1]) - 1),
-    # (1, (x, y) -> count(==('0'), y) == count(==('0'), x[:_arg_1])),
-    # (1, (x, y) -> count(==('1'), y) == count(==('1'), x[:_arg_1])),
-    # (1, (x, y) -> count(==('2'), y) == count(==('2'), x[:_arg_1])),
-    # (1, (x, y) -> count(==('3'), y) == count(==('3'), x[:_arg_1])),
-    # (1, (x, y) -> count(==('4'), y) == count(==('4'), x[:_arg_1])),
-    # (1, (x, y) -> count(==('5'), y) == count(==('5'), x[:_arg_1])),
-    # (1, (x, y) -> count(==('6'), y) == count(==('6'), x[:_arg_1])),
-    # (1, (x, y) -> count(==('7'), y) == count(==('7'), x[:_arg_1])),
-    # (1, (x, y) -> count(==('8'), y) == count(==('8'), x[:_arg_1])),
-    # (1, (x, y) -> count(==('9'), y) == count(==('9'), x[:_arg_1])),
+    (1, (x, y) -> length(y) <= length(x[:_arg_1]) - 2),
+    (1, (x, y) -> length(y) > 6),
+    # (1, (x, y) -> length(y) >= length(x[:_arg_1]) - 4),
+    # (1, (x, y) -> length(y) >= 1 ? y[1] != '0' : false),
+    # (1, (x, y) -> length(y) >= 1 ? y[1] != '1' : false),
 ]
 
 #=
@@ -68,6 +64,8 @@ function compute_priors()
     @show counts / n
 end
 
+# compute_priors()
+
 function heuristic(rulenode, child_values)
     outputs = rulenode._val
 
@@ -77,7 +75,7 @@ function heuristic(rulenode, child_values)
             return Inf
         end
 
-        diff = [w for (w, p) in properties if p(input, output) != p(input, target_output)]
+        diff = [p(input, output) == p(input, target_output) ? 0 : w for (w, p) in properties]
         cost += sum(diff)
     end
 
@@ -88,21 +86,20 @@ function search()
     iterator = BeamIterator(grammar, :ntString,
         beam_size = 10,
         program_to_cost = heuristic,
-        max_extension_depth = 1,
-        max_extension_size = 1,
+        max_extension_depth = 2,
+        max_extension_size = 2,
         clear_beam_before_expansion = false,
         stop_expanding_beam_once_replaced = true,
         interpreter = interpreter,
         observation_equivalance = true,
     )
 
-    counts = fill(0, length(properties))
-    n = 0
+    counter_examples = []
 
     for (i, entry) in enumerate(iterator)
         p = rulenode2expr(entry.program, grammar)
         c = entry.cost
-        o = entry.program._val#[1]
+        o = entry.program._val[1]
 
         println()
         @show i
@@ -110,14 +107,13 @@ function search()
         @show c
         @show o
 
-        for (input, output) in zip(inputs, o)
-            n += 1
-            counts += [p(input, output) for (w, p) in properties]
-        end
-
         if entry.program._val == target_outputs
             println("\nSolution found!")
-            break
+            return
+        end
+
+        if c == 0
+            push!(counter_examples, entry.program._val)
         end
 
         if i == 100
@@ -125,9 +121,11 @@ function search()
         end
     end
 
-    @show (counts / n)
-    return nothing
+    for entry in iterator.beam
+        c = entry.cost
+        o = entry.program._val
+        @show c, o
+    end
 end
 
-# compute_priors()
 search()

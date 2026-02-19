@@ -1,6 +1,6 @@
 using HerbCore, HerbGrammar, HerbSearch, HerbBenchmarks, HerbConstraints
 
-include("string_functions.jl")
+include("../string_functions.jl")
 
 benchmark = HerbBenchmarks.PBE_SLIA_Track_2019
 problem = benchmark.problem_phone_9_short
@@ -19,10 +19,10 @@ addconstraint!(grammar, Contains(2))
 
 =#
 properties = [
-    (1, (x, y) -> length(y) >= 1 ? y[1] != "+" : false),
-    (1, (x, y) -> length(y) >= 1 ? y[1] != x[:_arg_1][2] : false),
-    (1, (x, y) -> count(==('.'), y) > 1 ),
-    (1, (x, y) -> length(y) < 20),
+    (1, (x, y) -> true),
+    (1, (x, y) -> length(y) >= 1 ? y[1] == x[:_arg_1][2] : false),
+    (1, (x, y) -> !occursin(" ", y)),
+    (1, (x, y) -> length(y) > 3),
 ]
 
 function compute_priors()
@@ -45,8 +45,6 @@ function compute_priors()
     @show counts / n
 end
 
-# compute_priors()
-
 function heuristic(rulenode, child_values)
     outputs = rulenode._val
 
@@ -56,41 +54,45 @@ function heuristic(rulenode, child_values)
             return Inf
         end
 
-        diff = [w for (w, p) in properties if p(input, output) != p(input, target_output)]
+        diff = [p(input, output) == p(input, target_output) ? 0 : w for (w, p) in properties]
         cost += sum(diff)
     end
 
     return cost
 end
 
-iterator = BeamIterator(grammar, :ntString,
-    beam_size = 10,
-    program_to_cost = heuristic,
-    max_extension_depth = 2,
-    max_extension_size = 2,
-    clear_beam_before_expansion = false,
-    stop_expanding_beam_once_replaced = true,
-    interpreter = interpreter,
-    observation_equivalance = true,
-)
+function search()
+    iterator = BeamIterator(grammar, :ntString,
+        beam_size = 10,
+        program_to_cost = heuristic,
+        max_extension_depth = 2,
+        max_extension_size = 2,
+        clear_beam_before_expansion = false,
+        stop_expanding_beam_once_replaced = true,
+        interpreter = interpreter,
+        observation_equivalance = true,
+    )
 
-for (i, entry) in enumerate(iterator)
-    p = rulenode2expr(entry.program, grammar)
-    c = entry.cost
-    o = entry.program._val[1]
+    for (i, entry) in enumerate(iterator)
+        p = rulenode2expr(entry.program, grammar)
+        c = entry.cost
+        o = entry.program._val[1]
 
-    println()
-    @show i
-    @show p
-    @show c
-    @show o
+        println()
+        @show i
+        @show p
+        @show c
+        @show o
 
-    if entry.program._val == target_outputs
-        println("\nSolution found!")
-        break
-    end
+        if entry.program._val == target_outputs
+            println("\nSolution found!")
+            break
+        end
 
-    if i == 100
-        break
+        if i == 100
+            break
+        end
     end
 end
+
+search()

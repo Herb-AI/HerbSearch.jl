@@ -1,12 +1,12 @@
 using HerbCore, HerbGrammar, HerbSearch, HerbBenchmarks, HerbConstraints
 
-include("string_functions.jl")
+include("../string_functions.jl")
 
 benchmark = HerbBenchmarks.PBE_SLIA_Track_2019
-problem = benchmark.problem_name_combine_2
+problem = benchmark.problem_phone_1_short
 inputs = [io.in for io in problem.spec]
 target_outputs = [io.out for io in problem.spec]
-grammar = benchmark.grammar_name_combine_2
+grammar = benchmark.grammar_phone_1_short
 grammar_tags = benchmark.get_relevant_tags(grammar)
 interpreter = p -> [interpret_sygus(p, grammar_tags, input) for input in inputs]
 
@@ -14,15 +14,15 @@ addconstraint!(grammar, Contains(2))
 
 #=
 
-(Nancy, FreeHafer)    ->    Nancy F.
+938-242-504    ->    242
 
 =#
 properties = [
-    (1, (x, y) -> occursin(" ", y)),
-    (1, (x, y) -> endswith(y, ".")),
-    (1, (x, y) -> startswith(y, x[:_arg_1])),
-    (1, (x, y) -> occursin(x[:_arg_2][1], y)),
-    (1, (x, y) -> length(y) == length(x[:_arg_1]) + 3),
+    (1, (x, y) -> !occursin("-", y)),
+    (1, (x, y) -> length(y) == 3),
+    (1, (x, y) -> length(y) >= 1 ? y[1] == x[:_arg_1][5] : false),
+    (1, (x, y) -> length(y) >= 2 ? y[2] == x[:_arg_1][6] : false),
+    (1, (x, y) -> length(y) >= 3 ? y[3] == x[:_arg_1][7] : false),
 ]
 
 function compute_priors()
@@ -67,7 +67,7 @@ iterator = BeamIterator(grammar, :ntString,
     beam_size = 10,
     program_to_cost = heuristic,
     max_extension_depth = 2,
-    max_extension_size = 3,
+    max_extension_size = 2,
     clear_beam_before_expansion = false,
     stop_expanding_beam_once_replaced = true,
     interpreter = interpreter,

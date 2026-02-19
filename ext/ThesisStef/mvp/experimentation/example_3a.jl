@@ -1,12 +1,12 @@
 using HerbCore, HerbGrammar, HerbSearch, HerbBenchmarks, HerbConstraints
 
-include("string_functions.jl")
+include("../string_functions.jl")
 
 benchmark = HerbBenchmarks.PBE_SLIA_Track_2019
-problem = benchmark.problem_phone_9_short
+problem = benchmark.problem_name_combine_2
 inputs = [io.in for io in problem.spec]
 target_outputs = [io.out for io in problem.spec]
-grammar = benchmark.grammar_phone_9_short
+grammar = benchmark.grammar_name_combine_2
 grammar_tags = benchmark.get_relevant_tags(grammar)
 interpreter = p -> [interpret_sygus(p, grammar_tags, input) for input in inputs]
 
@@ -14,44 +14,15 @@ addconstraint!(grammar, Contains(2))
 
 #=
 
-+106 769-858-438    ->    106.769.858.438
-+6 775-969-238      ->    6.775.969.238
+(Nancy, FreeHafer)    ->    Nancy F.
 
 =#
 properties = [
-    (1, (x, y) -> !occursin("+", y)),
-    (1, (x, y) -> occursin(".", y)),
-    (1, (x, y) -> !occursin(" ", y)),
-    (1, (x, y) -> !occursin("-", y)),
-    (1, (x, y) -> length(y) > 0 ? y[1] == x[:_arg_1][2] : false),
-    (1, (x, y) -> length(y) < length(x[:_arg_1])),
-    (1, (x, y) -> length(y) >= 13),
-    (1, (x, y) -> occursin(" ", y)),
-    (1, (x, y) -> occursin(".", y)),
-    (1, (x, y) -> occursin(x[:_arg_1], y)),
-    (1, (x, y) -> length(y) >= length(x[:_arg_1])),
     (1, (x, y) -> occursin(" ", y)),
     (1, (x, y) -> endswith(y, ".")),
     (1, (x, y) -> startswith(y, x[:_arg_1])),
+    (1, (x, y) -> occursin(x[:_arg_2][1], y)),
     (1, (x, y) -> length(y) == length(x[:_arg_1]) + 3),
-    (1, (x, y) -> !occursin("-", y)),
-    (1, (x, y) -> length(y) >= 1),
-    (1, (x, y) -> length(y) <= 9),
-    (1, (x, y) -> length(y) % 2 == 1),
-    (1, (x, y) -> length(y) >= 1 ? y[1] != x[:_arg_1][1] : false),
-    (1, (x, y) -> length(y) >= 2 ? y[2] != x[:_arg_1][2] : false),
-    (1, (x, y) -> length(y) >= 3 ? y[3] != x[:_arg_1][3] : false),
-    (1, (x, y) -> length(y) >= 1 ? y[1] != "+" : false),
-    (1, (x, y) -> length(y) >= 1 ? y[1] != x[:_arg_1][2] : false),
-    (1, (x, y) -> count(==('.'), y) > 1 ),
-    (1, (x, y) -> length(y) < 20),
-    (1, (x, y) -> !occursin("+", y)),
-    (1, (x, y) -> occursin(".", y)),
-    (1, (x, y) -> !occursin(" ", y)),
-    (1, (x, y) -> !occursin("-", y)),
-    (1, (x, y) -> length(y) > 0 ? y[1] == x[:_arg_1][2] : false),
-    (1, (x, y) -> length(y) < length(x[:_arg_1])),
-    (1, (x, y) -> length(y) >= 13)
 ]
 
 function compute_priors()
@@ -96,7 +67,7 @@ iterator = BeamIterator(grammar, :ntString,
     beam_size = 10,
     program_to_cost = heuristic,
     max_extension_depth = 2,
-    max_extension_size = 2,
+    max_extension_size = 3,
     clear_beam_before_expansion = false,
     stop_expanding_beam_once_replaced = true,
     interpreter = interpreter,

@@ -148,7 +148,7 @@ function initialize!(iter::AbstractBeamIterator)
             beam_entry = BeamEntry(extension, cost, false, depth(extension), length(extension))
 
             # If it is a terminal with the correct output type and feasible with the original grammar constraints, add it to the first beam
-            if type == get_starting_symbol(iter.solver) && length(extension) == 1 && isfeasible(UniformSolver(original_grammar, extension))
+            if type == get_starting_symbol(iter.solver) && isfeasible(UniformSolver(original_grammar, extension))## && length(extension) == 1
                 push_to_beam!(iter, beam_entry)
             end
 
@@ -292,7 +292,6 @@ function Base.iterate(iter::AbstractBeamIterator, state::BeamState)
     # If the current queue is drained, new programs must be created
     if isempty(state.queue)
         # If so, expand the current beam and reset the pointer
-        println("\n-=-=-=-=-=-=-=-=-=-=-=-\n New Beam \n-=-=-=-=-=-=-=-=-=-=-=-\n")
         state.queue = combine!(iter)
     end
 

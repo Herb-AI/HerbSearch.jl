@@ -1,6 +1,6 @@
 using HerbCore, HerbGrammar, HerbSearch, HerbBenchmarks, HerbConstraints
 
-include("string_functions.jl")
+include("../string_functions.jl")
 
 benchmark = HerbBenchmarks.PBE_SLIA_Track_2019
 problem = benchmark.problem_phone_1_short
@@ -18,11 +18,9 @@ addconstraint!(grammar, Contains(2))
 
 =#
 properties = [
-    (1, (x, y) -> !occursin("-", y)),
+    (1, (x, y) -> true),
     (1, (x, y) -> length(y) == 3),
     (1, (x, y) -> length(y) >= 1 ? y[1] == x[:_arg_1][5] : false),
-    (1, (x, y) -> length(y) >= 2 ? y[2] == x[:_arg_1][6] : false),
-    (1, (x, y) -> length(y) >= 3 ? y[3] == x[:_arg_1][7] : false),
 ]
 
 function compute_priors()
@@ -56,41 +54,55 @@ function heuristic(rulenode, child_values)
             return Inf
         end
 
-        diff = [w for (w, p) in properties if p(input, output) != p(input, target_output)]
+        diff = [p(input, output) == p(input, target_output) ? 0 : w for (w, p) in properties]
         cost += sum(diff)
     end
 
     return cost
 end
 
-iterator = BeamIterator(grammar, :ntString,
-    beam_size = 10,
-    program_to_cost = heuristic,
-    max_extension_depth = 2,
-    max_extension_size = 2,
-    clear_beam_before_expansion = false,
-    stop_expanding_beam_once_replaced = true,
-    interpreter = interpreter,
-    observation_equivalance = true,
-)
+function search()
+    iterator = BeamIterator(grammar, :ntString,
+        beam_size = 10,
+        program_to_cost = heuristic,
+        max_extension_depth = 2,
+        max_extension_size = 2,
+        clear_beam_before_expansion = false,
+        stop_expanding_beam_once_replaced = true,
+        interpreter = interpreter,
+        observation_equivalance = true,
+    )
 
-for (i, entry) in enumerate(iterator)
-    p = rulenode2expr(entry.program, grammar)
-    c = entry.cost
-    o = entry.program._val[1]
+    counter_examples = []
 
-    println()
-    @show i
-    @show p
-    @show c
-    @show o
+    for (i, entry) in enumerate(iterator)
+        p = rulenode2expr(entry.program, grammar)
+        c = entry.cost
+        o = entry.program._val[1]
 
-    if entry.program._val == target_outputs
-        println("\nSolution found!")
-        break
+        println()
+        @show i
+        @show p
+        @show c
+        @show o
+
+        if entry.program._val == target_outputs
+            println("\nSolution found!")
+            break
+        end
+
+        if c == 0
+            push!(counter_examples, entry.program._val)
+        end
+
+        if i == 100
+            break
+        end
     end
 
-    if i == 100
-        break
+    for cs in counter_examples
+        @show cs
     end
 end
+
+search()
