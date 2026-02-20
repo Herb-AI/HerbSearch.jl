@@ -6,6 +6,10 @@ function search(;
     interpreter,
     properties,
     max_iterations,
+    beam_size = 10,
+    max_extension_depth = 2,
+    max_extension_size = 2,
+    starting_symbol = :ntString
 )
     # Extract io from spec
     inputs = [io.in for io in problem.spec]
@@ -33,13 +37,13 @@ function search(;
                 return cost
         end
 
-        iterator = BeamIterator(grammar, :ntString,
-            beam_size = 10,
+        iterator = BeamIterator(grammar, starting_symbol,
+            beam_size = beam_size,
             program_to_cost = heuristic,
             max_extension_depth = 2,
             max_extension_size = 2,
             clear_beam_before_expansion = false,
-            stop_expanding_beam_once_replaced = true,
+            stop_expanding_beam_once_replaced = false,
             interpreter = interpreter,
             observation_equivalance = false,
         )
@@ -60,13 +64,20 @@ function search(;
         best_property_index = 0
         best_property_representation = nothing
         best_property_score = -Inf
+        best_possible_score = beam_size * length(target_outputs)
 
         for (property_index, (property, representation)) in enumerate(properties)
+            target_values = [property(input, target_output) for (input, target_output) in zip(inputs, target_outputs)]
+
+            if !allequal(target_values)
+                continue
+            end
+
             score = 0
 
             for beam_entry_outputs in beam_outputs
-                for (input, beam_entry_output, target_output) in zip(inputs, beam_entry_outputs, target_outputs)
-                    score += property(input, beam_entry_output) != property(input, target_output)
+                for (input, beam_entry_output, target_value) in zip(inputs, beam_entry_outputs, target_values)
+                    score += property(input, beam_entry_output) != target_value
                 end
             end
 
@@ -76,10 +87,15 @@ function search(;
                 best_property_representation = representation
                 best_property_score = score
             end
+
+            if score == best_possible_score
+                break
+            end
         end
 
         # @show beam_outputs
-        println("Iteration: $iteration\t\t Property: $best_property_representation")
+        println("\nIteration:\t $iteration\t\t Best score: $best_property_score\t\t Best property: $best_property_representation")
+        println("Iteration:\t $iteration\t\t Best cost:  $(iterator.beam[1].cost)\t\t Best outputs:  $(beam_outputs[1])")
         # @show best_property_score
         push!(heuristic_properties, best_property)
         deleteat!(properties, best_property_index)
