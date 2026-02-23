@@ -130,9 +130,9 @@ function synth_with_aux(
     skipped_candidates = 0
 
     start_time = time()
-    loop_enums = 1
-    for loop_enums in 1:opts.max_enumerations
-        if time() - start_time > opts.max_time
+    loop_enums = 0
+    while true
+        if loop_enums >= opts.max_enumerations || time() - start_time > opts.max_time
             break
         end
 
@@ -159,6 +159,7 @@ function synth_with_aux(
             end
         end
 
+        loop_enums += 1
         score = evaluate_with_aux(problem, candidate_program, grammar, new_rules_decoding;
             opts=opts.eval_opts)
         if score == aux_bestval
