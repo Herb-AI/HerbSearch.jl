@@ -37,7 +37,7 @@ end
 
 Splits a rule node s.t. the resulting splits have no holes
 """
-function split_hole(hole::AbstractRuleNode, g::AbstractGrammar)::Vector{AbstractRuleNode}
+function HerbSearch.split_hole(hole::AbstractRuleNode, g::AbstractGrammar)::Vector{AbstractRuleNode}
     splits = _split_hole(hole, g)
     return splits
 end
@@ -52,7 +52,7 @@ New_type = ...
 
 The *Main_Rule* is the 1st element of the returned rules.
 """
-function create_new_exprs(rule::Union{UniformHole, RuleNode}, g::AbstractGrammar, id::Int)::Vector{Tuple{Symbol, Expr}}
+function create_new_exprs(rule::Union{UniformHole,RuleNode}, g::AbstractGrammar, id::Int)::Vector{Tuple{Symbol,Expr}}
     splits = split_hole(rule, g)
     rule_type = return_type(g, rule)
     if length(splits) == 1

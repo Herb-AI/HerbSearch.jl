@@ -74,7 +74,7 @@ end
 
 function HerbSearch.compress_to_expressions(
     programs::AbstractVector{<:AbstractRuleNode},
-    grammar::AbstractGrammar; 
+    grammar::AbstractGrammar;
     kwargs...)::Vector{Expr}
     new_rules = HerbSearch.compress_programs(programs, grammar; kwargs...)
     return vcat([create_new_exprs(nr, grammar, i) for (i, nr) in enumerate(new_rules)]...)
@@ -93,8 +93,4 @@ function _get_max_children(grammar::AbstractGrammar)::Int
     return res
 end
 
-export
-    compress_programs,
-    create_new_exprs, 
-    split_hole
 end
