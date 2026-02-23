@@ -1,12 +1,12 @@
 """
-    abstract type AbstractBeamIterator <: ProgramIterator end
+    abstract type AbstractBeamIteratorAlt <: ProgramIterator end
 
 Abstract supertype for the beam iterator.
 """
-abstract type AbstractBeamIterator <: ProgramIterator end
+abstract type AbstractBeamIteratorAlt <: ProgramIterator end
 
 """
-    BeamIterator
+    BeamIteratorAlt
 
 An iterator that implements beam search. Given a heuristic cost function, beam seach works by maintaining a beam of the best N programs and expanding the beam sequentially.
 Each iteration this iterator perform the following:
@@ -26,7 +26,7 @@ One can specify the following parameters:
 - `clear_beam_before_expansion::Bool=false`: if this is set to true, the beam is cleared before expansion, such that the beam is only filled with extended programs
 - `stop_expanding_beam_once_replaced::Bool=true`: stop expanding beam programs once the entire beam has been replaced with better ones
 
-""" BeamIterator
+""" BeamIteratorAlt
 
 """
     $(TYPEDEF)
@@ -48,30 +48,33 @@ get_program(beam_entry::BeamEntry) = beam_entry.program
 HerbCore.depth(beam_entry::BeamEntry) = beam_entry.depth
 Base.size(beam_entry::BeamEntry) = beam_entry.size
 
+@inline function isless(a::BeamEntry, b::BeamEntry)
+    return (a.cost, a.depth, a.size) < (b.cost, b.depth, b.size)
+end
 
-@programiterator BeamIterator(
+
+@programiterator BeamIteratorAlt(
     beam_size::Int=Inf,
     max_extension_depth::Int=1,
     max_extension_size::Int=1,
     program_to_cost::Union{Function,Nothing}=nothing,
-    clear_beam_before_expansion::Bool=false,
     stop_expanding_beam_once_replaced::Bool=true,
     interpreter::Union{Function,Nothing}=nothing,
     observation_equivalance::Bool=false,
     beam::Vector{BeamEntry}=BeamEntry[],
     extensions::Vector{BeamEntry}=BeamEntry[],
-) <: AbstractBeamIterator
+) <: AbstractBeamIteratorAlt
 
 
-highest_cost(iter::AbstractBeamIterator) = iter.beam[end].cost
-lowest_cost(iter::AbstractBeamIterator) = iter.beam[begin].cost
+highest_cost(iter::AbstractBeamIteratorAlt) = iter.beam[end].cost
+lowest_cost(iter::AbstractBeamIteratorAlt) = iter.beam[begin].cost
 
 """
-    Base.push_to_beam!(iter::AbstractBeamIterator, beam_entry::BeamEntry)
+    Base.push_to_beam!(iter::AbstractBeamIteratorAlt, beam_entry::BeamEntry)
 
 Adds a BeamEntry to the beam, ensuring that the beam size is not exceeded and only the best N programs are kept.
 """
-function push_to_beam!(iter::AbstractBeamIterator, beam_entry::BeamEntry)
+function push_to_beam!(iter::AbstractBeamIteratorAlt, beam_entry::BeamEntry)
     # If the beam is full and the new entry has a higher cost than the worst in the beam, we can abort
     if length(iter.beam) >= iter.beam_size && beam_entry.cost >= highest_cost(iter)
         return nothing
@@ -112,11 +115,11 @@ function push_to_beam!(iter::AbstractBeamIterator, beam_entry::BeamEntry)
 end
 
 """
-    initialize!(iter::AbstractBeamIterator)
+    initialize!(iter::AbstractBeamIteratorAlt)
 
 Initializes the iterator by creating all extensions and setting the first beam.
 """
-function initialize!(iter::AbstractBeamIterator)
+function initialize!(iter::AbstractBeamIteratorAlt)
     # Copy the grammar to clear constraints
     original_grammar = get_grammar(iter.solver)
     grammar = deepcopy(original_grammar)
@@ -161,41 +164,44 @@ function initialize!(iter::AbstractBeamIterator)
     return nothing
 end
 
+function all_combinations(iter::AbstractBeamIteratorAlt, program::AbstractRuleNode)::Vector{AbstractRuleNode}
+    grammar = get_grammar(iter.solver)
+    combinations = []
+
+    # Replace this program with any extension of the same type
+    for extension in iter.extensions
+        # Check if they're the same type
+        if grammar.types[get_rule(program)] == grammar.types[get_rule(extension.program)]
+            push!(combinations, extension.program) 
+        end
+    end
+
+    # Or don't and call this method on the children
+    for (child_index, child) in enumerate(program.children)
+        child_options = all_combinations(iter, child)
+
+        for child_option in child_options
+            new_children = [i != child_index ? c : child_option for (i, c) in enumerate(program.children)]
+            combination = RuleNode(get_rule(program), new_children)
+            push!(combinations, combination)
+        end
+    end
+
+    return combinations
+end
+
 """
-    combine!(iter::AbstractBeamIterator)
+    combine!(iter::AbstractBeamIteratorAlt)
 
 Creates new programs by expanding all programs in the beam with all possible extensions.
 Only selects the N best programs of these to create the new beam.
 """
-function combine!(iter::AbstractBeamIterator)
+function combine!(iter::AbstractBeamIteratorAlt)
     grammar = get_grammar(iter.solver)
-
-    # Finds all nonterminal shapes to combine the beam and termianls with
-    terminals_mask     = grammar.isterminal
-    nonterminals_mask  = .~terminals_mask
-    return_type_mask   = grammar.types .== get_starting_symbol(iter.solver)
-    nonterminal_shapes = UniformHole.(partition(Hole(nonterminals_mask .& return_type_mask), grammar), ([],))
-
-    # Computes whether a combination exceed the maximum depth or size
-    is_feasible = function(children::Tuple{Vararg{BeamEntry}})
-        (get_max_depth(iter) == typemax(Int) || maximum(depth.(children)) < get_max_depth(iter)) &&
-        (get_max_size(iter) == typemax(Int) || sum(size.(children)) < get_max_size(iter))
-    end
-
-    # Gives a BeamEntry's return type
-    get_return_type(beam_entry::BeamEntry) = grammar.types[get_rule(beam_entry.program)]
-
-    # Given the types of children, creates a filter to obtain well typed expressions
-    is_well_typed = child_types -> (children -> child_types == get_return_type.(children))
 
     # Obtain the sorted programs from the beam and clear it for the new programs
     best_old_beam_cost = lowest_cost(iter)
     old_beam = copy(iter.beam)
-
-    # Clear the beam if specified
-    if iter.clear_beam_before_expansion
-        iter.beam = []
-    end
 
     # Iterate over all programs in the beam and expand them
     for beam_entry in old_beam
@@ -206,48 +212,20 @@ function combine!(iter::AbstractBeamIterator)
             break
         end
 
-        # Iterate over all shapes to expand with and obtain their types, arity and type filter
-        for shape in nonterminal_shapes
-            child_types  = Tuple(grammar.childtypes[findfirst(shape.domain)])
-            arity        = length(child_types)
-            typed_filter = is_well_typed(child_types)
+        # Iterate over combinations
+        for program in all_combinations(iter, beam_entry.program)
 
-            # A program from the beam can in be one of the child positions
-            for beam_index in 1:arity
-                # Children only can be from the extension set, execpt at the beam index where we place the beam program
-                potential_children = collect(Iterators.repeated(iter.extensions, arity))
-                potential_children[beam_index] = [beam_entry]
-
-                # Obtain all possible combinations that are well typed and feasible in the depth and size limit
-                candidate_combinations = Iterators.product(potential_children...)
-                candidate_combinations = Iterators.filter(typed_filter, candidate_combinations)
-                candidate_combinations = Iterators.filter(is_feasible, candidate_combinations)
-
-                # Iterate over all possible programs and add them to the beam
-                for child_tuple in candidate_combinations
-                    for rule_idx in findall(shape.domain)
-                        children = collect(child_tuple)
-                        program = RuleNode(rule_idx, get_program.(children))
-
-                        # Check if the program is feasible with the constraints
-                        if any([!check_tree(constraint, program) for constraint in grammar.constraints])
-                            continue
-                        end
-
-                        # If an interpreter is defined, set the _val of the rulenode
-                        if !isnothing(iter.interpreter)
-                            program._val = iter.interpreter(program)
-                        end
-
-                        cost = iter.program_to_cost(program, children)
-                        entry_depth = maximum(depth.(children)) + 1
-                        entry_size = sum(size.(children)) + 1
-                        new_entry = BeamEntry(program, cost, false, entry_depth, entry_size)
-
-                        push_to_beam!(iter, new_entry)
-                    end
-                end
+            # If an interpreter is defined, set the _val of the rulenode
+            if !isnothing(iter.interpreter)
+                program._val = iter.interpreter(program)
             end
+            
+            # Create entry and bush to beam
+            cost = iter.program_to_cost(program, nothing)
+            entry_depth = depth(program)
+            entry_size = length(program)
+            new_entry = BeamEntry(program, cost, false, entry_depth, entry_size)
+            push_to_beam!(iter, new_entry)
         end
 
         # Set the current beam entry has been expanded, change that field
@@ -268,11 +246,11 @@ mutable struct BeamState
 end
 
 """
-    Base.iterate(iter::AbstractBeamIterator)
+    Base.iterate(iter::AbstractBeamIteratorAlt)
 
 The initial call to the iterator. Initializes the beams and iterator's state.
 """
-function Base.iterate(iter::AbstractBeamIterator)
+function Base.iterate(iter::AbstractBeamIteratorAlt)
     initialize!(iter)
 
     return Base.iterate(
@@ -282,14 +260,14 @@ function Base.iterate(iter::AbstractBeamIterator)
 end
 
 """
-    Base.iterate(iter::AbstractBeamIterator)
+    Base.iterate(iter::AbstractBeamIteratorAlt)
 
 Iterative call to the iterator. Perform the following:
 1. If all programs from the current beam have been returned, expand the current beam and reset the iterator state.
 2. If after expansion the beam is empty, kill the iterator.
 3. Otherwise, return the next program from the beam and increment the pointer.
 """
-function Base.iterate(iter::AbstractBeamIterator, state::BeamState)
+function Base.iterate(iter::AbstractBeamIteratorAlt, state::BeamState)
     # If the current queue is drained, new programs must be created
     if isempty(state.queue)
         # If so, expand the current beam and reset the pointer

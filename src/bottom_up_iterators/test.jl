@@ -32,7 +32,7 @@ end
 
 function heuristic_cost(program::AbstractRuleNode, children::Union{Vector{BeamEntry},Nothing})
     v = interp(program)
-    t = 10000
+    t = 100
     return abs(v - t)
 end
 
@@ -45,23 +45,29 @@ grammar = @cfgrammar begin
     Int = - Int
 end
 
-iterator = BeamIterator(grammar, :Int,
+iterator = BeamIteratorAlt(grammar, :Int,
     beam_size = 30,
     program_to_cost = heuristic_cost,
-    max_extension_depth = 4,
-    clear_beam_before_expansion = false,
+    max_extension_depth = 3,
+    max_extension_size = 5,
     stop_expanding_beam_once_replaced = true,
     interpreter = interp,
+    observation_equivalance = true,
 )
 
 for (i, entry) in enumerate(iterator)
     p = entry.program
+    e = rulenode2expr(p, grammar)
     c = entry.cost
-    @show i, c, p
+    println()
+    @show i
+    @show e
+    @show p._val
+    @show c
 
     # @show [e.cost for e in iterator.beam.programs]
 
-    if i == 20000
+    if i == 1000
         break
     end
 end

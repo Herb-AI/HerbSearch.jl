@@ -155,17 +155,7 @@ end
 Returns the cost of the `program` using the examples and the `cost_function`. It first convert the program to an expression and evaluates it on all the examples.
 """
 function _calculate_cost(program::Union{RuleNode, StateHole}, cost_function::Function, spec::AbstractVector{<:IOExample}, grammar::AbstractGrammar, evaluation_function::Function)
-    results = Tuple{<:Number,<:Number}[]
-
-    expression = rulenode2expr(program, grammar)
-    symbol_table = grammar2symboltable(grammar)
-
-    for example ∈ filter(e -> e isa IOExample, spec)
-        outcome = evaluation_function(symbol_table, expression, example.in)
-        push!(results, (example.out, outcome))
-    end
-
-    return cost_function(results)
+    return cost_function(program)
 end
 
 """

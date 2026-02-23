@@ -46,20 +46,21 @@ search(
     interpreter = interpreter,
     properties = properties,
     max_iterations = 10,
+    observation_equivalance = true,
 )
 
 #=
 
-Without observational equivalance
+With observational equivalance
 
 Iteration:       1               Best score: 60          Best property: len_cvc(_arg_out) == 3
-Iteration:       1               Best cost:  0           Best outputs:  ["938-242-504", "308-916-545", "623-599-749", "981-424-843", "118-980-214", "244-655-094"]
+Iteration:       1               Best cost:  0           Best outputs:  ["-", "-", "-", "-", "-", "-"]
 
 Iteration:       2               Best score: 60          Best property: prefixof_cvc(at_cvc(_arg_1, 5), _arg_out)
-Iteration:       2               Best cost:  0           Best outputs:  ["8-2", "8-9", "3-5", "1-4", "8-9", "4-6"]
+Iteration:       2               Best cost:  0           Best outputs:  ["   ", "   ", "   ", "   ", "   ", "   "]
 
 Solution found :)
-substr_cvc(substr_cvc(_arg_1, 5, len_cvc(_arg_1)), len_cvc(" "), 3)
-7{7{2,13,16{2}},16{3},11}
+substr_cvc(substr_cvc(_arg_1, 5, len_cvc(_arg_1)), 1, 3)
+7{7{2,13,16{2}},9,11}
 
 =#

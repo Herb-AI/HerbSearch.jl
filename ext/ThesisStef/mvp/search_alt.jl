@@ -9,8 +9,8 @@ function search(;
     beam_size = 10,
     max_extension_depth = 2,
     max_extension_size = 2,
-    observation_equivalance = false,
-    starting_symbol = :ntString
+    starting_symbol = :ntString,
+    observation_equivalance = true,
 )
     # Extract io from spec
     inputs = [io.in for io in problem.spec]
@@ -38,12 +38,11 @@ function search(;
             return cost
         end
 
-        iterator = BeamIterator(grammar, starting_symbol,
+        iterator = BeamIteratorAlt(grammar, starting_symbol,
             beam_size = beam_size,
             program_to_cost = heuristic,
             max_extension_depth = max_extension_depth,
             max_extension_size = max_extension_size,
-            clear_beam_before_expansion = false,
             stop_expanding_beam_once_replaced = false,
             interpreter = interpreter,
             observation_equivalance = observation_equivalance,
@@ -60,7 +59,6 @@ function search(;
 
         # Otherwise; find the property that adds the most heuristic cost to the last beam
         beam_outputs = [beam_entry.program._val for beam_entry in iterator.beam]
-
 
         best_property = nothing
         best_property_index = 0

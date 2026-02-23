@@ -46,29 +46,20 @@ search(
     interpreter = interpreter,
     properties = properties,
     max_iterations = 10,
+    observation_equivalance = true,
 )
 
 #=
 
-Without observational equivalance
+With observational equivalance
 
 Iteration:       1               Best score: 70          Best property: prefixof_cvc(at_cvc(_arg_1, 2), _arg_out)
 Iteration:       1               Best cost:  0           Best outputs:  ["..", "..", "..", "..", "..", "..", ".."]
 
-Iteration:       2               Best score: 70          Best property: contains_cvc(_arg_out, ".")
-Iteration:       2               Best cost:  0           Best outputs:  ["106 769-858-438-", "83 973-757-831-", "62 647-787-775-", "172 027-507-632-", "72 001-050-856-", "95 310-537-401-", "6 775-969-238-"]
-
-Iteration:       3               Best score: 70          Best property: contains_cvc(_arg_out, at_cvc(_arg_1, 3))
-Iteration:       3               Best cost:  7           Best outputs:  ["-.", "-.", "-.", "-.", "-.", "-.", "-."]
-
-Iteration:       4               Best score: 70          Best property: contains_cvc(_arg_out, "-")
-Iteration:       4               Best cost:  0           Best outputs:  ["106.769-858-438", "83.973-757-831", "62.647-787-775", "172.027-507-632", "72.001-050-856", "95.310-537-401", "6.775-969-238"]
-
-Iteration:       5               Best score: 70          Best property: prefixof_cvc(at_cvc(_arg_out, 3), _arg_1)
-Iteration:       5               Best cost:  14          Best outputs:  [".", ".", ".", ".", ".", ".", "."]
+Iteration:       2               Best score: 70          Best property: contains_cvc(_arg_out, at_cvc(_arg_1, 3))
+Iteration:       2               Best cost:  0           Best outputs:  ["106 769-858-438.", "83 973-757-831.", "62 647-787-775.", "172 027-507-632.", "72 001-050-856.", "95 310-537-401.", "6 775-969-238."]
 
 Solution found :)
-substr_cvc(replace_cvc(replace_cvc(_arg_1, "-", "."), " ", "."), 2, len_cvc(_arg_1))
-10{8{8{2,5,6},3,6},13,19{2}}
-
+replace_cvc(replace_cvc(substr_cvc(_arg_1, 2, len_cvc(_arg_1)), " ", "."), "-", ".")
+8{8{10{2,13,19{2}},3,6},5,6}
 =#

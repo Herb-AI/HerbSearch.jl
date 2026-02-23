@@ -42,18 +42,19 @@ search(
     grammar = grammar,
     interpreter = interpreter,
     properties = properties,
-    max_iterations = 20,
+    max_iterations = 100,
+    observation_equivalance = true,
 )
 
 #=
 
-Without observational equivalance
+With observational equivalance
 
 Iteration:       1               Best score: 30          Best property: contains_cvc(concat_cvc(_arg_1, ","), _arg_out)
 Iteration:       1               Best cost:  0           Best outputs:  ["0", "0", "0"]
 
 Iteration:       2               Best score: 30          Best property: prefixof_cvc("-", _arg_out)
-Iteration:       2               Best cost:  0           Best outputs:  ["-11", "-11", "-11"]
+Iteration:       2               Best cost:  0           Best outputs:  ["-10", "-10", "-10"]
 
 Iteration:       3               Best score: 30          Best property: -1 == str_to_int_cvc(_arg_out)
 Iteration:       3               Best cost:  0           Best outputs:  ["801-456-87651", "<978> 654-02991", "978.654.02991"]
@@ -65,12 +66,10 @@ Iteration:       5               Best score: 30          Best property: prefixof
 Iteration:       5               Best cost:  3           Best outputs:  ["11", "11", "11"]
 
 Iteration:       6               Best score: 30          Best property: contains_cvc(int_to_str_cvc(len_cvc(_arg_out)), int_to_str_cvc(0))
-Iteration:       6               Best cost:  1           Best outputs:  ["8011456187651", "978> 654102991", "97865402991"]
-
-Iteration:       7               Best score: 10          Best property: contains_cvc(_arg_out, " ")
-Iteration:       7               Best cost:  2           Best outputs:  ["8014568765", "978> 6540299", "9786540299"]
+Iteration:       6               Best cost:  1           Best outputs:  ["8011456187651", "978> 654102991", "9780654002991"]
 
 Solution found :)
-replace_cvc(replace_cvc(replace_cvc(replace_cvc(replace_cvc(_arg_1, "-", ""), "<", ""), ".", ""), " ", ""), ">", "")
-11{11{11{11{11{2,6,3},8,3},7,3},4,3},9,3}
+replace_cvc(replace_cvc(replace_cvc(replace_cvc(replace_cvc(_arg_1, "-", ""), ".", ""), "<", ""), ">", " "), " ", "")
+11{11{11{11{11{2,6,3},7,3},8,3},9,4},4,3}
+
 =#
