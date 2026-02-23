@@ -21,14 +21,14 @@ end
     Holds statistics returned from the search process.
 
     - `programs`::AbstractVector{<:AbstractRuleNode}: Best programs found, sorted from best to worst.
-    - `iter_state`: Iterator state after the search.
+    - `last_program`::Union{Nothing, AbstractRuleNode}: Last program enumerated by the iterator.
     - `score`::Number: Best score found.
     - `enumerations::Int`: The number of enumerations performed during the search.
     - `time::Float64`: How long the search process took.
 """
 struct SearchStats
     programs::AbstractVector{<:AbstractRuleNode}
-    iter_state::Any
+    last_program::Union{Nothing,AbstractRuleNode}
     score::Number
     enumerations::Int
     time::Float64
@@ -144,7 +144,7 @@ end
 Base.@kwdef struct AulileOptions
     max_iterations = 5
     max_depth = 10
-    restart_iterator = true
+    restart_iterator = false
     compression::Function = default_compression
     synth_opts = SynthOptions()
 end

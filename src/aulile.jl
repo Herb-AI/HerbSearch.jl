@@ -1,3 +1,5 @@
+const SMALL_COST = 1
+
 """
     Performs iterative library learning (Aulile) by enumerating programs using a grammar and synthesizing programs that 
         minimize the auxiliary scoring function across `IOExample`s.
@@ -7,7 +9,7 @@
     - `grammar`: The grammar used to generate candidate programs.
     - `start_symbol`: The non-terminal symbol representing the start of the grammar.
     - `new_rules_symbol`: A symbol used to add new rules to the grammar as library learning.
-    - `opts`: A list of additional arguments
+    - `opts`: A list of additional arguments.
 
     Returns an `AulileStats` struct with the best program found, its score, and aulile metrics.
 """
@@ -18,8 +20,6 @@ function aulile(
     start_symbol::Symbol;
     opts::AulileOptions=AulileOptions()
 )::AulileStats
-    SMALL_COST = 1
-    VERY_SMALL_COST = 0.000001
     aux = opts.synth_opts.eval_opts.aux
     best_score = aux.initial_score(problem)
     if opts.synth_opts.print_debug
@@ -27,16 +27,20 @@ function aulile(
     end
 
     iter = iter_t(grammar, start_symbol, max_depth=opts.max_depth)
-    iter_state = nothing
+    required_constraint = nothing
+    checkpoint_program = nothing
     new_rules_decoding = Dict{Int,AbstractRuleNode}()
     grammar_size = length(grammar.rules)
 
     best_program = nothing
     total_enums = 0
     for i in 1:opts.max_iterations
+        new_rules_indices = Set{Int}()
         stats = synth_with_aux(problem, iter, grammar, new_rules_decoding, best_score;
-            opts=opts.synth_opts, iter_state=iter_state)
-        iter_state = stats.iter_state
+            opts=opts.synth_opts,
+            required_constraint=required_constraint,
+            checkpoint_program=checkpoint_program)
+        checkpoint_program = stats.last_program
         total_enums += stats.enumerations
 
         if length(stats.programs) == 0
@@ -51,11 +55,11 @@ function aulile(
                 # Program is optimal
                 return AulileStats(best_program, best_score, i, total_enums)
             else
+                # Update grammar with the new compressed programs
+                new_rules_indices = Set{Int}()
                 compressed_programs = opts.compression(stats.programs, grammar; k=opts.synth_opts.num_returned_programs)
-                # wrapped compression returns ::Vector{Vector{Expr}}. Each of those expressions needs to be added to the grammar.
-                # the 1st expresison in each list must have a small nonzero cost, other expressions must have a cost of 0.
                 for new_rule in compressed_programs
-                    fixed_rules = CompressionExt.split_hole(new_rule, grammar)
+                    fixed_rules = split_hole(new_rule, grammar)
                     for rule in fixed_rules
                         rule_type = return_type(grammar, rule)
                         new_expr = rulenode2expr(rule, grammar)
@@ -67,9 +71,10 @@ function aulile(
                         end
                         if length(grammar.rules) > grammar_size
                             grammar_size = length(grammar.rules)
-                            new_rules_decoding[grammar_size] = rule                            
+                            new_rules_decoding[grammar_size] = rule
                         end
                     end
+                    push!(new_rules_indices, grammar_size)
                 end
             end
             if opts.synth_opts.print_debug
@@ -78,10 +83,11 @@ function aulile(
             end
         end
 
-        if opts.restart_iterator
-            iter = iter_t(grammar, start_symbol, max_depth=opts.max_depth)
-            iter_state = nothing
+        required_constraint = opts.restart_iterator && !isempty(new_rules_indices) ? ContainsAny(collect(new_rules_indices)) : nothing
+        if opts.synth_opts.print_debug && !isnothing(required_constraint)
+            println("ContainsAny constraint will be checked: $(required_constraint.rules)")
         end
+        iter = iter_t(grammar, start_symbol, max_depth=opts.max_depth)
     end
     return AulileStats(best_program, best_score, max_iterations, total_enums)
 end
@@ -96,7 +102,8 @@ end
         used when interpreting newly added grammar rules.
     - `score_upper_bound`: Current best score to beat.
     - `opts`: A list of additional arguments.
-    - `iter_state`: Optional iterator state to continue from.
+    - `required_constraint`: Optional `ContainsAny` constraint; when provided, candidates must satisfy it.
+    - `checkpoint_program`: Optional program used to disable the rule filter once reached.
 
     Returns a `SearchStats` object containing the best programs found (sorted best-first), 
     the iterator state, and search metrics.
@@ -108,13 +115,19 @@ function synth_with_aux(
     new_rules_decoding::Dict{Int,AbstractRuleNode},
     score_upper_bound::Number;
     opts::SynthOptions=SynthOptions(),
-    iter_state=nothing,
+    required_constraint::Union{Nothing,ContainsAny}=nothing,
+    checkpoint_program::Union{Nothing,AbstractRuleNode}=nothing,
 )::SearchStats
     aux_bestval = opts.eval_opts.aux.best_value
     # Max-heap to store minimal number of programs
     ord = Base.Order.ReverseOrdering(Base.Order.By(t -> first(t)))
     best_programs = BinaryHeap{Tuple{Int,RuleNode}}(ord)
     worst_score = typemax(Int)
+
+    candidate_program = nothing
+    iter_state = nothing
+    restoring_checkpoint = !isnothing(required_constraint)
+    skipped_candidates = 0
 
     start_time = time()
     loop_enums = 1
@@ -132,26 +145,38 @@ function synth_with_aux(
         end
 
         candidate_program, iter_state = next_item
+        # Skip checked candidates if restoring to a checkpoint
+        if restoring_checkpoint
+            if candidate_program == checkpoint_program
+                if opts.print_debug
+                    println("Skipped candidates: $(skipped_candidates)")
+                end
+                restoring_checkpoint = false
+                continue
+            elseif !check_tree(required_constraint, candidate_program)
+                skipped_candidates += 1
+                continue
+            end
+        end
+
         score = evaluate_with_aux(problem, candidate_program, grammar, new_rules_decoding;
             opts=opts.eval_opts)
-
         if score == aux_bestval
-            # Optimal program
-            candidate_program = freeze_state(candidate_program)
+            optimal_program = freeze_state(candidate_program)
             if opts.print_debug
                 println("Found an optimal program!")
             end
-            return SearchStats([candidate_program], iter_state, aux_bestval, loop_enums, time() - start_time)
+            return SearchStats([optimal_program], optimal_program, aux_bestval, loop_enums, time() - start_time)
         elseif score >= score_upper_bound
             # Worse program that is not worth considering
             continue
         elseif length(best_programs) < opts.num_returned_programs || score < worst_score
-            candidate_program = freeze_state(candidate_program)
-            push!(best_programs, (score, candidate_program))
+            push!(best_programs, (score, freeze_state(candidate_program)))
             length(best_programs) > opts.num_returned_programs && pop!(best_programs)
             worst_score = first(first(best_programs))
         end
     end
+
     top_programs, best_found_score = heap_to_vec(best_programs)
     if length(top_programs) == 0 && opts.print_debug
         println("Did not find a better program.")
@@ -159,7 +184,7 @@ function synth_with_aux(
         println("Found a suboptimal program with distance: $(best_found_score)")
     end
     # The enumerations are exhausted, but an optimal program was not found
-    return SearchStats(top_programs, iter_state, best_found_score, loop_enums, time() - start_time)
+    return SearchStats(top_programs, candidate_program, best_found_score, loop_enums, time() - start_time)
 end
 
 """

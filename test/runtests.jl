@@ -42,7 +42,7 @@ Random.seed!(1234)
 
     include("test_compression.jl")
     include("test_add_compressed_rules.jl")
-    # include("test_aulile.jl")
+    include("test_aulile.jl")
 
     # Excluded because it contains long tests
     # include("test_realistic_searches.jl")
