@@ -98,7 +98,7 @@ end
     program = rulenode2expr(test_result.program, g)
 end
 
-PRINT_FLAG = true
+PRINT_FLAG = false
 
 @testset "Aulile Example from Paper" begin
     problem = Problem([
@@ -117,6 +117,7 @@ PRINT_FLAG = true
     end
     if PRINT_FLAG
         println("Program: $(program), time: $(elapsed)s, enums: $(test_result.enumerations)")
+        println("=========================")
     end
 end
 
@@ -137,6 +138,7 @@ end
     end
     if PRINT_FLAG
         println("Program: $(program), time: $(elapsed)s, enums: $(test_result.enumerations)")
+        println("=========================")
     end
 end
 

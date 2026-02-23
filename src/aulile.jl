@@ -148,9 +148,6 @@ function synth_with_aux(
         # Skip checked candidates if restoring to a checkpoint
         if restoring_checkpoint
             if candidate_program == checkpoint_program
-                if opts.print_debug
-                    println("Skipped candidates: $(skipped_candidates)")
-                end
                 restoring_checkpoint = false
                 continue
             elseif !check_tree(required_constraint, candidate_program)
@@ -166,6 +163,9 @@ function synth_with_aux(
             optimal_program = freeze_state(candidate_program)
             if opts.print_debug
                 println("Found an optimal program!")
+                if skipped_candidates > 0
+                    println("Skipped candidates: $(skipped_candidates)")
+                end
             end
             return SearchStats([optimal_program], optimal_program, aux_bestval, loop_enums, time() - start_time)
         elseif score >= score_upper_bound
@@ -179,10 +179,15 @@ function synth_with_aux(
     end
 
     top_programs, best_found_score = heap_to_vec(best_programs)
-    if length(top_programs) == 0 && opts.print_debug
-        println("Did not find a better program.")
-    elseif opts.print_debug
-        println("Found a suboptimal program with distance: $(best_found_score)")
+    if opts.print_debug
+        if length(top_programs) == 0
+            println("Did not find a better program.")
+        else
+            println("Found a suboptimal program with distance: $(best_found_score)")
+        end
+        if skipped_candidates > 0
+            println("Skipped candidates: $(skipped_candidates)")
+        end
     end
     # The enumerations are exhausted, but an optimal program was not found
     return SearchStats(top_programs, candidate_program, best_found_score, loop_enums, time() - start_time)
