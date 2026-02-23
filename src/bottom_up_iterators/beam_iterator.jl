@@ -165,8 +165,7 @@ function initialize!(iter::AbstractBeamIterator)
             beam_entry = BeamEntry(extension, cost, false, depth(extension), length(extension))
 
             # If it has the correct output type and is feasible with the original grammar constraints, add it to the first beam
-            # TODO: not sure if this is the best way to check against all constraints. If anyone knows how, please improve :)
-            if type == get_starting_symbol(iter.solver) && isfeasible(UniformSolver(original_grammar, extension))
+            if type == get_starting_symbol(iter.solver) && all([check_tree(constraint, program) for constraint in grammar.constraints])
                 push_to_beam!(iter, beam_entry)
             end
 
@@ -242,8 +241,7 @@ function combine!(iter::AbstractBeamIterator)
                         program = RuleNode(rule_idx, get_program.(children))
 
                         # Check if the program is feasible with the constraints
-                        # TODO: not sure if this is the best way to check against all constraints. If anyone knows how, please improve :)
-                        if !isfeasible(UniformSolver(grammar, program))
+                        if any([!check_tree(constraint, program) for constraint in grammar.constraints])
                             continue
                         end
 
