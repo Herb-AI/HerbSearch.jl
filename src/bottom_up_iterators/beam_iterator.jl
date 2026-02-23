@@ -54,7 +54,7 @@ Base.size(beam_entry::BeamEntry) = beam_entry.size
     beam_size::Int=10,
     max_extension_depth::Int=1,
     max_extension_size::Int=1,
-    program_to_cost::Union{Function,Nothing}=nothing,
+    program_to_cost::Function,
     stop_expanding_beam_once_replaced::Bool=true,
     interpreter::Union{Function,Nothing}=nothing,
     observational_equivalance::Bool=false,
