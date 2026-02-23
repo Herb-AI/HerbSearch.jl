@@ -44,6 +44,7 @@ include("random_iterator.jl")
 include("bottom_up_iterator.jl")
 include("bottom_up_iterators/costbased_bus.jl")
 include("bottom_up_iterators/shapebased_bus.jl")
+include("bottom_up_iterators/beam_iterator.jl")
 
 
 # include("divide_conquer_functions/divide.jl")
@@ -84,6 +85,7 @@ export
     SizeBasedBottomUpIterator,
     DepthBasedBottomUpIterator,
     CostBasedBottomUpIterator,
+    BeamIterator,
     AccessAddress,
     CombineAddress,
     remaining_combinations,
