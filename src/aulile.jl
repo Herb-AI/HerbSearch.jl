@@ -58,21 +58,18 @@ function aulile(
                 # Update grammar with the new compressed programs
                 new_rules_indices = Set{Int}()
                 compressed_programs = opts.compression(stats.programs, grammar; k=opts.synth_opts.num_returned_programs)
-                for new_rule in compressed_programs
-                    fixed_rules = split_hole(new_rule, grammar)
-                    for rule in fixed_rules
-                        rule_type = return_type(grammar, rule)
-                        new_expr = rulenode2expr(rule, grammar)
-                        to_add = :($rule_type = $(new_expr))
-                        if isprobabilistic(grammar)
-                            add_rule!(grammar, SMALL_COST, to_add)
-                        else
-                            add_rule!(grammar, to_add)
-                        end
-                        if length(grammar.rules) > grammar_size
-                            grammar_size = length(grammar.rules)
-                            new_rules_decoding[grammar_size] = rule
-                        end
+                for rule in compress_programs
+                    rule_type = return_type(grammar, rule)
+                    new_expr = rulenode2expr(rule, grammar)
+                    to_add = :($rule_type = $(new_expr))
+                    if isprobabilistic(grammar)
+                        add_rule!(grammar, SMALL_COST, to_add)
+                    else
+                        add_rule!(grammar, to_add)
+                    end
+                    if length(grammar.rules) > grammar_size
+                        grammar_size = length(grammar.rules)
+                        new_rules_decoding[grammar_size] = rule
                     end
                     push!(new_rules_indices, grammar_size)
                 end
