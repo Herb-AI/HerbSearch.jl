@@ -45,42 +45,44 @@ function aulile(
 
         if length(stats.programs) == 0
             return AulileStats(best_program, best_score, i, total_enums)
-        else
-            # Iteration must improve the score
-            @assert stats.score <= best_score
-            best_score = stats.score
-
-            best_program = stats.programs[1]
-            if best_score <= aux.best_value
-                # Program is optimal
-                return AulileStats(best_program, best_score, i, total_enums)
-            else
-                # Update grammar with the new compressed programs
-                new_rules_indices = Set{Int}()
-                compressed_programs = opts.compression(stats.programs, grammar; k=opts.synth_opts.num_returned_programs)
-                for rule in compress_programs
-                    rule_type = return_type(grammar, rule)
-                    new_expr = rulenode2expr(rule, grammar)
-                    to_add = :($rule_type = $(new_expr))
-                    if isprobabilistic(grammar)
-                        add_rule!(grammar, SMALL_COST, to_add)
-                    else
-                        add_rule!(grammar, to_add)
-                    end
-                    if length(grammar.rules) > grammar_size
-                        grammar_size = length(grammar.rules)
-                        new_rules_decoding[grammar_size] = rule
-                    end
-                    push!(new_rules_indices, grammar_size)
-                end
-            end
-            if opts.synth_opts.print_debug
-                println("Grammar after step $(i):")
-                print_new_grammar_rules(grammar, grammar_size - opts.synth_opts.num_returned_programs)
-            end
         end
 
-        required_constraint = opts.restart_iterator && !isempty(new_rules_indices) ? ContainsAny(collect(new_rules_indices)) : nothing
+        # Iteration must improve the score
+        @assert stats.score <= best_score
+        best_score = stats.score
+
+        best_program = stats.programs[1]
+        if best_score <= aux.best_value
+            # Program is optimal
+            return AulileStats(best_program, best_score, i, total_enums)
+        end
+
+        # Update grammar with the new compressed programs
+        new_rules_indices = Set{Int}()
+        compressed_programs = opts.compression(stats.programs, grammar; k=opts.synth_opts.num_returned_programs)
+        for rule in compress_programs
+            rule_type = return_type(grammar, rule)
+            new_expr = rulenode2expr(rule, grammar)
+            to_add = :($rule_type = $(new_expr))
+            if isprobabilistic(grammar)
+                add_rule!(grammar, SMALL_COST, to_add)
+            else
+                add_rule!(grammar, to_add)
+            end
+            if length(grammar.rules) > grammar_size
+                grammar_size = length(grammar.rules)
+                new_rules_decoding[grammar_size] = rule
+            end
+        end
+        push!(new_rules_indices, grammar_size)
+    
+        if opts.synth_opts.print_debug
+            println("Grammar after step $(i):")
+            print_new_grammar_rules(grammar, grammar_size - opts.synth_opts.num_returned_programs)
+        end
+
+        required_constraint = opts.synth_opts.count_previously_seen_programs && 
+            !isempty(new_rules_indices) ? ContainsAny(collect(new_rules_indices)) : nothing
         if opts.synth_opts.print_debug && !isnothing(required_constraint)
             println("ContainsAny constraint will be checked: $(required_constraint.rules)")
         end
@@ -122,26 +124,12 @@ function synth_with_aux(
     worst_score = typemax(Int)
 
     candidate_program = nothing
-    iter_state = nothing
     restoring_checkpoint = !isnothing(required_constraint)
     skipped_candidates = 0
 
     start_time = time()
     loop_enums = 0
-    while true
-        if loop_enums >= opts.max_enumerations || time() - start_time > opts.max_time
-            break
-        end
-
-        next_item = isnothing(iter_state) ? iterate(iterator) : iterate(iterator, iter_state)
-        if isnothing(next_item)
-            if opts.print_debug
-                println("Iterator exhausted.")
-            end
-            break
-        end
-
-        candidate_program, iter_state = next_item
+    for (loop_enums, candidate_program) in enumerate(iterator)
         # Skip checked candidates if restoring to a checkpoint
         if restoring_checkpoint
             if candidate_program == checkpoint_program
@@ -153,7 +141,6 @@ function synth_with_aux(
             end
         end
 
-        loop_enums += 1
         score = evaluate_with_aux(problem, candidate_program, grammar, new_rules_decoding;
             opts=opts.eval_opts)
         if score == aux_bestval
@@ -172,6 +159,10 @@ function synth_with_aux(
             push!(best_programs, (score, freeze_state(candidate_program)))
             length(best_programs) > opts.num_returned_programs && pop!(best_programs)
             worst_score = first(first(best_programs))
+        end
+
+        if loop_enums > opts.max_enumerations || time() - start_time > opts.max_time
+            break
         end
     end
 
