@@ -128,6 +128,7 @@ Base.@kwdef struct SynthOptions
     num_returned_programs = 1
     max_enumerations = typemax(Int)
     max_time = typemax(Float64)
+    count_previously_seen_programs = false
     print_debug = false
     eval_opts = EvaluateOptions()
 end
@@ -144,7 +145,6 @@ end
 Base.@kwdef struct AulileOptions
     max_iterations = 5
     max_depth = 10
-    restart_iterator = false
     compression::Function = default_compression
     synth_opts = SynthOptions()
 end

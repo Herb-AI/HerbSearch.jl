@@ -45,45 +45,47 @@ function aulile(
 
         if length(stats.programs) == 0
             return AulileStats(best_program, best_score, i, total_enums)
-        else
-            # Iteration must improve the score
-            @assert stats.score <= best_score
-            best_score = stats.score
-
-            best_program = stats.programs[1]
-            if best_score <= aux.best_value
-                # Program is optimal
-                return AulileStats(best_program, best_score, i, total_enums)
-            else
-                # Update grammar with the new compressed programs
-                new_rules_indices = Set{Int}()
-                compressed_programs = opts.compression(stats.programs, grammar; k=opts.synth_opts.num_returned_programs)
-                for new_rule in compressed_programs
-                    fixed_rules = split_hole(new_rule, grammar)
-                    for rule in fixed_rules
-                        rule_type = return_type(grammar, rule)
-                        new_expr = rulenode2expr(rule, grammar)
-                        to_add = :($rule_type = $(new_expr))
-                        if isprobabilistic(grammar)
-                            add_rule!(grammar, SMALL_COST, to_add)
-                        else
-                            add_rule!(grammar, to_add)
-                        end
-                        if length(grammar.rules) > grammar_size
-                            grammar_size = length(grammar.rules)
-                            new_rules_decoding[grammar_size] = rule
-                        end
-                    end
-                    push!(new_rules_indices, grammar_size)
-                end
-            end
-            if opts.synth_opts.print_debug
-                println("Grammar after step $(i):")
-                print_new_grammar_rules(grammar, grammar_size - opts.synth_opts.num_returned_programs)
-            end
         end
 
-        required_constraint = opts.restart_iterator && !isempty(new_rules_indices) ? ContainsAny(collect(new_rules_indices)) : nothing
+        # Iteration must improve the score
+        @assert stats.score <= best_score
+        best_score = stats.score
+
+        best_program = stats.programs[1]
+        if best_score <= aux.best_value
+            # Program is optimal
+            return AulileStats(best_program, best_score, i, total_enums)
+        end
+
+        # Update grammar with the new compressed programs
+        new_rules_indices = Set{Int}()
+        compressed_programs = opts.compression(stats.programs, grammar; k=opts.synth_opts.num_returned_programs)
+        for new_rule in compressed_programs
+            fixed_rules = split_hole(new_rule, grammar)
+            for rule in fixed_rules
+                rule_type = return_type(grammar, rule)
+                new_expr = rulenode2expr(rule, grammar)
+                to_add = :($rule_type = $(new_expr))
+                if isprobabilistic(grammar)
+                    add_rule!(grammar, SMALL_COST, to_add)
+                else
+                    add_rule!(grammar, to_add)
+                end
+                if length(grammar.rules) > grammar_size
+                    grammar_size = length(grammar.rules)
+                    new_rules_decoding[grammar_size] = rule
+                end
+            end
+            push!(new_rules_indices, grammar_size)
+        end
+    
+        if opts.synth_opts.print_debug
+            println("Grammar after step $(i):")
+            print_new_grammar_rules(grammar, grammar_size - opts.synth_opts.num_returned_programs)
+        end
+
+        required_constraint = opts.synth_opts.count_previously_seen_programs && 
+            !isempty(new_rules_indices) ? ContainsAny(collect(new_rules_indices)) : nothing
         if opts.synth_opts.print_debug && !isnothing(required_constraint)
             println("ContainsAny constraint will be checked: $(required_constraint.rules)")
         end
