@@ -21,14 +21,14 @@ end
     Holds statistics returned from the search process.
 
     - `programs`::AbstractVector{<:AbstractRuleNode}: Best programs found, sorted from best to worst.
-    - `last_program`::Union{Nothing, AbstractRuleNode}: Last program enumerated by the iterator.
+    - `last_program`::Union{AbstractRuleNode, Nothing}: Last program enumerated by the iterator.
     - `score`::Number: Best score found.
     - `enumerations::Int`: The number of enumerations performed during the search.
     - `time::Float64`: How long the search process took.
 """
 struct SearchStats
     programs::AbstractVector{<:AbstractRuleNode}
-    last_program::Union{Nothing,AbstractRuleNode}
+    last_program::Union{AbstractRuleNode, Nothing}
     score::Number
     enumerations::Int
     time::Float64

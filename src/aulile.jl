@@ -125,26 +125,12 @@ function synth_with_aux(
     worst_score = typemax(Int)
 
     candidate_program = nothing
-    iter_state = nothing
     restoring_checkpoint = !isnothing(required_constraint)
     skipped_candidates = 0
 
     start_time = time()
     loop_enums = 0
-    while true
-        if loop_enums >= opts.max_enumerations || time() - start_time > opts.max_time
-            break
-        end
-
-        next_item = isnothing(iter_state) ? iterate(iterator) : iterate(iterator, iter_state)
-        if isnothing(next_item)
-            if opts.print_debug
-                println("Iterator exhausted.")
-            end
-            break
-        end
-
-        candidate_program, iter_state = next_item
+    for (loop_enums, candidate_program) in enumerate(iterator)
         # Skip checked candidates if restoring to a checkpoint
         if restoring_checkpoint
             if candidate_program == checkpoint_program
@@ -156,7 +142,6 @@ function synth_with_aux(
             end
         end
 
-        loop_enums += 1
         score = evaluate_with_aux(problem, candidate_program, grammar, new_rules_decoding;
             opts=opts.eval_opts)
         if score == aux_bestval
@@ -175,6 +160,10 @@ function synth_with_aux(
             push!(best_programs, (score, freeze_state(candidate_program)))
             length(best_programs) > opts.num_returned_programs && pop!(best_programs)
             worst_score = first(first(best_programs))
+        end
+
+        if loop_enums > opts.max_enumerations || time() - start_time > opts.max_time
+            break
         end
     end
 
