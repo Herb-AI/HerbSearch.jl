@@ -15,7 +15,7 @@ function aulile(
     problem::Problem{<:AbstractVector{<:IOExample}},
     iter_t::Type{<:ProgramIterator},
     grammar::AbstractGrammar;
-    new_rules_decoding::Dict{Int,AbstractRuleNode}=Dict(),
+    new_rules_decoding::Dict{Int,AbstractRuleNode}=Dict{Int,AbstractRuleNode}(),
     opts::AulileOptions=AulileOptions()
 )::AulileStats
     aux = opts.synth_opts.eval_opts.aux
@@ -32,7 +32,8 @@ function aulile(
     best_program = nothing
     total_enums = 0
     for i in 1:opts.max_iterations
-        stats = synth_with_aux(problem, iter, grammar, new_rules_decoding, best_score;
+        stats = synth_with_aux(problem, iter, grammar, best_score;
+            new_rules_decoding=new_rules_decoding,
             checkpoint_program=checkpoint_program,
             required_programs_before_checkpoint=required_programs_before_checkpoint,
             opts=opts.synth_opts)
@@ -89,9 +90,9 @@ end
     - `problem`: The problem definition with IO examples.
     - `iterator`: Program enumeration iterator.
     - `grammar`: Grammar used to generate and interpret programs.
+    - `score_upper_bound`: Current best score to beat.
     - `new_rules_decoding`: A dictionary mapping rule indices to their original `RuleNode`s, 
         used when interpreting newly added grammar rules.
-    - `score_upper_bound`: Current best score to beat.
     - `checkpoint_program`: Optional program used to disable the rule filter once reached.
     - `required_programs_before_checkpoint`: A set of indices of the new grammar rules for restoring checkpoint
     - `opts`: A list of additional arguments.
@@ -103,10 +104,10 @@ function synth_with_aux(
     problem::Problem{<:AbstractVector{<:IOExample}},
     iterator::ProgramIterator,
     grammar::AbstractGrammar,
-    new_rules_decoding::Dict{Int,AbstractRuleNode},
     score_upper_bound::Number;
+    new_rules_decoding::Dict{Int,AbstractRuleNode}=Dict{Int,AbstractRuleNode}(),
     checkpoint_program::Union{AbstractRuleNode,Nothing}=nothing,
-    required_programs_before_checkpoint::Set{Int}=Set(),
+    required_programs_before_checkpoint::Set{Int}=Set{Int}(),
     opts::SynthOptions=SynthOptions(),
 )::SearchStats
     aux_bestval = opts.eval_opts.aux.best_value
@@ -115,9 +116,10 @@ function synth_with_aux(
     best_programs = BinaryHeap{Tuple{Int,RuleNode}}(ord)
     worst_score = typemax(Int)
 
-    checkpoint_constraint = !isnothing(checkpoint_program) ? 
+    restoring_checkpoint = !isnothing(checkpoint_program)
+    checkpoint_constraint = restoring_checkpoint ? 
         ContainsAny(collect(required_programs_before_checkpoint)) : nothing
-    restoring_checkpoint = !isnothing(checkpoint_constraint)
+    
     skipped_candidates = 0
     
     start_time = time()
@@ -128,7 +130,7 @@ function synth_with_aux(
             skipped_candidates += 1
             restoring_checkpoint = false
             continue
-        elseif restoring_checkpoint && !check_tree(required_constraint, candidate_program)
+        elseif restoring_checkpoint && !check_tree(checkpoint_constraint, candidate_program)
             skipped_candidates += 1
             continue
         end
