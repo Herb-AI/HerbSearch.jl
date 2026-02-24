@@ -146,6 +146,7 @@ Base.@kwdef struct AulileOptions
     max_iterations = 5
     max_depth = 10
     compression::Function = default_compression
+    start_symbol::Symbol = :Start
     synth_opts = SynthOptions()
 end
 

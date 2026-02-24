@@ -1,5 +1,3 @@
-const SMALL_COST = 1
-
 """
     Performs iterative library learning (Aulile) by enumerating programs using a grammar and synthesizing programs that 
         minimize the auxiliary scoring function across `IOExample`s.
@@ -16,8 +14,8 @@ const SMALL_COST = 1
 function aulile(
     problem::Problem{<:AbstractVector{<:IOExample}},
     iter_t::Type{<:ProgramIterator},
-    grammar::AbstractGrammar,
-    start_symbol::Symbol;
+    grammar::AbstractGrammar;
+    new_rules_decoding::Dict{Int,AbstractRuleNode}=Dict(),
     opts::AulileOptions=AulileOptions()
 )::AulileStats
     aux = opts.synth_opts.eval_opts.aux
@@ -26,20 +24,18 @@ function aulile(
         println("Initial Distance: $(best_score)")
     end
 
-    iter = iter_t(grammar, start_symbol, max_depth=opts.max_depth)
-    required_constraint = nothing
+    iter = iter_t(grammar, opts.start_symbol, max_depth=opts.max_depth)
     checkpoint_program = nothing
-    new_rules_decoding = Dict{Int,AbstractRuleNode}()
+    required_programs_before_checkpoint = Set{Int}()
     grammar_size = length(grammar.rules)
 
     best_program = nothing
     total_enums = 0
     for i in 1:opts.max_iterations
-        new_rules_indices = Set{Int}()
         stats = synth_with_aux(problem, iter, grammar, new_rules_decoding, best_score;
-            opts=opts.synth_opts,
-            required_constraint=required_constraint,
-            checkpoint_program=checkpoint_program)
+            checkpoint_program=checkpoint_program,
+            required_programs_before_checkpoint=required_programs_before_checkpoint,
+            opts=opts.synth_opts)
         checkpoint_program = stats.last_program
         total_enums += stats.enumerations
 
@@ -58,35 +54,31 @@ function aulile(
         end
 
         # Update grammar with the new compressed programs
-        new_rules_indices = Set{Int}()
+        required_programs_before_checkpoint = Set{Int}()
         compressed_programs = opts.compression(stats.programs, grammar; k=opts.synth_opts.num_returned_programs)
         for rule in compressed_programs
             rule_type = return_type(grammar, rule)
             new_expr = rulenode2expr(rule, grammar)
             to_add = :($rule_type = $(new_expr))
             if isprobabilistic(grammar)
-                add_rule!(grammar, SMALL_COST, to_add)
+                add_rule!(grammar, 1, to_add) # Adds small cost
             else
                 add_rule!(grammar, to_add)
             end
+            # Check if adding to the grammar was successful
             if length(grammar.rules) > grammar_size
                 grammar_size = length(grammar.rules)
                 new_rules_decoding[grammar_size] = rule
+                push!(required_programs_before_checkpoint, grammar_size)
             end
         end
-        push!(new_rules_indices, grammar_size)
     
         if opts.synth_opts.print_debug
             println("Grammar after step $(i):")
             print_new_grammar_rules(grammar, grammar_size - opts.synth_opts.num_returned_programs)
         end
 
-        required_constraint = opts.synth_opts.count_previously_seen_programs && 
-            !isempty(new_rules_indices) ? ContainsAny(collect(new_rules_indices)) : nothing
-        if opts.synth_opts.print_debug && !isnothing(required_constraint)
-            println("ContainsAny constraint will be checked: $(required_constraint.rules)")
-        end
-        iter = iter_t(grammar, start_symbol, max_depth=opts.max_depth)
+        iter = iter_t(grammar, opts.start_symbol, max_depth=opts.max_depth)
     end
     return AulileStats(best_program, best_score, max_iterations, total_enums)
 end
@@ -100,9 +92,9 @@ end
     - `new_rules_decoding`: A dictionary mapping rule indices to their original `RuleNode`s, 
         used when interpreting newly added grammar rules.
     - `score_upper_bound`: Current best score to beat.
-    - `opts`: A list of additional arguments.
-    - `required_constraint`: Optional `ContainsAny` constraint; when provided, candidates must satisfy it.
     - `checkpoint_program`: Optional program used to disable the rule filter once reached.
+    - `required_programs_before_checkpoint`: A set of indices of the new grammar rules for restoring checkpoint
+    - `opts`: A list of additional arguments.
 
     Returns a `SearchStats` object containing the best programs found (sorted best-first), 
     the iterator state, and search metrics.
@@ -113,9 +105,9 @@ function synth_with_aux(
     grammar::AbstractGrammar,
     new_rules_decoding::Dict{Int,AbstractRuleNode},
     score_upper_bound::Number;
+    checkpoint_program::Union{AbstractRuleNode,Nothing}=nothing,
+    required_programs_before_checkpoint::Set{Int}=Set(),
     opts::SynthOptions=SynthOptions(),
-    required_constraint::Union{Nothing,ContainsAny}=nothing,
-    checkpoint_program::Union{Nothing,AbstractRuleNode}=nothing,
 )::SearchStats
     aux_bestval = opts.eval_opts.aux.best_value
     # Max-heap to store minimal number of programs
@@ -123,22 +115,22 @@ function synth_with_aux(
     best_programs = BinaryHeap{Tuple{Int,RuleNode}}(ord)
     worst_score = typemax(Int)
 
-    candidate_program = nothing
-    restoring_checkpoint = !isnothing(required_constraint)
+    checkpoint_constraint = !isnothing(checkpoint_program) ? 
+        ContainsAny(collect(required_programs_before_checkpoint)) : nothing
+    restoring_checkpoint = !isnothing(checkpoint_constraint)
     skipped_candidates = 0
-
+    
     start_time = time()
     loop_enums = 0
+    candidate_program = nothing
     for (loop_enums, candidate_program) in enumerate(iterator)
-        # Skip checked candidates if restoring to a checkpoint
-        if restoring_checkpoint
-            if candidate_program == checkpoint_program
-                restoring_checkpoint = false
-                continue
-            elseif !check_tree(required_constraint, candidate_program)
-                skipped_candidates += 1
-                continue
-            end
+        if restoring_checkpoint && candidate_program == checkpoint_program
+            skipped_candidates += 1
+            restoring_checkpoint = false
+            continue
+        elseif restoring_checkpoint && !check_tree(required_constraint, candidate_program)
+            skipped_candidates += 1
+            continue
         end
 
         score = evaluate_with_aux(problem, candidate_program, grammar, new_rules_decoding;
@@ -161,7 +153,7 @@ function synth_with_aux(
             worst_score = first(first(best_programs))
         end
 
-        if loop_enums > opts.max_enumerations || time() - start_time > opts.max_time
+        if loop_enums >= opts.max_enumerations || time() - start_time > opts.max_time
             break
         end
     end
