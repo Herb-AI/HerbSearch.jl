@@ -28,3 +28,5 @@ experiments/comparison_plots/**
 !experiments/comparison_plots/.gitkeep
 /statprof
 /.vscode
+
+Manifest.toml
