@@ -9,7 +9,7 @@
     - `enumerations::Int`: The number of enumerations performed during the search.
 """
 struct AulileStats
-    program::RuleNode
+    program::Union{RuleNode, Nothing}
     score::Number
     iterations::Int
     enumerations::Int
