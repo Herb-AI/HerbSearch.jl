@@ -60,7 +60,7 @@ function aulile(
         # Update grammar with the new compressed programs
         new_rules_indices = Set{Int}()
         compressed_programs = opts.compression(stats.programs, grammar; k=opts.synth_opts.num_returned_programs)
-        for rule in compress_programs
+        for rule in compressed_programs
             rule_type = return_type(grammar, rule)
             new_expr = rulenode2expr(rule, grammar)
             to_add = :($rule_type = $(new_expr))
