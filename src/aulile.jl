@@ -6,7 +6,7 @@
     - `iter_t`: Type of program iterator to use (must be constructible with grammar and symbol).
     - `grammar`: The grammar used to generate candidate programs.
     - `start_symbol`: The non-terminal symbol representing the start of the grammar.
-    - `new_rules_symbol`: A symbol used to add new rules to the grammar as library learning.
+    - `new_rules_decoding`: A dictionary to map new rules to interpretable ASTs during library learning.
     - `opts`: A list of additional arguments.
 
     Returns an `AulileStats` struct with the best program found, its score, and aulile metrics.
@@ -26,7 +26,7 @@ function aulile(
 
     iter = iter_t(grammar, opts.start_symbol, max_depth=opts.max_depth)
     checkpoint_program = nothing
-    required_programs_before_checkpoint = Set{Int}()
+    required_rules_before_checkpoint = Set{Int}()
     grammar_size = length(grammar.rules)
 
     best_program = nothing
@@ -35,11 +35,12 @@ function aulile(
         stats = synth_with_aux(problem, iter, grammar, best_score;
             new_rules_decoding=new_rules_decoding,
             checkpoint_program=checkpoint_program,
-            required_programs_before_checkpoint=required_programs_before_checkpoint,
+            required_rules_before_checkpoint=required_rules_before_checkpoint,
             opts=opts.synth_opts)
         checkpoint_program = stats.last_program
         total_enums += stats.enumerations
 
+        # Last iteration did not find better programs
         if length(stats.programs) == 0
             return AulileStats(best_program, best_score, i, total_enums)
         end
@@ -55,7 +56,7 @@ function aulile(
         end
 
         # Update grammar with the new compressed programs
-        required_programs_before_checkpoint = Set{Int}()
+        empty!(required_rules_before_checkpoint)
         compressed_programs = opts.compression(stats.programs, grammar; k=opts.synth_opts.num_returned_programs)
         for rule in compressed_programs
             rule_type = return_type(grammar, rule)
@@ -70,10 +71,10 @@ function aulile(
             if length(grammar.rules) > grammar_size
                 grammar_size = length(grammar.rules)
                 new_rules_decoding[grammar_size] = rule
-                push!(required_programs_before_checkpoint, grammar_size)
+                push!(required_rules_before_checkpoint, grammar_size)
             end
         end
-    
+
         if opts.synth_opts.print_debug
             println("Grammar after step $(i):")
             print_new_grammar_rules(grammar, grammar_size - opts.synth_opts.num_returned_programs)
@@ -81,7 +82,7 @@ function aulile(
 
         iter = iter_t(grammar, opts.start_symbol, max_depth=opts.max_depth)
     end
-    return AulileStats(best_program, best_score, max_iterations, total_enums)
+    return AulileStats(best_program, best_score, opts.max_iterations, total_enums)
 end
 
 """
@@ -91,10 +92,9 @@ end
     - `iterator`: Program enumeration iterator.
     - `grammar`: Grammar used to generate and interpret programs.
     - `score_upper_bound`: Current best score to beat.
-    - `new_rules_decoding`: A dictionary mapping rule indices to their original `RuleNode`s, 
-        used when interpreting newly added grammar rules.
+    - `new_rules_decoding`: A dictionary to map new rules to interpretable ASTs during library learning.
     - `checkpoint_program`: Optional program used to disable the rule filter once reached.
-    - `required_programs_before_checkpoint`: A set of indices of the new grammar rules for restoring checkpoint
+    - `required_rules_before_checkpoint`: A set of grammar rule indices to be considered until checkpoint is reached.
     - `opts`: A list of additional arguments.
 
     Returns a `SearchStats` object containing the best programs found (sorted best-first), 
@@ -107,7 +107,7 @@ function synth_with_aux(
     score_upper_bound::Number;
     new_rules_decoding::Dict{Int,AbstractRuleNode}=Dict{Int,AbstractRuleNode}(),
     checkpoint_program::Union{AbstractRuleNode,Nothing}=nothing,
-    required_programs_before_checkpoint::Set{Int}=Set{Int}(),
+    required_rules_before_checkpoint::Set{Int}=Set{Int}(),
     opts::SynthOptions=SynthOptions(),
 )::SearchStats
     aux_bestval = opts.eval_opts.aux.best_value
@@ -116,27 +116,28 @@ function synth_with_aux(
     best_programs = BinaryHeap{Tuple{Int,RuleNode}}(ord)
     worst_score = typemax(Int)
 
-    restoring_checkpoint = !isnothing(checkpoint_program)
-    checkpoint_constraint = restoring_checkpoint ? 
-        ContainsAny(collect(required_programs_before_checkpoint)) : nothing
-    
+    restoring_checkpoint = !isnothing(checkpoint_program) && opts.skip_old_programs
+    checkpoint_constraint = restoring_checkpoint ? ContainsAny(collect(required_rules_before_checkpoint)) : nothing
     skipped_candidates = 0
-    
+
+    candidate_program = nothing
     start_time = time()
     loop_enums = 0
-    candidate_program = nothing
-    for (loop_enums, candidate_program) in enumerate(iterator)
-        if restoring_checkpoint && candidate_program == checkpoint_program
+    for _candidate_program in iterator
+        # Julia scoping issue - loop variables shadow outer ones
+        candidate_program = _candidate_program
+        # Skip old candidates until we reach checkpoint, from which point we search normally
+        if restoring_checkpoint && !check_tree(checkpoint_constraint, candidate_program)
             skipped_candidates += 1
-            restoring_checkpoint = false
             continue
-        elseif restoring_checkpoint && !check_tree(checkpoint_constraint, candidate_program)
+        elseif restoring_checkpoint && candidate_program == checkpoint_program
+            restoring_checkpoint = false
             skipped_candidates += 1
             continue
         end
 
-        score = evaluate_with_aux(problem, candidate_program, grammar, new_rules_decoding;
-            opts=opts.eval_opts)
+        loop_enums += 1
+        score = evaluate_with_aux(problem, candidate_program, grammar, new_rules_decoding; opts=opts.eval_opts)
         if score == aux_bestval
             optimal_program = freeze_state(candidate_program)
             if opts.print_debug

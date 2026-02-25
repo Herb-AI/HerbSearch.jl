@@ -9,7 +9,7 @@
     - `enumerations::Int`: The number of enumerations performed during the search.
 """
 struct AulileStats
-    program::Union{RuleNode, Nothing}
+    program::Union{RuleNode,Nothing}
     score::Number
     iterations::Int
     enumerations::Int
@@ -28,7 +28,7 @@ end
 """
 struct SearchStats
     programs::AbstractVector{<:AbstractRuleNode}
-    last_program::Union{AbstractRuleNode, Nothing}
+    last_program::Union{AbstractRuleNode,Nothing}
     score::Number
     enumerations::Int
     time::Float64
@@ -121,6 +121,7 @@ end
     - `num_returned_programs`: Number of best programs returned.
     - `max_enumerations`: Maximum number of candidate programs to try.
     - `max_time`: Maximum allowed runtime for the synthesis loop.
+    - `skip_old_programs`: Whether to skip already explored programs until checkpoint.
     - `print_debug`: If true, print debug output.
     - `eval_opts`: Options for evaluation.
 """
@@ -128,7 +129,7 @@ Base.@kwdef struct SynthOptions
     num_returned_programs = 1
     max_enumerations = typemax(Int)
     max_time = typemax(Float64)
-    count_previously_seen_programs = false
+    skip_old_programs = true
     print_debug = false
     eval_opts = EvaluateOptions()
 end
@@ -138,7 +139,6 @@ end
 
     - `max_iterations`: Maximum number of learning iterations to perform.
     - `max_depth`: Maximum depth for program enumeration.
-    - `print_debug`: Whether to print debug info.
     - `compression`: A compression function before adding newfound programs to the grammar
     - `synth_opts`: Options for synthesis.
 """
