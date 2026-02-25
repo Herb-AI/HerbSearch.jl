@@ -14,7 +14,8 @@
 function aulile(
     problem::Problem{<:AbstractVector{<:IOExample}},
     iter_t::Type{<:ProgramIterator},
-    grammar::AbstractGrammar;
+    grammar::AbstractGrammar,
+    start_symbol::Symbol;
     new_rules_decoding::Dict{Int,AbstractRuleNode}=Dict{Int,AbstractRuleNode}(),
     opts::AulileOptions=AulileOptions()
 )::AulileStats
@@ -24,7 +25,7 @@ function aulile(
         println("Initial Distance: $(best_score)")
     end
 
-    iter = iter_t(grammar, opts.start_symbol, max_depth=opts.max_depth)
+    iter = iter_t(grammar, start_symbol, max_depth=opts.max_depth)
     checkpoint_program = nothing
     required_rules_before_checkpoint = Set{Int}()
     grammar_size = length(grammar.rules)
@@ -79,8 +80,7 @@ function aulile(
             println("Grammar after step $(i):")
             print_new_grammar_rules(grammar, grammar_size - opts.synth_opts.num_returned_programs)
         end
-
-        iter = iter_t(grammar, opts.start_symbol, max_depth=opts.max_depth)
+        iter = iter_t(grammar, start_symbol, max_depth=opts.max_depth)
     end
     return AulileStats(best_program, best_score, opts.max_iterations, total_enums)
 end

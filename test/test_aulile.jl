@@ -77,9 +77,8 @@ end
         IOExample(Dict(:x => "3"), "3.")
     ])
     g = deepcopy(simple_grammar)
-    opts = AulileOptions(start_symbol=:String, 
-        synth_opts=SynthOptions(eval_opts=EvaluateOptions(aux=levenshtein_aux)))
-    test_result = aulile(problem, BFSIterator, g, opts=opts)
+    opts = AulileOptions(synth_opts=SynthOptions(eval_opts=EvaluateOptions(aux=levenshtein_aux)))
+    test_result = aulile(problem, BFSIterator, g, :String, opts=opts)
     @test !(test_result.program isa Nothing)
     @test test_result.score == levenshtein_aux.best_value
     program = rulenode2expr(test_result.program, g)
@@ -92,9 +91,8 @@ end
         IOExample(Dict(:x => "3."), "3")
     ])
     g = deepcopy(simple_grammar)
-    opts = AulileOptions(start_symbol=:String, 
-        synth_opts=SynthOptions(eval_opts=EvaluateOptions(aux=levenshtein_aux)))
-    test_result = aulile(problem, BFSIterator, g, opts=opts)
+    opts = AulileOptions(synth_opts=SynthOptions(eval_opts=EvaluateOptions(aux=levenshtein_aux)))
+    test_result = aulile(problem, BFSIterator, g, :String, opts=opts)
     @test !(test_result.program isa Nothing)
     @test test_result.score == levenshtein_aux.best_value
     program = rulenode2expr(test_result.program, g)
@@ -109,10 +107,10 @@ PRINT_FLAG = false
         IOExample(Dict(:x => "978.654.0299"), "9786540299")
     ])
     g = deepcopy(simple_grammar)
-    opts = AulileOptions(start_symbol=:String, max_depth=2,
-        synth_opts=SynthOptions(eval_opts=EvaluateOptions(aux=levenshtein_aux), num_returned_programs=2, print_debug=PRINT_FLAG))
+    opts = AulileOptions(max_depth=2, synth_opts=SynthOptions(skip_old_programs=false,
+        eval_opts=EvaluateOptions(aux=levenshtein_aux), num_returned_programs=2, print_debug=PRINT_FLAG))
     elapsed = @elapsed begin
-        test_result = aulile(problem, BFSIterator, g, opts=opts)
+        test_result = aulile(problem, BFSIterator, g, :String, opts=opts)
         @test !(test_result.program isa Nothing)
         @test test_result.score == levenshtein_aux.best_value
         program = rulenode2expr(test_result.program, g)
@@ -130,10 +128,10 @@ end
         IOExample(Dict(:x => "978.654.0299"), "9786540299")
     ])
     g = deepcopy(simple_grammar)
-    opts = AulileOptions(max_depth=2, start_symbol=:String,
-        synth_opts=SynthOptions(eval_opts=EvaluateOptions(aux=levenshtein_aux), num_returned_programs=2, print_debug=PRINT_FLAG))
+    opts = AulileOptions(max_depth=2, synth_opts=SynthOptions(
+        eval_opts=EvaluateOptions(aux=levenshtein_aux), num_returned_programs=2, print_debug=PRINT_FLAG))
     elapsed = @elapsed begin
-        test_result = aulile(problem, BFSIterator, g, opts=opts)
+        test_result = aulile(problem, BFSIterator, g, :String, opts=opts)
         @test !(test_result.program isa Nothing)
         @test test_result.score == levenshtein_aux.best_value
         program = rulenode2expr(test_result.program, g)
