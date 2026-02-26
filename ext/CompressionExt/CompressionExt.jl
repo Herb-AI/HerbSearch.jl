@@ -57,7 +57,7 @@ function HerbSearch.compress_programs(
     data = String(take!(output))
 
     # Convert result into grammar rule
-    _, _, best_values = read_last_witness_from_json(data)
+    best_values = read_last_witness_from_json(data)
 
     # if no solution was found due to timeout or because theere are no subtree to be extracted, return the old grammar.
     if isnothing(best_values)

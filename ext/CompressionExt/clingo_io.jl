@@ -86,13 +86,14 @@ function read_last_witness_from_json(json_content)
         return (nothing,nothing,nothing)
     end
     optimal = json_parsed["Result"] == "OPTIMUM FOUND"
+    @info "Compression optimality: $optimal"
 
     witnesses = json_parsed["Call"][1]["Witnesses"]
 
     last_witness = witnesses[end]
     last_value = last_witness["Value"] #The best solution found
-    last_cost = last_witness["Costs"]
-    return optimal, last_cost, last_value
+    @info "Compression result: $last_value"
+    return last_value
 end
 
 
