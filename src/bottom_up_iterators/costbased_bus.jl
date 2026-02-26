@@ -51,7 +51,6 @@ get_measure_limit(iter::AbstractCostBasedBottomUpIterator) = iter.max_cost
 
 get_costs(grammar::AbstractGrammar) = abs.(grammar.log_probabilities)
 
-const EMPTYSET = Set{UInt64}() 
 """
     $(TYPEDSIGNATURES)
 
