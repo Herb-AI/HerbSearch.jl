@@ -73,7 +73,7 @@ function is_observationally_equivalent(
     outputs = hash(outputs, HASH_SEED)
 
     bank = get_bank(iter)
-    observed = get!(observed_outputs(bank), rettype, EMPTYSET)
+    observed = get!(observed_outputs(bank), rettype, Set{UInt64}())
 
     if outputs in observed
         return true
