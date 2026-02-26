@@ -51,7 +51,7 @@ get_measure_limit(iter::AbstractCostBasedBottomUpIterator) = iter.max_cost
 
 get_costs(grammar::AbstractGrammar) = abs.(grammar.log_probabilities)
 
-
+const EMPTYSET = Set{UInt64}() 
 """
     $(TYPEDSIGNATURES)
 
@@ -70,10 +70,10 @@ function is_observationally_equivalent(
         return false # no function given for observational equivalence, assume not equivalent
     end
     outputs = fn_map_to_outputs(program)
-    outputs = _hash_outputs_to_u64vec(outputs)
+    outputs = hash(outputs, HASH_SEED)
 
     bank = get_bank(iter)
-    observed = get!(observed_outputs(bank), rettype, Set{Vector{UInt64}}())
+    observed = get!(observed_outputs(bank), rettype, EMPTYSET)
 
     if outputs in observed
         return true
