@@ -18,6 +18,7 @@ function search(;
 
     # Initialize set of heuristic properties as empty set
     heuristic_properties = []
+    heuristic_properties_reprs = []
 
     for iteration in 1:max_iterations
 
@@ -25,14 +26,16 @@ function search(;
         function heuristic(rulenode, child_values)
             outputs = rulenode._val
 
+            if any(isnothing, outputs)
+                return Inf
+            end
+
             cost = 0
-            for (input, output, target_output) in zip(inputs, outputs, target_outputs)
-                if isnothing(output)
-                    return Inf
-                end
+            for p in heuristic_properties
+                target_values = p(target_outputs)
+                values = p(outputs)
                 
-                diff = Int[p(input, output) != p(input, target_output) for p in heuristic_properties]
-                cost += sum(diff)
+                cost += sum(target_values .!= values)
             end
 
             return cost
@@ -53,7 +56,7 @@ function search(;
             if beam_entry.program._val == target_outputs
                 println("\nSolution found :)")
                 println(rulenode2expr(beam_entry.program, grammar))
-                return beam_entry.program
+                return beam_entry.program, heuristic_properties_reprs
             end
         end
 
@@ -64,10 +67,10 @@ function search(;
         best_property_index = 0
         best_property_representation = nothing
         best_property_score = -Inf
-        best_possible_score = beam_size * length(target_outputs)
+        best_possible_score = count(output != target_output for outputs in beam_outputs for (output, target_output) in zip(outputs, target_outputs))
 
         for (property_index, (property, representation)) in enumerate(properties)
-            target_values = [property(input, target_output) for (input, target_output) in zip(inputs, target_outputs)]
+            target_values = property(target_outputs)
 
             # if !allequal(target_values)
             #     continue
@@ -76,9 +79,8 @@ function search(;
             score = 0
 
             for beam_entry_outputs in beam_outputs
-                for (input, beam_entry_output, target_value) in zip(inputs, beam_entry_outputs, target_values)
-                    score += property(input, beam_entry_output) != target_value
-                end
+                values = property(beam_entry_outputs)
+                score += sum(target_values .!= values)
             end
 
             if score > best_property_score
@@ -94,14 +96,27 @@ function search(;
         end
 
         # @show beam_outputs
-        println("\nIteration:\t $iteration\t\t Best score: $best_property_score\t\t Best property: $best_property_representation")
-        println("Iteration:\t $iteration\t\t Best cost:  $(iterator.beam[1].cost)\t\t Best outputs:  $(beam_outputs[1])")
-        # @show best_property_score
+        println("\nIteration:\t $iteration\t\t Best score: $best_property_score/$best_possible_score\t\t Best property: $best_property_representation")
+        # target_values = best_property(target_outputs)
+        # println("Target values:\t$target_values")
+
+        # for entry in iterator.beam
+        #     p = rulenode2expr(entry.program, grammar)
+        #     values = best_property(entry.program._val)
+
+        #     println("\t$(entry.cost) \t\t $(entry.program._val)\t\t $p")
+        #     println("\t$values")
+        # end
+        println("Best outputs\t $(beam_outputs[1])")
+        println("Best cost\t $(iterator.beam[1].cost)")
+        expr = rulenode2expr(iterator.beam[1].program, grammar)
+        println("Best program\t $expr")
         push!(heuristic_properties, best_property)
+        push!(heuristic_properties_reprs, best_property_representation)
         deleteat!(properties, best_property_index)
     end
 
     println("No solution found :(")
 
-    return nothing
+    return nothing, heuristic_properties_reprs
 end

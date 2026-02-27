@@ -2,7 +2,7 @@ using HerbCore, HerbGrammar, HerbSearch, HerbBenchmarks, HerbConstraints
 
 include("../string_functions.jl")
 include("../properties.jl")
-include("../search.jl")
+include("../search_alt.jl")
 
 benchmark = HerbBenchmarks.PBE_SLIA_Track_2019
 problem = benchmark.problem_clean_and_reformat_telephone_numbers
@@ -10,6 +10,8 @@ inputs = [io.in for io in problem.spec]
 grammar = benchmark.grammar_clean_and_reformat_telephone_numbers
 grammar_tags = benchmark.get_relevant_tags(grammar)
 interpreter = p -> [interpret_sygus(p, grammar_tags, input) for input in inputs]
+starting_symbol = grammar.rules[1]
+
 
 property_grammar = deepcopy(grammar)
 merge_grammars!(property_grammar, @cfgrammar begin
@@ -19,7 +21,7 @@ merge_grammars!(property_grammar, @cfgrammar begin
 end)
 addconstraint!(property_grammar, Contains(length(property_grammar.rules)))
 property_grammar_tags = benchmark.get_relevant_tags(property_grammar)
-property_interpreter = (p, y) -> [interpret_sygus(p, property_grammar_tags, (input[:_arg_out] = y; input)) for input in inputs]
+property_interpreter = (p, ys) -> [interpret_sygus(p, property_grammar_tags, (input[:_arg_out] = y; input)) for (y, input) in zip(ys, inputs)]
 
 #=
 
@@ -37,40 +39,47 @@ properties = generate_properties(;
 	max_size = 6,
 )
 
+@show length(properties)
+
 search(
     problem = problem,
     grammar = grammar,
     interpreter = interpreter,
     properties = properties,
-    max_iterations = 20,
+    starting_symbol = starting_symbol,
+    max_iterations = 50,
+    max_extension_depth = 2,
+    max_extension_size = 4,
+    observation_equivalance = true,
 )
 
 #=
 
-Without observational equivalance
+Iteration:       1               Best score: 30/30               Best property: contains_cvc(replace_cvc(_arg_out, "", _arg_1), _arg_out)
+Best outputs     ["801-456-8765", "<978> 654-0299", "978.654.0299"]
+Best cost        0
 
-Iteration:       1               Best score: 30          Best property: contains_cvc(concat_cvc(_arg_1, ","), _arg_out)
-Iteration:       1               Best cost:  0           Best outputs:  ["0", "0", "0"]
+Iteration:       2               Best score: 30/30               Best property: -1 == str_to_int_cvc(_arg_out)
+Best outputs     ["-1", "-1", "-1"]
+Best cost        0
 
-Iteration:       2               Best score: 30          Best property: prefixof_cvc("-", _arg_out)
-Iteration:       2               Best cost:  0           Best outputs:  ["-11", "-11", "-11"]
+Iteration:       3               Best score: 30/30               Best property: contains_cvc(int_to_str_cvc(len_cvc(_arg_out)), int_to_str_cvc(1))
+Best outputs     ["12", "14", "12"]
+Best cost        0
 
-Iteration:       3               Best score: 30          Best property: -1 == str_to_int_cvc(_arg_out)
-Iteration:       3               Best cost:  0           Best outputs:  ["801-456-87651", "<978> 654-02991", "978.654.02991"]
+Iteration:       4               Best score: 20/20               Best property: contains_cvc(int_to_str_cvc(len_cvc(_arg_out)), int_to_str_cvc(0))
+Best outputs     ["8014568765", "<978> 6540299", "9786540299"]
+Best cost        1
 
-Iteration:       4               Best score: 30          Best property: contains_cvc(_arg_out, at_cvc(_arg_1, 1))
-Iteration:       4               Best cost:  0           Best outputs:  ["11", "11", "11"]
+Iteration:       5               Best score: 10/10               Best property: prefixof_cvc("<", _arg_out)
+Best outputs     ["8014568765", "<978> 6540299", "9786540299"]
+Best cost        2
 
-Iteration:       5               Best score: 30          Best property: prefixof_cvc(at_cvc(_arg_1, 1), _arg_out)
-Iteration:       5               Best cost:  3           Best outputs:  ["11", "11", "11"]
-
-Iteration:       6               Best score: 30          Best property: contains_cvc(int_to_str_cvc(len_cvc(_arg_out)), int_to_str_cvc(0))
-Iteration:       6               Best cost:  1           Best outputs:  ["8011456187651", "978> 654102991", "97865402991"]
-
-Iteration:       7               Best score: 10          Best property: contains_cvc(_arg_out, " ")
-Iteration:       7               Best cost:  2           Best outputs:  ["8014568765", "978> 6540299", "9786540299"]
+Iteration:       6               Best score: 10/10               Best property: contains_cvc(_arg_out, " ")
+Best outputs     ["8014568765", ">978> 6540299", "9786540299"]
+Best cost        2
 
 Solution found :)
-replace_cvc(replace_cvc(replace_cvc(replace_cvc(replace_cvc(_arg_1, "-", ""), "<", ""), ".", ""), " ", ""), ">", "")
-11{11{11{11{11{2,6,3},8,3},7,3},4,3},9,3}
+replace_cvc(replace_cvc(replace_cvc(replace_cvc(_arg_1, "<", ""), concat_cvc(">", " "), ""), ".", ""), "-", "")
+
 =#

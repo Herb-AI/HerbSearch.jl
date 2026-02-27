@@ -2,7 +2,7 @@ using HerbCore, HerbGrammar, HerbSearch, HerbBenchmarks, HerbConstraints
 
 include("../string_functions.jl")
 include("../properties.jl")
-include("../search.jl")
+include("../search_alt.jl")
 
 benchmark = HerbBenchmarks.PBE_SLIA_Track_2019
 problem = benchmark.problem_name_combine_2
@@ -19,7 +19,7 @@ merge_grammars!(property_grammar, @cfgrammar begin
 end)
 addconstraint!(property_grammar, Contains(length(property_grammar.rules)))
 property_grammar_tags = benchmark.get_relevant_tags(property_grammar)
-property_interpreter = (p, y) -> [interpret_sygus(p, property_grammar_tags, (input[:_arg_out] = y; input)) for input in inputs]
+property_interpreter = (p, ys) -> [interpret_sygus(p, property_grammar_tags, (input[:_arg_out] = y; input)) for (y, input) in zip(ys, inputs)]
 
 #=
 
@@ -62,75 +62,31 @@ search(
     grammar = grammar,
     interpreter = interpreter,
     properties = properties,
-    max_iterations = 100,
+    max_iterations = 50,
+    max_extension_depth = 2,
+    max_extension_size = 4,
+    observation_equivalance = true,
 )
 
 #=
 
-Without observational equivalance
--- Using only invariant properties works better for this problem... 
+Iteration:       1               Best score: 40/40               Best property: suffixof_cvc(_arg_out, replace_cvc(_arg_out, " ", _arg_out))
+Best outputs     ["Nancy", "Andrew", "Jan", "Mariya"]
+Best cost        0
 
-Iteration:       1               Best score: 40          Best property: prefixof_cvc(concat_cvc(_arg_1, " "), _arg_out)
-Iteration:       1               Best cost:  0           Best outputs:  ["FreeHafer.", "Cencici.", "Kotas.", "Sergienko."]
+Iteration:       2               Best score: 40/40               Best property: prefixof_cvc(_arg_1, _arg_out)
+Best outputs     [" Nancy", " Andrew", " Jan", " Mariya"]
+Best cost        0
 
-Iteration:       2               Best score: 40          Best property: suffixof_cvc(at_cvc(_arg_2, len_cvc(_arg_out)), _arg_2)
-Iteration:       2               Best cost:  0           Best outputs:  ["Nancy ", "Andrew ", "Jan ", "Mariya "]
+Iteration:       3               Best score: 40/40               Best property: suffixof_cvc(concat_cvc(at_cvc(_arg_2, 1), "."), _arg_out)
+Best outputs     ["Nancy FreeHafer", "Andrew Cencici", "Jan Kotas", "Mariya Sergienko"]
+Best cost        0
 
-Iteration:       3               Best score: 40          Best property: suffixof_cvc(concat_cvc(at_cvc(_arg_2, 1), "."), _arg_out)
-Iteration:       3               Best cost:  0           Best outputs:  ["Nancy   ", "Andrew   ", "Jan   ", "Mariya   "]
-
-Iteration:       4               Best score: 40          Best property: suffixof_cvc(concat_cvc(at_cvc(_arg_2, len_cvc(" ")), "."), _arg_out)
-Iteration:       4               Best cost:  4           Best outputs:  ["Nancy   ", "Andrew   ", "Jan   ", "Mariya   "]
-
-Iteration:       5               Best score: 40          Best property: suffixof_cvc(concat_cvc(at_cvc(_arg_2, len_cvc(".")), "."), _arg_out)
-Iteration:       5               Best cost:  8           Best outputs:  ["Nancy   ", "Andrew   ", "Jan   ", "Mariya   "]
-
-Iteration:       6               Best score: 40          Best property: suffixof_cvc(concat_cvc(substr_cvc(_arg_2, 1, 1), "."), _arg_out)
-Iteration:       6               Best cost:  12          Best outputs:  ["Nancy   ", "Andrew   ", "Jan   ", "Mariya   "]
-
-Iteration:       7               Best score: 30          Best property: prefixof_cvc(".", at_cvc(_arg_out, len_cvc(_arg_2)))
-Iteration:       7               Best cost:  15          Best outputs:  ["Nancy Fre.", "Andrew .", "Jan K.", "Mariya Se."]
-
-Iteration:       8               Best score: 40          Best property: suffixof_cvc(concat_cvc(" ", "."), _arg_out)
-Iteration:       8               Best cost:  16          Best outputs:  ["Nancy  .", "Andrew  .", "Jan  .", "Mariya  ."]
-
-Iteration:       9               Best score: 40          Best property: suffixof_cvc(" ", _arg_out)
-Iteration:       9               Best cost:  18          Best outputs:  ["Nancy   ", "Andrew   ", "Jan   ", "Mariya   "]
-
-Iteration:       10              Best score: 40          Best property: suffixof_cvc(concat_cvc(".", "."), _arg_out)
-Iteration:       10              Best cost:  18          Best outputs:  ["Nancy ..", "Andrew ..", "Jan ..", "Mariya .."]
-
-Iteration:       11              Best score: 30          Best property: suffixof_cvc(".", at_cvc(_arg_out, len_cvc(_arg_2)))
-Iteration:       11              Best cost:  19          Best outputs:  ["Nancy Fre.", "Andrew .", "Jan K.", "Mariya Se."]
-
-Iteration:       12              Best score: 40          Best property: suffixof_cvc(concat_cvc(" ", "."), concat_cvc(_arg_1, _arg_out))
-Iteration:       12              Best cost:  20          Best outputs:  ["Nancy  .", "Andrew  .", "Jan  .", "Mariya  ."]
-
-Iteration:       13              Best score: 30          Best property: prefixof_cvc(at_cvc(_arg_out, len_cvc(_arg_2)), ".")
-Iteration:       13              Best cost:  23          Best outputs:  ["Nancy Fre.", "Andrew .", "Jan K.", "Mariya Se."]
-
-Iteration:       14              Best score: 40          Best property: prefixof_cvc(_arg_1, _arg_out)
-Iteration:       14              Best cost:  32          Best outputs:  ["FreeHafer", "Cencici", "Kotas", "Sergienko"]
-
-Iteration:       15              Best score: 40          Best property: suffixof_cvc(_arg_1, _arg_out)
-Iteration:       15              Best cost:  32          Best outputs:  ["NancyNancy", "AndrewAndrew", "JanJan", "MariyaMariya"]
-
-Iteration:       16              Best score: 40          Best property: suffixof_cvc(concat_cvc(" ", "."), concat_cvc(_arg_2, _arg_out))
-Iteration:       16              Best cost:  24          Best outputs:  ["Nancy  .", "Andrew  .", "Jan  .", "Mariya  ."]
-
-Iteration:       17              Best score: 40          Best property: suffixof_cvc(".", _arg_out)
-Iteration:       17              Best cost:  26          Best outputs:  ["Nancy   ", "Andrew   ", "Jan   ", "Mariya   "]
-
-Iteration:       18              Best score: 40          Best property: len_cvc(_arg_2) == indexof_cvc(_arg_out, ".", 0)
-Iteration:       18              Best cost:  26          Best outputs:  ["Nancy ..", "Andrew ..", "Jan ..", "Mariya .."]
-
-Iteration:       19              Best score: 40          Best property: suffixof_cvc(concat_cvc(" ", "."), concat_cvc(" ", _arg_out))
-Iteration:       19              Best cost:  28          Best outputs:  ["Nancy  .", "Andrew  .", "Jan  .", "Mariya  ."]
-
-Iteration:       20              Best score: 40          Best property: suffixof_cvc(at_cvc(_arg_out, len_cvc(_arg_2)), _arg_2)
-Iteration:       20              Best cost:  38          Best outputs:  ["Nancy.", "Andrew.", "Jan.", "Mariya."]
+Iteration:       4               Best score: 40/40               Best property: suffixof_cvc(concat_cvc(at_cvc(_arg_2, len_cvc(" ")), "."), _arg_out)
+Best outputs     ["Nancy FreeHafer", "Andrew Cencici", "Jan Kotas", "Mariya Sergienko"]
+Best cost        4
 
 Solution found :)
-concat_cvc(_arg_1, concat_cvc(" ", replace_cvc(_arg_2, substr_cvc(_arg_2, 2, len_cvc(_arg_2)), ".")))
-6{2,6{4,7{3,9{3,12,15{3}},5}}}
+concat_cvc(concat_cvc(_arg_1, " "), concat_cvc(at_cvc(_arg_2, 1), "."))
+
 =#

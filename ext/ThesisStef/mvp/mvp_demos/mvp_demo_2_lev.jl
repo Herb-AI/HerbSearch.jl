@@ -22,7 +22,7 @@ function heuristic(program, children)
 end
 
 iterator = BeamIterator(grammar, :ntString,
-    beam_size = 10,
+    beam_size = 50,
     program_to_cost = heuristic,
     max_extension_depth = 2,
     max_extension_size = 2,
@@ -54,7 +54,7 @@ for (i, e) in enumerate(iterator)
         break
     end
 
-    if i % 50 == 0
+    if i % 500 == 0
         break
     end
 end

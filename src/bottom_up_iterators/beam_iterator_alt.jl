@@ -48,7 +48,7 @@ get_program(beam_entry::BeamEntry) = beam_entry.program
 HerbCore.depth(beam_entry::BeamEntry) = beam_entry.depth
 Base.size(beam_entry::BeamEntry) = beam_entry.size
 
-@inline function isless(a::BeamEntry, b::BeamEntry)
+function Base.isless(a::BeamEntry, b::BeamEntry)
     return (a.cost, a.depth, a.size) < (b.cost, b.depth, b.size)
 end
 
@@ -66,9 +66,6 @@ end
 ) <: AbstractBeamIteratorAlt
 
 
-highest_cost(iter::AbstractBeamIteratorAlt) = iter.beam[end].cost
-lowest_cost(iter::AbstractBeamIteratorAlt) = iter.beam[begin].cost
-
 """
     Base.push_to_beam!(iter::AbstractBeamIteratorAlt, beam_entry::BeamEntry)
 
@@ -76,7 +73,7 @@ Adds a BeamEntry to the beam, ensuring that the beam size is not exceeded and on
 """
 function push_to_beam!(iter::AbstractBeamIteratorAlt, beam_entry::BeamEntry)
     # If the beam is full and the new entry has a higher cost than the worst in the beam, we can abort
-    if length(iter.beam) >= iter.beam_size && beam_entry.cost >= highest_cost(iter)
+    if length(iter.beam) >= iter.beam_size && beam_entry >= iter.beam[end]
         return nothing
     end
 
@@ -84,8 +81,8 @@ function push_to_beam!(iter::AbstractBeamIteratorAlt, beam_entry::BeamEntry)
     # First, find the possible indices to add the new entry:
     #  - The last index in the array that has a lower cost
     #  - The first index in the array that has a higher cost
-    first_index = searchsortedfirst([e.cost for e in iter.beam], beam_entry.cost)
-    last_index = searchsortedlast([e.cost for e in iter.beam], beam_entry.cost)
+    first_index = searchsortedfirst(iter.beam, beam_entry)
+    last_index = searchsortedlast(iter.beam, beam_entry)
 
     # To avoid duplicates or observational equivalance, we need to check each entry placed in this range and abort if the program or outputs are already present
     # If the cost was not present yet, last_index > first_index
@@ -104,7 +101,7 @@ function push_to_beam!(iter::AbstractBeamIteratorAlt, beam_entry::BeamEntry)
     end
 
     # Otherwise, insert the new entry
-    insert!(iter.beam, first_index, beam_entry)
+    insert!(iter.beam, last_index + 1, beam_entry)
 
     # If that exceeded the beam size, pop the worst entry
     if length(iter.beam) > iter.beam_size
@@ -164,9 +161,9 @@ function initialize!(iter::AbstractBeamIteratorAlt)
     return nothing
 end
 
-function all_combinations(iter::AbstractBeamIteratorAlt, program::AbstractRuleNode)::Vector{AbstractRuleNode}
+function all_combinations(iter::AbstractBeamIteratorAlt, program::AbstractRuleNode)::Set{AbstractRuleNode}
     grammar = get_grammar(iter.solver)
-    combinations = []
+    combinations = Set()
 
     # Replace this program with any extension of the same type
     for extension in iter.extensions
@@ -200,7 +197,7 @@ function combine!(iter::AbstractBeamIteratorAlt)
     grammar = get_grammar(iter.solver)
 
     # Obtain the sorted programs from the beam and clear it for the new programs
-    best_old_beam_cost = lowest_cost(iter)
+    best_old_beam_entry = iter.beam[begin]
     old_beam = copy(iter.beam)
 
     # Iterate over all programs in the beam and expand them
@@ -208,7 +205,7 @@ function combine!(iter::AbstractBeamIteratorAlt)
         # Optimization if enabled: once the whole beam has been replaced with new programs, terminate expansion
         # This is the case if the worst program in the new beam is better than the best in the old beam
         # Note that if `clear_beam_before_expansion`, the beam must be full before checking this
-        if iter.stop_expanding_beam_once_replaced && length(iter.beam) == iter.beam_size && lowest_cost(iter) < best_old_beam_cost
+        if iter.stop_expanding_beam_once_replaced && length(iter.beam) == iter.beam_size && iter.beam[begin] < best_old_beam_entry
             break
         end
 

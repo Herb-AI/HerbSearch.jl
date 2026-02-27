@@ -2,7 +2,7 @@ using HerbCore, HerbGrammar, HerbSearch, HerbBenchmarks, HerbConstraints
 
 include("../string_functions.jl")
 include("../properties.jl")
-include("../search.jl")
+include("../search_alt.jl")
 
 benchmark = HerbBenchmarks.PBE_SLIA_Track_2019
 problem = benchmark.problem_phone_1_short
@@ -19,7 +19,7 @@ merge_grammars!(property_grammar, @cfgrammar begin
 end)
 addconstraint!(property_grammar, Contains(length(property_grammar.rules)))
 property_grammar_tags = benchmark.get_relevant_tags(property_grammar)
-property_interpreter = (p, y) -> [interpret_sygus(p, property_grammar_tags, (input[:_arg_out] = y; input)) for input in inputs]
+property_interpreter = (p, ys) -> [interpret_sygus(p, property_grammar_tags, (input[:_arg_out] = y; input)) for (y, input) in zip(ys, inputs)]
 
 #=
 
@@ -45,21 +45,24 @@ search(
     grammar = grammar,
     interpreter = interpreter,
     properties = properties,
-    max_iterations = 10,
+    starting_symbol = starting_symbol,
+    max_iterations = 50,
+    max_extension_depth = 2,
+    max_extension_size = 4,
+    observation_equivalance = true,
 )
 
 #=
 
-Without observational equivalance
+Iteration:       1               Best score: 60/60               Best property: len_cvc(_arg_out) == 3
+Best outputs     ["938-242-504", "308-916-545", "623-599-749", "981-424-843", "118-980-214", "244-655-094"]
+Best cost        0
 
-Iteration:       1               Best score: 60          Best property: len_cvc(_arg_out) == 3
-Iteration:       1               Best cost:  0           Best outputs:  ["938-242-504", "308-916-545", "623-599-749", "981-424-843", "118-980-214", "244-655-094"]
-
-Iteration:       2               Best score: 60          Best property: prefixof_cvc(at_cvc(_arg_1, 5), _arg_out)
-Iteration:       2               Best cost:  0           Best outputs:  ["8-2", "8-9", "3-5", "1-4", "8-9", "4-6"]
+Iteration:       2               Best score: 60/60               Best property: prefixof_cvc(at_cvc(_arg_1, 5), _arg_out)
+Best outputs     ["938", "308", "623", "981", "118", "244"]
+Best cost        0
 
 Solution found :)
-substr_cvc(substr_cvc(_arg_1, 5, len_cvc(_arg_1)), len_cvc(" "), 3)
-7{7{2,13,16{2}},16{3},11}
+substr_cvc(_arg_1, 5, 5 + 2)
 
 =#
