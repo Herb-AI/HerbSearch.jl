@@ -260,15 +260,27 @@ end
 Describes the iteration for a given [`TopDownIterator`](@ref) over the grammar. The iteration constructs a [`PriorityQueue`](@ref) first and then prunes it propagating the active constraints. Recursively returns the result for the priority queue.
 """
 function Base.iterate(iter::TopDownIterator)
+    # each top‑level traversal needs a fresh solver instance.  we keep a
+    # prototype copy in `_ORIGINAL_SOLVER` and clone it whenever iteration
+    # begins.  this guarantees that all mutable solver fields (schedule,
+    # fix_point_running, etc.) start from the same pristine configuration and
+    # avoids the complexity of trying to revert a mutated solver in place.
+    # ensure we have a prototype solver for this iterator
+    if !(iter in keys(_ORIGINAL_SOLVER))
+        _ORIGINAL_SOLVER[iter] = deepcopy(get_solver(iter))
+    end
+    # create a fresh working copy and store it in the current-solvers map
+    local fresh = deepcopy(_ORIGINAL_SOLVER[iter])
+    _CURRENT_SOLVER[iter] = fresh
+
     # Priority queue with `SolverState`s (for variable shaped trees) and `UniformIterator`s (for fixed shaped trees)
     pq = _init_pq(iter)
 
-    solver = get_solver(iter)
-
+    solver = fresh
     if isfeasible(solver)
         push!(pq, get_state(solver) => priority_function(iter, get_grammar(solver), get_tree(solver), 0, false))
     end
-    return _find_next_complete_tree(get_solver(iter), pq, iter)
+    return _find_next_complete_tree(solver, pq, iter)
 end
 
 function _init_pq(iter::TopDownIterator)
