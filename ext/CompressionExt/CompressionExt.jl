@@ -75,7 +75,7 @@ end
 function HerbSearch.compress_with_splitting(
     programs::AbstractVector{<:AbstractRuleNode},
     grammar::AbstractGrammar;
-    kwargs...)::Vector{Expr}
+    kwargs...)
     new_rules = HerbSearch.compress_programs(programs, grammar; kwargs...)
     return vcat([HerbSearch.split_hole(nr, grammar) for nr in new_rules]...)
 end
