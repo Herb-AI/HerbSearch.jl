@@ -83,7 +83,7 @@ function read_last_witness_from_json(json_content)
     json_parsed = JSON.parse(json_content)
 
     if !("Witnesses" in keys(json_parsed["Call"][1]))
-        return (nothing,nothing,nothing)
+        return nothing
     end
     optimal = json_parsed["Result"] == "OPTIMUM FOUND"
     @info "Compression optimality: $optimal"
