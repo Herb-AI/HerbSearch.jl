@@ -107,8 +107,8 @@ PRINT_FLAG = false
         IOExample(Dict(:x => "978.654.0299"), "9786540299")
     ])
     g = deepcopy(simple_grammar)
-    opts = AulileOptions(max_depth=2,
-        synth_opts=SynthOptions(eval_opts=EvaluateOptions(aux=levenshtein_aux), num_returned_programs=2, print_debug=PRINT_FLAG))
+    opts = AulileOptions(max_depth=2, synth_opts=SynthOptions(skip_old_programs=false,
+        eval_opts=EvaluateOptions(aux=levenshtein_aux), num_returned_programs=2, print_debug=PRINT_FLAG))
     elapsed = @elapsed begin
         test_result = aulile(problem, BFSIterator, g, :String, opts=opts)
         @test !(test_result.program isa Nothing)
@@ -128,8 +128,8 @@ end
         IOExample(Dict(:x => "978.654.0299"), "9786540299")
     ])
     g = deepcopy(simple_grammar)
-    opts = AulileOptions(max_depth=2, restart_iterator=true,
-        synth_opts=SynthOptions(eval_opts=EvaluateOptions(aux=levenshtein_aux), num_returned_programs=2, print_debug=PRINT_FLAG))
+    opts = AulileOptions(max_depth=2, synth_opts=SynthOptions(
+        eval_opts=EvaluateOptions(aux=levenshtein_aux), num_returned_programs=2, print_debug=PRINT_FLAG))
     elapsed = @elapsed begin
         test_result = aulile(problem, BFSIterator, g, :String, opts=opts)
         @test !(test_result.program isa Nothing)
