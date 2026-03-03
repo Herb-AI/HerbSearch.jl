@@ -1,4 +1,3 @@
-using MLStyle
 # CVC5 functions
 
 ## String typed
@@ -18,15 +17,12 @@ len_cvc(str) = length(str)
 str_to_int_cvc(str) = tryparse(Int64, str)
 
 function indexof_cvc(str, substring, index::Int)
-        n = findfirst(substring, str)
-        
-        if isnothing(n)
-                return -1
-        elseif length(n) == 0
-                return -1
-        else
-                return n[1] >= index ? n[1] : -1
+        if !checkbounds(Bool, str, index) 
+                return nothing
         end
+
+        n = findnext(substring, str, index)
+        return isnothing(n) ? -1 : first(n)
 end
 
 # Bool typed
@@ -41,6 +37,8 @@ lt_cvc(str1, str2) = cmp(str1, str2) < 0
 leq_cvc(str1, str2) = cmp(str1, str2) <= 0
 
 isdigit_cvc(str) = tryparse(Int, str) !== nothing
+
+count_cvc(str1, str2) = length(collect(eachmatch(Regex(str2), str1)))
 
 """
 Gets relevant symbol to easily match grammar rules to operations in `interpret` function
@@ -65,7 +63,7 @@ function interpret_sygus(prog::AbstractRuleNode, grammar_tags::Dict{Int,Any}, ar
         _interpret_sygus(prog, grammar_tags, args)
 end
 
-function _interpret_sygus(prog::AbstractRuleNode, grammar_tags::Dict{Int,Any}, args::Dict{Symbol,Any})
+function _interpret_sygus(prog::AbstractRuleNode, grammar_tags::Dict{Int,Any}, args::Dict{Symbol,Any})        
         r = get_rule(prog)
         cs = [_interpret_sygus(c, grammar_tags, args) for c in get_children(prog)]
 
@@ -90,6 +88,7 @@ function _interpret_sygus(prog::AbstractRuleNode, grammar_tags::Dict{Int,Any}, a
                 
                 :+              => cs[1] + cs[2]
                 :-              => cs[1] - cs[2]
+                :*              => cs[1] * cs[2]
                 :and            => cs[1] && cs[2]
                 :or             => cs[1] || cs[2]
                 :xor            => xor(cs[1], cs[2])
@@ -101,6 +100,7 @@ function _interpret_sygus(prog::AbstractRuleNode, grammar_tags::Dict{Int,Any}, a
                 :(>)            => cs[1] > cs[2]
                 :(>=)           => cs[1] >= cs[2]
                 :!              => !cs[1]
+                :count_cvc      => count_cvc(cs[1], cs[2])
 
                 :IF             => cs[1] ? cs[2] : cs[3]
                 

@@ -1,89 +1,34 @@
 using HerbCore, HerbGrammar, HerbSearch, HerbBenchmarks, HerbConstraints
 
 include("string_functions.jl")
+include("run_on_problem.jl")
 
 benchmark = HerbBenchmarks.PBE_SLIA_Track_2019
-problem = benchmark.problem_11604909
-grammar = benchmark.grammar_11604909
-starting_symbol = :ntString
 
-property_grammar = deepcopy(grammar)
-merge_grammars!(property_grammar, @cfgrammar begin
-    ntBool = ntString == ntString
-    ntBool = ntInt == ntInt
-    ntBool = ntInt <= ntInt
-    ntBool = ntInt < ntInt
-    ntBool = and(ntBool, ntBool)
-    ntBool = or(ntBool, ntBool)
-    ntBool = xor(ntBool, ntBool)
-    ntBool = implies(ntBool, ntBool)
-    ntString = _arg_out
-end)
-addconstraint!(property_grammar, Contains(length(property_grammar.rules)))
-grammar_tags = benchmark.get_relevant_tags(property_grammar)
-
-properties = Vector{AbstractRuleNode}(collect(BFSIterator(property_grammar, :ntBool, 
-    max_depth = 4, 
-    max_size = 6,
-)))
-
-iterator = PropertyBasedNeighborhoodIterator(grammar, starting_symbol,
-    problem,
-    (p, x) -> interpret_sygus(p, grammar_tags, x),
-    10,
-    properties,
-
-    max_extension_depth = 2,
-    max_extension_size = 4,
-
-    property_grammar = property_grammar,
-
-    max_number_of_properties = 20,
+run( 
+    benchmark = HerbBenchmarks.PBE_SLIA_Track_2019,
+    benchmark_name = "SyGuS string",
+    problem = benchmark.problem_phone_1_short,
+    grammar = benchmark.grammar_phone_1_short,
 )
-
-for io in problem.spec
-    println("$(io.in) -> $(io.out)")
-end
-
-
-for (i, program) in enumerate(iterator)
-    cost = heuristic_cost(iterator, program)
-    expr = rulenode2expr(program, grammar)
-    
-    println()
-    @show i
-    @show expr
-    @show program._val
-    @show cost
-
-    if program._val == [io.out for io in problem.spec]
-        println("\nSolution found in $i iterations!")
-        expr = rulenode2expr(program, grammar)
-        @show expr
-
-        break
-    end
-
-    if i == 500
-        println("Reached max iterations")
-        break
-    end
-end
-
-println("\nWith $(length(iterator.selected_properties)) properties:")
-for property in iterator.selected_properties
-    prop = rulenode2expr(property, property_grammar)
-    println(" - $prop")
-end
 
 #=
 
-Dict{Symbol, Any}(:_arg_1 => "AIX 5.1") -> 5.1
-Dict{Symbol, Any}(:_arg_1 => "VMware ESX Server 3.5.0 build-110268") -> 3.5
-Dict{Symbol, Any}(:_arg_1 => "Linux Linux 2.6 Linux") -> 2.6
-Dict{Symbol, Any}(:_arg_1 => "Red Hat Enterprise AS 4 <2.6-78.0.13.ELl_arg_esmp>") -> 2.6
-Dict{Symbol, Any}(:_arg_1 => "Microsoft <R> Windows <R> 2000 Advanced Server 1.0") -> 1.0
-Dict{Symbol, Any}(:_arg_1 => "Microsoft Windows XP Win2008R2 6.1.7601") -> 6.1
+Problem problem_phone_1_short
+Dict{Symbol, Any}(:_arg_1 => "938-242-504", :_arg_out => "242") -> 242
+Dict{Symbol, Any}(:_arg_1 => "308-916-545", :_arg_out => "916") -> 916
+Dict{Symbol, Any}(:_arg_1 => "623-599-749", :_arg_out => "599") -> 599
+Dict{Symbol, Any}(:_arg_1 => "981-424-843", :_arg_out => "424") -> 424
+Dict{Symbol, Any}(:_arg_1 => "118-980-214", :_arg_out => "980") -> 980
+Dict{Symbol, Any}(:_arg_1 => "244-655-094", :_arg_out => "655") -> 655
 
+Solution found in 108 iterations!
+expr = :(substr_cvc(_arg_1, 5, 5 + 2))
 
-=#
+With 4 properties:
+ - len_cvc(_arg_out) == 3
+ - prefixof_cvc(at_cvc(_arg_1, 5), _arg_out)
+ - contains_cvc(_arg_1, _arg_out)
+ - contains_cvc(_arg_out, at_cvc(_arg_1, 4))
+ 
+ =#

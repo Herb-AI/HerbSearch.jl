@@ -1,89 +1,36 @@
 using HerbCore, HerbGrammar, HerbSearch, HerbBenchmarks, HerbConstraints
-using Profile, ProfileView
 
 include("string_functions.jl")
-
-Profile.clear()
+include("run_on_problem.jl")
 
 benchmark = HerbBenchmarks.PBE_SLIA_Track_2019
-problem = benchmark.problem_phone_9_short
-grammar = benchmark.grammar_phone_9_short
-starting_symbol = :ntString
 
-property_grammar = deepcopy(grammar)
-merge_grammars!(property_grammar, @cfgrammar begin
-    ntBool = ntString == ntString
-    ntBool = ntInt == ntInt
-    ntBool = ntInt <= ntInt
-    ntBool = ntInt < ntInt
-    # ntBool = and(ntBool, ntBool)
-    # ntBool = or(ntBool, ntBool)
-    # ntBool = xor(ntBool, ntBool)
-    # ntBool = implies(ntBool, ntBool)
-    ntString = _arg_out
-end)
-addconstraint!(property_grammar, Contains(length(property_grammar.rules)))
-grammar_tags = benchmark.get_relevant_tags(property_grammar)
-
-properties = Vector{AbstractRuleNode}(collect(BFSIterator(property_grammar, :ntBool, 
-    max_depth = 3, 
-    max_size = 5,
-)))
-
-iterator = PropertyBasedNeighborhoodIterator(grammar, starting_symbol,
-    problem,
-    (p, x) -> interpret_sygus(p, grammar_tags, x),
-    10,
-    properties,
-
-    max_extension_depth = 2,
-    max_extension_size = 4,
-
-    property_grammar = property_grammar,
-
-    max_number_of_properties = 6,
+run( 
+    benchmark = HerbBenchmarks.PBE_SLIA_Track_2019,
+    benchmark_name = "SyGuS string",
+    problem = benchmark.problem_phone_9_short,
+    grammar = benchmark.grammar_phone_9_short,
 )
-
-for io in problem.spec
-    println("$(io.in) -> $(io.out)")
-end
-
-
-@profile begin
-    for (i, program) in enumerate(iterator)
-        cost = heuristic_cost(iterator, program)
-        expr = rulenode2expr(program, grammar)
-        
-        # println()
-        @show i
-        # @show expr
-        # @show program._val
-        # @show cost
-
-        if program._val == [io.out for io in problem.spec]
-            println("\nSolution found in $i iterations!")
-            expr = rulenode2expr(program, grammar)
-            @show expr
-
-            println("\nWith $(length(iterator.selected_properties)) properties:")
-            for property in iterator.selected_properties
-                prop = rulenode2expr(property, property_grammar)
-                println(" - $prop")
-            end
-
-            break
-        end
-
-        if i == 30
-            println("Reached max iterations")
-            break
-        end
-    end
-end
-
-ProfileView.view()
 
 #=
 
+Problem problem_phone_9_short
+Dict{Symbol, Any}(:_arg_1 => "+106 769-858-438", :_arg_out => "106.769.858.438") -> 106.769.858.438
+Dict{Symbol, Any}(:_arg_1 => "+83 973-757-831", :_arg_out => "83.973.757.831") -> 83.973.757.831
+Dict{Symbol, Any}(:_arg_1 => "+62 647-787-775", :_arg_out => "62.647.787.775") -> 62.647.787.775
+Dict{Symbol, Any}(:_arg_1 => "+172 027-507-632", :_arg_out => "172.027.507.632") -> 172.027.507.632
+Dict{Symbol, Any}(:_arg_1 => "+72 001-050-856", :_arg_out => "72.001.050.856") -> 72.001.050.856
+Dict{Symbol, Any}(:_arg_1 => "+95 310-537-401", :_arg_out => "95.310.537.401") -> 95.310.537.401
+Dict{Symbol, Any}(:_arg_1 => "+6 775-969-238", :_arg_out => "6.775.969.238") -> 6.775.969.238
+
+Solution found in 99 iterations!
+expr = :(replace_cvc(substr_cvc(replace_cvc(_arg_1, "-", "."), 2, len_cvc(_arg_1)), " ", "."))
+
+With 5 properties:
+ - prefixof_cvc(substr_cvc(_arg_out, 1, 2), _arg_1)
+ - prefixof_cvc(at_cvc(_arg_1, 2), _arg_out)
+ - contains_cvc(substr_cvc(_arg_out, 1, 4), ".")
+ - contains_cvc(replace_cvc(_arg_out, " ", _arg_1), "+")
+ - len_cvc(_arg_out) <= 5
 
 =#

@@ -1,0 +1,5466 @@
+[
+    {
+        "program": "replace_cvc(replace_cvc(_arg_1, \"CAN\", \"US\"), concat_cvc(\" \", \"US\"), \"\")",
+        "problem": {
+            "name": "problem_11440431",
+            "spec": [
+                {
+                    "in": {
+                        "_arg_1": "Mining US",
+                        "_arg_out": "Mining"
+                    },
+                    "out": "Mining"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Soybean Farming CAN",
+                        "_arg_out": "Soybean Farming"
+                    },
+                    "out": "Soybean Farming"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Soybean Farming",
+                        "_arg_out": "Soybean Farming"
+                    },
+                    "out": "Soybean Farming"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Oil Extraction US",
+                        "_arg_out": "Oil Extraction"
+                    },
+                    "out": "Oil Extraction"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Fishing",
+                        "_arg_out": "Fishing"
+                    },
+                    "out": "Fishing"
+                }
+            ]
+        },
+        "properties": [
+            "4 <= len_cvc(_arg_out)",
+            "prefixof_cvc(replace_cvc(_arg_out, \"US\", _arg_1), _arg_1)"
+        ],
+        "benchmark_name": "SyGuS strings",
+        "solved": true
+    },
+    {
+        "program": "nothing",
+        "problem": {
+            "name": "problem_11604909",
+            "spec": [
+                {
+                    "in": {
+                        "_arg_1": "AIX 5.1",
+                        "_arg_out": "5.1"
+                    },
+                    "out": "5.1"
+                },
+                {
+                    "in": {
+                        "_arg_1": "VMware ESX Server 3.5.0 build-110268",
+                        "_arg_out": "3.5"
+                    },
+                    "out": "3.5"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Linux Linux 2.6 Linux",
+                        "_arg_out": "2.6"
+                    },
+                    "out": "2.6"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Red Hat Enterprise AS 4 <2.6-78.0.13.ELl_arg_esmp>",
+                        "_arg_out": "2.6"
+                    },
+                    "out": "2.6"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Microsoft <R> Windows <R> 2000 Advanced Server 1.0",
+                        "_arg_out": "1.0"
+                    },
+                    "out": "1.0"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Microsoft Windows XP Win2008R2 6.1.7601",
+                        "_arg_out": "6.1"
+                    },
+                    "out": "6.1"
+                }
+            ]
+        },
+        "properties": [
+            "3 == len_cvc(_arg_out)",
+            "contains_cvc(_arg_1, _arg_out)",
+            "1 == str_to_int_cvc(at_cvc(_arg_out, 1))",
+            "contains_cvc(_arg_out, \".\")",
+            "contains_cvc(concat_cvc(_arg_1, _arg_1), _arg_out)",
+            "len_cvc(_arg_out) == 3",
+            "contains_cvc(concat_cvc(_arg_1, \"\"), _arg_out)",
+            "prefixof_cvc(\".\", at_cvc(_arg_out, 2))",
+            "contains_cvc(concat_cvc(_arg_1, \" \"), _arg_out)",
+            "suffixof_cvc(\".\", at_cvc(_arg_out, 2))",
+            "contains_cvc(concat_cvc(_arg_1, \".\"), _arg_out)",
+            "contains_cvc(\".\", at_cvc(_arg_out, 2))",
+            "contains_cvc(concat_cvc(\"\", _arg_1), _arg_out)",
+            "\".\" == at_cvc(_arg_out, 2)",
+            "prefixof_cvc(int_to_str_cvc(0), _arg_out)",
+            "contains_cvc(concat_cvc(\" \", _arg_1), _arg_out)",
+            "contains_cvc(concat_cvc(\".\", _arg_1), _arg_out)",
+            "prefixof_cvc(at_cvc(_arg_out, 2), \".\")",
+            "suffixof_cvc(\".\", _arg_out)",
+            "prefixof_cvc(_arg_1, _arg_out)"
+        ],
+        "benchmark_name": "SyGuS strings",
+        "solved": false
+    },
+    {
+        "program": "nothing",
+        "problem": {
+            "name": "problem_12948338",
+            "spec": [
+                {
+                    "in": {
+                        "_arg_1": "An example string with _username in it RT _AwesomeUser says _username is awesome",
+                        "_arg_2": "username",
+                        "_arg_out": 2
+                    },
+                    "out": 2
+                },
+                {
+                    "in": {
+                        "_arg_1": "An example string with _username in it RT _AwesomeUser says _username is awesome",
+                        "_arg_2": "AwesomeUser",
+                        "_arg_out": 1
+                    },
+                    "out": 1
+                },
+                {
+                    "in": {
+                        "_arg_1": "An _example string with _example in it is awesome _example",
+                        "_arg_2": "example",
+                        "_arg_out": 3
+                    },
+                    "out": 3
+                }
+            ]
+        },
+        "properties": [
+            "prefixof_cvc(at_cvc(_arg_2, _arg_out), _arg_2)",
+            "prefixof_cvc(substr_cvc(_arg_1, 3, _arg_out), _arg_1)",
+            "prefixof_cvc(substr_cvc(_arg_1, 3, _arg_out), _arg_2)",
+            "prefixof_cvc(substr_cvc(_arg_1, 3, _arg_out), \"\")",
+            "prefixof_cvc(substr_cvc(_arg_1, 3, _arg_out), \"_\")",
+            "prefixof_cvc(substr_cvc(_arg_1, _arg_out, 2), _arg_2)",
+            "prefixof_cvc(substr_cvc(_arg_1, _arg_out, 2), \"\")",
+            "prefixof_cvc(substr_cvc(_arg_1, _arg_out, 2), \" \")",
+            "prefixof_cvc(substr_cvc(_arg_1, _arg_out, 2), \"_\")",
+            "prefixof_cvc(substr_cvc(_arg_1, _arg_out, 3), _arg_1)",
+            "prefixof_cvc(substr_cvc(_arg_1, _arg_out, 3), \" \")",
+            "prefixof_cvc(substr_cvc(_arg_2, 3, _arg_out), _arg_1)",
+            "prefixof_cvc(substr_cvc(_arg_2, 3, _arg_out), _arg_2)",
+            "prefixof_cvc(substr_cvc(_arg_2, 3, _arg_out), \"\")",
+            "prefixof_cvc(substr_cvc(_arg_2, 3, _arg_out), \" \")",
+            "prefixof_cvc(substr_cvc(_arg_2, 3, _arg_out), \"_\")",
+            "prefixof_cvc(substr_cvc(_arg_2, _arg_out, 2), _arg_1)",
+            "prefixof_cvc(substr_cvc(_arg_2, _arg_out, 2), \"\")",
+            "prefixof_cvc(substr_cvc(_arg_2, _arg_out, 2), \" \")",
+            "prefixof_cvc(substr_cvc(_arg_2, _arg_out, 2), \"_\")"
+        ],
+        "benchmark_name": "SyGuS strings",
+        "solved": false
+    },
+    {
+        "program": "nothing",
+        "problem": {
+            "name": "problem_17212077",
+            "spec": [
+                {
+                    "in": {
+                        "_arg_1": "01/15/2013",
+                        "_arg_out": "01/2013"
+                    },
+                    "out": "01/2013"
+                },
+                {
+                    "in": {
+                        "_arg_1": "03/07/2011",
+                        "_arg_out": "03/2011"
+                    },
+                    "out": "03/2011"
+                },
+                {
+                    "in": {
+                        "_arg_1": "05/09/2009",
+                        "_arg_out": "05/2009"
+                    },
+                    "out": "05/2009"
+                }
+            ]
+        },
+        "properties": [
+            "prefixof_cvc(at_cvc(_arg_out, 5), _arg_1)",
+            "suffixof_cvc(_arg_1, _arg_out)",
+            "prefixof_cvc(int_to_str_cvc(0), _arg_out)",
+            "contains_cvc(int_to_str_cvc(len_cvc(_arg_out)), int_to_str_cvc(5))",
+            "contains_cvc(_arg_out, _arg_1)",
+            "len_cvc(_arg_1) <= len_cvc(_arg_out)",
+            "contains_cvc(_arg_out, int_to_str_cvc(2))",
+            "suffixof_cvc(int_to_str_cvc(0), _arg_out)",
+            "prefixof_cvc(\"/\", at_cvc(_arg_out, 3))",
+            "suffixof_cvc(\"/\", at_cvc(_arg_out, 3))",
+            "suffixof_cvc(\"/\", _arg_out)",
+            "2 == len_cvc(_arg_out) - 5",
+            "suffixof_cvc(concat_cvc(\"\", \"/\"), _arg_out)",
+            "3 == len_cvc(_arg_out) - 4",
+            "suffixof_cvc(at_cvc(_arg_out, 3), _arg_out)",
+            "4 == len_cvc(_arg_out) - 3",
+            "suffixof_cvc(substr_cvc(_arg_out, 1, 3), _arg_out)",
+            "5 == len_cvc(_arg_out) - 2",
+            "suffixof_cvc(substr_cvc(_arg_out, 2, 3), _arg_out)",
+            "contains_cvc(\"/\", at_cvc(_arg_out, 3))"
+        ],
+        "benchmark_name": "SyGuS strings",
+        "solved": false
+    },
+    {
+        "program": "contains_cvc(_arg_1, \"9999999\")",
+        "problem": {
+            "name": "problem_19274448",
+            "spec": [
+                {
+                    "in": {
+                        "_arg_1": "dhfjd9999999dfda"
+                    },
+                    "out": true
+                },
+                {
+                    "in": {
+                        "_arg_1": "ddsss999dfdfsfd"
+                    },
+                    "out": false
+                }
+            ]
+        },
+        "properties": [],
+        "benchmark_name": "SyGuS strings",
+        "solved": true
+    },
+    {
+        "program": "at_cvc(_arg_1, _arg_2)",
+        "problem": {
+            "name": "problem_19558979",
+            "spec": [
+                {
+                    "in": {
+                        "_arg_1": "spreadsheet",
+                        "_arg_2": 1
+                    },
+                    "out": "s"
+                },
+                {
+                    "in": {
+                        "_arg_1": "spreadsheet",
+                        "_arg_2": 2
+                    },
+                    "out": "p"
+                },
+                {
+                    "in": {
+                        "_arg_1": "spreadsheet",
+                        "_arg_2": 3
+                    },
+                    "out": "r"
+                },
+                {
+                    "in": {
+                        "_arg_1": "spreadsheet",
+                        "_arg_2": 4
+                    },
+                    "out": "e"
+                },
+                {
+                    "in": {
+                        "_arg_1": "spreadsheet",
+                        "_arg_2": 5
+                    },
+                    "out": "a"
+                }
+            ]
+        },
+        "properties": [],
+        "benchmark_name": "SyGuS strings",
+        "solved": true
+    },
+    {
+        "program": "nothing",
+        "problem": {
+            "name": "problem_2171308",
+            "spec": [
+                {
+                    "in": {
+                        "_arg_1": "John Doe",
+                        "_arg_out": "J Doe"
+                    },
+                    "out": "J Doe"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Mayur Naik",
+                        "_arg_out": "M Naik"
+                    },
+                    "out": "M Naik"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Nimit Singh",
+                        "_arg_out": "N Singh"
+                    },
+                    "out": "N Singh"
+                }
+            ]
+        },
+        "properties": [
+            "prefixof_cvc(\" \", at_cvc(_arg_out, 2))",
+            "prefixof_cvc(\" \", substr_cvc(_arg_out, 1, 4))",
+            "2 == indexof_cvc(_arg_out, \" \", 1)",
+            "suffixof_cvc(\" \", replace_cvc(_arg_out, _arg_1, \"\"))",
+            "contains_cvc(_arg_out, int_to_str_cvc(1))",
+            "contains_cvc(_arg_1, substr_cvc(_arg_out, 2, 3))",
+            "contains_cvc(_arg_1, substr_cvc(_arg_out, 2, 4))",
+            "suffixof_cvc(\" \", at_cvc(_arg_out, 2))",
+            "contains_cvc(\" \", at_cvc(_arg_out, 2))",
+            "contains_cvc(_arg_1, substr_cvc(_arg_out, 2, 5))",
+            "contains_cvc(_arg_out, at_cvc(_arg_1, len_cvc(_arg_out)))",
+            "contains_cvc(_arg_out, int_to_str_cvc(0))",
+            "prefixof_cvc(\" \", at_cvc(_arg_out, 4))",
+            "4 == len_cvc(_arg_out)",
+            "len_cvc(_arg_1) <= len_cvc(_arg_out)",
+            "prefixof_cvc(_arg_out, _arg_1)",
+            "contains_cvc(_arg_out, at_cvc(_arg_1, 3))",
+            "\" \" == at_cvc(_arg_out, 2)",
+            "prefixof_cvc(at_cvc(_arg_out, 2), \" \")",
+            "prefixof_cvc(\" \", at_cvc(_arg_out, 5))"
+        ],
+        "benchmark_name": "SyGuS strings",
+        "solved": false
+    },
+    {
+        "program": "(1 + 1) - (-1 + if prefixof_cvc(_arg_2, _arg_1)\n            1\n        else\n            0\n        end)",
+        "problem": {
+            "name": "problem_23435880",
+            "spec": [
+                {
+                    "in": {
+                        "_arg_1": "apple apples",
+                        "_arg_2": "apple",
+                        "_arg_out": 2
+                    },
+                    "out": 2
+                },
+                {
+                    "in": {
+                        "_arg_1": "an orange among the oranges is a spoiled orange",
+                        "_arg_2": "orange",
+                        "_arg_out": 3
+                    },
+                    "out": 3
+                }
+            ]
+        },
+        "properties": [
+            "len_cvc(_arg_2) - 3 == _arg_out",
+            "len_cvc(_arg_2) - _arg_out == 3",
+            "len_cvc(_arg_2) == 3 + _arg_out",
+            "len_cvc(_arg_2) == _arg_out + 3",
+            "3 + _arg_out == len_cvc(_arg_2)",
+            "_arg_out + 3 == len_cvc(_arg_2)",
+            "3 == len_cvc(_arg_2) - _arg_out",
+            "_arg_out == len_cvc(_arg_2) - 3",
+            "prefixof_cvc(at_cvc(_arg_2, _arg_out), _arg_1)"
+        ],
+        "benchmark_name": "SyGuS strings",
+        "solved": true
+    },
+    {
+        "program": "nothing",
+        "problem": {
+            "name": "problem_25239569",
+            "spec": [
+                {
+                    "in": {
+                        "_arg_1": "Adf_ROCLeader_BAN_728x90_CPM_STD _BRD _NRT_DCK",
+                        "_arg_out": "Adf_ROCLeader_BAN_728x90_CPM_STD _Branding _NRT_DCK"
+                    },
+                    "out": "Adf_ROCLeader_BAN_728x90_CPM_STD _Branding _NRT_DCK"
+                },
+                {
+                    "in": {
+                        "_arg_1": "MMC_ContextualLarRec_BAN_336x280_CPM_STD _LDS _RTG_DCK",
+                        "_arg_out": "MMC_ContextualLarRec_BAN_336x280_CPM_STD _Leads _RTG_DCK"
+                    },
+                    "out": "MMC_ContextualLarRec_BAN_336x280_CPM_STD _Leads _RTG_DCK"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Adf_ROC_DLBD_728x90_CPM_STD_DRS_NRT_NOR_DCK",
+                        "_arg_out": "Adf_ROC_DLBD_728x90_CPM_STD_Direct Response_NRT_NOR_DCK"
+                    },
+                    "out": "Adf_ROC_DLBD_728x90_CPM_STD_Direct Response_NRT_NOR_DCK"
+                }
+            ]
+        },
+        "properties": [
+            "len_cvc(_arg_out) <= len_cvc(_arg_1)",
+            "contains_cvc(_arg_out, _arg_1)",
+            "contains_cvc(\"Direct Response\", at_cvc(_arg_out, 2))",
+            "prefixof_cvc(int_to_str_cvc(5), int_to_str_cvc(len_cvc(_arg_out)))",
+            "contains_cvc(_arg_out, int_to_str_cvc(0))",
+            "contains_cvc(_arg_out, int_to_str_cvc(1))",
+            "contains_cvc(_arg_1, at_cvc(_arg_out, 1))",
+            "suffixof_cvc(int_to_str_cvc(0), _arg_out)",
+            "prefixof_cvc(int_to_str_cvc(2), _arg_out)",
+            "contains_cvc(_arg_out, int_to_str_cvc(2))",
+            "prefixof_cvc(int_to_str_cvc(len_cvc(\"Branding\")), _arg_out)",
+            "contains_cvc(_arg_out, int_to_str_cvc(5))",
+            "prefixof_cvc(at_cvc(_arg_1, 1), _arg_out)",
+            "contains_cvc(_arg_out, at_cvc(\"BRD\", 3))",
+            "contains_cvc(_arg_out, at_cvc(\"BRD\", 2))",
+            "contains_cvc(_arg_out, at_cvc(_arg_1, len_cvc(\"Branding\")))",
+            "contains_cvc(\"DRS\", at_cvc(_arg_out, len_cvc(_arg_out)))",
+            "contains_cvc(\"Direct Response\", at_cvc(_arg_out, 4))",
+            "contains_cvc(_arg_1, at_cvc(_arg_out, len_cvc(_arg_out)))",
+            "suffixof_cvc(at_cvc(_arg_1, len_cvc(_arg_1)), _arg_out)"
+        ],
+        "benchmark_name": "SyGuS strings",
+        "solved": false
+    },
+    {
+        "program": "substr_cvc(_arg_1, 1, indexof_cvc(replace_cvc(replace_cvc(_arg_1, \" \", _arg_1), \" \", \"\"), \"-\", 0))",
+        "problem": {
+            "name": "problem_28627624_1",
+            "spec": [
+                {
+                    "in": {
+                        "_arg_1": "Dec 2, 2014, 11=23 PM - +91 90000 80000= loren ipsum",
+                        "_arg_out": "Dec 2, 2014, 11=23 PM"
+                    },
+                    "out": "Dec 2, 2014, 11=23 PM"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Dec 2, 2014, 11=24 PM - +91 90000 80000= loren",
+                        "_arg_out": "Dec 2, 2014, 11=24 PM"
+                    },
+                    "out": "Dec 2, 2014, 11=24 PM"
+                }
+            ]
+        },
+        "properties": [
+            "prefixof_cvc(concat_cvc(_arg_out, \" \"), _arg_1)",
+            "prefixof_cvc(\" \", replace_cvc(_arg_1, _arg_out, \"\"))",
+            "contains_cvc(replace_cvc(_arg_out, _arg_1, \"\"), \" \")",
+            "contains_cvc(_arg_1, concat_cvc(_arg_out, \" \"))",
+            "prefixof_cvc(\" \", _arg_out)",
+            "suffixof_cvc(at_cvc(_arg_out, 4), _arg_out)",
+            "prefixof_cvc(_arg_out, _arg_1)",
+            "prefixof_cvc(replace_cvc(_arg_1, _arg_out, \"\"), _arg_1)",
+            "contains_cvc(replace_cvc(_arg_out, _arg_1, \"=\"), \" \")",
+            "prefixof_cvc(concat_cvc(\"\", _arg_out), _arg_1)",
+            "suffixof_cvc(int_to_str_cvc(1), int_to_str_cvc(len_cvc(_arg_out)))",
+            "contains_cvc(_arg_out, \"-\")"
+        ],
+        "benchmark_name": "SyGuS strings",
+        "solved": true
+    },
+    {
+        "program": "nothing",
+        "problem": {
+            "name": "problem_30732554",
+            "spec": [
+                {
+                    "in": {
+                        "_arg_1": "TL-18273982| 10MM",
+                        "_arg_out": "TL-18273982"
+                    },
+                    "out": "TL-18273982"
+                },
+                {
+                    "in": {
+                        "_arg_1": "TL-288762| 76DK",
+                        "_arg_out": "TL-288762"
+                    },
+                    "out": "TL-288762"
+                },
+                {
+                    "in": {
+                        "_arg_1": "CT-576",
+                        "_arg_out": "CT-576"
+                    },
+                    "out": "CT-576"
+                },
+                {
+                    "in": {
+                        "_arg_1": "N/A",
+                        "_arg_out": "N/A"
+                    },
+                    "out": "N/A"
+                }
+            ]
+        },
+        "properties": [
+            "prefixof_cvc(_arg_out, substr_cvc(_arg_out, 1, 3))",
+            "suffixof_cvc(int_to_str_cvc(2), _arg_out)",
+            "prefixof_cvc(concat_cvc(_arg_out, \"|\"), _arg_1)",
+            "contains_cvc(_arg_1, concat_cvc(_arg_out, \"|\"))",
+            "suffixof_cvc(int_to_str_cvc(2), concat_cvc(_arg_1, _arg_out))",
+            "suffixof_cvc(int_to_str_cvc(2), concat_cvc(\"\", _arg_out))",
+            "suffixof_cvc(int_to_str_cvc(2), concat_cvc(\" \", _arg_out))",
+            "suffixof_cvc(int_to_str_cvc(2), concat_cvc(\"|\", _arg_out))",
+            "suffixof_cvc(int_to_str_cvc(2), concat_cvc(_arg_out, \"\"))",
+            "suffixof_cvc(int_to_str_cvc(2), concat_cvc(_arg_out, _arg_out))",
+            "suffixof_cvc(concat_cvc(\"\", int_to_str_cvc(2)), _arg_out)",
+            "suffixof_cvc(at_cvc(int_to_str_cvc(2), 1), _arg_out)",
+            "prefixof_cvc(replace_cvc(_arg_1, _arg_out, _arg_1), _arg_1)",
+            "prefixof_cvc(replace_cvc(_arg_1, _arg_out, \"\"), _arg_1)",
+            "prefixof_cvc(replace_cvc(_arg_out, \" \", \"|\"), _arg_1)",
+            "suffixof_cvc(at_cvc(_arg_out, len_cvc(_arg_out)), _arg_1)",
+            "suffixof_cvc(at_cvc(_arg_1, len_cvc(_arg_out)), _arg_1)",
+            "prefixof_cvc(_arg_out, _arg_1)",
+            "prefixof_cvc(replace_cvc(_arg_out, _arg_1, \" \"), _arg_1)",
+            "prefixof_cvc(replace_cvc(_arg_out, _arg_1, \"|\"), _arg_1)"
+        ],
+        "benchmark_name": "SyGuS strings",
+        "solved": false
+    },
+    {
+        "program": "nothing",
+        "problem": {
+            "name": "problem_31753108",
+            "spec": [
+                {
+                    "in": {
+                        "_arg_1": "Tire Pressure ABC123873 Monitor",
+                        "_arg_out": "ABC123873"
+                    },
+                    "out": "ABC123873"
+                },
+                {
+                    "in": {
+                        "_arg_1": " Oil Life ABC849999999021 gauge",
+                        "_arg_out": "ABC849999999021"
+                    },
+                    "out": "ABC849999999021"
+                },
+                {
+                    "in": {
+                        "_arg_1": " Air conditioner GHF211 maintenance",
+                        "_arg_out": "GHF211"
+                    },
+                    "out": "GHF211"
+                }
+            ]
+        },
+        "properties": [
+            "prefixof_cvc(\" \", at_cvc(_arg_out, 5))",
+            "contains_cvc(_arg_1, _arg_out)",
+            "suffixof_cvc(_arg_out, _arg_1)",
+            "contains_cvc(_arg_out, \" \")",
+            "contains_cvc(_arg_out, int_to_str_cvc(1))",
+            "contains_cvc(_arg_1, concat_cvc(_arg_out, \" \"))",
+            "contains_cvc(_arg_1, concat_cvc(\" \", _arg_out))",
+            "1 == str_to_int_cvc(at_cvc(_arg_out, 3))",
+            "0 == str_to_int_cvc(at_cvc(_arg_out, 3))",
+            "contains_cvc(_arg_out, int_to_str_cvc(2))",
+            "1 == str_to_int_cvc(_arg_out)",
+            "0 == str_to_int_cvc(_arg_out)",
+            "-1 == str_to_int_cvc(_arg_out)",
+            "3 == len_cvc(_arg_out)",
+            "contains_cvc(concat_cvc(_arg_1, _arg_1), _arg_out)",
+            "contains_cvc(concat_cvc(_arg_1, \"\"), _arg_out)",
+            "4 <= len_cvc(_arg_out)",
+            "5 <= len_cvc(_arg_out)",
+            "suffixof_cvc(int_to_str_cvc(1), _arg_out)",
+            "prefixof_cvc(concat_cvc(\" \", _arg_out), _arg_1)"
+        ],
+        "benchmark_name": "SyGuS strings",
+        "solved": false
+    },
+    {
+        "program": "replace_cvc(replace_cvc(replace_cvc(replace_cvc(_arg_1, \"Inc\", \"Enterprises\"), \"Enterprises\", \"Corporation\"), \"Company\", \"Corporation\"), concat_cvc(\" \", \"Corporation\"), \"\")",
+        "problem": {
+            "name": "problem_33619752",
+            "spec": [
+                {
+                    "in": {
+                        "_arg_1": "General Electric",
+                        "_arg_out": "General Electric"
+                    },
+                    "out": "General Electric"
+                },
+                {
+                    "in": {
+                        "_arg_1": "General Electric Inc",
+                        "_arg_out": "General Electric"
+                    },
+                    "out": "General Electric"
+                },
+                {
+                    "in": {
+                        "_arg_1": "General Electric Company",
+                        "_arg_out": "General Electric"
+                    },
+                    "out": "General Electric"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Microsoft",
+                        "_arg_out": "Microsoft"
+                    },
+                    "out": "Microsoft"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Microsoft Corporation",
+                        "_arg_out": "Microsoft"
+                    },
+                    "out": "Microsoft"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Nintendo",
+                        "_arg_out": "Nintendo"
+                    },
+                    "out": "Nintendo"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Nintendo Enterprises",
+                        "_arg_out": "Nintendo"
+                    },
+                    "out": "Nintendo"
+                }
+            ]
+        },
+        "properties": [
+            "contains_cvc(_arg_out, at_cvc(_arg_1, 1))",
+            "contains_cvc(\"Company\", at_cvc(_arg_1, len_cvc(_arg_out)))",
+            "prefixof_cvc(_arg_out, _arg_1)"
+        ],
+        "benchmark_name": "SyGuS strings",
+        "solved": true
+    },
+    {
+        "program": "nothing",
+        "problem": {
+            "name": "problem_34801680",
+            "spec": [
+                {
+                    "in": {
+                        "_arg_1": "Name= ABC Retailers",
+                        "_arg_out": "ABC Retailers"
+                    },
+                    "out": "ABC Retailers"
+                },
+                {
+                    "in": {
+                        "_arg_1": " ame= XYZ Suppliers",
+                        "_arg_out": "XYZ Suppliers"
+                    },
+                    "out": "XYZ Suppliers"
+                }
+            ]
+        },
+        "properties": [
+            "suffixof_cvc(concat_cvc(\" \", _arg_out), _arg_1)",
+            "prefixof_cvc(\" \", at_cvc(_arg_out, 4))",
+            "suffixof_cvc(\" \", _arg_out)",
+            "suffixof_cvc(_arg_out, _arg_1)",
+            "contains_cvc(_arg_1, _arg_out)",
+            "suffixof_cvc(\" \", at_cvc(_arg_out, 4))",
+            "contains_cvc(int_to_str_cvc(len_cvc(_arg_out)), int_to_str_cvc(3))",
+            "contains_cvc(_arg_out, \"=\")",
+            "prefixof_cvc(_arg_out, _arg_1)",
+            "prefixof_cvc(\" \", _arg_out)",
+            "prefixof_cvc(concat_cvc(\"\", \" \"), _arg_out)",
+            "contains_cvc(_arg_out, int_to_str_cvc(1))",
+            "contains_cvc(_arg_out, int_to_str_cvc(2))",
+            "len_cvc(_arg_1) <= len_cvc(_arg_out)",
+            "suffixof_cvc(concat_cvc(\"\", _arg_out), _arg_1)",
+            "suffixof_cvc(_arg_out, \"Name\")",
+            "suffixof_cvc(\"Name\", _arg_out)",
+            "prefixof_cvc(\" \", at_cvc(_arg_out, 2))",
+            "suffixof_cvc(concat_cvc(_arg_out, \"\"), _arg_1)",
+            "contains_cvc(concat_cvc(_arg_1, _arg_1), _arg_out)"
+        ],
+        "benchmark_name": "SyGuS strings",
+        "solved": false
+    },
+    {
+        "program": "replace_cvc(_arg_1, replace_cvc(_arg_1, \"C0\", \" \"), if false\n        \"\"\n    else\n        _arg_2\n    end)",
+        "problem": {
+            "name": "problem_35016216",
+            "spec": [
+                {
+                    "in": {
+                        "_arg_1": "C0abc",
+                        "_arg_2": "def",
+                        "_arg_out": "C0abc"
+                    },
+                    "out": "C0abc"
+                },
+                {
+                    "in": {
+                        "_arg_1": "aabc",
+                        "_arg_2": "def",
+                        "_arg_out": "def"
+                    },
+                    "out": "def"
+                },
+                {
+                    "in": {
+                        "_arg_1": "C0dd",
+                        "_arg_2": "qwe",
+                        "_arg_out": "C0dd"
+                    },
+                    "out": "C0dd"
+                },
+                {
+                    "in": {
+                        "_arg_1": "dd",
+                        "_arg_2": "qwe",
+                        "_arg_out": "qwe"
+                    },
+                    "out": "qwe"
+                }
+            ]
+        },
+        "properties": [
+            "contains_cvc(_arg_1, at_cvc(_arg_out, 3))",
+            "contains_cvc(concat_cvc(_arg_1, _arg_2), _arg_out)",
+            "len_cvc(_arg_out) <= len_cvc(_arg_1)",
+            "prefixof_cvc(_arg_1, _arg_out)",
+            "prefixof_cvc(_arg_out, _arg_1)",
+            "suffixof_cvc(_arg_1, _arg_out)"
+        ],
+        "benchmark_name": "SyGuS strings",
+        "solved": true
+    },
+    {
+        "program": "nothing",
+        "problem": {
+            "name": "problem_35744094",
+            "spec": [
+                {
+                    "in": {
+                        "_arg_1": "http=//www.apple.com/uk/mac",
+                        "_arg_out": "mac"
+                    },
+                    "out": "mac"
+                },
+                {
+                    "in": {
+                        "_arg_1": "https=//www.microsoft.com/en-gb/windows",
+                        "_arg_out": "windows"
+                    },
+                    "out": "windows"
+                },
+                {
+                    "in": {
+                        "_arg_1": "https=//www.microsoft.com/",
+                        "_arg_out": "microsoft"
+                    },
+                    "out": "microsoft"
+                }
+            ]
+        },
+        "properties": [
+            "suffixof_cvc(_arg_out, replace_cvc(_arg_1, \"/\", \"microsoft\"))",
+            "prefixof_cvc(at_cvc(_arg_out, 1), _arg_1)",
+            "contains_cvc(_arg_1, _arg_out)",
+            "contains_cvc(\"windows\", at_cvc(_arg_out, 2))",
+            "contains_cvc(\"microsoft\", _arg_out)",
+            "suffixof_cvc(concat_cvc(\"/\", _arg_out), _arg_1)",
+            "1 == len_cvc(_arg_out)",
+            "prefixof_cvc(\"windows\", _arg_out)",
+            "2 == len_cvc(_arg_out)",
+            "prefixof_cvc(at_cvc(_arg_out, 2), \"windows\")",
+            "contains_cvc(\"microsoft\", at_cvc(_arg_out, 4))",
+            "contains_cvc(\"windows\", at_cvc(_arg_out, 4))",
+            "suffixof_cvc(replace_cvc(_arg_out, \"microsoft\", \"/\"), _arg_1)",
+            "contains_cvc(replace_cvc(_arg_1, \"windows\", \"mac\"), _arg_out)",
+            "contains_cvc(\"microsoft\", at_cvc(\"windows\", len_cvc(_arg_out)))",
+            "contains_cvc(_arg_out, at_cvc(\"windows\", len_cvc(_arg_out)))",
+            "prefixof_cvc(substr_cvc(_arg_out, 1, 4), \"microsoft\")",
+            "prefixof_cvc(substr_cvc(_arg_out, 1, 4), \"windows\")",
+            "prefixof_cvc(substr_cvc(_arg_out, 1, 5), \"microsoft\")",
+            "prefixof_cvc(substr_cvc(_arg_out, 1, 5), \"windows\")"
+        ],
+        "benchmark_name": "SyGuS strings",
+        "solved": false
+    },
+    {
+        "program": "nothing",
+        "problem": {
+            "name": "problem_36462127",
+            "spec": [
+                {
+                    "in": {
+                        "_arg_1": "ABCDE/FGHI/JKL/MNOPQR",
+                        "_arg_out": "MNOPQR"
+                    },
+                    "out": "MNOPQR"
+                },
+                {
+                    "in": {
+                        "_arg_1": "A/ABCDE/FGHI/JKL",
+                        "_arg_out": "JKL"
+                    },
+                    "out": "JKL"
+                }
+            ]
+        },
+        "properties": [
+            "suffixof_cvc(concat_cvc(\"/\", _arg_out), _arg_1)",
+            "prefixof_cvc(substr_cvc(_arg_out, 1, 3), _arg_1)",
+            "suffixof_cvc(_arg_out, _arg_1)",
+            "indexof_cvc(_arg_1, _arg_out, 2) == -1",
+            "suffixof_cvc(\"/\", replace_cvc(_arg_1, _arg_out, \"\"))",
+            "indexof_cvc(_arg_1, _arg_out, 3) == -1",
+            "prefixof_cvc(replace_cvc(_arg_out, _arg_1, \"\"), \"/\")",
+            "contains_cvc(_arg_out, \"/\")",
+            "contains_cvc(_arg_1, _arg_out)",
+            "1 == len_cvc(_arg_out)",
+            "2 <= len_cvc(_arg_out)",
+            "3 <= len_cvc(_arg_out)",
+            "contains_cvc(_arg_1, at_cvc(_arg_out, 2))",
+            "suffixof_cvc(concat_cvc(\"\", _arg_out), _arg_1)",
+            "suffixof_cvc(concat_cvc(_arg_out, \"\"), _arg_1)",
+            "prefixof_cvc(\"/\", at_cvc(_arg_out, 5))",
+            "contains_cvc(concat_cvc(\"\", _arg_out), \"/\")",
+            "contains_cvc(concat_cvc(\" \", _arg_out), \"/\")",
+            "contains_cvc(concat_cvc(_arg_out, \"\"), \"/\")",
+            "contains_cvc(concat_cvc(_arg_out, \" \"), \"/\")"
+        ],
+        "benchmark_name": "SyGuS strings",
+        "solved": false
+    },
+    {
+        "program": "suffixof_cvc(_arg_2, _arg_1)",
+        "problem": {
+            "name": "problem_37281007",
+            "spec": [
+                {
+                    "in": {
+                        "_arg_1": "ABC",
+                        "_arg_2": "D"
+                    },
+                    "out": false
+                },
+                {
+                    "in": {
+                        "_arg_1": "ABC",
+                        "_arg_2": "BC"
+                    },
+                    "out": true
+                }
+            ]
+        },
+        "properties": [],
+        "benchmark_name": "SyGuS strings",
+        "solved": true
+    },
+    {
+        "program": "replace_cvc(_arg_1, replace_cvc(_arg_1, _arg_3, _arg_2), if true\n        _arg_2\n    else\n        _arg_3\n    end)",
+        "problem": {
+            "name": "problem_37534494",
+            "spec": [
+                {
+                    "in": {
+                        "_arg_1": "I love apples",
+                        "_arg_2": "I hate bananas",
+                        "_arg_out": "I hate bananas",
+                        "_arg_3": "banana"
+                    },
+                    "out": "I hate bananas"
+                },
+                {
+                    "in": {
+                        "_arg_1": "I love apples",
+                        "_arg_2": "I hate bananas",
+                        "_arg_out": "I love apples",
+                        "_arg_3": "apple"
+                    },
+                    "out": "I love apples"
+                }
+            ]
+        },
+        "properties": [
+            "contains_cvc(_arg_out, concat_cvc(\" \", _arg_3))",
+            "prefixof_cvc(replace_cvc(_arg_out, _arg_1, _arg_2), _arg_2)",
+            "prefixof_cvc(_arg_1, _arg_out)"
+        ],
+        "benchmark_name": "SyGuS strings",
+        "solved": true
+    },
+    {
+        "program": "replace_cvc(_arg_1, replace_cvc(\"that\", _arg_1, \"\"), \"\")",
+        "problem": {
+            "name": "problem_38664547",
+            "spec": [
+                {
+                    "in": {
+                        "_arg_1": "thatensures",
+                        "_arg_out": "ensures"
+                    },
+                    "out": "ensures"
+                },
+                {
+                    "in": {
+                        "_arg_1": "thatwill",
+                        "_arg_out": "will"
+                    },
+                    "out": "will"
+                },
+                {
+                    "in": {
+                        "_arg_1": "thathave",
+                        "_arg_out": "have"
+                    },
+                    "out": "have"
+                },
+                {
+                    "in": {
+                        "_arg_1": "knowthat",
+                        "_arg_out": "know"
+                    },
+                    "out": "know"
+                },
+                {
+                    "in": {
+                        "_arg_1": "that",
+                        "_arg_out": "that"
+                    },
+                    "out": "that"
+                },
+                {
+                    "in": {
+                        "_arg_1": "mouse",
+                        "_arg_out": "mouse"
+                    },
+                    "out": "mouse"
+                },
+                {
+                    "in": {
+                        "_arg_1": "knowthat",
+                        "_arg_out": "know"
+                    },
+                    "out": "know"
+                }
+            ]
+        },
+        "properties": [
+            "replace_cvc(_arg_1, \"that\", \"\") == _arg_out"
+        ],
+        "benchmark_name": "SyGuS strings",
+        "solved": true
+    },
+    {
+        "program": "replace_cvc(replace_cvc(_arg_1, \"<\", \"\"), \">\", \"\")",
+        "problem": {
+            "name": "problem_38871714",
+            "spec": [
+                {
+                    "in": {
+                        "_arg_1": "This is a <string>, It should be <changed> to <a> number.",
+                        "_arg_out": "This is a string, It should be changed to a number."
+                    },
+                    "out": "This is a string, It should be changed to a number."
+                },
+                {
+                    "in": {
+                        "_arg_1": "a < 4 and a > 0",
+                        "_arg_out": "a  4 and a  0"
+                    },
+                    "out": "a  4 and a  0"
+                }
+            ]
+        },
+        "properties": [
+            "prefixof_cvc(\" \", at_cvc(_arg_out, 3))"
+        ],
+        "benchmark_name": "SyGuS strings",
+        "solved": true
+    },
+    {
+        "program": "nothing",
+        "problem": {
+            "name": "problem_39060015",
+            "spec": [
+                {
+                    "in": {
+                        "_arg_1": "This is a line. /delete words in the area /keep this part",
+                        "_arg_out": "This is a line. keep this part"
+                    },
+                    "out": "This is a line. keep this part"
+                },
+                {
+                    "in": {
+                        "_arg_1": "/delete words in the area /",
+                        "_arg_out": ""
+                    },
+                    "out": ""
+                }
+            ]
+        },
+        "properties": [
+            "contains_cvc(int_to_str_cvc(len_cvc(_arg_out)), int_to_str_cvc(0))",
+            "prefixof_cvc(replace_cvc(_arg_1, _arg_out, \"/\"), _arg_1)",
+            "suffixof_cvc(replace_cvc(_arg_1, _arg_out, \"/\"), _arg_1)",
+            "prefixof_cvc(\" \", at_cvc(_arg_1, len_cvc(_arg_out)))",
+            "suffixof_cvc(\" \", at_cvc(_arg_1, len_cvc(_arg_out)))",
+            "contains_cvc(\" \", at_cvc(_arg_1, len_cvc(_arg_out)))",
+            "suffixof_cvc(int_to_str_cvc(0), int_to_str_cvc(len_cvc(_arg_out)))",
+            "prefixof_cvc(_arg_out, _arg_1)",
+            "prefixof_cvc(_arg_out, \"\")",
+            "prefixof_cvc(_arg_out, \" \")",
+            "prefixof_cvc(_arg_out, \"/\")",
+            "suffixof_cvc(_arg_out, _arg_1)",
+            "suffixof_cvc(_arg_out, \"\")",
+            "suffixof_cvc(_arg_out, \" \")",
+            "suffixof_cvc(_arg_out, \"/\")",
+            "contains_cvc(_arg_1, _arg_out)",
+            "contains_cvc(\"\", _arg_out)",
+            "contains_cvc(\" \", _arg_out)",
+            "contains_cvc(\"/\", _arg_out)",
+            "contains_cvc(_arg_out, _arg_1)"
+        ],
+        "benchmark_name": "SyGuS strings",
+        "solved": false
+    },
+    {
+        "program": "prefixof_cvc(_arg_1, replace_cvc(_arg_1, \"overhead\", \",\"))",
+        "problem": {
+            "name": "problem_40498040",
+            "spec": [
+                {
+                    "in": {
+                        "_arg_1": "some project,other project"
+                    },
+                    "out": true
+                },
+                {
+                    "in": {
+                        "_arg_1": "some project"
+                    },
+                    "out": true
+                },
+                {
+                    "in": {
+                        "_arg_1": "overhead"
+                    },
+                    "out": false
+                },
+                {
+                    "in": {
+                        "_arg_1": "some project, overhead"
+                    },
+                    "out": false
+                },
+                {
+                    "in": {
+                        "_arg_1": "some project, other, boo"
+                    },
+                    "out": true
+                }
+            ]
+        },
+        "properties": [],
+        "benchmark_name": "SyGuS strings",
+        "solved": true
+    },
+    {
+        "program": "nothing",
+        "problem": {
+            "name": "problem_41503046",
+            "spec": [
+                {
+                    "in": {
+                        "_arg_1": "Polygonum amphibium",
+                        "_arg_out": "Polygonum"
+                    },
+                    "out": "Polygonum"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Hippuris vulgaris",
+                        "_arg_out": "Hippuris"
+                    },
+                    "out": "Hippuris"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Lysimachia vulgaris",
+                        "_arg_out": "Lysimachia"
+                    },
+                    "out": "Lysimachia"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Juncus bulbosus ssp. bulbosus",
+                        "_arg_out": "Juncus bulbosus"
+                    },
+                    "out": "Juncus bulbosus"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Lycopus europaeus ssp. europaeus",
+                        "_arg_out": "Lycopus europaeus"
+                    },
+                    "out": "Lycopus europaeus"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Nymphaea alba",
+                        "_arg_out": "Nymphaea"
+                    },
+                    "out": "Nymphaea"
+                }
+            ]
+        },
+        "properties": [
+            "prefixof_cvc(concat_cvc(_arg_out, \" \"), _arg_1)",
+            "prefixof_cvc(\" \", replace_cvc(_arg_1, _arg_out, \"\"))",
+            "contains_cvc(_arg_1, concat_cvc(_arg_out, \" \"))",
+            "suffixof_cvc(_arg_out, _arg_1)",
+            "prefixof_cvc(_arg_out, _arg_1)",
+            "4 <= len_cvc(_arg_out) - 5",
+            "contains_cvc(int_to_str_cvc(len_cvc(_arg_out)), int_to_str_cvc(1))",
+            "5 <= len_cvc(_arg_out) - 5",
+            "4 < len_cvc(_arg_out) - 5",
+            "5 < len_cvc(_arg_out) - 4",
+            "len_cvc(_arg_out) - 4 <= 5",
+            "len_cvc(_arg_out) - 5 <= 4",
+            "contains_cvc(_arg_out, \" \")",
+            "contains_cvc(concat_cvc(\"\", _arg_out), \" \")",
+            "contains_cvc(concat_cvc(\"ssp.\", _arg_out), \" \")",
+            "contains_cvc(concat_cvc(_arg_out, \"\"), \" \")",
+            "contains_cvc(concat_cvc(_arg_out, \"ssp.\"), \" \")",
+            "contains_cvc(concat_cvc(_arg_out, _arg_out), \" \")",
+            "contains_cvc(_arg_out, at_cvc(\" \", 1))",
+            "contains_cvc(_arg_out, concat_cvc(\"\", \" \"))"
+        ],
+        "benchmark_name": "SyGuS strings",
+        "solved": false
+    },
+    {
+        "program": "replace_cvc(replace_cvc(replace_cvc(replace_cvc(replace_cvc(replace_cvc(_arg_1, \"1\", \"apple\"), \"2\", \"1\"), \"1\", \"bananas\"), \"4\", \"oranges\"), \"3\", \"strawberries\"), \",\", \"\")",
+        "problem": {
+            "name": "problem_43120683",
+            "spec": [
+                {
+                    "in": {
+                        "_arg_1": "one, 1",
+                        "_arg_out": "one apple"
+                    },
+                    "out": "one apple"
+                },
+                {
+                    "in": {
+                        "_arg_1": "two, 2",
+                        "_arg_out": "two bananas"
+                    },
+                    "out": "two bananas"
+                },
+                {
+                    "in": {
+                        "_arg_1": "three, 3",
+                        "_arg_out": "three strawberries"
+                    },
+                    "out": "three strawberries"
+                },
+                {
+                    "in": {
+                        "_arg_1": "four, 4",
+                        "_arg_out": "four oranges"
+                    },
+                    "out": "four oranges"
+                }
+            ]
+        },
+        "properties": [
+            "contains_cvc(replace_cvc(_arg_out, \" \", _arg_1), _arg_out)",
+            "prefixof_cvc(at_cvc(_arg_1, 1), _arg_out)",
+            "prefixof_cvc(_arg_1, replace_cvc(_arg_out, \"apple\", _arg_1))",
+            "contains_cvc(\"strawberries\", at_cvc(_arg_out, len_cvc(_arg_out)))",
+            "contains_cvc(_arg_out, at_cvc(_arg_1, len_cvc(_arg_1)))",
+            "prefixof_cvc(\" \", at_cvc(_arg_out, 2))",
+            "contains_cvc(_arg_1, substr_cvc(_arg_out, 1, 3))",
+            "contains_cvc(_arg_out, substr_cvc(_arg_1, 1, 3))",
+            "contains_cvc(_arg_out, \",\")",
+            "contains_cvc(\"oranges\", at_cvc(_arg_out, len_cvc(\"strawberries\")))"
+        ],
+        "benchmark_name": "SyGuS strings",
+        "solved": true
+    },
+    {
+        "program": "nothing",
+        "problem": {
+            "name": "problem_43606446",
+            "spec": [
+                {
+                    "in": {
+                        "_arg_1": "USD.EUR<IDEALPRO,CASH,EUR>",
+                        "_arg_out": "EUR"
+                    },
+                    "out": "EUR"
+                },
+                {
+                    "in": {
+                        "_arg_1": "USD.EUR<IDEALPRO,CASH,USD>",
+                        "_arg_out": "USD"
+                    },
+                    "out": "USD"
+                },
+                {
+                    "in": {
+                        "_arg_1": "KOR.JPN<IDEALPRO,CASH,WON>",
+                        "_arg_out": "WON"
+                    },
+                    "out": "WON"
+                },
+                {
+                    "in": {
+                        "_arg_1": "KOR.JPN<IDEALPRO,CASH,YEN>",
+                        "_arg_out": "YEN"
+                    },
+                    "out": "YEN"
+                }
+            ]
+        },
+        "properties": [
+            "3 == len_cvc(_arg_out)",
+            "contains_cvc(_arg_1, _arg_out)",
+            "contains_cvc(_arg_1, replace_cvc(_arg_1, _arg_out, \"\"))",
+            "1 == len_cvc(_arg_out)",
+            "suffixof_cvc(replace_cvc(_arg_1, _arg_out, \"\"), _arg_1)",
+            "2 <= len_cvc(_arg_out)",
+            "suffixof_cvc(concat_cvc(_arg_out, \">\"), _arg_1)",
+            "prefixof_cvc(replace_cvc(_arg_1, _arg_out, \"\"), _arg_1)",
+            "suffixof_cvc(_arg_1, replace_cvc(_arg_1, _arg_out, _arg_1))",
+            "indexof_cvc(_arg_1, _arg_out, 2) == -1",
+            "indexof_cvc(_arg_1, _arg_out, 3) == -1",
+            "indexof_cvc(_arg_1, _arg_out, 4) == -1",
+            "indexof_cvc(_arg_1, _arg_out, 5) == -1",
+            "indexof_cvc(_arg_1, _arg_out, 1) <= 1",
+            "indexof_cvc(_arg_1, _arg_out, 1) <= 2",
+            "indexof_cvc(_arg_1, _arg_out, 1) <= 3",
+            "indexof_cvc(_arg_1, _arg_out, 1) <= 4",
+            "len_cvc(_arg_out) == 3",
+            "1 == 4 - len_cvc(_arg_out)",
+            "0 == 3 - len_cvc(_arg_out)"
+        ],
+        "benchmark_name": "SyGuS strings",
+        "solved": false
+    },
+    {
+        "program": "nothing",
+        "problem": {
+            "name": "problem_44789427",
+            "spec": [
+                {
+                    "in": {
+                        "_arg_1": "1/17/16-1/18/17",
+                        "_arg_2": 1,
+                        "_arg_out": "1/17/16"
+                    },
+                    "out": "1/17/16"
+                },
+                {
+                    "in": {
+                        "_arg_1": "1/17/16-1/18/17",
+                        "_arg_2": 2,
+                        "_arg_out": "1/18/17"
+                    },
+                    "out": "1/18/17"
+                },
+                {
+                    "in": {
+                        "_arg_1": "01/17/2016-01/18/2017",
+                        "_arg_2": 1,
+                        "_arg_out": "01/17/2016"
+                    },
+                    "out": "01/17/2016"
+                },
+                {
+                    "in": {
+                        "_arg_1": "01/17/2016-01/18/2017",
+                        "_arg_2": 2,
+                        "_arg_out": "01/18/2017"
+                    },
+                    "out": "01/18/2017"
+                }
+            ]
+        },
+        "properties": [
+            "suffixof_cvc(at_cvc(_arg_out, 4), _arg_out)",
+            "contains_cvc(_arg_1, _arg_out)",
+            "prefixof_cvc(_arg_1, _arg_out)",
+            "prefixof_cvc(at_cvc(_arg_out, 2), _arg_1)",
+            "contains_cvc(_arg_out, \"-\")",
+            "prefixof_cvc(_arg_out, _arg_1)",
+            "suffixof_cvc(_arg_out, _arg_1)",
+            "suffixof_cvc(concat_cvc(\"\", _arg_out), _arg_1)",
+            "suffixof_cvc(concat_cvc(\"-\", _arg_out), _arg_1)",
+            "suffixof_cvc(concat_cvc(_arg_out, \"\"), _arg_1)",
+            "suffixof_cvc(_arg_out, concat_cvc(_arg_1, _arg_1))",
+            "5 <= len_cvc(_arg_out)",
+            "suffixof_cvc(_arg_out, concat_cvc(_arg_1, \"\"))",
+            "prefixof_cvc(_arg_out, \"\")",
+            "suffixof_cvc(_arg_out, concat_cvc(\"\", _arg_1))",
+            "prefixof_cvc(_arg_out, \" \")",
+            "suffixof_cvc(_arg_out, concat_cvc(\" \", _arg_1))",
+            "prefixof_cvc(_arg_out, \"-\")",
+            "prefixof_cvc(concat_cvc(\"\", _arg_out), _arg_1)",
+            "prefixof_cvc(int_to_str_cvc(1), _arg_out)"
+        ],
+        "benchmark_name": "SyGuS strings",
+        "solved": false
+    },
+    {
+        "program": "concat_cvc(concat_cvc(concat_cvc(_arg_1, \"/n\"), concat_cvc(_arg_2, \"/n\")), _arg_3)",
+        "problem": {
+            "name": "problem_add_a_line_break_with_a_formula",
+            "spec": [
+                {
+                    "in": {
+                        "_arg_1": "Traci Brown",
+                        "_arg_2": "1301 Robinson Court",
+                        "_arg_out": "Traci Brown/n1301 Robinson Court/nSaginaw, MI 48607",
+                        "_arg_3": "Saginaw, MI 48607"
+                    },
+                    "out": "Traci Brown/n1301 Robinson Court/nSaginaw, MI 48607"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Mary Hannan",
+                        "_arg_2": "1195 Amethyst Drive",
+                        "_arg_out": "Mary Hannan/n1195 Amethyst Drive/nLansing, MI 48933",
+                        "_arg_3": "Lansing, MI 48933"
+                    },
+                    "out": "Mary Hannan/n1195 Amethyst Drive/nLansing, MI 48933"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Linda Thomas",
+                        "_arg_2": "2479 North Bend Road",
+                        "_arg_out": "Linda Thomas/n2479 North Bend Road/nAllen, KY 41601",
+                        "_arg_3": "Allen, KY 41601"
+                    },
+                    "out": "Linda Thomas/n2479 North Bend Road/nAllen, KY 41601"
+                }
+            ]
+        },
+        "properties": [
+            "prefixof_cvc(concat_cvc(_arg_1, \"/n\"), _arg_out)",
+            "contains_cvc(_arg_out, concat_cvc(_arg_2, \"/n\"))"
+        ],
+        "benchmark_name": "SyGuS strings",
+        "solved": true
+    },
+    {
+        "program": "nothing",
+        "problem": {
+            "name": "problem_bikes",
+            "spec": [
+                {
+                    "in": {
+                        "_arg_1": "Ducati100",
+                        "_arg_out": "Ducati"
+                    },
+                    "out": "Ducati"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Honda125",
+                        "_arg_out": "Honda"
+                    },
+                    "out": "Honda"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Ducati250",
+                        "_arg_out": "Ducati"
+                    },
+                    "out": "Ducati"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Honda250",
+                        "_arg_out": "Honda"
+                    },
+                    "out": "Honda"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Honda550",
+                        "_arg_out": "Honda"
+                    },
+                    "out": "Honda"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Ducati125",
+                        "_arg_out": "Ducati"
+                    },
+                    "out": "Ducati"
+                }
+            ]
+        },
+        "properties": [
+            "suffixof_cvc(at_cvc(_arg_out, 5), _arg_out)",
+            "prefixof_cvc(_arg_out, _arg_1)",
+            "2 <= len_cvc(_arg_out) - 5",
+            "prefixof_cvc(_arg_out, substr_cvc(_arg_out, 1, 5))",
+            "suffixof_cvc(_arg_out, substr_cvc(_arg_out, 1, 5))",
+            "contains_cvc(_arg_1, _arg_out)",
+            "suffixof_cvc(_arg_out, _arg_1)",
+            "prefixof_cvc(_arg_out, concat_cvc(_arg_1, _arg_1))",
+            "5 == len_cvc(_arg_out)",
+            "5 < len_cvc(_arg_out)",
+            "len_cvc(_arg_out) == 5",
+            "len_cvc(_arg_out) <= 5",
+            "suffixof_cvc(at_cvc(_arg_1, 5), _arg_out)",
+            "0 == len_cvc(_arg_out) - 5",
+            "1 == len_cvc(_arg_out) - 4",
+            "1 == len_cvc(_arg_out) - 5",
+            "2 == len_cvc(_arg_out) - 3",
+            "2 == len_cvc(_arg_out) - 4",
+            "3 == len_cvc(_arg_out) - 2",
+            "3 == len_cvc(_arg_out) - 3"
+        ],
+        "benchmark_name": "SyGuS strings",
+        "solved": false
+    },
+    {
+        "program": "nothing",
+        "problem": {
+            "name": "problem_bikes_long",
+            "spec": [
+                {
+                    "in": {
+                        "_arg_1": "Ducati100",
+                        "_arg_out": "Ducati"
+                    },
+                    "out": "Ducati"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Honda125",
+                        "_arg_out": "Honda"
+                    },
+                    "out": "Honda"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Ducati250",
+                        "_arg_out": "Ducati"
+                    },
+                    "out": "Ducati"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Honda250",
+                        "_arg_out": "Honda"
+                    },
+                    "out": "Honda"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Honda550",
+                        "_arg_out": "Honda"
+                    },
+                    "out": "Honda"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Ducati125",
+                        "_arg_out": "Ducati"
+                    },
+                    "out": "Ducati"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Acura100",
+                        "_arg_out": "Acura"
+                    },
+                    "out": "Acura"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Acura125",
+                        "_arg_out": "Acura"
+                    },
+                    "out": "Acura"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Ferrari250",
+                        "_arg_out": "Ferrari"
+                    },
+                    "out": "Ferrari"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Ferrari250",
+                        "_arg_out": "Ferrari"
+                    },
+                    "out": "Ferrari"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Honda550",
+                        "_arg_out": "Honda"
+                    },
+                    "out": "Honda"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Ducati125",
+                        "_arg_out": "Ducati"
+                    },
+                    "out": "Ducati"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Ducati100",
+                        "_arg_out": "Ducati"
+                    },
+                    "out": "Ducati"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Honda125",
+                        "_arg_out": "Honda"
+                    },
+                    "out": "Honda"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Ducati250",
+                        "_arg_out": "Ducati"
+                    },
+                    "out": "Ducati"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Honda250",
+                        "_arg_out": "Honda"
+                    },
+                    "out": "Honda"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Honda550",
+                        "_arg_out": "Honda"
+                    },
+                    "out": "Honda"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Ducati125",
+                        "_arg_out": "Ducati"
+                    },
+                    "out": "Ducati"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Acura100",
+                        "_arg_out": "Acura"
+                    },
+                    "out": "Acura"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Acura125",
+                        "_arg_out": "Acura"
+                    },
+                    "out": "Acura"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Ferrari250",
+                        "_arg_out": "Ferrari"
+                    },
+                    "out": "Ferrari"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Ferrari250",
+                        "_arg_out": "Ferrari"
+                    },
+                    "out": "Ferrari"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Honda550",
+                        "_arg_out": "Honda"
+                    },
+                    "out": "Honda"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Ducati125",
+                        "_arg_out": "Ducati"
+                    },
+                    "out": "Ducati"
+                }
+            ]
+        },
+        "properties": [
+            "suffixof_cvc(at_cvc(_arg_out, 5), _arg_out)",
+            "prefixof_cvc(_arg_out, _arg_1)",
+            "2 <= len_cvc(_arg_out) - 5",
+            "prefixof_cvc(_arg_out, substr_cvc(_arg_out, 1, 5))",
+            "contains_cvc(_arg_1, _arg_out)",
+            "suffixof_cvc(_arg_out, _arg_1)",
+            "prefixof_cvc(_arg_out, concat_cvc(_arg_1, _arg_1))",
+            "5 == len_cvc(_arg_out)",
+            "5 < len_cvc(_arg_out)",
+            "len_cvc(_arg_out) == 5",
+            "len_cvc(_arg_out) <= 5",
+            "suffixof_cvc(at_cvc(_arg_1, 5), _arg_out)",
+            "0 == len_cvc(_arg_out) - 5",
+            "1 == len_cvc(_arg_out) - 4",
+            "2 == len_cvc(_arg_out) - 3",
+            "3 == len_cvc(_arg_out) - 2",
+            "4 == len_cvc(_arg_out) - 1",
+            "5 == len_cvc(_arg_out) + 0",
+            "5 == len_cvc(_arg_out) - 0",
+            "1 <= len_cvc(_arg_out) - 5"
+        ],
+        "benchmark_name": "SyGuS strings",
+        "solved": false
+    },
+    {
+        "program": "nothing",
+        "problem": {
+            "name": "problem_bikes_long_repeat",
+            "spec": [
+                {
+                    "in": {
+                        "_arg_1": "Ducati100",
+                        "_arg_out": "Ducati"
+                    },
+                    "out": "Ducati"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Ducati100",
+                        "_arg_out": "Ducati"
+                    },
+                    "out": "Ducati"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Ducati100",
+                        "_arg_out": "Ducati"
+                    },
+                    "out": "Ducati"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Honda125",
+                        "_arg_out": "Honda"
+                    },
+                    "out": "Honda"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Honda125",
+                        "_arg_out": "Honda"
+                    },
+                    "out": "Honda"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Honda125",
+                        "_arg_out": "Honda"
+                    },
+                    "out": "Honda"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Ducati250",
+                        "_arg_out": "Ducati"
+                    },
+                    "out": "Ducati"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Ducati250",
+                        "_arg_out": "Ducati"
+                    },
+                    "out": "Ducati"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Ducati250",
+                        "_arg_out": "Ducati"
+                    },
+                    "out": "Ducati"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Honda250",
+                        "_arg_out": "Honda"
+                    },
+                    "out": "Honda"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Honda250",
+                        "_arg_out": "Honda"
+                    },
+                    "out": "Honda"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Honda250",
+                        "_arg_out": "Honda"
+                    },
+                    "out": "Honda"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Honda550",
+                        "_arg_out": "Honda"
+                    },
+                    "out": "Honda"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Honda550",
+                        "_arg_out": "Honda"
+                    },
+                    "out": "Honda"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Honda550",
+                        "_arg_out": "Honda"
+                    },
+                    "out": "Honda"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Ducati125",
+                        "_arg_out": "Ducati"
+                    },
+                    "out": "Ducati"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Ducati125",
+                        "_arg_out": "Ducati"
+                    },
+                    "out": "Ducati"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Ducati125",
+                        "_arg_out": "Ducati"
+                    },
+                    "out": "Ducati"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Acura100",
+                        "_arg_out": "Acura"
+                    },
+                    "out": "Acura"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Acura100",
+                        "_arg_out": "Acura"
+                    },
+                    "out": "Acura"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Acura100",
+                        "_arg_out": "Acura"
+                    },
+                    "out": "Acura"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Acura125",
+                        "_arg_out": "Acura"
+                    },
+                    "out": "Acura"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Ferrari250",
+                        "_arg_out": "Ferrari"
+                    },
+                    "out": "Ferrari"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Ferrari250",
+                        "_arg_out": "Ferrari"
+                    },
+                    "out": "Ferrari"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Ferrari250",
+                        "_arg_out": "Ferrari"
+                    },
+                    "out": "Ferrari"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Ferrari250",
+                        "_arg_out": "Ferrari"
+                    },
+                    "out": "Ferrari"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Honda550",
+                        "_arg_out": "Honda"
+                    },
+                    "out": "Honda"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Honda550",
+                        "_arg_out": "Honda"
+                    },
+                    "out": "Honda"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Honda550",
+                        "_arg_out": "Honda"
+                    },
+                    "out": "Honda"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Ducati125",
+                        "_arg_out": "Ducati"
+                    },
+                    "out": "Ducati"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Ducati125",
+                        "_arg_out": "Ducati"
+                    },
+                    "out": "Ducati"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Ducati125",
+                        "_arg_out": "Ducati"
+                    },
+                    "out": "Ducati"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Ducati100",
+                        "_arg_out": "Ducati"
+                    },
+                    "out": "Ducati"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Honda125",
+                        "_arg_out": "Honda"
+                    },
+                    "out": "Honda"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Honda125",
+                        "_arg_out": "Honda"
+                    },
+                    "out": "Honda"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Honda125",
+                        "_arg_out": "Honda"
+                    },
+                    "out": "Honda"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Ducati250",
+                        "_arg_out": "Ducati"
+                    },
+                    "out": "Ducati"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Honda250",
+                        "_arg_out": "Honda"
+                    },
+                    "out": "Honda"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Honda250",
+                        "_arg_out": "Honda"
+                    },
+                    "out": "Honda"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Honda250",
+                        "_arg_out": "Honda"
+                    },
+                    "out": "Honda"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Honda550",
+                        "_arg_out": "Honda"
+                    },
+                    "out": "Honda"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Ducati125",
+                        "_arg_out": "Ducati"
+                    },
+                    "out": "Ducati"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Ducati125",
+                        "_arg_out": "Ducati"
+                    },
+                    "out": "Ducati"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Ducati125",
+                        "_arg_out": "Ducati"
+                    },
+                    "out": "Ducati"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Acura100",
+                        "_arg_out": "Acura"
+                    },
+                    "out": "Acura"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Acura125",
+                        "_arg_out": "Acura"
+                    },
+                    "out": "Acura"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Acura125",
+                        "_arg_out": "Acura"
+                    },
+                    "out": "Acura"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Acura125",
+                        "_arg_out": "Acura"
+                    },
+                    "out": "Acura"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Ferrari250",
+                        "_arg_out": "Ferrari"
+                    },
+                    "out": "Ferrari"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Ferrari250",
+                        "_arg_out": "Ferrari"
+                    },
+                    "out": "Ferrari"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Ferrari250",
+                        "_arg_out": "Ferrari"
+                    },
+                    "out": "Ferrari"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Honda550",
+                        "_arg_out": "Honda"
+                    },
+                    "out": "Honda"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Honda550",
+                        "_arg_out": "Honda"
+                    },
+                    "out": "Honda"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Honda550",
+                        "_arg_out": "Honda"
+                    },
+                    "out": "Honda"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Ducati125",
+                        "_arg_out": "Ducati"
+                    },
+                    "out": "Ducati"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Ducati125",
+                        "_arg_out": "Ducati"
+                    },
+                    "out": "Ducati"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Ducati125",
+                        "_arg_out": "Ducati"
+                    },
+                    "out": "Ducati"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Ducati125",
+                        "_arg_out": "Ducati"
+                    },
+                    "out": "Ducati"
+                }
+            ]
+        },
+        "properties": [
+            "suffixof_cvc(at_cvc(_arg_out, 5), _arg_out)",
+            "prefixof_cvc(_arg_out, _arg_1)",
+            "5 == len_cvc(_arg_out)",
+            "5 < len_cvc(_arg_out)",
+            "len_cvc(_arg_out) == 5",
+            "4 == len_cvc(_arg_out)",
+            "len_cvc(_arg_out) <= 5",
+            "suffixof_cvc(at_cvc(_arg_1, 5), _arg_out)",
+            "0 == len_cvc(_arg_out) - 5",
+            "5 <= len_cvc(_arg_out)",
+            "1 == len_cvc(_arg_out) - 4",
+            "4 < len_cvc(_arg_out)",
+            "2 == len_cvc(_arg_out) - 3",
+            "len_cvc(_arg_out) == 4",
+            "3 == len_cvc(_arg_out) - 2",
+            "len_cvc(_arg_out) <= 4",
+            "4 == len_cvc(_arg_out) - 1",
+            "len_cvc(_arg_out) < 5",
+            "5 == len_cvc(_arg_out) + 0",
+            "prefixof_cvc(_arg_out, concat_cvc(_arg_1, _arg_1))"
+        ],
+        "benchmark_name": "SyGuS strings",
+        "solved": false
+    },
+    {
+        "program": "nothing",
+        "problem": {
+            "name": "problem_bikes_small",
+            "spec": [
+                {
+                    "in": {
+                        "_arg_1": "Ducati100",
+                        "_arg_out": "Ducati"
+                    },
+                    "out": "Ducati"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Honda125",
+                        "_arg_out": "Honda"
+                    },
+                    "out": "Honda"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Ducati250",
+                        "_arg_out": "Ducati"
+                    },
+                    "out": "Ducati"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Honda250",
+                        "_arg_out": "Honda"
+                    },
+                    "out": "Honda"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Honda550",
+                        "_arg_out": "Honda"
+                    },
+                    "out": "Honda"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Ducati125",
+                        "_arg_out": "Ducati"
+                    },
+                    "out": "Ducati"
+                }
+            ]
+        },
+        "properties": [
+            "prefixof_cvc(replace_cvc(_arg_out, _arg_1, \" \"), _arg_1)",
+            "suffixof_cvc(at_cvc(_arg_out, 5), _arg_out)",
+            "suffixof_cvc(substr_cvc(_arg_out, 1, 5), _arg_out)",
+            "suffixof_cvc(substr_cvc(_arg_out, 2, 5), _arg_out)",
+            "suffixof_cvc(substr_cvc(_arg_out, 3, 5), _arg_out)",
+            "suffixof_cvc(substr_cvc(_arg_out, 4, 5), _arg_out)",
+            "suffixof_cvc(substr_cvc(_arg_out, 5, 5), _arg_out)",
+            "substr_cvc(_arg_out, 1, 5) == _arg_out",
+            "prefixof_cvc(_arg_out, substr_cvc(_arg_out, 1, 5))",
+            "suffixof_cvc(_arg_out, substr_cvc(_arg_out, 1, 5))",
+            "_arg_out == substr_cvc(_arg_out, 1, 5)",
+            "len_cvc(_arg_out) == 5",
+            "len_cvc(_arg_out) <= 3",
+            "len_cvc(_arg_out) <= 4",
+            "len_cvc(_arg_out) <= 5",
+            "5 == len_cvc(_arg_out)",
+            "len_cvc(_arg_out) < 4",
+            "4 <= len_cvc(_arg_out)",
+            "len_cvc(_arg_out) < 5",
+            "5 <= len_cvc(_arg_out)"
+        ],
+        "benchmark_name": "SyGuS strings",
+        "solved": false
+    },
+    {
+        "program": "contains_cvc(_arg_1, _arg_4)",
+        "problem": {
+            "name": "problem_cell_contains_all_of_many_things",
+            "spec": [
+                {
+                    "in": {
+                        "_arg_1": "yellow dog on green grass",
+                        "_arg_2": "yellow",
+                        "_arg_4": "dog",
+                        "_arg_3": "green"
+                    },
+                    "out": true
+                },
+                {
+                    "in": {
+                        "_arg_1": "Lone dog with a green frisbie on yellow sand",
+                        "_arg_2": "yellow",
+                        "_arg_4": "dog",
+                        "_arg_3": "green"
+                    },
+                    "out": true
+                },
+                {
+                    "in": {
+                        "_arg_1": "A yellow sun in a green field",
+                        "_arg_2": "yellow",
+                        "_arg_4": "dog",
+                        "_arg_3": "green"
+                    },
+                    "out": false
+                },
+                {
+                    "in": {
+                        "_arg_1": "yellow neon sign with a green background",
+                        "_arg_2": "yellow",
+                        "_arg_4": "dog",
+                        "_arg_3": "green"
+                    },
+                    "out": false
+                }
+            ]
+        },
+        "properties": [],
+        "benchmark_name": "SyGuS strings",
+        "solved": true
+    },
+    {
+        "program": "contains_cvc(replace_cvc(_arg_1, \"2\", \"1\"), \"1\")",
+        "problem": {
+            "name": "problem_cell_contains_number",
+            "spec": [
+                {
+                    "in": {
+                        "_arg_1": "A bird in the hand is worth 2 in the bush."
+                    },
+                    "out": true
+                },
+                {
+                    "in": {
+                        "_arg_1": "A bird in the hand is worth two in the bush."
+                    },
+                    "out": false
+                },
+                {
+                    "in": {
+                        "_arg_1": "The 15 shortcuts you simply must know"
+                    },
+                    "out": true
+                }
+            ]
+        },
+        "properties": [],
+        "benchmark_name": "SyGuS strings",
+        "solved": true
+    },
+    {
+        "program": "contains_cvc(_arg_1, _arg_2)",
+        "problem": {
+            "name": "problem_cell_contains_one_of_many_things",
+            "spec": [
+                {
+                    "in": {
+                        "_arg_1": "yellow dog on green grass",
+                        "_arg_2": "yellow",
+                        "_arg_4": "dog",
+                        "_arg_3": "green"
+                    },
+                    "out": true
+                },
+                {
+                    "in": {
+                        "_arg_1": "warm gray sweater",
+                        "_arg_2": "yellow",
+                        "_arg_4": "dog",
+                        "_arg_3": "green"
+                    },
+                    "out": false
+                },
+                {
+                    "in": {
+                        "_arg_1": "A yellow sun in a green field",
+                        "_arg_2": "yellow",
+                        "_arg_4": "dog",
+                        "_arg_3": "green"
+                    },
+                    "out": true
+                },
+                {
+                    "in": {
+                        "_arg_1": "yellow neon sign with a green background",
+                        "_arg_2": "yellow",
+                        "_arg_4": "dog",
+                        "_arg_3": "green"
+                    },
+                    "out": true
+                }
+            ]
+        },
+        "properties": [],
+        "benchmark_name": "SyGuS strings",
+        "solved": true
+    },
+    {
+        "program": "contains_cvc(_arg_1, _arg_3)",
+        "problem": {
+            "name": "problem_cell_contains_one_of_many_with_exclusions",
+            "spec": [
+                {
+                    "in": {
+                        "_arg_1": "yellow dog on green grass",
+                        "_arg_2": "yellow",
+                        "_arg_4": "cat",
+                        "_arg_3": "green"
+                    },
+                    "out": true
+                },
+                {
+                    "in": {
+                        "_arg_1": "warm gray sweater",
+                        "_arg_2": "yellow",
+                        "_arg_4": "cat",
+                        "_arg_3": "green"
+                    },
+                    "out": false
+                },
+                {
+                    "in": {
+                        "_arg_1": "blue neon signs",
+                        "_arg_2": "blue",
+                        "_arg_4": "neon",
+                        "_arg_3": "green"
+                    },
+                    "out": false
+                },
+                {
+                    "in": {
+                        "_arg_1": "hot pink socks",
+                        "_arg_2": "blue",
+                        "_arg_4": "neon",
+                        "_arg_3": "pink"
+                    },
+                    "out": true
+                },
+                {
+                    "in": {
+                        "_arg_1": "deep black eyes",
+                        "_arg_2": "yellow",
+                        "_arg_4": "neon",
+                        "_arg_3": "green"
+                    },
+                    "out": false
+                }
+            ]
+        },
+        "properties": [],
+        "benchmark_name": "SyGuS strings",
+        "solved": true
+    },
+    {
+        "program": "prefixof_cvc(_arg_2, _arg_1)",
+        "problem": {
+            "name": "problem_cell_contains_some_words_but_not_others",
+            "spec": [
+                {
+                    "in": {
+                        "_arg_1": "red ball, green sweater",
+                        "_arg_2": "red",
+                        "_arg_4": "pink",
+                        "_arg_3": "green"
+                    },
+                    "out": true
+                },
+                {
+                    "in": {
+                        "_arg_1": "pink ball, green sweater",
+                        "_arg_2": "red",
+                        "_arg_4": "pink",
+                        "_arg_3": "green"
+                    },
+                    "out": false
+                },
+                {
+                    "in": {
+                        "_arg_1": "blue sea, pink ribbon",
+                        "_arg_2": "red",
+                        "_arg_4": "pink",
+                        "_arg_3": "blue"
+                    },
+                    "out": false
+                },
+                {
+                    "in": {
+                        "_arg_1": "black sea, white ribbon",
+                        "_arg_2": "red",
+                        "_arg_4": "pink",
+                        "_arg_3": "blue"
+                    },
+                    "out": false
+                },
+                {
+                    "in": {
+                        "_arg_1": "red green blue",
+                        "_arg_2": "red",
+                        "_arg_4": "pink",
+                        "_arg_3": "blue"
+                    },
+                    "out": true
+                }
+            ]
+        },
+        "properties": [],
+        "benchmark_name": "SyGuS strings",
+        "solved": true
+    },
+    {
+        "program": "contains_cvc(_arg_1, _arg_2)",
+        "problem": {
+            "name": "problem_cell_contains_specific_text",
+            "spec": [
+                {
+                    "in": {
+                        "_arg_1": "An apple a day keeps the doctor away",
+                        "_arg_2": "apple"
+                    },
+                    "out": true
+                },
+                {
+                    "in": {
+                        "_arg_1": "An apple a day keeps the doctor away",
+                        "_arg_2": "orange"
+                    },
+                    "out": false
+                },
+                {
+                    "in": {
+                        "_arg_1": "Better the devil you know",
+                        "_arg_2": "you know"
+                    },
+                    "out": true
+                }
+            ]
+        },
+        "properties": [],
+        "benchmark_name": "SyGuS strings",
+        "solved": true
+    },
+    {
+        "program": "prefixof_cvc(replace_cvc(replace_cvc(replace_cvc(_arg_1, \"blue\", \"orange\"), \"orange\", \"yellow\"), \"pink\", \"\"), \"yellow\")",
+        "problem": {
+            "name": "problem_cell_equals_one_of_many_things",
+            "spec": [
+                {
+                    "in": {
+                        "_arg_1": "yellow",
+                        "_arg_out": true
+                    },
+                    "out": true
+                },
+                {
+                    "in": {
+                        "_arg_1": "gray",
+                        "_arg_out": false
+                    },
+                    "out": false
+                },
+                {
+                    "in": {
+                        "_arg_1": "black",
+                        "_arg_out": false
+                    },
+                    "out": false
+                },
+                {
+                    "in": {
+                        "_arg_1": "blue",
+                        "_arg_out": true
+                    },
+                    "out": true
+                },
+                {
+                    "in": {
+                        "_arg_1": "pink",
+                        "_arg_out": true
+                    },
+                    "out": true
+                },
+                {
+                    "in": {
+                        "_arg_1": "orange",
+                        "_arg_out": true
+                    },
+                    "out": true
+                },
+                {
+                    "in": {
+                        "_arg_1": "turkey",
+                        "_arg_out": false
+                    },
+                    "out": false
+                }
+            ]
+        },
+        "properties": [
+            "_arg_out"
+        ],
+        "benchmark_name": "SyGuS strings",
+        "solved": true
+    },
+    {
+        "program": "replace_cvc(_arg_1, \"-\", \"\")",
+        "problem": {
+            "name": "problem_change_negative_numbers_to_positive",
+            "spec": [
+                {
+                    "in": {
+                        "_arg_1": "-%134"
+                    },
+                    "out": "%134"
+                },
+                {
+                    "in": {
+                        "_arg_1": "500"
+                    },
+                    "out": "500"
+                },
+                {
+                    "in": {
+                        "_arg_1": "5.125"
+                    },
+                    "out": "5.125"
+                },
+                {
+                    "in": {
+                        "_arg_1": "-%43.00"
+                    },
+                    "out": "%43.00"
+                }
+            ]
+        },
+        "properties": [],
+        "benchmark_name": "SyGuS strings",
+        "solved": true
+    },
+    {
+        "program": "nothing",
+        "problem": {
+            "name": "problem_clean_and_reformat_telephone_numbers",
+            "spec": [
+                {
+                    "in": {
+                        "_arg_1": "801-456-8765",
+                        "_arg_out": "8014568765"
+                    },
+                    "out": "8014568765"
+                },
+                {
+                    "in": {
+                        "_arg_1": "<978> 654-0299",
+                        "_arg_out": "9786540299"
+                    },
+                    "out": "9786540299"
+                },
+                {
+                    "in": {
+                        "_arg_1": "978.654.0299",
+                        "_arg_out": "9786540299"
+                    },
+                    "out": "9786540299"
+                }
+            ]
+        },
+        "properties": [
+            "2 <= str_to_int_cvc(_arg_out)",
+            "contains_cvc(_arg_1, _arg_out)",
+            "contains_cvc(_arg_out, int_to_str_cvc(4))",
+            "contains_cvc(int_to_str_cvc(len_cvc(_arg_out)), int_to_str_cvc(0))",
+            "contains_cvc(_arg_out, \" \")",
+            "prefixof_cvc(\"<\", _arg_out)",
+            "contains_cvc(_arg_out, \"<\")",
+            "contains_cvc(_arg_out, \",\")",
+            "contains_cvc(_arg_out, \">\")",
+            "1 == str_to_int_cvc(_arg_out)",
+            "0 == str_to_int_cvc(_arg_out)",
+            "-1 == str_to_int_cvc(_arg_out)",
+            "2 == str_to_int_cvc(_arg_out)",
+            "3 == str_to_int_cvc(_arg_out)",
+            "4 == str_to_int_cvc(_arg_out)",
+            "5 == str_to_int_cvc(_arg_out)",
+            "1 <= str_to_int_cvc(_arg_out)",
+            "0 <= str_to_int_cvc(_arg_out)",
+            "-1 <= str_to_int_cvc(_arg_out)",
+            "3 <= str_to_int_cvc(_arg_out)"
+        ],
+        "benchmark_name": "SyGuS strings",
+        "solved": false
+    },
+    {
+        "program": "prefixof_cvc(_arg_1, _arg_2)",
+        "problem": {
+            "name": "problem_compare_two_strings",
+            "spec": [
+                {
+                    "in": {
+                        "_arg_1": "apple",
+                        "_arg_2": "apple"
+                    },
+                    "out": true
+                },
+                {
+                    "in": {
+                        "_arg_1": "orange",
+                        "_arg_2": "Orange"
+                    },
+                    "out": false
+                },
+                {
+                    "in": {
+                        "_arg_1": "peach",
+                        "_arg_2": "peach"
+                    },
+                    "out": true
+                },
+                {
+                    "in": {
+                        "_arg_1": "cherry",
+                        "_arg_2": "cherrY"
+                    },
+                    "out": false
+                }
+            ]
+        },
+        "properties": [],
+        "benchmark_name": "SyGuS strings",
+        "solved": true
+    },
+    {
+        "program": "int_to_str_cvc(_arg_1)",
+        "problem": {
+            "name": "problem_convert_numbers_to_text",
+            "spec": [
+                {
+                    "in": {
+                        "_arg_1": 101
+                    },
+                    "out": "101"
+                },
+                {
+                    "in": {
+                        "_arg_1": 1002
+                    },
+                    "out": "1002"
+                },
+                {
+                    "in": {
+                        "_arg_1": 743
+                    },
+                    "out": "743"
+                }
+            ]
+        },
+        "properties": [],
+        "benchmark_name": "SyGuS strings",
+        "solved": true
+    },
+    {
+        "program": "str_to_int_cvc(_arg_1)",
+        "problem": {
+            "name": "problem_convert_text_to_numbers",
+            "spec": [
+                {
+                    "in": {
+                        "_arg_1": "101"
+                    },
+                    "out": 101
+                },
+                {
+                    "in": {
+                        "_arg_1": "1002"
+                    },
+                    "out": 1002
+                },
+                {
+                    "in": {
+                        "_arg_1": "743"
+                    },
+                    "out": 743
+                }
+            ]
+        },
+        "properties": [],
+        "benchmark_name": "SyGuS strings",
+        "solved": true
+    },
+    {
+        "program": "nothing",
+        "problem": {
+            "name": "problem_count_consecutive_monthly_orders",
+            "spec": [
+                {
+                    "in": {
+                        "_arg_1": "7 0 0 5 4 4",
+                        "_arg_out": 3
+                    },
+                    "out": 3
+                },
+                {
+                    "in": {
+                        "_arg_1": "0 0 2 3 3 0",
+                        "_arg_out": 3
+                    },
+                    "out": 3
+                },
+                {
+                    "in": {
+                        "_arg_1": "5 6 4 6 0 7",
+                        "_arg_out": 4
+                    },
+                    "out": 4
+                },
+                {
+                    "in": {
+                        "_arg_1": "0 4 5 0 0 2",
+                        "_arg_out": 2
+                    },
+                    "out": 2
+                },
+                {
+                    "in": {
+                        "_arg_1": "3 0 3 0 1 2",
+                        "_arg_out": 2
+                    },
+                    "out": 2
+                },
+                {
+                    "in": {
+                        "_arg_1": "5 3 2 5 6 1",
+                        "_arg_out": 6
+                    },
+                    "out": 6
+                }
+            ]
+        },
+        "properties": [
+            "prefixof_cvc(substr_cvc(_arg_1, _arg_out, 5), _arg_1)",
+            "prefixof_cvc(substr_cvc(_arg_1, _arg_out, 3), \"0\")",
+            "suffixof_cvc(substr_cvc(_arg_1, _arg_out, 3), \"0\")",
+            "contains_cvc(_arg_1, int_to_str_cvc(1 + _arg_out))",
+            "contains_cvc(_arg_1, int_to_str_cvc(_arg_out + 1))",
+            "contains_cvc(_arg_1, int_to_str_cvc(_arg_out - 3))",
+            "contains_cvc(_arg_1, int_to_str_cvc(4 - _arg_out))",
+            "contains_cvc(_arg_1, int_to_str_cvc(_arg_out))",
+            "4 == _arg_out",
+            "4 <= _arg_out",
+            "5 <= _arg_out",
+            "_arg_out == 4",
+            "_arg_out <= 3",
+            "_arg_out <= 4",
+            "3 < _arg_out",
+            "_arg_out < 4",
+            "suffixof_cvc(int_to_str_cvc(_arg_out), _arg_1)",
+            "_arg_out <= 5",
+            "1 + 3 == _arg_out",
+            "4 < _arg_out"
+        ],
+        "benchmark_name": "SyGuS strings",
+        "solved": false
+    },
+    {
+        "program": "nothing",
+        "problem": {
+            "name": "problem_count_line_breaks_in_cell",
+            "spec": [
+                {
+                    "in": {
+                        "_arg_1": "one",
+                        "_arg_out": 1
+                    },
+                    "out": 1
+                },
+                {
+                    "in": {
+                        "_arg_1": "one/ntwo",
+                        "_arg_out": 2
+                    },
+                    "out": 2
+                },
+                {
+                    "in": {
+                        "_arg_1": "one/ntwo/nthree",
+                        "_arg_out": 3
+                    },
+                    "out": 3
+                }
+            ]
+        },
+        "properties": [
+            "prefixof_cvc(substr_cvc(_arg_1, _arg_out, 3), _arg_1)",
+            "prefixof_cvc(at_cvc(_arg_1, _arg_out), _arg_1)",
+            "suffixof_cvc(at_cvc(_arg_1, _arg_out), _arg_1)",
+            "prefixof_cvc(substr_cvc(_arg_1, _arg_out, _arg_out), _arg_1)",
+            "suffixof_cvc(substr_cvc(_arg_1, 2, _arg_out), _arg_1)",
+            "4 <= _arg_out",
+            "3 == _arg_out",
+            "contains_cvc(_arg_1, at_cvc(\"/n\", _arg_out))",
+            "5 <= _arg_out",
+            "prefixof_cvc(at_cvc(\"/n\", _arg_out), \"/n\")",
+            "suffixof_cvc(at_cvc(\"/n\", _arg_out), \"/n\")",
+            "4 == _arg_out",
+            "_arg_out <= 3",
+            "_arg_out == len_cvc(at_cvc(\"/n\", _arg_out))",
+            "_arg_out <= len_cvc(at_cvc(\"/n\", _arg_out))",
+            "_arg_out <= 4",
+            "prefixof_cvc(substr_cvc(\"/n\", 2, _arg_out), _arg_1)",
+            "prefixof_cvc(substr_cvc(\"/n\", 2, _arg_out), \"\")",
+            "_arg_out == 4",
+            "-1 == _arg_out"
+        ],
+        "benchmark_name": "SyGuS strings",
+        "solved": false
+    },
+    {
+        "program": "nothing",
+        "problem": {
+            "name": "problem_count_specific_characters_in_a_cell",
+            "spec": [
+                {
+                    "in": {
+                        "_arg_1": "Hannah",
+                        "_arg_2": "n",
+                        "_arg_out": 2
+                    },
+                    "out": 2
+                },
+                {
+                    "in": {
+                        "_arg_1": "Hannah",
+                        "_arg_2": "x",
+                        "_arg_out": 0
+                    },
+                    "out": 0
+                },
+                {
+                    "in": {
+                        "_arg_1": "Hannah",
+                        "_arg_2": "N",
+                        "_arg_out": 0
+                    },
+                    "out": 0
+                },
+                {
+                    "in": {
+                        "_arg_1": "Hannah",
+                        "_arg_2": "a",
+                        "_arg_out": 2
+                    },
+                    "out": 2
+                },
+                {
+                    "in": {
+                        "_arg_1": "Hannah",
+                        "_arg_2": "h",
+                        "_arg_out": 1
+                    },
+                    "out": 1
+                }
+            ]
+        },
+        "properties": [
+            "prefixof_cvc(substr_cvc(_arg_1, _arg_out, 2), _arg_1)",
+            "indexof_cvc(_arg_1, _arg_2, 1) == _arg_out",
+            "indexof_cvc(_arg_1, _arg_2, 1) <= _arg_out",
+            "2 == _arg_out",
+            "2 <= _arg_out",
+            "prefixof_cvc(_arg_1, at_cvc(int_to_str_cvc(-1), _arg_out))",
+            "_arg_out == 2",
+            "1 <= _arg_out",
+            "1 + 1 == _arg_out",
+            "prefixof_cvc(_arg_2, at_cvc(_arg_1, _arg_out))",
+            "1 + _arg_out == 3",
+            "0 + 2 == _arg_out",
+            "suffixof_cvc(_arg_2, at_cvc(_arg_1, _arg_out))",
+            "0 + _arg_out == 2",
+            "-1 + 3 == _arg_out",
+            "contains_cvc(_arg_2, at_cvc(_arg_1, _arg_out))",
+            "-1 + _arg_out == 1",
+            "2 + 0 == _arg_out",
+            "_arg_2 == at_cvc(_arg_1, _arg_out)",
+            "2 + _arg_out == 4"
+        ],
+        "benchmark_name": "SyGuS strings",
+        "solved": false
+    },
+    {
+        "program": "nothing",
+        "problem": {
+            "name": "problem_count_specific_words_in_a_cell",
+            "spec": [
+                {
+                    "in": {
+                        "_arg_1": "The fox jumped over the fox",
+                        "_arg_2": "fox",
+                        "_arg_out": 2
+                    },
+                    "out": 2
+                },
+                {
+                    "in": {
+                        "_arg_1": "The fox jumped over the fox",
+                        "_arg_2": "ox",
+                        "_arg_out": 2
+                    },
+                    "out": 2
+                },
+                {
+                    "in": {
+                        "_arg_1": "The fox jumped over the fox",
+                        "_arg_2": "Fox",
+                        "_arg_out": 0
+                    },
+                    "out": 0
+                }
+            ]
+        },
+        "properties": [
+            "prefixof_cvc(substr_cvc(_arg_1, _arg_out, 2), _arg_1)",
+            "prefixof_cvc(substr_cvc(_arg_1, _arg_out, 3), _arg_1)",
+            "prefixof_cvc(substr_cvc(_arg_1, _arg_out, 4), _arg_1)",
+            "prefixof_cvc(substr_cvc(_arg_1, _arg_out, 5), _arg_1)",
+            "prefixof_cvc(substr_cvc(_arg_2, _arg_out, 2), _arg_2)",
+            "suffixof_cvc(substr_cvc(_arg_1, 2, _arg_out), _arg_1)",
+            "prefixof_cvc(at_cvc(_arg_2, _arg_out), _arg_2)",
+            "_arg_out == len_cvc(at_cvc(_arg_2, _arg_out))",
+            "_arg_out <= len_cvc(at_cvc(_arg_2, _arg_out))",
+            "prefixof_cvc(substr_cvc(_arg_2, 2, _arg_out), _arg_1)",
+            "prefixof_cvc(substr_cvc(_arg_2, 2, _arg_out), _arg_2)",
+            "prefixof_cvc(substr_cvc(_arg_2, 2, _arg_out), \"\")",
+            "prefixof_cvc(substr_cvc(_arg_2, 2, _arg_out), \" \")",
+            "prefixof_cvc(substr_cvc(_arg_2, _arg_out, 1), _arg_1)",
+            "prefixof_cvc(substr_cvc(_arg_2, _arg_out, 1), \"\")",
+            "prefixof_cvc(substr_cvc(_arg_2, _arg_out, 1), \" \")",
+            "prefixof_cvc(substr_cvc(_arg_2, _arg_out, _arg_out), _arg_2)",
+            "suffixof_cvc(substr_cvc(_arg_2, 2, _arg_out), \"\")",
+            "suffixof_cvc(substr_cvc(_arg_2, 2, _arg_out), \" \")",
+            "suffixof_cvc(substr_cvc(_arg_2, _arg_out, 1), _arg_1)"
+        ],
+        "benchmark_name": "SyGuS strings",
+        "solved": false
+    },
+    {
+        "program": "len_cvc(_arg_1)",
+        "problem": {
+            "name": "problem_count_total_characters_in_a_cell",
+            "spec": [
+                {
+                    "in": {
+                        "_arg_1": "The"
+                    },
+                    "out": 3
+                },
+                {
+                    "in": {
+                        "_arg_1": "The quick fox"
+                    },
+                    "out": 13
+                },
+                {
+                    "in": {
+                        "_arg_1": "The quick  fox"
+                    },
+                    "out": 14
+                }
+            ]
+        },
+        "properties": [],
+        "benchmark_name": "SyGuS strings",
+        "solved": true
+    },
+    {
+        "program": "nothing",
+        "problem": {
+            "name": "problem_count_total_words_in_a_cell",
+            "spec": [
+                {
+                    "in": {
+                        "_arg_1": "humpty dumpty",
+                        "_arg_out": 2
+                    },
+                    "out": 2
+                },
+                {
+                    "in": {
+                        "_arg_1": "humpty dumpty sat on a wall,",
+                        "_arg_out": 6
+                    },
+                    "out": 6
+                },
+                {
+                    "in": {
+                        "_arg_1": "couldnt put humpty together again.",
+                        "_arg_out": 5
+                    },
+                    "out": 5
+                }
+            ]
+        },
+        "properties": [
+            "suffixof_cvc(substr_cvc(_arg_1, 2, _arg_out), _arg_1)",
+            "prefixof_cvc(substr_cvc(_arg_1, _arg_out, 5), _arg_1)",
+            "suffixof_cvc(substr_cvc(_arg_1, 3, _arg_out), _arg_1)",
+            "3 == _arg_out",
+            "5 <= _arg_out",
+            "5 == _arg_out",
+            "-1 + _arg_out <= 5",
+            "4 == _arg_out",
+            "_arg_out == 4",
+            "prefixof_cvc(int_to_str_cvc(4), int_to_str_cvc(_arg_out))",
+            "prefixof_cvc(int_to_str_cvc(_arg_out), int_to_str_cvc(4))",
+            "suffixof_cvc(int_to_str_cvc(4), int_to_str_cvc(_arg_out))",
+            "suffixof_cvc(int_to_str_cvc(_arg_out), int_to_str_cvc(4))",
+            "contains_cvc(int_to_str_cvc(4), int_to_str_cvc(_arg_out))",
+            "contains_cvc(int_to_str_cvc(_arg_out), int_to_str_cvc(4))",
+            "int_to_str_cvc(4) == int_to_str_cvc(_arg_out)",
+            "int_to_str_cvc(_arg_out) == int_to_str_cvc(4)",
+            "str_to_int_cvc(int_to_str_cvc(4)) == _arg_out",
+            "str_to_int_cvc(int_to_str_cvc(_arg_out)) == 4",
+            "1 + 3 == _arg_out"
+        ],
+        "benchmark_name": "SyGuS strings",
+        "solved": false
+    },
+    {
+        "program": "concat_cvc(at_cvc(_arg_2, 1), concat_cvc(_arg_1, \"_acme.com\"))",
+        "problem": {
+            "name": "problem_create_email_address_from_name",
+            "spec": [
+                {
+                    "in": {
+                        "_arg_1": "brown",
+                        "_arg_2": "traci",
+                        "_arg_out": "tbrown_acme.com"
+                    },
+                    "out": "tbrown_acme.com"
+                },
+                {
+                    "in": {
+                        "_arg_1": "thomas",
+                        "_arg_2": "linda",
+                        "_arg_out": "lthomas_acme.com"
+                    },
+                    "out": "lthomas_acme.com"
+                },
+                {
+                    "in": {
+                        "_arg_1": "ward",
+                        "_arg_2": "jack",
+                        "_arg_out": "jward_acme.com"
+                    },
+                    "out": "jward_acme.com"
+                }
+            ]
+        },
+        "properties": [
+            "suffixof_cvc(concat_cvc(_arg_1, \"_acme.com\"), _arg_out)"
+        ],
+        "benchmark_name": "SyGuS strings",
+        "solved": true
+    },
+    {
+        "program": "concat_cvc(concat_cvc(substr_cvc(_arg_1, 1, 1), _arg_2), concat_cvc(\"_\", _arg_3))",
+        "problem": {
+            "name": "problem_create_email_address_with_name_and_domain",
+            "spec": [
+                {
+                    "in": {
+                        "_arg_1": "ayako",
+                        "_arg_2": "ogawa",
+                        "_arg_out": "aogawa_acme.com",
+                        "_arg_3": "acme.com"
+                    },
+                    "out": "aogawa_acme.com"
+                },
+                {
+                    "in": {
+                        "_arg_1": "amy",
+                        "_arg_2": "johnson",
+                        "_arg_out": "ajohnson_google.com",
+                        "_arg_3": "google.com"
+                    },
+                    "out": "ajohnson_google.com"
+                },
+                {
+                    "in": {
+                        "_arg_1": "tom",
+                        "_arg_2": "chang",
+                        "_arg_out": "tchang_upenn.edu",
+                        "_arg_3": "upenn.edu"
+                    },
+                    "out": "tchang_upenn.edu"
+                }
+            ]
+        },
+        "properties": [
+            "len_cvc(_arg_out) <= len_cvc(_arg_3)",
+            "prefixof_cvc(at_cvc(_arg_out, 2), _arg_2)",
+            "suffixof_cvc(concat_cvc(\"_\", _arg_3), _arg_out)"
+        ],
+        "benchmark_name": "SyGuS strings",
+        "solved": true
+    },
+    {
+        "program": "concat_cvc(concat_cvc(\"Dr.\", \" \"), substr_cvc(replace_cvc(_arg_1, \" \", _arg_1), 1, indexof_cvc(_arg_1, \" \", 1) + indexof_cvc(\".\", \"Dr.\", 2)))",
+        "problem": {
+            "name": "problem_dr_name",
+            "spec": [
+                {
+                    "in": {
+                        "_arg_1": "Nancy FreeHafer",
+                        "_arg_out": "Dr. Nancy"
+                    },
+                    "out": "Dr. Nancy"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Andrew Cencici",
+                        "_arg_out": "Dr. Andrew"
+                    },
+                    "out": "Dr. Andrew"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Jan Kotas",
+                        "_arg_out": "Dr. Jan"
+                    },
+                    "out": "Dr. Jan"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Mariya Sergienko",
+                        "_arg_out": "Dr. Mariya"
+                    },
+                    "out": "Dr. Mariya"
+                }
+            ]
+        },
+        "properties": [
+            "prefixof_cvc(at_cvc(_arg_out, 5), _arg_1)",
+            "contains_cvc(_arg_out, at_cvc(_arg_1, len_cvc(_arg_out)))",
+            "contains_cvc(_arg_out, substr_cvc(_arg_1, 1, 3))",
+            "suffixof_cvc(\" \", replace_cvc(_arg_out, \".\", \" \"))",
+            "contains_cvc(_arg_1, at_cvc(_arg_out, len_cvc(_arg_out)))",
+            "prefixof_cvc(at_cvc(_arg_out, 4), \" \")",
+            "5 < len_cvc(_arg_out) - 5",
+            "contains_cvc(_arg_out, at_cvc(_arg_1, 5))",
+            "4 == len_cvc(_arg_out) - 5",
+            "5 == len_cvc(_arg_out) - 5",
+            "5 <= len_cvc(_arg_out) - 5",
+            "4 < len_cvc(_arg_out) - 5",
+            "5 < len_cvc(_arg_out) - 4",
+            "prefixof_cvc(int_to_str_cvc(1), int_to_str_cvc(len_cvc(_arg_out)))"
+        ],
+        "benchmark_name": "SyGuS strings",
+        "solved": true
+    },
+    {
+        "program": "nothing",
+        "problem": {
+            "name": "problem_43606446",
+            "spec": [
+                {
+                    "in": {
+                        "_arg_1": "USD.EUR<IDEALPRO,CASH,EUR>",
+                        "_arg_out": "EUR"
+                    },
+                    "out": "EUR"
+                },
+                {
+                    "in": {
+                        "_arg_1": "USD.EUR<IDEALPRO,CASH,USD>",
+                        "_arg_out": "USD"
+                    },
+                    "out": "USD"
+                },
+                {
+                    "in": {
+                        "_arg_1": "KOR.JPN<IDEALPRO,CASH,WON>",
+                        "_arg_out": "WON"
+                    },
+                    "out": "WON"
+                },
+                {
+                    "in": {
+                        "_arg_1": "KOR.JPN<IDEALPRO,CASH,YEN>",
+                        "_arg_out": "YEN"
+                    },
+                    "out": "YEN"
+                }
+            ]
+        },
+        "properties": [
+            "3 == len_cvc(_arg_out)",
+            "contains_cvc(_arg_1, _arg_out)",
+            "contains_cvc(_arg_1, replace_cvc(_arg_1, _arg_out, \"\"))",
+            "1 == len_cvc(_arg_out)",
+            "suffixof_cvc(replace_cvc(_arg_1, _arg_out, \"\"), _arg_1)",
+            "2 <= len_cvc(_arg_out)",
+            "suffixof_cvc(concat_cvc(_arg_out, \">\"), _arg_1)",
+            "prefixof_cvc(replace_cvc(_arg_1, _arg_out, \"\"), _arg_1)",
+            "suffixof_cvc(_arg_1, replace_cvc(_arg_1, _arg_out, _arg_1))",
+            "indexof_cvc(_arg_1, _arg_out, 2) == -1",
+            "indexof_cvc(_arg_1, _arg_out, 3) == -1",
+            "indexof_cvc(_arg_1, _arg_out, 4) == -1",
+            "indexof_cvc(_arg_1, _arg_out, 5) == -1",
+            "indexof_cvc(_arg_1, _arg_out, 1) <= 1",
+            "indexof_cvc(_arg_1, _arg_out, 1) <= 2",
+            "indexof_cvc(_arg_1, _arg_out, 1) <= 3",
+            "indexof_cvc(_arg_1, _arg_out, 1) <= 4",
+            "len_cvc(_arg_out) == 3",
+            "1 == 4 - len_cvc(_arg_out)",
+            "0 == 3 - len_cvc(_arg_out)"
+        ],
+        "benchmark_name": "SyGuS strings",
+        "solved": false
+    },
+    {
+        "program": "nothing",
+        "problem": {
+            "name": "problem_44789427",
+            "spec": [
+                {
+                    "in": {
+                        "_arg_1": "1/17/16-1/18/17",
+                        "_arg_2": 1,
+                        "_arg_out": "1/17/16"
+                    },
+                    "out": "1/17/16"
+                },
+                {
+                    "in": {
+                        "_arg_1": "1/17/16-1/18/17",
+                        "_arg_2": 2,
+                        "_arg_out": "1/18/17"
+                    },
+                    "out": "1/18/17"
+                },
+                {
+                    "in": {
+                        "_arg_1": "01/17/2016-01/18/2017",
+                        "_arg_2": 1,
+                        "_arg_out": "01/17/2016"
+                    },
+                    "out": "01/17/2016"
+                },
+                {
+                    "in": {
+                        "_arg_1": "01/17/2016-01/18/2017",
+                        "_arg_2": 2,
+                        "_arg_out": "01/18/2017"
+                    },
+                    "out": "01/18/2017"
+                }
+            ]
+        },
+        "properties": [
+            "suffixof_cvc(at_cvc(_arg_out, 4), _arg_out)",
+            "contains_cvc(_arg_1, _arg_out)",
+            "prefixof_cvc(_arg_1, _arg_out)",
+            "prefixof_cvc(at_cvc(_arg_out, 2), _arg_1)",
+            "contains_cvc(_arg_out, \"-\")",
+            "prefixof_cvc(_arg_out, _arg_1)",
+            "suffixof_cvc(_arg_out, _arg_1)",
+            "suffixof_cvc(concat_cvc(\"\", _arg_out), _arg_1)",
+            "suffixof_cvc(concat_cvc(\"-\", _arg_out), _arg_1)",
+            "suffixof_cvc(concat_cvc(_arg_out, \"\"), _arg_1)",
+            "suffixof_cvc(_arg_out, concat_cvc(_arg_1, _arg_1))",
+            "5 <= len_cvc(_arg_out)",
+            "suffixof_cvc(_arg_out, concat_cvc(_arg_1, \"\"))",
+            "prefixof_cvc(_arg_out, \"\")",
+            "suffixof_cvc(_arg_out, concat_cvc(\"\", _arg_1))",
+            "prefixof_cvc(_arg_out, \" \")",
+            "suffixof_cvc(_arg_out, concat_cvc(\" \", _arg_1))",
+            "prefixof_cvc(_arg_out, \"-\")",
+            "prefixof_cvc(concat_cvc(\"\", _arg_out), _arg_1)",
+            "prefixof_cvc(int_to_str_cvc(1), _arg_out)"
+        ],
+        "benchmark_name": "SyGuS strings",
+        "solved": false
+    },
+    {
+        "program": "concat_cvc(concat_cvc(concat_cvc(_arg_1, \"/n\"), concat_cvc(_arg_2, \"/n\")), _arg_3)",
+        "problem": {
+            "name": "problem_add_a_line_break_with_a_formula",
+            "spec": [
+                {
+                    "in": {
+                        "_arg_1": "Traci Brown",
+                        "_arg_2": "1301 Robinson Court",
+                        "_arg_out": "Traci Brown/n1301 Robinson Court/nSaginaw, MI 48607",
+                        "_arg_3": "Saginaw, MI 48607"
+                    },
+                    "out": "Traci Brown/n1301 Robinson Court/nSaginaw, MI 48607"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Mary Hannan",
+                        "_arg_2": "1195 Amethyst Drive",
+                        "_arg_out": "Mary Hannan/n1195 Amethyst Drive/nLansing, MI 48933",
+                        "_arg_3": "Lansing, MI 48933"
+                    },
+                    "out": "Mary Hannan/n1195 Amethyst Drive/nLansing, MI 48933"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Linda Thomas",
+                        "_arg_2": "2479 North Bend Road",
+                        "_arg_out": "Linda Thomas/n2479 North Bend Road/nAllen, KY 41601",
+                        "_arg_3": "Allen, KY 41601"
+                    },
+                    "out": "Linda Thomas/n2479 North Bend Road/nAllen, KY 41601"
+                }
+            ]
+        },
+        "properties": [
+            "prefixof_cvc(concat_cvc(_arg_1, \"/n\"), _arg_out)",
+            "contains_cvc(_arg_out, concat_cvc(_arg_2, \"/n\"))"
+        ],
+        "benchmark_name": "SyGuS strings",
+        "solved": true
+    },
+    {
+        "program": "nothing",
+        "problem": {
+            "name": "problem_bikes",
+            "spec": [
+                {
+                    "in": {
+                        "_arg_1": "Ducati100",
+                        "_arg_out": "Ducati"
+                    },
+                    "out": "Ducati"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Honda125",
+                        "_arg_out": "Honda"
+                    },
+                    "out": "Honda"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Ducati250",
+                        "_arg_out": "Ducati"
+                    },
+                    "out": "Ducati"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Honda250",
+                        "_arg_out": "Honda"
+                    },
+                    "out": "Honda"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Honda550",
+                        "_arg_out": "Honda"
+                    },
+                    "out": "Honda"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Ducati125",
+                        "_arg_out": "Ducati"
+                    },
+                    "out": "Ducati"
+                }
+            ]
+        },
+        "properties": [
+            "suffixof_cvc(at_cvc(_arg_out, 5), _arg_out)",
+            "prefixof_cvc(_arg_out, _arg_1)",
+            "2 <= len_cvc(_arg_out) - 5",
+            "prefixof_cvc(_arg_out, substr_cvc(_arg_out, 1, 5))",
+            "suffixof_cvc(_arg_out, substr_cvc(_arg_out, 1, 5))",
+            "contains_cvc(_arg_1, _arg_out)",
+            "suffixof_cvc(_arg_out, _arg_1)",
+            "prefixof_cvc(_arg_out, concat_cvc(_arg_1, _arg_1))",
+            "5 == len_cvc(_arg_out)",
+            "5 < len_cvc(_arg_out)",
+            "len_cvc(_arg_out) == 5",
+            "len_cvc(_arg_out) <= 5",
+            "suffixof_cvc(at_cvc(_arg_1, 5), _arg_out)",
+            "0 == len_cvc(_arg_out) - 5",
+            "1 == len_cvc(_arg_out) - 4",
+            "1 == len_cvc(_arg_out) - 5",
+            "2 == len_cvc(_arg_out) - 3",
+            "2 == len_cvc(_arg_out) - 4",
+            "3 == len_cvc(_arg_out) - 2",
+            "3 == len_cvc(_arg_out) - 3"
+        ],
+        "benchmark_name": "SyGuS strings",
+        "solved": false
+    },
+    {
+        "program": "nothing",
+        "problem": {
+            "name": "problem_bikes_long",
+            "spec": [
+                {
+                    "in": {
+                        "_arg_1": "Ducati100",
+                        "_arg_out": "Ducati"
+                    },
+                    "out": "Ducati"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Honda125",
+                        "_arg_out": "Honda"
+                    },
+                    "out": "Honda"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Ducati250",
+                        "_arg_out": "Ducati"
+                    },
+                    "out": "Ducati"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Honda250",
+                        "_arg_out": "Honda"
+                    },
+                    "out": "Honda"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Honda550",
+                        "_arg_out": "Honda"
+                    },
+                    "out": "Honda"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Ducati125",
+                        "_arg_out": "Ducati"
+                    },
+                    "out": "Ducati"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Acura100",
+                        "_arg_out": "Acura"
+                    },
+                    "out": "Acura"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Acura125",
+                        "_arg_out": "Acura"
+                    },
+                    "out": "Acura"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Ferrari250",
+                        "_arg_out": "Ferrari"
+                    },
+                    "out": "Ferrari"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Ferrari250",
+                        "_arg_out": "Ferrari"
+                    },
+                    "out": "Ferrari"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Honda550",
+                        "_arg_out": "Honda"
+                    },
+                    "out": "Honda"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Ducati125",
+                        "_arg_out": "Ducati"
+                    },
+                    "out": "Ducati"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Ducati100",
+                        "_arg_out": "Ducati"
+                    },
+                    "out": "Ducati"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Honda125",
+                        "_arg_out": "Honda"
+                    },
+                    "out": "Honda"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Ducati250",
+                        "_arg_out": "Ducati"
+                    },
+                    "out": "Ducati"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Honda250",
+                        "_arg_out": "Honda"
+                    },
+                    "out": "Honda"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Honda550",
+                        "_arg_out": "Honda"
+                    },
+                    "out": "Honda"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Ducati125",
+                        "_arg_out": "Ducati"
+                    },
+                    "out": "Ducati"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Acura100",
+                        "_arg_out": "Acura"
+                    },
+                    "out": "Acura"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Acura125",
+                        "_arg_out": "Acura"
+                    },
+                    "out": "Acura"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Ferrari250",
+                        "_arg_out": "Ferrari"
+                    },
+                    "out": "Ferrari"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Ferrari250",
+                        "_arg_out": "Ferrari"
+                    },
+                    "out": "Ferrari"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Honda550",
+                        "_arg_out": "Honda"
+                    },
+                    "out": "Honda"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Ducati125",
+                        "_arg_out": "Ducati"
+                    },
+                    "out": "Ducati"
+                }
+            ]
+        },
+        "properties": [
+            "suffixof_cvc(at_cvc(_arg_out, 5), _arg_out)",
+            "prefixof_cvc(_arg_out, _arg_1)",
+            "2 <= len_cvc(_arg_out) - 5",
+            "prefixof_cvc(_arg_out, substr_cvc(_arg_out, 1, 5))",
+            "contains_cvc(_arg_1, _arg_out)",
+            "suffixof_cvc(_arg_out, _arg_1)",
+            "prefixof_cvc(_arg_out, concat_cvc(_arg_1, _arg_1))",
+            "5 == len_cvc(_arg_out)",
+            "5 < len_cvc(_arg_out)",
+            "len_cvc(_arg_out) == 5",
+            "len_cvc(_arg_out) <= 5",
+            "suffixof_cvc(at_cvc(_arg_1, 5), _arg_out)",
+            "0 == len_cvc(_arg_out) - 5",
+            "1 == len_cvc(_arg_out) - 4",
+            "2 == len_cvc(_arg_out) - 3",
+            "3 == len_cvc(_arg_out) - 2",
+            "4 == len_cvc(_arg_out) - 1",
+            "5 == len_cvc(_arg_out) + 0",
+            "5 == len_cvc(_arg_out) - 0",
+            "1 <= len_cvc(_arg_out) - 5"
+        ],
+        "benchmark_name": "SyGuS strings",
+        "solved": false
+    },
+    {
+        "program": "nothing",
+        "problem": {
+            "name": "problem_bikes_long_repeat",
+            "spec": [
+                {
+                    "in": {
+                        "_arg_1": "Ducati100",
+                        "_arg_out": "Ducati"
+                    },
+                    "out": "Ducati"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Ducati100",
+                        "_arg_out": "Ducati"
+                    },
+                    "out": "Ducati"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Ducati100",
+                        "_arg_out": "Ducati"
+                    },
+                    "out": "Ducati"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Honda125",
+                        "_arg_out": "Honda"
+                    },
+                    "out": "Honda"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Honda125",
+                        "_arg_out": "Honda"
+                    },
+                    "out": "Honda"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Honda125",
+                        "_arg_out": "Honda"
+                    },
+                    "out": "Honda"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Ducati250",
+                        "_arg_out": "Ducati"
+                    },
+                    "out": "Ducati"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Ducati250",
+                        "_arg_out": "Ducati"
+                    },
+                    "out": "Ducati"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Ducati250",
+                        "_arg_out": "Ducati"
+                    },
+                    "out": "Ducati"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Honda250",
+                        "_arg_out": "Honda"
+                    },
+                    "out": "Honda"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Honda250",
+                        "_arg_out": "Honda"
+                    },
+                    "out": "Honda"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Honda250",
+                        "_arg_out": "Honda"
+                    },
+                    "out": "Honda"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Honda550",
+                        "_arg_out": "Honda"
+                    },
+                    "out": "Honda"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Honda550",
+                        "_arg_out": "Honda"
+                    },
+                    "out": "Honda"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Honda550",
+                        "_arg_out": "Honda"
+                    },
+                    "out": "Honda"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Ducati125",
+                        "_arg_out": "Ducati"
+                    },
+                    "out": "Ducati"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Ducati125",
+                        "_arg_out": "Ducati"
+                    },
+                    "out": "Ducati"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Ducati125",
+                        "_arg_out": "Ducati"
+                    },
+                    "out": "Ducati"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Acura100",
+                        "_arg_out": "Acura"
+                    },
+                    "out": "Acura"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Acura100",
+                        "_arg_out": "Acura"
+                    },
+                    "out": "Acura"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Acura100",
+                        "_arg_out": "Acura"
+                    },
+                    "out": "Acura"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Acura125",
+                        "_arg_out": "Acura"
+                    },
+                    "out": "Acura"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Ferrari250",
+                        "_arg_out": "Ferrari"
+                    },
+                    "out": "Ferrari"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Ferrari250",
+                        "_arg_out": "Ferrari"
+                    },
+                    "out": "Ferrari"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Ferrari250",
+                        "_arg_out": "Ferrari"
+                    },
+                    "out": "Ferrari"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Ferrari250",
+                        "_arg_out": "Ferrari"
+                    },
+                    "out": "Ferrari"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Honda550",
+                        "_arg_out": "Honda"
+                    },
+                    "out": "Honda"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Honda550",
+                        "_arg_out": "Honda"
+                    },
+                    "out": "Honda"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Honda550",
+                        "_arg_out": "Honda"
+                    },
+                    "out": "Honda"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Ducati125",
+                        "_arg_out": "Ducati"
+                    },
+                    "out": "Ducati"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Ducati125",
+                        "_arg_out": "Ducati"
+                    },
+                    "out": "Ducati"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Ducati125",
+                        "_arg_out": "Ducati"
+                    },
+                    "out": "Ducati"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Ducati100",
+                        "_arg_out": "Ducati"
+                    },
+                    "out": "Ducati"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Honda125",
+                        "_arg_out": "Honda"
+                    },
+                    "out": "Honda"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Honda125",
+                        "_arg_out": "Honda"
+                    },
+                    "out": "Honda"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Honda125",
+                        "_arg_out": "Honda"
+                    },
+                    "out": "Honda"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Ducati250",
+                        "_arg_out": "Ducati"
+                    },
+                    "out": "Ducati"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Honda250",
+                        "_arg_out": "Honda"
+                    },
+                    "out": "Honda"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Honda250",
+                        "_arg_out": "Honda"
+                    },
+                    "out": "Honda"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Honda250",
+                        "_arg_out": "Honda"
+                    },
+                    "out": "Honda"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Honda550",
+                        "_arg_out": "Honda"
+                    },
+                    "out": "Honda"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Ducati125",
+                        "_arg_out": "Ducati"
+                    },
+                    "out": "Ducati"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Ducati125",
+                        "_arg_out": "Ducati"
+                    },
+                    "out": "Ducati"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Ducati125",
+                        "_arg_out": "Ducati"
+                    },
+                    "out": "Ducati"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Acura100",
+                        "_arg_out": "Acura"
+                    },
+                    "out": "Acura"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Acura125",
+                        "_arg_out": "Acura"
+                    },
+                    "out": "Acura"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Acura125",
+                        "_arg_out": "Acura"
+                    },
+                    "out": "Acura"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Acura125",
+                        "_arg_out": "Acura"
+                    },
+                    "out": "Acura"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Ferrari250",
+                        "_arg_out": "Ferrari"
+                    },
+                    "out": "Ferrari"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Ferrari250",
+                        "_arg_out": "Ferrari"
+                    },
+                    "out": "Ferrari"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Ferrari250",
+                        "_arg_out": "Ferrari"
+                    },
+                    "out": "Ferrari"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Honda550",
+                        "_arg_out": "Honda"
+                    },
+                    "out": "Honda"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Honda550",
+                        "_arg_out": "Honda"
+                    },
+                    "out": "Honda"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Honda550",
+                        "_arg_out": "Honda"
+                    },
+                    "out": "Honda"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Ducati125",
+                        "_arg_out": "Ducati"
+                    },
+                    "out": "Ducati"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Ducati125",
+                        "_arg_out": "Ducati"
+                    },
+                    "out": "Ducati"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Ducati125",
+                        "_arg_out": "Ducati"
+                    },
+                    "out": "Ducati"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Ducati125",
+                        "_arg_out": "Ducati"
+                    },
+                    "out": "Ducati"
+                }
+            ]
+        },
+        "properties": [
+            "suffixof_cvc(at_cvc(_arg_out, 5), _arg_out)",
+            "prefixof_cvc(_arg_out, _arg_1)",
+            "5 == len_cvc(_arg_out)",
+            "5 < len_cvc(_arg_out)",
+            "len_cvc(_arg_out) == 5",
+            "4 == len_cvc(_arg_out)",
+            "len_cvc(_arg_out) <= 5",
+            "suffixof_cvc(at_cvc(_arg_1, 5), _arg_out)",
+            "0 == len_cvc(_arg_out) - 5",
+            "5 <= len_cvc(_arg_out)",
+            "1 == len_cvc(_arg_out) - 4",
+            "4 < len_cvc(_arg_out)",
+            "2 == len_cvc(_arg_out) - 3",
+            "len_cvc(_arg_out) == 4",
+            "3 == len_cvc(_arg_out) - 2",
+            "len_cvc(_arg_out) <= 4",
+            "4 == len_cvc(_arg_out) - 1",
+            "len_cvc(_arg_out) < 5",
+            "5 == len_cvc(_arg_out) + 0",
+            "prefixof_cvc(_arg_out, concat_cvc(_arg_1, _arg_1))"
+        ],
+        "benchmark_name": "SyGuS strings",
+        "solved": false
+    },
+    {
+        "program": "nothing",
+        "problem": {
+            "name": "problem_bikes_small",
+            "spec": [
+                {
+                    "in": {
+                        "_arg_1": "Ducati100",
+                        "_arg_out": "Ducati"
+                    },
+                    "out": "Ducati"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Honda125",
+                        "_arg_out": "Honda"
+                    },
+                    "out": "Honda"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Ducati250",
+                        "_arg_out": "Ducati"
+                    },
+                    "out": "Ducati"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Honda250",
+                        "_arg_out": "Honda"
+                    },
+                    "out": "Honda"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Honda550",
+                        "_arg_out": "Honda"
+                    },
+                    "out": "Honda"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Ducati125",
+                        "_arg_out": "Ducati"
+                    },
+                    "out": "Ducati"
+                }
+            ]
+        },
+        "properties": [
+            "prefixof_cvc(replace_cvc(_arg_out, _arg_1, \" \"), _arg_1)",
+            "suffixof_cvc(at_cvc(_arg_out, 5), _arg_out)",
+            "suffixof_cvc(substr_cvc(_arg_out, 1, 5), _arg_out)",
+            "suffixof_cvc(substr_cvc(_arg_out, 2, 5), _arg_out)",
+            "suffixof_cvc(substr_cvc(_arg_out, 3, 5), _arg_out)",
+            "suffixof_cvc(substr_cvc(_arg_out, 4, 5), _arg_out)",
+            "suffixof_cvc(substr_cvc(_arg_out, 5, 5), _arg_out)",
+            "substr_cvc(_arg_out, 1, 5) == _arg_out",
+            "prefixof_cvc(_arg_out, substr_cvc(_arg_out, 1, 5))",
+            "suffixof_cvc(_arg_out, substr_cvc(_arg_out, 1, 5))",
+            "_arg_out == substr_cvc(_arg_out, 1, 5)",
+            "len_cvc(_arg_out) == 5",
+            "len_cvc(_arg_out) <= 3",
+            "len_cvc(_arg_out) <= 4",
+            "len_cvc(_arg_out) <= 5",
+            "5 == len_cvc(_arg_out)",
+            "len_cvc(_arg_out) < 4",
+            "4 <= len_cvc(_arg_out)",
+            "len_cvc(_arg_out) < 5",
+            "5 <= len_cvc(_arg_out)"
+        ],
+        "benchmark_name": "SyGuS strings",
+        "solved": false
+    },
+    {
+        "program": "contains_cvc(_arg_1, _arg_4)",
+        "problem": {
+            "name": "problem_cell_contains_all_of_many_things",
+            "spec": [
+                {
+                    "in": {
+                        "_arg_1": "yellow dog on green grass",
+                        "_arg_2": "yellow",
+                        "_arg_4": "dog",
+                        "_arg_3": "green"
+                    },
+                    "out": true
+                },
+                {
+                    "in": {
+                        "_arg_1": "Lone dog with a green frisbie on yellow sand",
+                        "_arg_2": "yellow",
+                        "_arg_4": "dog",
+                        "_arg_3": "green"
+                    },
+                    "out": true
+                },
+                {
+                    "in": {
+                        "_arg_1": "A yellow sun in a green field",
+                        "_arg_2": "yellow",
+                        "_arg_4": "dog",
+                        "_arg_3": "green"
+                    },
+                    "out": false
+                },
+                {
+                    "in": {
+                        "_arg_1": "yellow neon sign with a green background",
+                        "_arg_2": "yellow",
+                        "_arg_4": "dog",
+                        "_arg_3": "green"
+                    },
+                    "out": false
+                }
+            ]
+        },
+        "properties": [],
+        "benchmark_name": "SyGuS strings",
+        "solved": true
+    },
+    {
+        "program": "contains_cvc(replace_cvc(_arg_1, \"2\", \"1\"), \"1\")",
+        "problem": {
+            "name": "problem_cell_contains_number",
+            "spec": [
+                {
+                    "in": {
+                        "_arg_1": "A bird in the hand is worth 2 in the bush."
+                    },
+                    "out": true
+                },
+                {
+                    "in": {
+                        "_arg_1": "A bird in the hand is worth two in the bush."
+                    },
+                    "out": false
+                },
+                {
+                    "in": {
+                        "_arg_1": "The 15 shortcuts you simply must know"
+                    },
+                    "out": true
+                }
+            ]
+        },
+        "properties": [],
+        "benchmark_name": "SyGuS strings",
+        "solved": true
+    },
+    {
+        "program": "contains_cvc(_arg_1, _arg_2)",
+        "problem": {
+            "name": "problem_cell_contains_one_of_many_things",
+            "spec": [
+                {
+                    "in": {
+                        "_arg_1": "yellow dog on green grass",
+                        "_arg_2": "yellow",
+                        "_arg_4": "dog",
+                        "_arg_3": "green"
+                    },
+                    "out": true
+                },
+                {
+                    "in": {
+                        "_arg_1": "warm gray sweater",
+                        "_arg_2": "yellow",
+                        "_arg_4": "dog",
+                        "_arg_3": "green"
+                    },
+                    "out": false
+                },
+                {
+                    "in": {
+                        "_arg_1": "A yellow sun in a green field",
+                        "_arg_2": "yellow",
+                        "_arg_4": "dog",
+                        "_arg_3": "green"
+                    },
+                    "out": true
+                },
+                {
+                    "in": {
+                        "_arg_1": "yellow neon sign with a green background",
+                        "_arg_2": "yellow",
+                        "_arg_4": "dog",
+                        "_arg_3": "green"
+                    },
+                    "out": true
+                }
+            ]
+        },
+        "properties": [],
+        "benchmark_name": "SyGuS strings",
+        "solved": true
+    },
+    {
+        "program": "contains_cvc(_arg_1, _arg_3)",
+        "problem": {
+            "name": "problem_cell_contains_one_of_many_with_exclusions",
+            "spec": [
+                {
+                    "in": {
+                        "_arg_1": "yellow dog on green grass",
+                        "_arg_2": "yellow",
+                        "_arg_4": "cat",
+                        "_arg_3": "green"
+                    },
+                    "out": true
+                },
+                {
+                    "in": {
+                        "_arg_1": "warm gray sweater",
+                        "_arg_2": "yellow",
+                        "_arg_4": "cat",
+                        "_arg_3": "green"
+                    },
+                    "out": false
+                },
+                {
+                    "in": {
+                        "_arg_1": "blue neon signs",
+                        "_arg_2": "blue",
+                        "_arg_4": "neon",
+                        "_arg_3": "green"
+                    },
+                    "out": false
+                },
+                {
+                    "in": {
+                        "_arg_1": "hot pink socks",
+                        "_arg_2": "blue",
+                        "_arg_4": "neon",
+                        "_arg_3": "pink"
+                    },
+                    "out": true
+                },
+                {
+                    "in": {
+                        "_arg_1": "deep black eyes",
+                        "_arg_2": "yellow",
+                        "_arg_4": "neon",
+                        "_arg_3": "green"
+                    },
+                    "out": false
+                }
+            ]
+        },
+        "properties": [],
+        "benchmark_name": "SyGuS strings",
+        "solved": true
+    },
+    {
+        "program": "prefixof_cvc(_arg_2, _arg_1)",
+        "problem": {
+            "name": "problem_cell_contains_some_words_but_not_others",
+            "spec": [
+                {
+                    "in": {
+                        "_arg_1": "red ball, green sweater",
+                        "_arg_2": "red",
+                        "_arg_4": "pink",
+                        "_arg_3": "green"
+                    },
+                    "out": true
+                },
+                {
+                    "in": {
+                        "_arg_1": "pink ball, green sweater",
+                        "_arg_2": "red",
+                        "_arg_4": "pink",
+                        "_arg_3": "green"
+                    },
+                    "out": false
+                },
+                {
+                    "in": {
+                        "_arg_1": "blue sea, pink ribbon",
+                        "_arg_2": "red",
+                        "_arg_4": "pink",
+                        "_arg_3": "blue"
+                    },
+                    "out": false
+                },
+                {
+                    "in": {
+                        "_arg_1": "black sea, white ribbon",
+                        "_arg_2": "red",
+                        "_arg_4": "pink",
+                        "_arg_3": "blue"
+                    },
+                    "out": false
+                },
+                {
+                    "in": {
+                        "_arg_1": "red green blue",
+                        "_arg_2": "red",
+                        "_arg_4": "pink",
+                        "_arg_3": "blue"
+                    },
+                    "out": true
+                }
+            ]
+        },
+        "properties": [],
+        "benchmark_name": "SyGuS strings",
+        "solved": true
+    },
+    {
+        "program": "contains_cvc(_arg_1, _arg_2)",
+        "problem": {
+            "name": "problem_cell_contains_specific_text",
+            "spec": [
+                {
+                    "in": {
+                        "_arg_1": "An apple a day keeps the doctor away",
+                        "_arg_2": "apple"
+                    },
+                    "out": true
+                },
+                {
+                    "in": {
+                        "_arg_1": "An apple a day keeps the doctor away",
+                        "_arg_2": "orange"
+                    },
+                    "out": false
+                },
+                {
+                    "in": {
+                        "_arg_1": "Better the devil you know",
+                        "_arg_2": "you know"
+                    },
+                    "out": true
+                }
+            ]
+        },
+        "properties": [],
+        "benchmark_name": "SyGuS strings",
+        "solved": true
+    },
+    {
+        "program": "prefixof_cvc(replace_cvc(replace_cvc(replace_cvc(_arg_1, \"blue\", \"orange\"), \"orange\", \"yellow\"), \"pink\", \"\"), \"yellow\")",
+        "problem": {
+            "name": "problem_cell_equals_one_of_many_things",
+            "spec": [
+                {
+                    "in": {
+                        "_arg_1": "yellow",
+                        "_arg_out": true
+                    },
+                    "out": true
+                },
+                {
+                    "in": {
+                        "_arg_1": "gray",
+                        "_arg_out": false
+                    },
+                    "out": false
+                },
+                {
+                    "in": {
+                        "_arg_1": "black",
+                        "_arg_out": false
+                    },
+                    "out": false
+                },
+                {
+                    "in": {
+                        "_arg_1": "blue",
+                        "_arg_out": true
+                    },
+                    "out": true
+                },
+                {
+                    "in": {
+                        "_arg_1": "pink",
+                        "_arg_out": true
+                    },
+                    "out": true
+                },
+                {
+                    "in": {
+                        "_arg_1": "orange",
+                        "_arg_out": true
+                    },
+                    "out": true
+                },
+                {
+                    "in": {
+                        "_arg_1": "turkey",
+                        "_arg_out": false
+                    },
+                    "out": false
+                }
+            ]
+        },
+        "properties": [
+            "_arg_out"
+        ],
+        "benchmark_name": "SyGuS strings",
+        "solved": true
+    },
+    {
+        "program": "replace_cvc(_arg_1, \"-\", \"\")",
+        "problem": {
+            "name": "problem_change_negative_numbers_to_positive",
+            "spec": [
+                {
+                    "in": {
+                        "_arg_1": "-%134"
+                    },
+                    "out": "%134"
+                },
+                {
+                    "in": {
+                        "_arg_1": "500"
+                    },
+                    "out": "500"
+                },
+                {
+                    "in": {
+                        "_arg_1": "5.125"
+                    },
+                    "out": "5.125"
+                },
+                {
+                    "in": {
+                        "_arg_1": "-%43.00"
+                    },
+                    "out": "%43.00"
+                }
+            ]
+        },
+        "properties": [],
+        "benchmark_name": "SyGuS strings",
+        "solved": true
+    },
+    {
+        "program": "nothing",
+        "problem": {
+            "name": "problem_clean_and_reformat_telephone_numbers",
+            "spec": [
+                {
+                    "in": {
+                        "_arg_1": "801-456-8765",
+                        "_arg_out": "8014568765"
+                    },
+                    "out": "8014568765"
+                },
+                {
+                    "in": {
+                        "_arg_1": "<978> 654-0299",
+                        "_arg_out": "9786540299"
+                    },
+                    "out": "9786540299"
+                },
+                {
+                    "in": {
+                        "_arg_1": "978.654.0299",
+                        "_arg_out": "9786540299"
+                    },
+                    "out": "9786540299"
+                }
+            ]
+        },
+        "properties": [
+            "2 <= str_to_int_cvc(_arg_out)",
+            "contains_cvc(_arg_1, _arg_out)",
+            "contains_cvc(_arg_out, int_to_str_cvc(4))",
+            "contains_cvc(int_to_str_cvc(len_cvc(_arg_out)), int_to_str_cvc(0))",
+            "contains_cvc(_arg_out, \" \")",
+            "prefixof_cvc(\"<\", _arg_out)",
+            "contains_cvc(_arg_out, \"<\")",
+            "contains_cvc(_arg_out, \",\")",
+            "contains_cvc(_arg_out, \">\")",
+            "1 == str_to_int_cvc(_arg_out)",
+            "0 == str_to_int_cvc(_arg_out)",
+            "-1 == str_to_int_cvc(_arg_out)",
+            "2 == str_to_int_cvc(_arg_out)",
+            "3 == str_to_int_cvc(_arg_out)",
+            "4 == str_to_int_cvc(_arg_out)",
+            "5 == str_to_int_cvc(_arg_out)",
+            "1 <= str_to_int_cvc(_arg_out)",
+            "0 <= str_to_int_cvc(_arg_out)",
+            "-1 <= str_to_int_cvc(_arg_out)",
+            "3 <= str_to_int_cvc(_arg_out)"
+        ],
+        "benchmark_name": "SyGuS strings",
+        "solved": false
+    },
+    {
+        "program": "prefixof_cvc(_arg_1, _arg_2)",
+        "problem": {
+            "name": "problem_compare_two_strings",
+            "spec": [
+                {
+                    "in": {
+                        "_arg_1": "apple",
+                        "_arg_2": "apple"
+                    },
+                    "out": true
+                },
+                {
+                    "in": {
+                        "_arg_1": "orange",
+                        "_arg_2": "Orange"
+                    },
+                    "out": false
+                },
+                {
+                    "in": {
+                        "_arg_1": "peach",
+                        "_arg_2": "peach"
+                    },
+                    "out": true
+                },
+                {
+                    "in": {
+                        "_arg_1": "cherry",
+                        "_arg_2": "cherrY"
+                    },
+                    "out": false
+                }
+            ]
+        },
+        "properties": [],
+        "benchmark_name": "SyGuS strings",
+        "solved": true
+    },
+    {
+        "program": "int_to_str_cvc(_arg_1)",
+        "problem": {
+            "name": "problem_convert_numbers_to_text",
+            "spec": [
+                {
+                    "in": {
+                        "_arg_1": 101
+                    },
+                    "out": "101"
+                },
+                {
+                    "in": {
+                        "_arg_1": 1002
+                    },
+                    "out": "1002"
+                },
+                {
+                    "in": {
+                        "_arg_1": 743
+                    },
+                    "out": "743"
+                }
+            ]
+        },
+        "properties": [],
+        "benchmark_name": "SyGuS strings",
+        "solved": true
+    },
+    {
+        "program": "str_to_int_cvc(_arg_1)",
+        "problem": {
+            "name": "problem_convert_text_to_numbers",
+            "spec": [
+                {
+                    "in": {
+                        "_arg_1": "101"
+                    },
+                    "out": 101
+                },
+                {
+                    "in": {
+                        "_arg_1": "1002"
+                    },
+                    "out": 1002
+                },
+                {
+                    "in": {
+                        "_arg_1": "743"
+                    },
+                    "out": 743
+                }
+            ]
+        },
+        "properties": [],
+        "benchmark_name": "SyGuS strings",
+        "solved": true
+    },
+    {
+        "program": "nothing",
+        "problem": {
+            "name": "problem_count_consecutive_monthly_orders",
+            "spec": [
+                {
+                    "in": {
+                        "_arg_1": "7 0 0 5 4 4",
+                        "_arg_out": 3
+                    },
+                    "out": 3
+                },
+                {
+                    "in": {
+                        "_arg_1": "0 0 2 3 3 0",
+                        "_arg_out": 3
+                    },
+                    "out": 3
+                },
+                {
+                    "in": {
+                        "_arg_1": "5 6 4 6 0 7",
+                        "_arg_out": 4
+                    },
+                    "out": 4
+                },
+                {
+                    "in": {
+                        "_arg_1": "0 4 5 0 0 2",
+                        "_arg_out": 2
+                    },
+                    "out": 2
+                },
+                {
+                    "in": {
+                        "_arg_1": "3 0 3 0 1 2",
+                        "_arg_out": 2
+                    },
+                    "out": 2
+                },
+                {
+                    "in": {
+                        "_arg_1": "5 3 2 5 6 1",
+                        "_arg_out": 6
+                    },
+                    "out": 6
+                }
+            ]
+        },
+        "properties": [
+            "prefixof_cvc(substr_cvc(_arg_1, _arg_out, 5), _arg_1)",
+            "prefixof_cvc(substr_cvc(_arg_1, _arg_out, 3), \"0\")",
+            "suffixof_cvc(substr_cvc(_arg_1, _arg_out, 3), \"0\")",
+            "contains_cvc(_arg_1, int_to_str_cvc(1 + _arg_out))",
+            "contains_cvc(_arg_1, int_to_str_cvc(_arg_out + 1))",
+            "contains_cvc(_arg_1, int_to_str_cvc(_arg_out - 3))",
+            "contains_cvc(_arg_1, int_to_str_cvc(4 - _arg_out))",
+            "contains_cvc(_arg_1, int_to_str_cvc(_arg_out))",
+            "4 == _arg_out",
+            "4 <= _arg_out",
+            "5 <= _arg_out",
+            "_arg_out == 4",
+            "_arg_out <= 3",
+            "_arg_out <= 4",
+            "3 < _arg_out",
+            "_arg_out < 4",
+            "suffixof_cvc(int_to_str_cvc(_arg_out), _arg_1)",
+            "_arg_out <= 5",
+            "1 + 3 == _arg_out",
+            "4 < _arg_out"
+        ],
+        "benchmark_name": "SyGuS strings",
+        "solved": false
+    },
+    {
+        "program": "nothing",
+        "problem": {
+            "name": "problem_count_line_breaks_in_cell",
+            "spec": [
+                {
+                    "in": {
+                        "_arg_1": "one",
+                        "_arg_out": 1
+                    },
+                    "out": 1
+                },
+                {
+                    "in": {
+                        "_arg_1": "one/ntwo",
+                        "_arg_out": 2
+                    },
+                    "out": 2
+                },
+                {
+                    "in": {
+                        "_arg_1": "one/ntwo/nthree",
+                        "_arg_out": 3
+                    },
+                    "out": 3
+                }
+            ]
+        },
+        "properties": [
+            "prefixof_cvc(substr_cvc(_arg_1, _arg_out, 3), _arg_1)",
+            "prefixof_cvc(at_cvc(_arg_1, _arg_out), _arg_1)",
+            "suffixof_cvc(at_cvc(_arg_1, _arg_out), _arg_1)",
+            "prefixof_cvc(substr_cvc(_arg_1, _arg_out, _arg_out), _arg_1)",
+            "suffixof_cvc(substr_cvc(_arg_1, 2, _arg_out), _arg_1)",
+            "4 <= _arg_out",
+            "3 == _arg_out",
+            "contains_cvc(_arg_1, at_cvc(\"/n\", _arg_out))",
+            "5 <= _arg_out",
+            "prefixof_cvc(at_cvc(\"/n\", _arg_out), \"/n\")",
+            "suffixof_cvc(at_cvc(\"/n\", _arg_out), \"/n\")",
+            "4 == _arg_out",
+            "_arg_out <= 3",
+            "_arg_out == len_cvc(at_cvc(\"/n\", _arg_out))",
+            "_arg_out <= len_cvc(at_cvc(\"/n\", _arg_out))",
+            "_arg_out <= 4",
+            "prefixof_cvc(substr_cvc(\"/n\", 2, _arg_out), _arg_1)",
+            "prefixof_cvc(substr_cvc(\"/n\", 2, _arg_out), \"\")",
+            "_arg_out == 4",
+            "-1 == _arg_out"
+        ],
+        "benchmark_name": "SyGuS strings",
+        "solved": false
+    },
+    {
+        "program": "nothing",
+        "problem": {
+            "name": "problem_count_specific_characters_in_a_cell",
+            "spec": [
+                {
+                    "in": {
+                        "_arg_1": "Hannah",
+                        "_arg_2": "n",
+                        "_arg_out": 2
+                    },
+                    "out": 2
+                },
+                {
+                    "in": {
+                        "_arg_1": "Hannah",
+                        "_arg_2": "x",
+                        "_arg_out": 0
+                    },
+                    "out": 0
+                },
+                {
+                    "in": {
+                        "_arg_1": "Hannah",
+                        "_arg_2": "N",
+                        "_arg_out": 0
+                    },
+                    "out": 0
+                },
+                {
+                    "in": {
+                        "_arg_1": "Hannah",
+                        "_arg_2": "a",
+                        "_arg_out": 2
+                    },
+                    "out": 2
+                },
+                {
+                    "in": {
+                        "_arg_1": "Hannah",
+                        "_arg_2": "h",
+                        "_arg_out": 1
+                    },
+                    "out": 1
+                }
+            ]
+        },
+        "properties": [
+            "prefixof_cvc(substr_cvc(_arg_1, _arg_out, 2), _arg_1)",
+            "indexof_cvc(_arg_1, _arg_2, 1) == _arg_out",
+            "indexof_cvc(_arg_1, _arg_2, 1) <= _arg_out",
+            "2 == _arg_out",
+            "2 <= _arg_out",
+            "prefixof_cvc(_arg_1, at_cvc(int_to_str_cvc(-1), _arg_out))",
+            "_arg_out == 2",
+            "1 <= _arg_out",
+            "1 + 1 == _arg_out",
+            "prefixof_cvc(_arg_2, at_cvc(_arg_1, _arg_out))",
+            "1 + _arg_out == 3",
+            "0 + 2 == _arg_out",
+            "suffixof_cvc(_arg_2, at_cvc(_arg_1, _arg_out))",
+            "0 + _arg_out == 2",
+            "-1 + 3 == _arg_out",
+            "contains_cvc(_arg_2, at_cvc(_arg_1, _arg_out))",
+            "-1 + _arg_out == 1",
+            "2 + 0 == _arg_out",
+            "_arg_2 == at_cvc(_arg_1, _arg_out)",
+            "2 + _arg_out == 4"
+        ],
+        "benchmark_name": "SyGuS strings",
+        "solved": false
+    },
+    {
+        "program": "nothing",
+        "problem": {
+            "name": "problem_count_specific_words_in_a_cell",
+            "spec": [
+                {
+                    "in": {
+                        "_arg_1": "The fox jumped over the fox",
+                        "_arg_2": "fox",
+                        "_arg_out": 2
+                    },
+                    "out": 2
+                },
+                {
+                    "in": {
+                        "_arg_1": "The fox jumped over the fox",
+                        "_arg_2": "ox",
+                        "_arg_out": 2
+                    },
+                    "out": 2
+                },
+                {
+                    "in": {
+                        "_arg_1": "The fox jumped over the fox",
+                        "_arg_2": "Fox",
+                        "_arg_out": 0
+                    },
+                    "out": 0
+                }
+            ]
+        },
+        "properties": [
+            "prefixof_cvc(substr_cvc(_arg_1, _arg_out, 2), _arg_1)",
+            "prefixof_cvc(substr_cvc(_arg_1, _arg_out, 3), _arg_1)",
+            "prefixof_cvc(substr_cvc(_arg_1, _arg_out, 4), _arg_1)",
+            "prefixof_cvc(substr_cvc(_arg_1, _arg_out, 5), _arg_1)",
+            "prefixof_cvc(substr_cvc(_arg_2, _arg_out, 2), _arg_2)",
+            "suffixof_cvc(substr_cvc(_arg_1, 2, _arg_out), _arg_1)",
+            "prefixof_cvc(at_cvc(_arg_2, _arg_out), _arg_2)",
+            "_arg_out == len_cvc(at_cvc(_arg_2, _arg_out))",
+            "_arg_out <= len_cvc(at_cvc(_arg_2, _arg_out))",
+            "prefixof_cvc(substr_cvc(_arg_2, 2, _arg_out), _arg_1)",
+            "prefixof_cvc(substr_cvc(_arg_2, 2, _arg_out), _arg_2)",
+            "prefixof_cvc(substr_cvc(_arg_2, 2, _arg_out), \"\")",
+            "prefixof_cvc(substr_cvc(_arg_2, 2, _arg_out), \" \")",
+            "prefixof_cvc(substr_cvc(_arg_2, _arg_out, 1), _arg_1)",
+            "prefixof_cvc(substr_cvc(_arg_2, _arg_out, 1), \"\")",
+            "prefixof_cvc(substr_cvc(_arg_2, _arg_out, 1), \" \")",
+            "prefixof_cvc(substr_cvc(_arg_2, _arg_out, _arg_out), _arg_2)",
+            "suffixof_cvc(substr_cvc(_arg_2, 2, _arg_out), \"\")",
+            "suffixof_cvc(substr_cvc(_arg_2, 2, _arg_out), \" \")",
+            "suffixof_cvc(substr_cvc(_arg_2, _arg_out, 1), _arg_1)"
+        ],
+        "benchmark_name": "SyGuS strings",
+        "solved": false
+    },
+    {
+        "program": "len_cvc(_arg_1)",
+        "problem": {
+            "name": "problem_count_total_characters_in_a_cell",
+            "spec": [
+                {
+                    "in": {
+                        "_arg_1": "The"
+                    },
+                    "out": 3
+                },
+                {
+                    "in": {
+                        "_arg_1": "The quick fox"
+                    },
+                    "out": 13
+                },
+                {
+                    "in": {
+                        "_arg_1": "The quick  fox"
+                    },
+                    "out": 14
+                }
+            ]
+        },
+        "properties": [],
+        "benchmark_name": "SyGuS strings",
+        "solved": true
+    },
+    {
+        "program": "nothing",
+        "problem": {
+            "name": "problem_count_total_words_in_a_cell",
+            "spec": [
+                {
+                    "in": {
+                        "_arg_1": "humpty dumpty",
+                        "_arg_out": 2
+                    },
+                    "out": 2
+                },
+                {
+                    "in": {
+                        "_arg_1": "humpty dumpty sat on a wall,",
+                        "_arg_out": 6
+                    },
+                    "out": 6
+                },
+                {
+                    "in": {
+                        "_arg_1": "couldnt put humpty together again.",
+                        "_arg_out": 5
+                    },
+                    "out": 5
+                }
+            ]
+        },
+        "properties": [
+            "suffixof_cvc(substr_cvc(_arg_1, 2, _arg_out), _arg_1)",
+            "prefixof_cvc(substr_cvc(_arg_1, _arg_out, 5), _arg_1)",
+            "suffixof_cvc(substr_cvc(_arg_1, 3, _arg_out), _arg_1)",
+            "3 == _arg_out",
+            "5 <= _arg_out",
+            "5 == _arg_out",
+            "-1 + _arg_out <= 5",
+            "4 == _arg_out",
+            "_arg_out == 4",
+            "prefixof_cvc(int_to_str_cvc(4), int_to_str_cvc(_arg_out))",
+            "prefixof_cvc(int_to_str_cvc(_arg_out), int_to_str_cvc(4))",
+            "suffixof_cvc(int_to_str_cvc(4), int_to_str_cvc(_arg_out))",
+            "suffixof_cvc(int_to_str_cvc(_arg_out), int_to_str_cvc(4))",
+            "contains_cvc(int_to_str_cvc(4), int_to_str_cvc(_arg_out))",
+            "contains_cvc(int_to_str_cvc(_arg_out), int_to_str_cvc(4))",
+            "int_to_str_cvc(4) == int_to_str_cvc(_arg_out)",
+            "int_to_str_cvc(_arg_out) == int_to_str_cvc(4)",
+            "str_to_int_cvc(int_to_str_cvc(4)) == _arg_out",
+            "str_to_int_cvc(int_to_str_cvc(_arg_out)) == 4",
+            "1 + 3 == _arg_out"
+        ],
+        "benchmark_name": "SyGuS strings",
+        "solved": false
+    },
+    {
+        "program": "concat_cvc(at_cvc(_arg_2, 1), concat_cvc(_arg_1, \"_acme.com\"))",
+        "problem": {
+            "name": "problem_create_email_address_from_name",
+            "spec": [
+                {
+                    "in": {
+                        "_arg_1": "brown",
+                        "_arg_2": "traci",
+                        "_arg_out": "tbrown_acme.com"
+                    },
+                    "out": "tbrown_acme.com"
+                },
+                {
+                    "in": {
+                        "_arg_1": "thomas",
+                        "_arg_2": "linda",
+                        "_arg_out": "lthomas_acme.com"
+                    },
+                    "out": "lthomas_acme.com"
+                },
+                {
+                    "in": {
+                        "_arg_1": "ward",
+                        "_arg_2": "jack",
+                        "_arg_out": "jward_acme.com"
+                    },
+                    "out": "jward_acme.com"
+                }
+            ]
+        },
+        "properties": [
+            "suffixof_cvc(concat_cvc(_arg_1, \"_acme.com\"), _arg_out)"
+        ],
+        "benchmark_name": "SyGuS strings",
+        "solved": true
+    },
+    {
+        "program": "concat_cvc(concat_cvc(substr_cvc(_arg_1, 1, 1), _arg_2), concat_cvc(\"_\", _arg_3))",
+        "problem": {
+            "name": "problem_create_email_address_with_name_and_domain",
+            "spec": [
+                {
+                    "in": {
+                        "_arg_1": "ayako",
+                        "_arg_2": "ogawa",
+                        "_arg_out": "aogawa_acme.com",
+                        "_arg_3": "acme.com"
+                    },
+                    "out": "aogawa_acme.com"
+                },
+                {
+                    "in": {
+                        "_arg_1": "amy",
+                        "_arg_2": "johnson",
+                        "_arg_out": "ajohnson_google.com",
+                        "_arg_3": "google.com"
+                    },
+                    "out": "ajohnson_google.com"
+                },
+                {
+                    "in": {
+                        "_arg_1": "tom",
+                        "_arg_2": "chang",
+                        "_arg_out": "tchang_upenn.edu",
+                        "_arg_3": "upenn.edu"
+                    },
+                    "out": "tchang_upenn.edu"
+                }
+            ]
+        },
+        "properties": [
+            "len_cvc(_arg_out) <= len_cvc(_arg_3)",
+            "prefixof_cvc(at_cvc(_arg_out, 2), _arg_2)",
+            "suffixof_cvc(concat_cvc(\"_\", _arg_3), _arg_out)"
+        ],
+        "benchmark_name": "SyGuS strings",
+        "solved": true
+    },
+    {
+        "program": "concat_cvc(concat_cvc(\"Dr.\", \" \"), substr_cvc(replace_cvc(_arg_1, \" \", _arg_1), 1, indexof_cvc(_arg_1, \" \", 1) + indexof_cvc(\".\", \"Dr.\", 2)))",
+        "problem": {
+            "name": "problem_dr_name",
+            "spec": [
+                {
+                    "in": {
+                        "_arg_1": "Nancy FreeHafer",
+                        "_arg_out": "Dr. Nancy"
+                    },
+                    "out": "Dr. Nancy"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Andrew Cencici",
+                        "_arg_out": "Dr. Andrew"
+                    },
+                    "out": "Dr. Andrew"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Jan Kotas",
+                        "_arg_out": "Dr. Jan"
+                    },
+                    "out": "Dr. Jan"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Mariya Sergienko",
+                        "_arg_out": "Dr. Mariya"
+                    },
+                    "out": "Dr. Mariya"
+                }
+            ]
+        },
+        "properties": [
+            "prefixof_cvc(at_cvc(_arg_out, 5), _arg_1)",
+            "contains_cvc(_arg_out, at_cvc(_arg_1, len_cvc(_arg_out)))",
+            "contains_cvc(_arg_out, substr_cvc(_arg_1, 1, 3))",
+            "suffixof_cvc(\" \", replace_cvc(_arg_out, \".\", \" \"))",
+            "contains_cvc(_arg_1, at_cvc(_arg_out, len_cvc(_arg_out)))",
+            "prefixof_cvc(at_cvc(_arg_out, 4), \" \")",
+            "5 < len_cvc(_arg_out) - 5",
+            "contains_cvc(_arg_out, at_cvc(_arg_1, 5))",
+            "4 == len_cvc(_arg_out) - 5",
+            "5 == len_cvc(_arg_out) - 5",
+            "5 <= len_cvc(_arg_out) - 5",
+            "4 < len_cvc(_arg_out) - 5",
+            "5 < len_cvc(_arg_out) - 4",
+            "prefixof_cvc(int_to_str_cvc(1), int_to_str_cvc(len_cvc(_arg_out)))"
+        ],
+        "benchmark_name": "SyGuS strings",
+        "solved": true
+    },
+    {
+        "program": "nothing",
+        "problem": {
+            "name": "problem_dr_name_long",
+            "spec": [
+                {
+                    "in": {
+                        "_arg_1": "Launa Withers",
+                        "_arg_out": "Dr. Launa"
+                    },
+                    "out": "Dr. Launa"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Lakenya Edison",
+                        "_arg_out": "Dr. Lakenya"
+                    },
+                    "out": "Dr. Lakenya"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Brendan Hage",
+                        "_arg_out": "Dr. Brendan"
+                    },
+                    "out": "Dr. Brendan"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Bradford Lango",
+                        "_arg_out": "Dr. Bradford"
+                    },
+                    "out": "Dr. Bradford"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Rudolf Akiyama",
+                        "_arg_out": "Dr. Rudolf"
+                    },
+                    "out": "Dr. Rudolf"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Lara Constable",
+                        "_arg_out": "Dr. Lara"
+                    },
+                    "out": "Dr. Lara"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Madelaine Ghoston",
+                        "_arg_out": "Dr. Madelaine"
+                    },
+                    "out": "Dr. Madelaine"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Salley Hornak",
+                        "_arg_out": "Dr. Salley"
+                    },
+                    "out": "Dr. Salley"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Micha Junkin",
+                        "_arg_out": "Dr. Micha"
+                    },
+                    "out": "Dr. Micha"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Teddy Bobo",
+                        "_arg_out": "Dr. Teddy"
+                    },
+                    "out": "Dr. Teddy"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Coralee Scalia",
+                        "_arg_out": "Dr. Coralee"
+                    },
+                    "out": "Dr. Coralee"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Jeff Quashie",
+                        "_arg_out": "Dr. Jeff"
+                    },
+                    "out": "Dr. Jeff"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Vena Babiarz",
+                        "_arg_out": "Dr. Vena"
+                    },
+                    "out": "Dr. Vena"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Karrie Lain",
+                        "_arg_out": "Dr. Karrie"
+                    },
+                    "out": "Dr. Karrie"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Tobias Dermody",
+                        "_arg_out": "Dr. Tobias"
+                    },
+                    "out": "Dr. Tobias"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Celsa Hopkins",
+                        "_arg_out": "Dr. Celsa"
+                    },
+                    "out": "Dr. Celsa"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Kimberley Halpern",
+                        "_arg_out": "Dr. Kimberley"
+                    },
+                    "out": "Dr. Kimberley"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Phillip Rowden",
+                        "_arg_out": "Dr. Phillip"
+                    },
+                    "out": "Dr. Phillip"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Elias Neil",
+                        "_arg_out": "Dr. Elias"
+                    },
+                    "out": "Dr. Elias"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Lashanda Cortes",
+                        "_arg_out": "Dr. Lashanda"
+                    },
+                    "out": "Dr. Lashanda"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Mackenzie Spell",
+                        "_arg_out": "Dr. Mackenzie"
+                    },
+                    "out": "Dr. Mackenzie"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Kathlyn Eccleston",
+                        "_arg_out": "Dr. Kathlyn"
+                    },
+                    "out": "Dr. Kathlyn"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Georgina Brescia",
+                        "_arg_out": "Dr. Georgina"
+                    },
+                    "out": "Dr. Georgina"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Beata Miah",
+                        "_arg_out": "Dr. Beata"
+                    },
+                    "out": "Dr. Beata"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Desiree Seamons",
+                        "_arg_out": "Dr. Desiree"
+                    },
+                    "out": "Dr. Desiree"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Jeanice Soderstrom",
+                        "_arg_out": "Dr. Jeanice"
+                    },
+                    "out": "Dr. Jeanice"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Mariel Jurgens",
+                        "_arg_out": "Dr. Mariel"
+                    },
+                    "out": "Dr. Mariel"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Alida Bogle",
+                        "_arg_out": "Dr. Alida"
+                    },
+                    "out": "Dr. Alida"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Jacqualine Olague",
+                        "_arg_out": "Dr. Jacqualine"
+                    },
+                    "out": "Dr. Jacqualine"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Joaquin Clasen",
+                        "_arg_out": "Dr. Joaquin"
+                    },
+                    "out": "Dr. Joaquin"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Samuel Richert",
+                        "_arg_out": "Dr. Samuel"
+                    },
+                    "out": "Dr. Samuel"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Malissa Marcus",
+                        "_arg_out": "Dr. Malissa"
+                    },
+                    "out": "Dr. Malissa"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Alaina Partida",
+                        "_arg_out": "Dr. Alaina"
+                    },
+                    "out": "Dr. Alaina"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Trinidad Mulloy",
+                        "_arg_out": "Dr. Trinidad"
+                    },
+                    "out": "Dr. Trinidad"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Carlene Garrard",
+                        "_arg_out": "Dr. Carlene"
+                    },
+                    "out": "Dr. Carlene"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Melodi Chism",
+                        "_arg_out": "Dr. Melodi"
+                    },
+                    "out": "Dr. Melodi"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Bess Chilcott",
+                        "_arg_out": "Dr. Bess"
+                    },
+                    "out": "Dr. Bess"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Chong Aylward",
+                        "_arg_out": "Dr. Chong"
+                    },
+                    "out": "Dr. Chong"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Jani Ramthun",
+                        "_arg_out": "Dr. Jani"
+                    },
+                    "out": "Dr. Jani"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Jacquiline Heintz",
+                        "_arg_out": "Dr. Jacquiline"
+                    },
+                    "out": "Dr. Jacquiline"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Hayley Marquess",
+                        "_arg_out": "Dr. Hayley"
+                    },
+                    "out": "Dr. Hayley"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Andria Spagnoli",
+                        "_arg_out": "Dr. Andria"
+                    },
+                    "out": "Dr. Andria"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Irwin Covelli",
+                        "_arg_out": "Dr. Irwin"
+                    },
+                    "out": "Dr. Irwin"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Gertude Montiel",
+                        "_arg_out": "Dr. Gertude"
+                    },
+                    "out": "Dr. Gertude"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Stefany Reily",
+                        "_arg_out": "Dr. Stefany"
+                    },
+                    "out": "Dr. Stefany"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Rae Mcgaughey",
+                        "_arg_out": "Dr. Rae"
+                    },
+                    "out": "Dr. Rae"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Cruz Latimore",
+                        "_arg_out": "Dr. Cruz"
+                    },
+                    "out": "Dr. Cruz"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Maryann Casler",
+                        "_arg_out": "Dr. Maryann"
+                    },
+                    "out": "Dr. Maryann"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Annalisa Gregori",
+                        "_arg_out": "Dr. Annalisa"
+                    },
+                    "out": "Dr. Annalisa"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Jenee Pannell",
+                        "_arg_out": "Dr. Jenee"
+                    },
+                    "out": "Dr. Jenee"
+                }
+            ]
+        },
+        "properties": [
+            "prefixof_cvc(at_cvc(_arg_out, 5), _arg_1)",
+            "prefixof_cvc(\"Dr.\", _arg_out)",
+            "contains_cvc(_arg_out, _arg_1)",
+            "contains_cvc(_arg_out, at_cvc(_arg_1, len_cvc(_arg_out)))",
+            "contains_cvc(_arg_out, substr_cvc(_arg_1, 1, 2))",
+            "suffixof_cvc(_arg_out, replace_cvc(_arg_out, \".\", \"Dr.\"))",
+            "contains_cvc(_arg_out, substr_cvc(_arg_1, 1, 3))",
+            "contains_cvc(_arg_out, substr_cvc(_arg_1, 1, 4))",
+            "contains_cvc(_arg_out, substr_cvc(_arg_1, 1, 5))",
+            "suffixof_cvc(substr_cvc(_arg_1, 1, 5), _arg_out)",
+            "suffixof_cvc(int_to_str_cvc(2), int_to_str_cvc(len_cvc(_arg_out)))",
+            "suffixof_cvc(int_to_str_cvc(3), int_to_str_cvc(len_cvc(_arg_out)))",
+            "contains_cvc(_arg_out, int_to_str_cvc(1))",
+            "contains_cvc(_arg_out, int_to_str_cvc(2))",
+            "contains_cvc(_arg_out, int_to_str_cvc(3))",
+            "contains_cvc(_arg_out, int_to_str_cvc(4))",
+            "contains_cvc(_arg_out, int_to_str_cvc(5))",
+            "contains_cvc(_arg_out, int_to_str_cvc(1 + 5))",
+            "contains_cvc(_arg_out, int_to_str_cvc(2 + 5))",
+            "contains_cvc(_arg_out, int_to_str_cvc(3 + 5))"
+        ],
+        "benchmark_name": "SyGuS strings",
+        "solved": false
+    }
+]
