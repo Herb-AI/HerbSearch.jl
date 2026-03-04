@@ -84,6 +84,8 @@ function conquer(
 	return final_program
 end
 
+input_rules(grammar::AbstractGrammar) = findall(rule -> occursin("_arg_", string(rule)), grammar.rules)
+
 """
 	Returns predicates that can serve as conditional statements for combining programs in a decision tree.
 
@@ -102,7 +104,7 @@ function get_predicates(grammar::AbstractGrammar,
 	grammar_constraints = deepcopy(grammar)
 	clearconstraints!(grammar_constraints)
 	# Create DomainRuleNode that contains all rules of type sym_constraint and add constraint to grammar
-	rules = grammar_constraints.bytype[sym_constraint]
+	rules = input_rules(grammar)
 	domain = HerbConstraints.DomainRuleNode(grammar_constraints, rules)
 	addconstraint!(grammar_constraints, ContainsSubtree(domain))
 	predicates = _iterate_predicates(grammar_constraints, sym_bool, n_predicates)
@@ -128,6 +130,7 @@ function get_predicates(grammar::AbstractGrammar,
 	domain = HerbConstraints.DomainRuleNode(grammar_constraints, rules)
 	addconstraint!(grammar_constraints, ContainsSubtree(domain))
 	predicates = _iterate_predicates(grammar_constraints, sym_bool, n_predicates)
+
 	return predicates
 end
 
@@ -149,14 +152,13 @@ end
 
 """
 	Returns a matrix containing the feature vectors for all problem/predicate combinations. 
-	A feature vector is obtained by evaluating a `IOExample` in `ioexamples_solutions` on each
-	predicate.
+	A feature vector is obtained by evaluating a `IOExample` in `ioexamples_solutions` on each predicate.
 """
 function get_features(
 	ioexamples::AbstractVector{<:IOExample},
 	predicates::AbstractVector{RuleNode},
 	grammar::AbstractGrammar,
-	symboltable::SymbolTable,  # or symboltable::AbstractSymbolTable if that exists
+	symboltable::SymbolTable,
 	allow_evaluation_errors::Bool = true,
 )
 	# features matrix with dimension n_ioexamples x n_predicates

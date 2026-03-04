@@ -9,12 +9,30 @@ Returns `True` if the program solves the given problem.
 - `expr`: Corresponding Julia expression of the program under decision
 - `symboltable`: The symbol table used for evaluating expressions.
 """
+# New fast overload (no expr, no symboltable)
 function decide(
-	problem::Problem,
-	expr::Any,
-	symboltable::SymbolTable,
-)::Bool
-	score = HerbSearch.evaluate(problem, expr, symboltable, allow_evaluation_errors = true)
-	return score == 1
-end
+    problem::Problem,
+    program::AbstractRuleNode,
+    interp::F;
+    eq::Function = (==),
+    allow_errors::Bool = true,
+) where {F}
+    for ex in problem.spec
+        ok = false
+        if allow_errors
+            try
+                # prefer IOExample overload (fast + matches your tests)
+                y = interp(program, ex)
+                ok = eq(y, ex.out)
+            catch err
+                ok = false
+            end
+        else
+            y = interp(program, ex)
+            ok = eq(y, ex.out)
+        end
 
+        ok || return false
+    end
+    return true
+end
