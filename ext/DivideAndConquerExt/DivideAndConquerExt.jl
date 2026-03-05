@@ -70,6 +70,7 @@ function HerbSearch.divide_and_conquer(
 
     for (i, candidate_program) ∈ enumerate(iterator)
         is_added = false
+		programs_iterated = i
 
         for prob in subproblems
             keep_program = decide(prob, candidate_program, interp;
@@ -92,14 +93,14 @@ function HerbSearch.divide_and_conquer(
 
         if all(!isempty, values(problems_to_solutions)) || i > max_enumerations ||
            time() - start_time > max_time
-		   	programs_iterated = i
+		   @show all(!isempty, values(problems_to_solutions)) 
+		   @show i > max_enumerations 
+           @show time() - start_time > max_time
             break
         end
     end
 
-	symboltable = grammar2symboltable(grammar, mod)
-
-	if programs_iterated == 0
+	if any(isempty, values(problems_to_solutions))
 		return nothing, programs_iterated
 	end
 
