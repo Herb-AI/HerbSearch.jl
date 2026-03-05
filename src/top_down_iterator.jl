@@ -11,6 +11,18 @@ Concrete iterators may overload the following methods:
 abstract type TopDownIterator <: ProgramIterator end
 
 """
+    TopDownIteratorState
+
+Holds the mutable state for a TopDownIterator during iteration.
+- `solver`: The current solver instance being used for iteration
+- `pq`: The priority queue containing pending items to explore
+"""
+mutable struct TopDownIteratorState
+    solver::Solver
+    pq::PriorityQueue{Union{SolverState,AbstractUniformIterator}, Union{Real,Tuple{Vararg{Real}}}}
+end
+
+"""
     ConstraintStyle
 
 Abstract type representing the family of constraint styles present in Herb.
@@ -260,27 +272,24 @@ end
 Describes the iteration for a given [`TopDownIterator`](@ref) over the grammar. The iteration constructs a [`PriorityQueue`](@ref) first and then prunes it propagating the active constraints. Recursively returns the result for the priority queue.
 """
 function Base.iterate(iter::TopDownIterator)
-    # each top‑level traversal needs a fresh solver instance.  we keep a
-    # prototype copy in `_ORIGINAL_SOLVER` and clone it whenever iteration
-    # begins.  this guarantees that all mutable solver fields (schedule,
-    # fix_point_running, etc.) start from the same pristine configuration and
-    # avoids the complexity of trying to revert a mutated solver in place.
-    # ensure we have a prototype solver for this iterator
-    if !(iter in keys(_ORIGINAL_SOLVER))
-        _ORIGINAL_SOLVER[iter] = deepcopy(get_solver(iter))
-    end
-    # create a fresh working copy and store it in the current-solvers map
-    local fresh = deepcopy(_ORIGINAL_SOLVER[iter])
-    _CURRENT_SOLVER[iter] = fresh
+    # Create a fresh solver instance for this iteration
+    fresh_solver = deepcopy(get_solver(iter))
 
     # Priority queue with `SolverState`s (for variable shaped trees) and `UniformIterator`s (for fixed shaped trees)
     pq = _init_pq(iter)
 
-    solver = fresh
+    solver = fresh_solver
     if isfeasible(solver)
         push!(pq, get_state(solver) => priority_function(iter, get_grammar(solver), get_tree(solver), 0, false))
     end
-    return _find_next_complete_tree(solver, pq, iter)
+    
+    state = TopDownIteratorState(solver, pq)
+    result = _find_next_complete_tree(state, iter)
+    if isnothing(result)
+        return nothing
+    else
+        return (result[1], state)
+    end
 end
 
 function _init_pq(iter::TopDownIterator)
@@ -302,40 +311,32 @@ function _init_pq(::ASPStyle)
 end
 
 """
-    Base.iterate(iter::TopDownIterator, pq::DataStructures.PriorityQueue)
+    Base.iterate(iter::TopDownIterator, state::TopDownIteratorState)
 
-Describes the iteration for a given [`TopDownIterator`](@ref) and a [`PriorityQueue`](@ref) over the grammar without enqueueing new items to the priority queue. Recursively returns the result for the priority queue.
+Describes the iteration for a given [`TopDownIterator`](@ref) and a [`TopDownIteratorState`](@ref) over the grammar. Recursively returns the result for the priority queue.
 """
-function Base.iterate(iter::TopDownIterator, tup::Tuple{Vector{<:AbstractRuleNode},DataStructures.PriorityQueue})
-    @timeit_debug get_solver(iter).statistics "#CompleteTrees (by FixedShapedIterator)" begin end
-    # iterating over fixed shaped trees using the FixedShapedIterator
-    if !isempty(tup[1])
-        return (pop!(tup[1]), tup)
+function Base.iterate(iter::TopDownIterator, state::TopDownIteratorState)
+    result = _find_next_complete_tree(state, iter)
+    if isnothing(result)
+        return nothing
+    else
+        return (result[1], state)
     end
-
-    return _find_next_complete_tree(get_solver(iter), tup[2], iter)
-end
-
-
-function Base.iterate(iter::TopDownIterator, pq::DataStructures.PriorityQueue)
-    @timeit_debug get_solver(iter).statistics "#CompleteTrees (by UniformSolver)" begin end
-    return _find_next_complete_tree(get_solver(iter), pq, iter)
 end
 
 """
-    _find_next_complete_tree(solver::Solver, pq::PriorityQueue, iter::TopDownIterator)::Union{Tuple{RuleNode, Tuple{Vector{AbstractRuleNode}, PriorityQueue}}, Nothing}
+    _find_next_complete_tree(state::TopDownIteratorState, iter::TopDownIterator)::Union{Tuple{RuleNode, TopDownIteratorState}, Nothing}
 
 Takes a priority queue and returns the smallest AST from the grammar it can obtain from the queue or by (repeatedly) expanding trees that are in the queue.
 Returns `nothing` if there are no trees left within the depth limit.
 """
 function _find_next_complete_tree(
-    solver::Solver,
-    pq::PriorityQueue,
+    state::TopDownIteratorState,
     iter::TopDownIterator
 )
-    while length(pq) ≠ 0
-        (item, priority_value) = popfirst!(pq)
-        solution_or_nothing = _find_next_complete_tree(solver, pq, iter, item, priority_value)
+    while length(state.pq) ≠ 0
+        (item, priority_value) = popfirst!(state.pq)
+        solution_or_nothing = _find_next_complete_tree(state, iter, item, priority_value)
         if !isnothing(solution_or_nothing)
             return solution_or_nothing
         end
@@ -344,8 +345,7 @@ function _find_next_complete_tree(
 end
 
 function _find_next_complete_tree(
-    solver::Solver,
-    pq::PriorityQueue,
+    state::TopDownIteratorState,
     iter::TopDownIterator,
     item::AbstractUniformIterator,
     priority_value
@@ -354,41 +354,39 @@ function _find_next_complete_tree(
     uniform_iterator = item
     solution = next_solution!(uniform_iterator)
     if !isnothing(solution)
-        push!(pq, uniform_iterator => priority_function(iter, get_grammar(solver), solution, priority_value, true))
-        return (solution, pq)
+        push!(state.pq, uniform_iterator => priority_function(iter, get_grammar(state.solver), solution, priority_value, true))
+        return (solution, state)
     end
 end
 
 function _find_next_complete_tree(
-    solver::Solver,
-    pq::PriorityQueue,
+    state::TopDownIteratorState,
     iter::TopDownIterator,
     item::SolverState,
     priority_value
 )
     #the item is a solver state, we should find a variable shaped hole to branch on
-    state = item
-    load_state!(solver, state)
+    solver_state = item
+    load_state!(state.solver, solver_state)
 
-    hole_res = hole_heuristic(iter, get_tree(solver), get_max_depth(solver))
-    return _decide_hole(solver, pq, iter, item, priority_value, hole_res)
+    hole_res = hole_heuristic(iter, get_tree(state.solver), get_max_depth(state.solver))
+    return _decide_hole(state, iter, item, priority_value, hole_res)
 end
 
 function _decide_hole(
-    solver::Solver,
-    pq::PriorityQueue,
+    state::TopDownIteratorState,
     iter::TopDownIterator,
     ::SolverState,
     priority_value,
     ::AlreadyComplete
 )
-    @timeit_debug get_solver(iter).statistics "#FixedShapedTrees" begin end
+    @timeit_debug state.solver.statistics "#FixedShapedTrees" begin end
     # Always use the Uniform Solver
-    uniform_iterator = _make_uniform_iterator(solver, iter)
+    uniform_iterator = _make_uniform_iterator(state.solver, iter)
     solution = next_solution!(uniform_iterator)
     if !isnothing(solution)
-        push!(pq, uniform_iterator => priority_function(iter, get_grammar(solver), solution, priority_value, true))
-        return (solution, pq)
+        push!(state.pq, uniform_iterator => priority_function(iter, get_grammar(state.solver), solution, priority_value, true))
+        return (solution, state)
     end
 end
 
@@ -407,8 +405,7 @@ function _make_uniform_iterator(::ASPStyle, solver::Solver, iter::TopDownIterato
 end
 
 function _decide_hole(
-    ::Solver,
-    ::PriorityQueue,
+    ::TopDownIteratorState,
     ::TopDownIterator,
     ::SolverState,
     ::Any,
@@ -419,8 +416,7 @@ function _decide_hole(
 end
 
 function _decide_hole(
-    solver::Solver,
-    pq::PriorityQueue,
+    state::TopDownIteratorState,
     iter::TopDownIterator,
     ::SolverState,
     priority_value,
@@ -429,19 +425,19 @@ function _decide_hole(
     # Variable Shaped Hole was found
     (; hole, path) = hole_res
 
-    partitioned_domains = partition(hole, get_grammar(solver))
+    partitioned_domains = partition(hole, get_grammar(state.solver))
     number_of_domains = length(partitioned_domains)
     for (i, domain) ∈ enumerate(partitioned_domains)
         if i < number_of_domains
-            state = save_state!(solver)
+            saved_state = save_state!(state.solver)
         end
-        @assert isfeasible(solver) "Attempting to expand an infeasible tree: $(get_tree(solver))"
-        remove_all_but!(solver, path, domain)
-        if isfeasible(solver)
-            push!(pq, get_state(solver) => priority_function(iter, get_grammar(solver), get_tree(solver), priority_value, false))
+        @assert isfeasible(state.solver) "Attempting to expand an infeasible tree: $(get_tree(state.solver))"
+        remove_all_but!(state.solver, path, domain)
+        if isfeasible(state.solver)
+            push!(state.pq, get_state(state.solver) => priority_function(iter, get_grammar(state.solver), get_tree(state.solver), priority_value, false))
         end
         if i < number_of_domains
-            load_state!(solver, state)
+            load_state!(state.solver, saved_state)
         end
     end
 end

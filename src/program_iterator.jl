@@ -12,24 +12,16 @@ defining new strategies.
 abstract type ProgramIterator end
 
 # When an iterator is used multiple times we want each traversal to start
-# from a fresh solver instance.  `_ORIGINAL_SOLVER` holds a deep copy of the
-# solver as it was provided to the iterator constructor, while
-# `_CURRENT_SOLVER` tracks the solver object that is actively being used for
-# the most recent call to `Base.iterate`.  The latter avoids mutating the
-# iterator struct itself, which may be immutable (many built-in iterators are
-# not mutable).
-const _ORIGINAL_SOLVER = IdDict{ProgramIterator, Solver}()
-const _CURRENT_SOLVER  = IdDict{ProgramIterator, Solver}()
+# from a fresh solver instance.  The solver field in the iterator serves as
+# the prototype copy.
 
 """
     get_solver(pi::ProgramIterator)
 
-Get the program iterator solver.  During iteration this will return the
-working copy from `_CURRENT_SOLVER` if one has been created; otherwise it
-simply returns the solver field stored in the iterator.
+Get the program iterator solver.
 """
 function get_solver(pi::ProgramIterator)
-    return get(_CURRENT_SOLVER, pi, pi.solver)
+    return pi.solver
 end
 
 """
