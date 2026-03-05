@@ -115,4 +115,27 @@
         uniform_iterator = UniformIterator(uniform_solver, nothing)
         @test isnothing(next_solution!(uniform_iterator))
     end
+
+    # regression test for iterator exhaustion and reset behaviour
+    @testset "length exhausts and requires fresh iterator" begin
+        grammar = @csgrammar begin
+            S = x | 1
+        end
+        tree = UniformHole(BitVector((1,1)), [])
+        uniform_solver = UniformSolver(grammar, tree)
+        uniform_iterator = UniformIterator(uniform_solver, nothing)
+
+        # first length should count all solutions
+        n1 = length(uniform_iterator)
+        @test n1 == 2
+
+        # second length call should return 0, because the iterator has been
+        # exhausted and the solver state is not reset automatically
+        n2 = length(uniform_iterator)
+        @test n2 == 0
+
+        # a fresh iterator should again report the same count
+        uniform_iterator2 = UniformIterator(UniformSolver(grammar, tree), nothing)
+        @test length(uniform_iterator2) == n1
+    end
 end
