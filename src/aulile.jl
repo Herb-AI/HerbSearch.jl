@@ -124,6 +124,9 @@ function synth_with_aux(
     start_time = time()
     loop_enums = 0
     for _candidate_program in iterator
+        if loop_enums >= opts.max_enumerations || time() - start_time > opts.max_time
+            break
+        end
         # Julia scoping issue - loop variables shadow outer ones
         candidate_program = _candidate_program
         # Skip old candidates until we reach checkpoint, from which point we search normally
@@ -154,10 +157,6 @@ function synth_with_aux(
             push!(best_programs, (score, freeze_state(candidate_program)))
             length(best_programs) > opts.num_returned_programs && pop!(best_programs)
             worst_score = first(first(best_programs))
-        end
-
-        if loop_enums >= opts.max_enumerations || time() - start_time > opts.max_time
-            break
         end
     end
 
