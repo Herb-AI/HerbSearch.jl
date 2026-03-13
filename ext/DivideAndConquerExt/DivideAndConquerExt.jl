@@ -104,6 +104,8 @@ function HerbSearch.divide_and_conquer(
 		return nothing, programs_iterated
 	end
 
+	symboltable = grammar2symboltable(grammar, mod)
+
     final_program = conquer(
         problems_to_solutions,
         solutions,
