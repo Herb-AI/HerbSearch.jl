@@ -1,0 +1,69 @@
+using DocStringExtensions
+
+function _needs_splitting(hole::UniformHole, g)
+    !isempty(hole.children) && return true
+    hole_type = g.types[findfirst(==(1), hole.domain)]
+    return g.domains[hole_type] != hole.domain
+end
+
+function _split_hole(rule::RuleNode, g)
+    isempty(rule.children) && return [rule]
+    splits = []
+    children_res = [_split_hole(ch, g) for ch in rule.children]
+    for children in Iterators.product(children_res...)
+        new_rule = RuleNode(get_rule(rule), collect(children))
+        push!(splits, new_rule)
+    end
+    return splits
+end
+
+function _split_hole(hole::UniformHole, g)
+    splits = []
+    isfilled(hole) && return [hole]
+    _needs_splitting(hole, g) || return [hole]
+    children_res = [_split_hole(ch, g) for ch in hole.children]
+    for (i, d) in enumerate(hole.domain)
+        d || continue
+        for children in Iterators.product(children_res...)
+            new_rule = RuleNode(i, collect(children))
+            push!(splits, new_rule)
+        end
+    end
+    return splits
+end
+
+"""
+    $(TYPEDSIGNATURES)
+
+Splits a rule node s.t. the resulting splits have no holes
+"""
+function HerbSearch.split_hole(hole::AbstractRuleNode, g::AbstractGrammar)::Vector{AbstractRuleNode}
+    splits = _split_hole(hole, g)
+    return splits
+end
+
+"""
+    $(TYPEDSIGNATURES)
+
+Given a rule that may contain holes, returns new rules structured like.
+Main_Rule = New_type
+New_type = ...
+New_type = ...
+
+The *Main_Rule* is the 1st element of the returned rules.
+"""
+function create_new_exprs(rule::Union{UniformHole,RuleNode}, g::AbstractGrammar, id::Int)::Vector{Tuple{Symbol,Expr}}
+    splits = split_hole(rule, g)
+    rule_type = return_type(g, rule)
+    if length(splits) == 1
+        return [(rule_type, :($rule_type = $(rulenode2expr(only(splits), g))))]
+    end
+    g_length = length(g.rules)
+    new_type = Symbol("_Rule_$(g_length+1)_$(id)")
+    head_rule = (rule_type, :($rule_type = $new_type))
+    new_expressions = [head_rule]
+    for expr in splits
+        push!(new_expressions, (rule_type, :($new_type = $(rulenode2expr(expr, g)))))
+    end
+    return new_expressions
+end

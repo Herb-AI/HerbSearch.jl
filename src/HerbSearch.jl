@@ -24,6 +24,9 @@ include("top_down_iterator.jl")
 
 include("evaluate.jl")
 
+include("aulile_utils.jl")
+include("aulile.jl")
+
 include("search_procedure.jl")
 
 include("stochastic_iterator.jl")
@@ -51,10 +54,13 @@ include("bottom_up_iterators/shapebased_bus.jl")
 # include("divide_conquer_functions/conquer.jl")
 
 function divide_and_conquer end
+function compress_programs end
+function compress_with_splitting end
+function split_hole end
 
 export
     ProgramIterator,
-    @programiterator, 
+    @programiterator,
     get_solver,
     heuristic_leftmost,
     heuristic_rightmost,
@@ -64,7 +70,7 @@ export
     optimal_program,
     suboptimal_program, UniformIterator,
     next_solution!, TopDownIterator,
-	UniformASPIterator,
+    UniformASPIterator,
     RandomIterator,
     BFSIterator,
     DFSIterator,
@@ -100,7 +106,23 @@ export
     init_combine_structure,
     get_bank,
 
+    # Divide and conquer
     divide_and_conquer,
     EvaluationError,
-    get_solver
+    get_solver,
+
+    # Aulile and compression
+    compress_programs,
+    split_hole,
+    aulile,
+    synth_with_aux,
+    AuxFunction,
+    AulileOptions,
+    SynthOptions,
+    EvaluateOptions,
+    AulileStats,
+    SearchStats,
+    default_aux,
+    default_interpreter,
+    default_compression
 end # module HerbSearch
