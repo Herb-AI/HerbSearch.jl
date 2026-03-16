@@ -23,10 +23,6 @@ include("heuristics.jl")
 include("top_down_iterator.jl")
 
 include("evaluate.jl")
-
-include("aulile_utils.jl")
-include("aulile.jl")
-
 include("search_procedure.jl")
 
 include("stochastic_iterator.jl")
@@ -109,20 +105,5 @@ export
     # Divide and conquer
     divide_and_conquer,
     EvaluationError,
-    get_solver,
-
-    # Aulile and compression
-    compress_programs,
-    split_hole,
-    aulile,
-    synth_with_aux,
-    AuxFunction,
-    AulileOptions,
-    SynthOptions,
-    EvaluateOptions,
-    AulileStats,
-    SearchStats,
-    default_aux,
-    default_interpreter,
-    default_compression
+    get_solver
 end # module HerbSearch
