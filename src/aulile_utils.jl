@@ -49,9 +49,15 @@ end
 """
     Default compression function that serves as a noop.
     This is used when no custom compression function is provided to aulile.
+    The number of returned programs can be specified with the k parameter.
 """
 function default_compression(programs::AbstractVector{<:AbstractRuleNode}, grammar::AbstractGrammar; kwargs...)
-    return programs
+    if haskey(kwargs, :k)
+        k = kwargs[:k]
+        return programs[1:min(k, end)]
+    else
+        return programs
+    end
 end
 
 """
@@ -146,6 +152,7 @@ Base.@kwdef struct AulileOptions
     max_iterations = 5
     max_depth = 10
     compression::Function = default_compression
+    compression_output_programs = 1
     synth_opts = SynthOptions()
 end
 
