@@ -11,6 +11,30 @@ Concrete iterators may overload the following methods:
 abstract type TopDownIterator <: ProgramIterator end
 
 """
+    ConstraintStyle
+
+Abstract type representing the family of constraint styles present in Herb.
+
+There are currently two styles, namely:
+
+- [`HerbStyle`](@ref): The default, this corresponds to iterators that enforce
+    constraints using the propagation implemented in `HerbConstraints`. 
+- [`ASPStyle`](@ref): Corresponds to iterators that enforce constraints using ASP via Clingo.
+
+See [`constraint_style`](@ref).
+"""
+abstract type ConstraintStyle end
+struct ASPStyle <: ConstraintStyle end
+struct HerbStyle <: ConstraintStyle end
+
+"""
+    constraint_style(it)
+
+Get the constraint style of an iterator.
+"""
+constraint_style(::ProgramIterator) = HerbStyle()
+
+"""
     priority_function(::TopDownIterator, g::AbstractGrammar, tree::AbstractRuleNode, parent_value::Union{Real, Tuple{Vararg{Real}}}, isrequeued::Bool)
 
 Assigns a priority value to a `tree` that needs to be considered later in the search. Trees with the lowest priority value are considered first.
@@ -22,10 +46,10 @@ Assigns a priority value to a `tree` that needs to be considered later in the se
 - `isrequeued`: The same tree shape will be requeued. The next time this tree shape is considered, the `UniformSolver` will produce the next complete program deriving from this shape.
 """
 function priority_function(
-    iter::TopDownIterator, 
-    g::AbstractGrammar, 
-    tree::AbstractRuleNode, 
-    parent_value::Union{Real, Tuple{Vararg{Real}}},
+    iter::TopDownIterator,
+    g::AbstractGrammar,
+    tree::AbstractRuleNode,
+    parent_value::Union{Real,Tuple{Vararg{Real}}},
     isrequeued::Bool
 )
     #the default priority function is the bfs priority function
@@ -106,9 +130,22 @@ Base.@doc """
 Creates a breadth-first search iterator for traversing given a grammar, starting from the given symbol. The iterator returns trees in the grammar in increasing order of size.
 """ BFSIterator
 @programiterator mutable BFSIterator(
-    uniform_solver_ref::Ref{Union{UniformSolver, Nothing}} = Ref(nothing),
-    insertion_counter::Int = 0
+    uniform_solver_ref::Ref{Union{UniformSolver,Nothing}}=Ref(nothing),
+    insertion_counter::Int=0
 ) <: AbstractBFSIterator
+
+Base.@doc """
+    @programiterator BFSASPIterator() <: AbstractBFSIterator
+
+Creates a breadth-first search iterator for traversing given a grammar,
+starting from the given symbol. The iterator returns trees in the grammar in
+increasing order of size.
+
+Constraints on uniform trees are enforced in ASP, making use of Clingo.
+Behavior should otherwise match that of [`AbstractBFSIterator`](@ref)s.
+""" BFSASPIterator
+@programiterator BFSASPIterator() <: AbstractBFSIterator
+constraint_style(::BFSASPIterator) = ASPStyle()
 
 """
     AbstractDFSIterator <: TopDownIterator
@@ -118,16 +155,17 @@ implemented to perform a depth-first search.
 """
 abstract type AbstractDFSIterator <: TopDownIterator end
 
+
 """
     priority_function(::AbstractDFSIterator, g::AbstractGrammar, tree::AbstractRuleNode, parent_value::Union{Real, Tuple{Vararg{Real}}}, isrequeued::Bool)
 
 Assigns priority such that the search tree is traversed like in a DFS manner. 
 """
 function priority_function(
-    iter::AbstractDFSIterator, 
-    ::AbstractGrammar, 
-    ::AbstractRuleNode, 
-    parent_value::Union{Real, Tuple{Vararg{Real}}},
+    iter::AbstractDFSIterator,
+    ::AbstractGrammar,
+    ::AbstractRuleNode,
+    parent_value::Union{Real,Tuple{Vararg{Real}}},
     isrequeued::Bool
 )
     #the default priority function is the bfs priority function
@@ -150,9 +188,22 @@ Base.@doc """
 Creates a depth-first search iterator for traversing a given a grammar, starting from a given symbol. The iterator returns trees in the grammar in decreasing order of size. 
 """ DFSIterator
 @programiterator mutable DFSIterator(
-    uniform_solver_ref::Ref{Union{UniformSolver, Nothing}} = Ref(nothing),
-    insertion_counter::Int = 0
+    uniform_solver_ref::Ref{Union{UniformSolver,Nothing}}=Ref(nothing),
+    insertion_counter::Int=0
 ) <: AbstractDFSIterator
+
+Base.@doc """
+    @programiterator DFSASPIterator() <: AbstractDFSIterator
+
+Creates a depth-first search iterator for traversing given a grammar,
+starting from the given symbol. The iterator returns trees in the grammar in
+decreasing order of size.
+
+Constraints on uniform trees are enforced in ASP, making use of Clingo.
+Behavior should otherwise match that of [`AbstractDFSIterator`](@ref)s.
+""" DFSASPIterator
+@programiterator DFSASPIterator() <: AbstractDFSIterator
+constraint_style(::DFSASPIterator) = ASPStyle()
 
 Base.@doc """
     @programiterator MLFSIterator() <: TopDownIterator
@@ -186,22 +237,25 @@ Sorts the indices within a domain, that is grammar rules, by decreasing log_prob
 This will invert the enumeration order if probabilities are equal.
 """
 function derivation_heuristic(iter::MLFSIterator, domain::Vector{Int})
-    log_probs = get_grammar(iter.solver).log_probabilities
+    log_probs = get_grammar(iter).log_probabilities
     return sort(domain, by=i -> log_probs[i], rev=true) # have highest log_probability first
 end
 
 """
-    @enum ExpandFailureReason limit_reached=1 already_complete=2
+    ExpandFailureReason
 
-Representation of the different reasons why expanding a partial tree failed. 
+Abstract type representing the different reasons why expanding a partial tree failed. 
+
 Currently, there are two possible causes of the expansion failing:
 
-- `limit_reached`: The depth limit or the size limit of the partial tree would 
+- [`LimitReached`](@ref): The depth limit or the size limit of the partial tree would 
    be violated by the expansion
-- `already_complete`: There is no hole left in the tree, so nothing can be 
+- [`AlreadyComplete`](@ref): There is no hole left in the tree, so nothing can be 
    expanded.
 """
-@enum ExpandFailureReason limit_reached = 1 already_complete = 2
+abstract type ExpandFailureReason end
+struct LimitReached <: ExpandFailureReason end
+struct AlreadyComplete <: ExpandFailureReason end
 
 
 """
@@ -228,14 +282,32 @@ Describes the iteration for a given [`TopDownIterator`](@ref) over the grammar. 
 """
 function Base.iterate(iter::TopDownIterator)
     # Priority queue with `SolverState`s (for variable shaped trees) and `UniformIterator`s (for fixed shaped trees)
-    pq::PriorityQueue{Union{SolverState,UniformIterator},Union{Real,Tuple{Vararg{Real}}}} = PriorityQueue()
+    pq = _init_pq(iter)
 
-    solver = iter.solver
+    solver = get_solver(iter)
 
     if isfeasible(solver)
         push!(pq, get_state(solver) => priority_function(iter, get_grammar(solver), get_tree(solver), 0, false))
     end
-    return _find_next_complete_tree(iter.solver, pq, iter)
+    return _find_next_complete_tree(get_solver(iter), pq, iter)
+end
+
+function _init_pq(iter::TopDownIterator)
+    _init_pq(constraint_style(iter))
+end
+
+function _init_pq(::HerbStyle)
+    return PriorityQueue{
+        Union{SolverState,UniformIterator},
+        Union{Real,Tuple{Vararg{Real}}}
+    }()
+end
+
+function _init_pq(::ASPStyle)
+    return PriorityQueue{
+        Union{SolverState,UniformASPIterator},
+        Union{Real,Tuple{Vararg{Real}}}
+    }()
 end
 
 """
@@ -244,19 +316,19 @@ end
 Describes the iteration for a given [`TopDownIterator`](@ref) and a [`PriorityQueue`](@ref) over the grammar without enqueueing new items to the priority queue. Recursively returns the result for the priority queue.
 """
 function Base.iterate(iter::TopDownIterator, tup::Tuple{Vector{<:AbstractRuleNode},DataStructures.PriorityQueue})
-    @timeit_debug iter.solver.statistics "#CompleteTrees (by FixedShapedIterator)" begin end
+    @timeit_debug get_solver(iter).statistics "#CompleteTrees (by FixedShapedIterator)" begin end
     # iterating over fixed shaped trees using the FixedShapedIterator
     if !isempty(tup[1])
         return (pop!(tup[1]), tup)
     end
 
-    return _find_next_complete_tree(iter.solver, tup[2], iter)
+    return _find_next_complete_tree(get_solver(iter), tup[2], iter)
 end
 
 
 function Base.iterate(iter::TopDownIterator, pq::DataStructures.PriorityQueue)
-    @timeit_debug iter.solver.statistics "#CompleteTrees (by UniformSolver)" begin end
-    return _find_next_complete_tree(iter.solver, pq, iter)
+    @timeit_debug get_solver(iter).statistics "#CompleteTrees (by UniformSolver)" begin end
+    return _find_next_complete_tree(get_solver(iter), pq, iter)
 end
 
 """
@@ -273,66 +345,122 @@ function _find_next_complete_tree(
     # print_priority_queue_overview(pq)
     while length(pq) ≠ 0
         (item, priority_value) = popfirst!(pq)
-        if item isa UniformIterator
-            #the item is a fixed shaped solver, we should get the next solution and re-enqueue it with a new priority value
-            uniform_iterator = item
-            if hasproperty(iter, :uniform_solver_ref) && iter.uniform_solver_ref !== nothing
-                iter.uniform_solver_ref[] = uniform_iterator.solver
-            end
-            solution = next_solution!(uniform_iterator)
-            if !isnothing(solution)
-                push!(pq, uniform_iterator => priority_function(iter, get_grammar(solver), solution, priority_value, true))
-                return (solution, pq)
-            end
-        elseif item isa SolverState
-            #the item is a solver state, we should find a variable shaped hole to branch on
-            state = item
-            load_state!(solver, state)
-
-            hole_res = hole_heuristic(iter, get_tree(solver), get_max_depth(solver))
-            if hole_res ≡ already_complete
-                @timeit_debug iter.solver.statistics "#FixedShapedTrees" begin end
-                # Always use the Uniform Solver
-                uniform_solver = UniformSolver(get_grammar(solver), get_tree(solver), with_statistics=solver.statistics)
-                uniform_iterator = UniformIterator(uniform_solver, iter)
-                if hasproperty(iter, :uniform_solver_ref) && iter.uniform_solver_ref !== nothing
-                    iter.uniform_solver_ref[] = uniform_iterator.solver
-                end
-                solution = next_solution!(uniform_iterator)
-                if !isnothing(solution)
-                    push!(pq, uniform_iterator => priority_function(iter, get_grammar(solver), solution, priority_value, true))
-                    return (solution, pq)
-                end
-            elseif hole_res ≡ limit_reached
-                # The maximum depth is reached
-                continue
-            elseif hole_res isa HoleReference
-                # Variable Shaped Hole was found
-                (; hole, path) = hole_res
-
-                partitioned_domains = partition(hole, get_grammar(solver))
-                number_of_domains = length(partitioned_domains)
-                for (i, domain) ∈ enumerate(partitioned_domains)
-                    if i < number_of_domains
-                        state = save_state!(solver)
-                    end
-                    @assert isfeasible(solver) "Attempting to expand an infeasible tree: $(get_tree(solver))"
-                    remove_all_but!(solver, path, domain)
-                    if isfeasible(solver)
-                        push!(pq, get_state(solver) => priority_function(iter, get_grammar(solver), get_tree(solver), priority_value, false))
-                    end
-                    if i < number_of_domains
-                        load_state!(solver, state)
-                    end
-                end
-            end
-        else
-            throw("BadArgument: PriorityQueue contains an item of unexpected type '$(typeof(item))'")
+        solution_or_nothing = _find_next_complete_tree(solver, pq, iter, item, priority_value)
+        if !isnothing(solution_or_nothing)
+            return solution_or_nothing
         end
     end
     return nothing
 end
 
+function _find_next_complete_tree(
+    solver::Solver,
+    pq::PriorityQueue,
+    iter::TopDownIterator,
+    item::AbstractUniformIterator,
+    priority_value
+)
+    #the item is a fixed shaped solver, we should get the next solution and re-enqueue it with a new priority value
+    uniform_iterator = item
+    if hasproperty(iter, :uniform_solver_ref) && iter.uniform_solver_ref !== nothing
+        iter.uniform_solver_ref[] = uniform_iterator.solver
+    end
+    solution = next_solution!(uniform_iterator)
+    if !isnothing(solution)
+        push!(pq, uniform_iterator => priority_function(iter, get_grammar(solver), solution, priority_value, true))
+        return (solution, pq)
+    end
+end
+
+function _find_next_complete_tree(
+    solver::Solver,
+    pq::PriorityQueue,
+    iter::TopDownIterator,
+    item::SolverState,
+    priority_value
+)
+    #the item is a solver state, we should find a variable shaped hole to branch on
+    state = item
+    load_state!(solver, state)
+
+    hole_res = hole_heuristic(iter, get_tree(solver), get_max_depth(solver))
+    return _decide_hole(solver, pq, iter, item, priority_value, hole_res)
+end
+
+function _decide_hole(
+    solver::Solver,
+    pq::PriorityQueue,
+    iter::TopDownIterator,
+    ::SolverState,
+    priority_value,
+    ::AlreadyComplete
+)
+    @timeit_debug get_solver(iter).statistics "#FixedShapedTrees" begin end
+    # Always use the Uniform Solver
+    uniform_iterator = _make_uniform_iterator(solver, iter)
+    if hasproperty(iter, :uniform_solver_ref) && iter.uniform_solver_ref !== nothing
+        iter.uniform_solver_ref[] = uniform_iterator.solver
+    end
+    solution = next_solution!(uniform_iterator)
+    if !isnothing(solution)
+        push!(pq, uniform_iterator => priority_function(iter, get_grammar(solver), solution, priority_value, true))
+        return (solution, pq)
+    end
+end
+
+function _make_uniform_iterator(solver::Solver, iter::TopDownIterator)
+    return _make_uniform_iterator(constraint_style(iter), solver, iter)
+end
+
+function _make_uniform_iterator(::HerbStyle, solver::Solver, iter::TopDownIterator)
+    uniform_solver = UniformSolver(get_grammar(solver), get_tree(solver), with_statistics=solver.statistics)
+    return UniformIterator(uniform_solver, iter)
+end
+
+function _make_uniform_iterator(::ASPStyle, solver::Solver, iter::TopDownIterator)
+    uniform_solver = HerbConstraints.ASPSolver(get_grammar(solver), get_tree(solver), with_statistics=solver.statistics)
+    return UniformASPIterator(uniform_solver, iter)
+end
+
+function _decide_hole(
+    ::Solver,
+    ::PriorityQueue,
+    ::TopDownIterator,
+    ::SolverState,
+    ::Any,
+    ::LimitReached
+)
+    # The maximum depth is reached
+    return nothing
+end
+
+function _decide_hole(
+    solver::Solver,
+    pq::PriorityQueue,
+    iter::TopDownIterator,
+    ::SolverState,
+    priority_value,
+    hole_res::HoleReference
+)
+    # Variable Shaped Hole was found
+    (; hole, path) = hole_res
+
+    partitioned_domains = partition(hole, get_grammar(solver))
+    number_of_domains = length(partitioned_domains)
+    for (i, domain) ∈ enumerate(partitioned_domains)
+        if i < number_of_domains
+            state = save_state!(solver)
+        end
+        @assert isfeasible(solver) "Attempting to expand an infeasible tree: $(get_tree(solver))"
+        remove_all_but!(solver, path, domain)
+        if isfeasible(solver)
+            push!(pq, get_state(solver) => priority_function(iter, get_grammar(solver), get_tree(solver), priority_value, false))
+        end
+        if i < number_of_domains
+            load_state!(solver, state)
+        end
+    end
+end
 
 function add_constraints!(iter::TopDownIterator, constraints::Vector{AbstractGrammarConstraint})
     HerbConstraints.add_constraints!(iter.solver, constraints)
@@ -343,12 +471,12 @@ end
 
 # Prints a compact overview of the amount of entries for every priority_value in the pq
 function print_priority_queue_overview(pq::DataStructures.PriorityQueue)
-    counts = Dict{Any, Int}()
+    counts = Dict{Any,Int}()
     for (_, priority) in pq
         counts[priority] = get(counts, priority, 0) + 1
     end
     println("Priority value counts:")
-    for (priority, count) in sort(collect(counts); by=x->x[1])
+    for (priority, count) in sort(collect(counts); by=x -> x[1])
         println("  $priority: $count")
     end
 end
