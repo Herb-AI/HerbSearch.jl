@@ -1,6 +1,6 @@
 struct EvaluationError <: Exception
     expr::Expr
-    input::Dict{Symbol, Any}
+    input::Dict{Symbol,Any}
     error::Exception
 end
 
@@ -24,9 +24,8 @@ function evaluate(
     symboltable::SymbolTable;
     shortcircuit::Bool=true,
     allow_evaluation_errors::Bool=false
-)::Tuple{Union{Any, Nothing}, Number}
+)::Number
     number_of_satisfied_examples = 0
-    output = nothing
 
     crashed = false
     for example ∈ problem.spec
@@ -44,10 +43,9 @@ function evaluate(
             # Throw the error again if evaluation errors aren't allowed
             eval_error = EvaluationError(expr, example.in, e)
             allow_evaluation_errors || throw(eval_error)
-            return (nothing, number_of_satisfied_examples/length(problem.spec))
+            break
         end
     end
 
-    return (output, number_of_satisfied_examples/length(problem.spec))
+    return number_of_satisfied_examples / length(problem.spec)
 end
-
