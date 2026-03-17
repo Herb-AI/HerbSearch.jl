@@ -462,13 +462,6 @@ function _decide_hole(
     end
 end
 
-function add_constraints!(iter::TopDownIterator, constraints::Vector{AbstractGrammarConstraint})
-    HerbConstraints.add_constraints!(iter.solver, constraints)
-    if hasproperty(iter, :uniform_solver_ref) && iter.uniform_solver_ref !== nothing
-        HerbConstraints.add_constraints!(iter.uniform_solver_ref[], constraints)
-    end
-end
-
 # Prints a compact overview of the amount of entries for every priority_value in the pq
 function print_priority_queue_overview(pq::DataStructures.PriorityQueue)
     counts = Dict{Any,Int}()
