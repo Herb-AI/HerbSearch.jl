@@ -1,12 +1,12 @@
 using DocStringExtensions
 
-function _needs_splitting(hole::UniformHole, g)
+function _needs_splitting(hole::UniformHole, g::AbstractGrammar)
     !isempty(hole.children) && return true
     hole_type = g.types[findfirst(==(1), hole.domain)]
     return g.domains[hole_type] != hole.domain
 end
 
-function _split_hole(rule::RuleNode, g)
+function _split_hole(rule::RuleNode, g::AbstractGrammar)
     isempty(rule.children) && return [rule]
     splits = []
     children_res = [_split_hole(ch, g) for ch in rule.children]
@@ -17,7 +17,7 @@ function _split_hole(rule::RuleNode, g)
     return splits
 end
 
-function _split_hole(hole::UniformHole, g)
+function _split_hole(hole::UniformHole, g::AbstractGrammar)
     splits = []
     isfilled(hole) && return [hole]
     _needs_splitting(hole, g) || return [hole]
@@ -25,7 +25,7 @@ function _split_hole(hole::UniformHole, g)
     for (i, d) in enumerate(hole.domain)
         d || continue
         for children in Iterators.product(children_res...)
-            new_rule = RuleNode(i, collect(children))
+            new_rule = RuleNode(i, collect(deepcopy(children)))
             push!(splits, new_rule)
         end
     end
