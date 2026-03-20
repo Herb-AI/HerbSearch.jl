@@ -1,6 +1,6 @@
 using Random
 
- """
+"""
      abstract type StochasticSearchIterator <: ProgramIterator
 
 A unified abstract type for the stochastic search algorithms Metropolis Hastings, Very Large Scale Neighbourhood and Simulated Annealing. 
@@ -27,7 +27,7 @@ Returns a sorted sublist of the `indices`, based on which rules are most promisi
 The underlying solver can change the order within a Hole's domain. We sort the domain to make the enumeration order explicit and more predictable. 
 """
 function derivation_heuristic(::StochasticSearchIterator, indices::Vector{Int})
-    return sort(indices);
+    return sort(indices)
 end
 
 """
@@ -35,7 +35,7 @@ end
 
 Returns a node location from the neighbourhood of the current program. 
 """
-neighbourhood(iter::StochasticSearchIterator, current_program::RuleNode) = constructNeighbourhood(current_program, get_grammar(iter.solver))
+neighbourhood(iter::StochasticSearchIterator, current_program::RuleNode) = constructNeighbourhood(current_program, get_grammar(iter))
 
 
 """
@@ -43,7 +43,8 @@ neighbourhood(iter::StochasticSearchIterator, current_program::RuleNode) = const
 
 Proposes a list of programs to fill in the location provided by `path` and the `dict`.
 """
-propose(iter::StochasticSearchIterator, path::Vector{Int}, dict::Union{Nothing,Dict{String,Any}}) = propose_shape(iter, get_grammar(iter.solver), path)
+propose(iter::StochasticSearchIterator, path::Vector{Int}, dict::Union{Nothing,Dict{String,Any}}) = propose_shape(iter, get_grammar(iter), path)
+# propose(iter::StochasticSearchIterator, path::Vector{Int}, dict::Union{Nothing,Dict{String,Any}}) = random_fill_propose(get_solver(iter), path, dict)
 
 """
     temperature(::StochasticSearchIterator, current_temperature::Real)
@@ -73,7 +74,7 @@ Base.IteratorSize(::StochasticSearchIterator) = Base.SizeUnknown()
 Base.eltype(::StochasticSearchIterator) = RuleNode
 
 function Base.iterate(iter::StochasticSearchIterator)
-    solver = iter.solver
+    solver = get_solver(iter)
     grammar, max_depth = get_grammar(solver), get_max_depth(solver)
 
     # sample a random node using start symbol and grammar
@@ -83,7 +84,7 @@ function Base.iterate(iter::StochasticSearchIterator)
     substitute!(solver, Vector{Int}(), sampled_tree)
     while !isfeasible(solver)
         #TODO: prevent infinite loops here. Check max_time and/or max_enumerations.
-        sampled_tree = rand(RuleNode, grammar, start_symbol, max_depth) 
+        sampled_tree = rand(RuleNode, grammar, start_symbol, max_depth)
         substitute!(solver, Vector{Int}(), sampled_tree)
     end
 
@@ -103,44 +104,44 @@ The algorithm that constructs the iterator of StochasticSearchIterator. It has t
 5. return the new next_program
 """
 function Base.iterate(iter::StochasticSearchIterator, iterator_state::IteratorState)
-        grammar, solver = get_grammar(iter.solver), iter.solver
-        current_program = get_tree(solver)#iterator_state.current_program
+    grammar, solver = get_grammar(iter), get_solver(iter)
+    current_program = get_tree(solver)#iterator_state.current_program
 
-        current_cost = calculate_cost(iter, current_program)
-        new_temperature = temperature(iter, iterator_state.current_temperature)
+    current_cost = calculate_cost(iter, current_program)
+    new_temperature = temperature(iter, iterator_state.current_temperature)
 
-        # get the neighbour node location 
-        neighbourhood_node_location, dict = neighbourhood(iter, current_program)
+    # get the neighbour node location 
+    neighbourhood_node_location, dict = neighbourhood(iter, current_program)
 
-        # get the subprogram pointed by node-location
-        subprogram = get(current_program, neighbourhood_node_location)
+    # get the subprogram pointed by node-location
+    subprogram = get(current_program, neighbourhood_node_location)
 
-        original_state = save_state!(solver)
+    original_state = save_state!(solver)
 
-        @info "Start: $(rulenode2expr(current_program, grammar)), subexpr: $(rulenode2expr(subprogram, grammar)), cost: $current_cost
-                temp $new_temperature"
+    @info "Start: $(rulenode2expr(current_program, grammar)), subexpr: $(rulenode2expr(subprogram, grammar)), cost: $current_cost
+            temp $new_temperature"
 
-        # remove the rule node by substituting it with a hole of the same symbol
-        original_node = get(current_program, neighbourhood_node_location)
-        path = get_path(current_program, original_node)
+    # remove the rule node by substituting it with a hole of the same symbol
+    original_node = get(current_program, neighbourhood_node_location)
+    path = get_path(current_program, original_node)
 
-        # `propose`` new concret eprograms to consider. They are programs to put in the place of the nodelocation
-        possible_programs = propose(iter, path, dict)
+    # `propose`` new concret eprograms to consider. They are programs to put in the place of the nodelocation
+    possible_programs = propose(iter, path, dict)
 
-        # try to improve the program using any of the possible replacements
-        improved_program = try_improve_program!(iter, possible_programs, new_temperature, current_cost)
+    # try to improve the program using any of the possible replacements
+    improved_program = try_improve_program!(iter, possible_programs, new_temperature, current_cost)
 
-        if isnothing(improved_program)
-                load_state!(solver, original_state)
-        else
-                new_state!(solver, improved_program)
-        end
+    if isnothing(improved_program)
+        load_state!(solver, original_state)
+    else
+        new_state!(solver, improved_program)
+    end
 
-        @assert isfeasible(solver)
-        @assert !contains_hole(get_tree(solver))
+    @assert isfeasible(solver)
+    @assert !contains_hole(get_tree(solver))
 
-        next_state = IteratorState(get_tree(solver), new_temperature, iterator_state.dmap)
-        return (get_tree(solver), next_state)
+    next_state = IteratorState(get_tree(solver), new_temperature, iterator_state.dmap)
+    return (get_tree(solver), next_state)
 end
 
 
@@ -166,7 +167,7 @@ end
 
 Returns the cost of the `program` using the examples and the `cost_function`. It first convert the program to an expression and evaluates it on all the examples.
 """
-function _calculate_cost(program::Union{RuleNode, StateHole}, cost_function::Function, spec::AbstractVector{<:IOExample}, grammar::AbstractGrammar, evaluation_function::Function)
+function _calculate_cost(program::Union{RuleNode,StateHole}, cost_function::Function, spec::AbstractVector{<:IOExample}, grammar::AbstractGrammar, evaluation_function::Function)
     results = Tuple{<:Number,<:Number}[]
 
     expression = rulenode2expr(program, grammar)
@@ -185,7 +186,7 @@ end
 
 Wrapper around [`_calculate_cost`](@ref).
 """
-calculate_cost(iter::StochasticSearchIterator, program::Union{RuleNode, StateHole}) = _calculate_cost(program, iter.cost_function, iter.spec, get_grammar(iter.solver), iter.evaluation_function)
+calculate_cost(iter::T, program::Union{RuleNode,StateHole}) where T<:StochasticSearchIterator = _calculate_cost(program, iter.cost_function, iter.spec, get_grammar(iter), iter.evaluation_function)
 
 
 """
@@ -216,8 +217,8 @@ An iterator to generate programs according to the Metropolis Hastings algorithm.
 @programiterator MHSearchIterator(
     spec::Vector{<:IOExample},
     cost_function::Function,
-    initial_temperature::Real = 1,
-    evaluation_function::Function = execute_on_input, 
+    initial_temperature::Real=1,
+    evaluation_function::Function=execute_on_input,
 ) <: AbstractMHSearchIterator
 
 """
@@ -227,7 +228,8 @@ This is the supertype for all VLSN search iterators.
 """
 abstract type AbstractVLSNSearchIterator <: StochasticSearchIterator end
 
-propose(iter::AbstractVLSNSearchIterator, path::Vector{Int}, dict::Union{Nothing,Dict{String,Any}}) = enumerate_neighbours_propose(iter.vlsn_neighbourhood_depth)(iter.solver, path, dict)
+propose(iter::AbstractVLSNSearchIterator, path::Vector{Int}, dict::Union{Nothing,Dict{String,Any}}) = enumerate_neighbours_propose(iter.vlsn_neighbourhood_depth)(get_solver(iter), path)
+# propose(iter::AbstractVLSNSearchIterator, path::Vector{Int}, dict::Union{Nothing,Dict{String,Any}}) = enumerate_neighbours_propose(iter.vlsn_neighbourhood_depth)(get_solver(iter), path, dict)
 temperature(::AbstractVLSNSearchIterator, current_temperature::Real) = const_temperature(current_temperature)
 accept(::AbstractVLSNSearchIterator, current_cost::Real, next_cost::Real, temperature::Real) = best_accept(current_cost, next_cost, temperature)
 
@@ -246,9 +248,9 @@ The temperature value of the algorithm remains constant over time.
 @programiterator VLSNSearchIterator(
     spec::Vector{<:IOExample},
     cost_function::Function,
-    vlsn_neighbourhood_depth::Int = 2,
-    initial_temperature::Real = 1,
-    evaluation_function::Function = execute_on_input
+    vlsn_neighbourhood_depth::Int=2,
+    initial_temperature::Real=1,
+    evaluation_function::Function=execute_on_input
 ) <: AbstractVLSNSearchIterator
 
 """
@@ -258,7 +260,10 @@ This is the supertype for all simulated annealing (SA) search iterators.
 """
 abstract type AbstractSASearchIterator <: StochasticSearchIterator end
 
-propose(iter::AbstractSASearchIterator, path::Vector{Int}, dict::Union{Nothing,Dict{String,Any}}) = random_fill_propose(iter.solver, path, dict)
+propose(iter::AbstractSASearchIterator, path::Vector{Int}, dict::Union{Nothing,Dict{String,Any}}) = propose_shape(iter, get_grammar(iter), path)
+
+# propose(iter::StochasticSearchIterator, path::Vector{Int}, dict::Union{Nothing,Dict{String,Any}}) = propose_shape(iter, get_grammar(iter), path)
+
 
 temperature(iter::AbstractSASearchIterator, current_temperature::Real) = decreasing_temperature(iter.temperature_decreasing_factor)(current_temperature)
 
@@ -279,9 +284,9 @@ but takes into account the tempeerature too.
 @programiterator SASearchIterator(
     spec::Vector{<:IOExample},
     cost_function::Function,
-    initial_temperature::Real = 1,
-    temperature_decreasing_factor::Real = 0.99,
-    evaluation_function::Function = execute_on_input
+    initial_temperature::Real=1,
+    temperature_decreasing_factor::Real=0.99,
+    evaluation_function::Function=execute_on_input
 ) <: AbstractSASearchIterator
 
 

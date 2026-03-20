@@ -1,14 +1,15 @@
-global const runs::Int16 = 1000
+using HerbSearch
+const global runs::Int16 = 1000
 
 function test_is_true_on_percentage(function_call::Function, percentage::Real)
     count = 0
     for _ in 1:runs
         outcome = function_call()
-        if outcome 
+        if outcome
             count = count + 1
         end
     end
-    @test count >= (percentage - 0.2) * runs 
+    @test count >= (percentage - 0.2) * runs
 end
 
 @testset "Accept function" begin
@@ -25,19 +26,19 @@ end
     )
 
     parametrized_test(
-        [   
+        [
             # (current_cost, next_cost, temperature, percentage)
             # temperature equal to 1
-            [1, 1,  1, 0.5],
-            [1, 3,  1, 0.25],
-            [1, 9,  1, 0.1],
+            [1, 1, 1, 0.5],
+            [1, 3, 1, 0.25],
+            [1, 9, 1, 0.1],
             [10, 1, 1, 1],
             # temperature not 1
             [4, 2, 5, 1],
             [4, 5, 9, 1],
             [4, 5, 3, 0.3],
             [4, 5, 0, 0],
-            [4, 5, 0.1, 1/9 * 0.1]
+            [4, 5, 0.1, 1 / 9 * 0.1]
         ],
         function probabilistic_accept_with_temperature(current_cost, next_cost, temperature, percentage)
             test_is_true_on_percentage(() -> HerbSearch.probabilistic_accept_with_temperature(current_cost, next_cost, temperature), percentage)
@@ -66,11 +67,11 @@ end
             ([(1, 1), (2, 2), (3, 3)], 0),
             ([(1, 1), (2, 2), (3.5, 3.5)], 0),
 
-            
+
             # mistakes
             ([(1, 1), (1, 2)], 1 / 2),
-            ([(1, 2), (1, 2), (1, 3) ], 3 / 3),
-            ([(1, 1), (2, 2), (1, 3) ], 1 / 3),
+            ([(1, 2), (1, 2), (1, 3)], 3 / 3),
+            ([(1, 1), (2, 2), (1, 3)], 1 / 3),
         ],
         function miclassification(list_of_tuples, misclassified)
             @test HerbSearch.misclassification(list_of_tuples) == misclassified
@@ -85,11 +86,11 @@ end
             ([(1, 1), (2, 2), (3, 3)], 0),
             ([(1, 1), (2, 2), (3.5, 3.5)], 0),
 
-            
+
             # mistakes
             ([(1, 1), (1, 2)], 1 / 2),
-            ([(1, 2), (1, 2), (1, 3) ], (1 + 1 + 2 * 2) / 3),
-            ([(1, 1), (2, 2), (1, 3) ], 2 * 2 / 3),
+            ([(1, 2), (1, 2), (1, 3)], (1 + 1 + 2 * 2) / 3),
+            ([(1, 1), (2, 2), (1, 3)], 2 * 2 / 3),
         ],
         function mean_squared_error(list_of_tuples, error)
             @test HerbSearch.mean_squared_error(list_of_tuples) == error
@@ -113,10 +114,10 @@ end
     cost_function = () -> 1
 
     iter_SA = SASearchIterator(grammar, :Number, problem.spec, cost_function, max_depth=2)
-    iter_VLSN = VLSNSearchIterator(grammar, :Number, problem, max_depth=2)
-    iter_MH = MHSearchIterator(grammar, :Number, problem, max_depth=2)
+    iter_VLSN = VLSNSearchIterator(grammar, :Number, problem.spec, cost_function, max_depth=2)
+    iter_MH = MHSearchIterator(grammar, :Number, problem.spec, cost_function, max_depth=2)
 
-    @test 1 == collect(propose(iter_SA, Int[]))
-    @test num_programs == collect(propose(iter_VLSN, []))
-    @test num_programs == collect(propose(iter_MH, []))
+    @test 1 == length(collect(HerbSearch.propose(iter_SA, Int[], nothing)))
+    @test num_programs == length(collect(HerbSearch.propose(iter_VLSN, Int[], nothing)))
+    @test num_programs == length(collect(HerbSearch.propose(iter_MH, Int[], nothing)))
 end
