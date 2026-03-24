@@ -11,7 +11,7 @@ function _split_hole(rule::RuleNode, g::AbstractGrammar)
     splits = []
     children_res = [_split_hole(ch, g) for ch in rule.children]
     for children in Iterators.product(children_res...)
-        new_rule = RuleNode(get_rule(rule), collect(children))
+        new_rule = RuleNode(get_rule(rule), collect(deepcopy(children)))
         push!(splits, new_rule)
     end
     return splits
