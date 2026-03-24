@@ -2,7 +2,7 @@
 
 julia_version = "1.12.5"
 manifest_format = "2.0"
-project_hash = "7cf32111ce8b775d1faeb058971d79cadc17a558"
+project_hash = "126ddcdaf5e40fc7ade100c5459aef44d9b70403"
 
 [[deps.AbstractTrees]]
 git-tree-sha1 = "2d9c9a55f9c93e8887ad391fbae72f8ef55e1177"
@@ -52,11 +52,9 @@ version = "0.1.10"
 
 [[deps.HerbConstraints]]
 deps = ["DataStructures", "DocStringExtensions", "HerbCore", "HerbGrammar", "MLStyle", "TimerOutputs"]
-git-tree-sha1 = "1d6b5315cc22cbf5654a44b199e5be19615a3321"
-repo-rev = "aulile_containsany"
-repo-url = "https://github.com/Herb-AI/HerbConstraints.jl.git"
+git-tree-sha1 = "1d4044955c5ccbb106d10791015c3226d535a6b0"
 uuid = "1fa96474-3206-4513-b4fa-23913f296dfc"
-version = "1.1.2"
+version = "1.2.0"
 
     [deps.HerbConstraints.extensions]
     ASPExt = "Clingo_jll"
@@ -66,15 +64,15 @@ version = "1.1.2"
 
 [[deps.HerbCore]]
 deps = ["AbstractTrees", "MacroTools", "StyledStrings"]
-git-tree-sha1 = "81d9ee1811d5d3704b2da0e6fd89fd4eaef0ed51"
+git-tree-sha1 = "18c705c6e00d72b7c728ed64bf074db721daf545"
 uuid = "2b23ba43-8213-43cb-b5ea-38c12b45bd45"
-version = "1.0.0"
+version = "1.1.0"
 
 [[deps.HerbGrammar]]
 deps = ["HerbCore", "Serialization"]
-git-tree-sha1 = "15cc8cd1839236428528dd0231f27478efdbd0e1"
+git-tree-sha1 = "338d71991be90868293aec70a43dfaef50f47bbb"
 uuid = "4ef9e186-2fe5-4b24-8de7-9f7291f24af7"
-version = "1.0.0"
+version = "1.1.0"
 
 [[deps.HerbInterpret]]
 deps = ["HerbCore", "HerbGrammar", "HerbSpecification", "RuntimeGeneratedFunctions"]
