@@ -79,14 +79,14 @@ A bank that groups programs by a measure of type `M`` (e.g., depth, size, etc.) 
 """
 struct MeasureHashedBank{M<:Real,R<:AbstractRuleNode}
     bank::DefaultDict{Symbol,DefaultDict{M,Vector{BankEntry{R}}}}
-    observed_outputs::DefaultDict{Symbol,Set{Vector{UInt64}}}
+    observed_outputs::DefaultDict{Symbol,Set{UInt64}}
 
     function MeasureHashedBank{M,R}() where {M,R<:AbstractRuleNode}
         # For each symbol, we keep a DefaultDict keyed by the measure M,
         # whose values are vectors of BankEntry{R}.
         inner_bank = () -> DefaultDict{M,Vector{BankEntry{R}}}(() -> BankEntry{R}[])
 
-        seen = DefaultDict{Symbol,Set{Vector{UInt64}}}(() -> Set{Vector{UInt64}}())
+        seen = DefaultDict{Symbol,Set{UInt64}}(() -> Set{UInt64}())
 
         return new{M,R}(
             DefaultDict{Symbol,DefaultDict{M,Vector{BankEntry{R}}}}(inner_bank),
