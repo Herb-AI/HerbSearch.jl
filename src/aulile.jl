@@ -19,6 +19,7 @@ function aulile(
     new_rules_decoding::Dict{Int,AbstractRuleNode}=Dict{Int,AbstractRuleNode}(),
     opts::AulileOptions=AulileOptions()
 )::AulileStats
+    @assert opts.compression_output_programs <= opts.synth_opts.num_returned_programs
     aux = opts.synth_opts.eval_opts.aux
     best_score = aux.initial_score(problem)
     if opts.synth_opts.print_debug
@@ -58,7 +59,7 @@ function aulile(
 
         # Update grammar with the new compressed programs
         empty!(required_rules_before_checkpoint)
-        compressed_programs = opts.compression(stats.programs, grammar; k=opts.synth_opts.num_returned_programs)
+        compressed_programs = opts.compression(stats.programs, grammar; k=opts.compression_output_programs)
         for rule in compressed_programs
             rule_type = return_type(grammar, rule)
             new_expr = rulenode2expr(rule, grammar)
