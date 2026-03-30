@@ -25,7 +25,7 @@ JSON = "682c06a0-de6a-54ab-a142-c8b1cf79cde6"
 
 [extensions]
 CompressionExt = ["Clingo_jll", "JSON"]
-DivideAndConquerExt = " DecisionTree"
+DivideAndConquerExt = "DecisionTree"
 
 [compat]
 Clingo_jll = "5.7.1"
