@@ -191,8 +191,21 @@ correct_child_position(C_NODE, NODE) :- not comp_edge(C_NODE, _, _), node(NODE, 
 
 %% ------------------------- Optimization ---------------------------------
 
-% Maximize assignment
-%#maximize {1, X : assign(_, X)}.
+% Each compression component consists of its root and all descendant comp_nodes.
+comp_member(ROOT, ROOT) :- comp_root(ROOT, _).
+comp_member(ROOT, NODE) :- connects_to_root(NODE, ROOT), comp_node(NODE, _).
 
-% This weak constraint allows us to timeout the search at any point and return the best found solution so far.
-:~ assign(_, Y). [-1, Y]
+% Size of each compression component.
+comp_size(ROOT, SIZE) :- comp_root(ROOT, _), SIZE = #count { NODE : comp_member(ROOT, NODE) }.
+
+% Number of occurrences of each compression component.
+comp_occ(ROOT, OCC) :- comp_root(ROOT, _), OCC = #count { NODE : assign(ROOT, NODE) }.
+
+% Prioritize larger repeated components: gain = occurrences * (size - 1).
+gain(ROOT, GAIN) :- comp_size(ROOT, SIZE), comp_occ(ROOT, OCC), GAIN = OCC * (SIZE - 1).
+
+% Primary objective: maximize component gain.
+:~ gain(ROOT, GAIN). [-GAIN*2@2, ROOT]
+
+% Secondary objective: maximize assignment count to break ties.
+:~ assign(_, Y). [-1@1, Y]
