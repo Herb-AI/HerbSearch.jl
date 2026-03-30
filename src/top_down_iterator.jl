@@ -383,6 +383,11 @@ function _find_next_complete_tree(
     state = item
     load_state!(solver, state)
 
+    # skip expanding infeasible states
+    if !isfeasible(solver)
+        return nothing
+    end
+
     hole_res = hole_heuristic(iter, get_tree(solver), get_max_depth(solver))
     return _decide_hole(solver, pq, iter, item, priority_value, hole_res)
 end
