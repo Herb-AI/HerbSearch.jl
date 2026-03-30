@@ -104,8 +104,6 @@ Structure for pasing compression trees given by the
 struct TreeNode
     id::Int64
     children::Dict{Int64, TreeNode}
-    # children::Vector{NamedTuple{(:pos, :child), Tuple{Int64, TreeNode}}} # tuple (position, child)
-    # known_children::Set{Int64} # set of children that are not a hole
 
     function TreeNode(id::Int64,
          children::Dict{Int64, TreeNode} = Dict{Int64, TreeNode}())
@@ -182,7 +180,7 @@ end
 """
     $(TYPEDSIGNATURES)
 
-Constructs a list of rules from a set of compression trees.
+Constructs a list of rules from compression trees.
 
 # Arguments
 - `grammar`: The original grammar.
