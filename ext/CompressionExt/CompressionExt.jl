@@ -68,8 +68,8 @@ function HerbSearch.compress_programs(
     (comp_trees, node2rule) = parse_compressed_subtrees(node_assignments)
 
     best_compressions = construct_subtrees(grammar, comp_trees, node2rule)
-    new_rules = merge_nonbranching_elements.(best_compressions, (grammar,))
-    return new_rules
+    # new_rules = merge_nonbranching_elements.(best_compressions, (grammar,))
+    return best_compressions
 end
 
 function HerbSearch.compress_with_splitting(

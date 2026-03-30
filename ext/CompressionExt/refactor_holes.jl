@@ -36,8 +36,10 @@ end
     $(TYPEDSIGNATURES)
 
 Splits a rule node s.t. the resulting splits have no holes
+
+Returns a vector of rule nodes
 """
-function HerbSearch.split_hole(hole::AbstractRuleNode, g::AbstractGrammar)::Vector{AbstractRuleNode}
+function HerbSearch.split_hole(hole::AbstractRuleNode, g::AbstractGrammar)
     splits = _split_hole(hole, g)
     return splits
 end
