@@ -22,6 +22,9 @@ DecisionTree = "7806a523-6efd-50cb-b5f6-3fa6f1930dbb"
 [extensions]
 DivideAndConquerExt = "DecisionTree"
 
+[workspace]
+projects = ["test"]
+
 [compat]
 DataStructures = "0.19"
 DecisionTree = "0.12"

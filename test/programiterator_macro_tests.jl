@@ -1,4 +1,5 @@
-@testset verbose = true "@iterator macro" begin
+@testitem "@iterator macro" begin
+    using HerbGrammar, HerbConstraints
     g = @csgrammar begin
         R = x
     end

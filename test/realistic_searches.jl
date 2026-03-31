@@ -1,16 +1,16 @@
-@testset verbose=true "Somewhat larger domains" begin
+@testitem "Realistic searches" begin
     @testset "Small domain, small operators" begin
         """Expects to return a program equivalent to 1 + (1 - x) = 2 - x"""
 
         g₁ = @csgrammar begin
-            Element = |(1 : 3)          # 1 - 3
+            Element = |(1:3)          # 1 - 3
             Element = Element + Element # 4
             Element = 1 - Element       # 5
             Element = x                 # 6
         end
 
         addconstraint!(g₁, ComesAfter(6, [5]))
-        
+
         examples = [
             IOExample(Dict(:x => 0), 2),
             IOExample(Dict(:x => 1), 1),
@@ -29,7 +29,7 @@
             Element = Element + Element + Element # 1
             Element = Element + Element * Element # 2
             Element = x                           # 3
-            Element = |(3 : 5)                    # 4
+            Element = |(3:5)                    # 4
         end
 
         # Restrict .. + x * x
@@ -53,7 +53,7 @@
         """Expects to return a program equivalent to (1 - (((1 - x) - 1) - 1)) - 1 = x + 1"""
 
         g₃ = @csgrammar begin
-            Element = |(1 : 20)   # 1 - 20
+            Element = |(1:20)   # 1 - 20
             Element = Element - 1 # 21
             Element = 1 - Element # 22
             Element = x           # 23
@@ -77,7 +77,7 @@
         """Expects to return a program equivalent to 18 + 4x"""
 
         g₄ = @csgrammar begin
-            Element = |(0 : 20)                   # 1 - 20
+            Element = |(0:20)                   # 1 - 20
             Element = Element + Element + Element # 21
             Element = Element + Element * Element # 22
             Element = x                           # 23
@@ -106,13 +106,13 @@
         g₅ = @csgrammar begin
             Element = Number # 1
             Element = Bool # 2
-        
-            Number = |(1 : 3) # 3-5
-            
+
+            Number = |(1:3) # 3-5
+
             Number = Number + Number # 6
             Bool = Number ≡ Number # 7
             Number = x # 8
-            
+
             Number = Bool ? Number : Number # 9
             Bool = Bool ? Bool : Bool # 10
         end
@@ -133,5 +133,5 @@
         solution = search(g₅, problem, :Element)
 
         @test execute_on_input(grammar2symboltable(g₅), solution, Dict(:x => 3)) == 5
-    end    
+    end
 end

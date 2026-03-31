@@ -1,9 +1,10 @@
-@testset verbose=true "Unique" begin
+@testitem "Unique" begin
+    using HerbGrammar, HerbConstraints
     @testset "Number of candidate programs" begin
         grammar = @csgrammar begin
             Int = 1
             Int = x
-            Int = - Int
+            Int = -Int
             Int = Int + Int
             Int = Int * Int
         end

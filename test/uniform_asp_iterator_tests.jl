@@ -1,4 +1,5 @@
-@testset verbose = true "UniformASPIterator" begin
+@testitem "UniformASPIterator" begin
+    using HerbGrammar, HerbConstraints, HerbCore
     using Clingo_jll
 
     @testset "ASP_solution_conversion" begin

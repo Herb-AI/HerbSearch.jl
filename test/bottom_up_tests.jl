@@ -1,7 +1,9 @@
+@testitem "Bottom up" begin
 using Test
 using DataStructures: DefaultDict, PriorityQueue, FasterForward, enqueue!
 import HerbSearch: init_combine_structure
 import HerbSearch: _hash_outputs_to_u64vec
+using HerbCore, HerbGrammar, HerbConstraints
 
 grammars_to_test = Dict(
     "arity <= 1" => (@csgrammar begin
@@ -292,5 +294,6 @@ end
             end
         end
     end
+end
 end
 end
