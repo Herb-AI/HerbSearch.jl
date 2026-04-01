@@ -1,5 +1,6 @@
+@testitem "contains_test" setup=[HerbSearchSetup] begin
 using HerbCore, HerbGrammar, HerbConstraints
-
+include("test_helpers.jl")
 @testset verbose=true "Contains" begin
 
     @testset "Permutation grammar" begin
@@ -18,4 +19,5 @@ using HerbCore, HerbGrammar, HerbConstraints
         iter = BFSIterator(grammar, :Permutation)
         @test length(iter) == 120
     end
+end
 end

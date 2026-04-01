@@ -1,5 +1,5 @@
-using HerbCore, HerbGrammar, HerbConstraints
-
+@testitem "constraints_test" setup=[HerbSearchSetup] begin
+using HerbCore, HerbGrammar, HerbConstraints, Random
 @testset verbose=true "Constraints" begin
 
     function new_grammar()
@@ -120,4 +120,5 @@ using HerbCore, HerbGrammar, HerbConstraints
         iter = BFSIterator(grammar, :Int, max_size=10)
         @test length(iter) == 0
     end
+end
 end

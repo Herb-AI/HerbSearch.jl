@@ -1,3 +1,4 @@
+@testitem "ordered_test" setup=[HerbSearchSetup] begin
 using HerbCore, HerbGrammar, HerbConstraints
 
 @testset verbose=true "Ordered" begin
@@ -127,4 +128,5 @@ using HerbCore, HerbGrammar, HerbConstraints
         # 2x ((((a, a), (a, a)), ((a, a), (a, a))), (((a, a), (a, a)), ((a, a), (a, a))))
         @test length(iter)  == 10
     end
+end
 end

@@ -54,8 +54,8 @@ New_type = ...
 
 The *Main_Rule* is the 1st element of the returned rules.
 """
-function create_new_exprs(rule::Union{UniformHole,RuleNode}, g::AbstractGrammar, id::Int)::Vector{Tuple{Symbol,Expr}}
-    splits = split_hole(rule, g)
+function HerbSearch.create_new_exprs(rule::Union{UniformHole,RuleNode}, g::AbstractGrammar, id::Int)::Vector{Tuple{Symbol,Expr}}
+    splits = HerbSearch.split_hole(rule, g)
     rule_type = return_type(g, rule)
     if length(splits) == 1
         return [(rule_type, :($rule_type = $(rulenode2expr(only(splits), g))))]

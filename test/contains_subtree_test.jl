@@ -1,5 +1,6 @@
+@testitem "contains_subtree_test" setup=[HerbSearchSetup] begin
 using HerbCore, HerbGrammar, HerbConstraints
-
+include("test_helpers.jl")
 @testset verbose=true "ContainsSubtree" begin
     @testset "Minimal Example" begin
         grammar = @csgrammar begin
@@ -94,4 +95,5 @@ using HerbCore, HerbGrammar, HerbConstraints
         iter = BFSIterator(grammar, :Permutation)
         @test length(iter) == 120
     end
+end
 end

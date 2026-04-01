@@ -1,3 +1,4 @@
+@testitem "uniform_asp_iterator_test" setup=[HerbSearchSetup] begin
 @testset verbose = true "UniformASPIterator" begin
     using Clingo_jll
 
@@ -170,4 +171,5 @@
         asp_iterator = UniformASPIterator(asp_solver, nothing)
         @test isnothing(next_solution!(asp_iterator))
     end
+end
 end

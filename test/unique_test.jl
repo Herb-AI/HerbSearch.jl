@@ -1,3 +1,4 @@
+@testitem "unique_test" setup=[HerbSearchSetup] begin
 @testset verbose=true "Unique" begin
     @testset "Number of candidate programs" begin
         grammar = @csgrammar begin
@@ -26,4 +27,5 @@
         constrainted_iter = BFSIterator(grammar, :Int, max_size=5)
         @test validtrees == length(constrainted_iter)
     end
+end
 end

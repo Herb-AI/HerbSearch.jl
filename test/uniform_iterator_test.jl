@@ -1,3 +1,4 @@
+@testitem "uniform_iterator_test" setup=[HerbSearchSetup] begin
 @testset verbose=true "UniformIterator" begin
 
     function create_dummy_grammar_and_tree_128programs()
@@ -115,4 +116,5 @@
         uniform_iterator = UniformIterator(uniform_solver, nothing)
         @test isnothing(next_solution!(uniform_iterator))
     end
+end
 end

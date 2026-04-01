@@ -1,3 +1,4 @@
+@testitem "sampling_test" setup=[HerbSearchSetup] begin
 using Test
 using HerbSearch 
 using HerbGrammar
@@ -92,4 +93,5 @@ using Random
 
         end
     end
+end
 end

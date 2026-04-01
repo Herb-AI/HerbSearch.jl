@@ -1,3 +1,4 @@
+@testitem "search_procedure_test" setup=[HerbSearchSetup] begin
 
 @testset verbose=true "Search procedure synth" begin
     g₁ = @csgrammar begin
@@ -80,3 +81,4 @@
     end
 end
 
+end

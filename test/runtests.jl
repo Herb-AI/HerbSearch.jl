@@ -10,45 +10,47 @@ using HerbSpecification
 using Test
 using JSON
 using Clingo_jll
+using ReTestItems
 
 DocMeta.setdocmeta!(HerbSearch, :DocTestSetup, :(using HerbCore,
         HerbConstraints, HerbGrammar, HerbSearch); recursive=true)
 
+include("setup.jl")
 include("test_helpers.jl")
 using Random
 Random.seed!(1234)
+runtests()
 
-@testset "HerbSearch.jl" verbose = true begin
-    @testset "Aqua" Aqua.test_all(
-        HerbSearch,
-        piracies=(treat_as_own=[RuleNode, AbstractGrammar],),
-    )
-    include("test_search_procedure.jl")
-    include("test_context_free_iterators.jl")
-    include("test_sampling.jl")
-    include("test_stochastic/test_stochastic.jl")
-    include("test_genetic.jl")
-    include("test_programiterator_macro.jl")
-    include("test_uniform_iterator.jl")
-    include("test_forbidden.jl")
-    include("test_ordered.jl")
-    include("test_contains.jl")
-    include("test_contains_subtree.jl")
-    include("test_unique.jl")
-    include("test_constraints.jl")
-    include("test_bottom_up.jl")
-    include("test_uniform_asp_iterator.jl")
-    include("test_asp_iterator.jl")
+# @testset "HerbSearch.jl" verbose = true begin
+#     @testset "Aqua" Aqua.test_all(
+#         HerbSearch,
+#         piracies=(treat_as_own=[RuleNode, AbstractGrammar],),
+#     )
+#     include("search_procedure_test.jl")
+#     include("context_free_iterators_test.jl")
+#     include("sampling_test.jl")
+#     include("test_stochastic/test_stochastic.jl")
+#     include("genetic_test.jl")
+#     include("programiterator_macro_test.jl")
+#     include("uniform_iterator_test.jl")
+#     include("forbidden_test.jl")
+#     include("ordered_test.jl")
+#     include("contains_test.jl")
+#     include("contains_subtree_test.jl")
+#     include("unique_test.jl")
+#     include("constraints_test.jl")
+#     include("bottom_up_test.jl")
+#     include("uniform_asp_iterator_test.jl")
+#     include("asp_iterator_test.jl")
 
-    include("test_compression.jl")
-    include("test_add_compressed_rules.jl")
-    include("test_aulile.jl")
+#     include("compression_test.jl")
+#     include("add_compressed_rules_test.jl")
 
-    # Excluded because it contains long tests
-    # include("test_realistic_searches.jl")
-    @testset verbose = true "Divide and conquer extension" begin
-        include("test_divide_conquer.jl")
-        include("test_divide_conquer_example.jl")
-    end
-    doctest(HerbSearch; manual=false)
-end
+#     # Excluded because it contains long tests
+#     # include("realistic_searches_test.jl")
+#     @testset verbose = true "Divide and conquer extension" begin
+#         include("divide_conquer_test.jl")
+#         include("divide_conquer_example_test.jl")
+#     end
+#     doctest(HerbSearch; manual=false)
+# end

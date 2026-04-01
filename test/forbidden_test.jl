@@ -1,3 +1,4 @@
+@testitem "forbidden_test" setup=[HerbSearchSetup] begin
 using HerbCore, HerbGrammar, HerbConstraints
 
 @testset verbose=true "Forbidden" begin
@@ -126,4 +127,5 @@ using HerbCore, HerbGrammar, HerbConstraints
         @test number_of_programs1 == 26
         @test number_of_programs2 == 26
     end
+end
 end

@@ -53,6 +53,7 @@ function divide_and_conquer end
 function compress_programs end
 function compress_with_splitting end
 function split_hole end
+function create_new_exprs end
 
 export
     ProgramIterator,

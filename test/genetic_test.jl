@@ -1,3 +1,4 @@
+@testitem "genetic_test" setup=[HerbSearchSetup] begin
 using Logging
 using LegibleLambdas
 disable_logging(LogLevel(1))
@@ -162,4 +163,5 @@ disable_logging(LogLevel(1))
             @test HerbSearch.validate_iterator(enumerator)
         end
     end
+end
 end

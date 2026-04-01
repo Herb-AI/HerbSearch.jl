@@ -1,3 +1,4 @@
+@testitem "asp_iterator_test" setup=[HerbSearchSetup] begin
 @testset "ASP Iterators" begin
     using HerbCore
     using HerbSearch: BFSASPIterator, DFSASPIterator
@@ -45,4 +46,5 @@
         iter = BFSASPIterator(g, :Int, max_depth=3)
         @test length(collect(iter)) > 0
     end
+end
 end

@@ -1,3 +1,4 @@
+@testitem "divide_conquer_test" setup=[HerbSearchSetup] begin
 DivideAndConquerExt = Base.get_extension(HerbSearch, :DivideAndConquerExt)
 using .DivideAndConquerExt:
 	divide, decide, conquer, get_labels, get_predicates, get_features, construct_final_program
@@ -255,4 +256,5 @@ using .DivideAndConquerExt:
 
 	end
 
+end
 end

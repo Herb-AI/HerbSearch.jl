@@ -1,3 +1,5 @@
+@testitem "context_free_iterators_test" setup=[HerbSearchSetup] begin
+    include("test_helpers.jl")
 @testset verbose = true "Context-free iterators" begin
     @testset "getters for ProgramIterators" begin
         g1 = @csgrammar begin
@@ -167,4 +169,5 @@
         @test length(mlfs_programs) == 6
         @test all(p ∈ mlfs_programs for p ∈ answer_programs)
     end
+end
 end

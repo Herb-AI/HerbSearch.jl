@@ -1,8 +1,8 @@
-CompressionExt = Base.get_extension(HerbSearch, :CompressionExt)
-using .CompressionExt: compress_programs
+@testitem "compression_test" setup=[HerbSearchSetup] begin
 using Test
 using JSON
 using Clingo_jll
+include("test_helpers.jl")
 
 grammar = @csgrammar begin
     Int = 1             #1 
@@ -27,7 +27,7 @@ end
         ast2 = RuleNode(2, [RuleNode(1), RuleNode(6, [RuleNode(9)])])
         ast3 = RuleNode(2, [RuleNode(1), RuleNode(6, [RuleNode(10)])])
         useful_asts = [ast1, ast2, ast3]
-        new_rules= compress_programs(useful_asts, grammar; k=1, max_compression_nodes=10, time_limit_sec=60)
+        new_rules= HerbSearch.compress_programs(useful_asts, grammar; k=1, max_compression_nodes=10, time_limit_sec=60)
         @test rulenode2expr(only(new_rules), grammar) == Expr(:call, :+, 1, Expr(:call, :+, 1, :Num))
     end
 
@@ -39,7 +39,7 @@ end
         ast2 = RuleNode(2, [RuleNode(1), RuleNode(7, [RuleNode(11, [RuleNode(9)])])])
         ast3 = RuleNode(2, [RuleNode(1), RuleNode(7, [RuleNode(11, [RuleNode(10)])])])
         useful_asts = [ast1, ast2, ast3]
-        new_rules = compress_programs(useful_asts, grammar; k=1, max_compression_nodes=10, time_limit_sec=60)
+        new_rules = HerbSearch.compress_programs(useful_asts, grammar; k=1, max_compression_nodes=10, time_limit_sec=60)
         @test rulenode2expr(only(new_rules), grammar) == Expr(:call, :+, 1, Expr(:call, :+, 1, :Num))
     end
 
@@ -49,7 +49,7 @@ end
         ast1 = RuleNode(2, [RuleNode(1), RuleNode(1)])
         ast2 = RuleNode(3, [RuleNode(1), RuleNode(1)])
         useful_asts = [ast1, ast2]
-        new_rules = compress_programs(useful_asts, grammar; k=1, max_compression_nodes=10, time_limit_sec=60)
+        new_rules = HerbSearch.compress_programs(useful_asts, grammar; k=1, max_compression_nodes=10, time_limit_sec=60)
         @test isempty(new_rules)
     end
 
@@ -61,7 +61,7 @@ end
         ast2 = RuleNode(2, [RuleNode(2, [RuleNode(1), RuleNode(1)]), RuleNode(2, [RuleNode(4, [RuleNode(1), RuleNode(1)]),RuleNode(4, [RuleNode(1), RuleNode(1)])])])
         ast3 = RuleNode(2, [RuleNode(2, [RuleNode(1), RuleNode(1)]), RuleNode(2, [RuleNode(5, [RuleNode(1), RuleNode(1)]),RuleNode(5, [RuleNode(1), RuleNode(1)])])])
         useful_asts = [ast1, ast2, ast3]
-        new_rules = compress_programs(useful_asts, grammar; k=2, max_compression_nodes=10, time_limit_sec=60)
+        new_rules = HerbSearch.compress_programs(useful_asts, grammar; k=2, max_compression_nodes=10, time_limit_sec=60)
         @test rulenode2expr(new_rules[1], grammar) == Expr(:call, :-, 1, 1)
         @test rulenode2expr(new_rules[2], grammar) == Expr(:call, :+, Expr(:call, :+, 1, 1), Expr(:call, :+, :Int, :Int))
     end
@@ -74,8 +74,9 @@ end
         ast2 = RuleNode(2, [RuleNode(1), RuleNode(4, [RuleNode(1), RuleNode(1)])])
         ast3 = RuleNode(2, [RuleNode(1), RuleNode(1)])
         useful_asts = [ast1, ast2, ast3]
-        new_rules = compress_programs(useful_asts, grammar; k=1, max_compression_nodes=10, time_limit_sec=60)
+        new_rules = HerbSearch.compress_programs(useful_asts, grammar; k=1, max_compression_nodes=10, time_limit_sec=60)
         @test rulenode2expr(only(new_rules), grammar) == Expr(:call, :+, 1, :Int)
     end
 
+end
 end

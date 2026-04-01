@@ -1,3 +1,4 @@
+@testitem "programiterator_macro_test" setup=[HerbSearchSetup] begin
 @testset verbose = true "@iterator macro" begin
     g = @csgrammar begin
         R = x
@@ -96,4 +97,5 @@
     @testset "Overlapping with default fields throws error" begin
         @test_throws "collide" @macroexpand @programiterator OverlappingDefaultFields(solver)
     end
+end
 end

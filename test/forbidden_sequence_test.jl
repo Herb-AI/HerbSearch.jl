@@ -1,3 +1,5 @@
+@testitem "forbidden_sequence_test" setup=[HerbSearchSetup] begin
+    include("test_helpers.jl")
 @testset verbose=true "Forbidden Sequence" begin
     @testset "Number of candidate programs (without ignore_if)" begin
 
@@ -24,4 +26,5 @@
         constrainted_iter = BFSIterator(grammar, :S, max_size=5)
         @test validtrees == length(constrainted_iter)
     end
+end
 end
