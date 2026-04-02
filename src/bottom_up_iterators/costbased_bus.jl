@@ -9,13 +9,27 @@ Concrete implementations are expected to provide at least:
 """
 abstract type AbstractCostBasedBottomUpIterator <: BottomUpIterator end
 
+struct RuleCombineAddress{N} <: AbstractAddress
+    rule
+    addrs::NTuple{N,AccessAddress}
+end
+
+RuleCombineAddress(rule, addrs::AbstractVector{<:AccessAddress}) = RuleCombineAddress(rule, Tuple(addrs))
+
+get_children(c::RuleCombineAddress) = c.addrs
+
+get_operator(c::RuleCombineAddress) = c.rule.ind
+
+get_combine_rule(c::RuleCombineAddress) = c.rule
 
 @programiterator CostBasedBottomUpIterator(
     bank=MeasureHashedBank{Float64, RuleNode}(),
     max_cost::Float64=Inf,
     current_costs::Vector{Float64}=Float64[],
     program_to_outputs::Union{Nothing,Function} = nothing, # Must return Float64
-) <: AbstractCostBasedBottomUpIterator
+    combine_operators::Vector{Tuple{RuleNode, Vector{UniformHole}}} = Tuple{RuleNode, Vector{UniformHole}}[], # TODO: remove, this is used for initializaiton and because I will add custom combine rules
+    combinators::Dict{Tuple{Vararg{Symbol}}, Vector{RuleNode}} = Dict{Tuple{Vararg{Symbol}}, Vector{RuleNode}}()  # A vector of (combine_tree, shapes_of_children)
+    ) <: AbstractCostBasedBottomUpIterator
 
 @doc """
     CostBasedBottomUpIterator
@@ -50,6 +64,10 @@ Returns maximum cost, which is set at init. If not defined, the maximum cost is 
 get_measure_limit(iter::AbstractCostBasedBottomUpIterator) = iter.max_cost
 
 get_costs(grammar::AbstractGrammar) = abs.(grammar.log_probabilities)
+
+get_combinators(iter::AbstractCostBasedBottomUpIterator) = iter.combinators
+
+get_combine_operators(iter::AbstractCostBasedBottomUpIterator) = iter.combine_operators
 
 
 """
@@ -125,6 +143,62 @@ function populate_bank!(iter::AbstractCostBasedBottomUpIterator)
     return out
 end
 
+function populate_combinators!(iter::AbstractCostBasedBottomUpIterator, additinonal_combinators=[])
+    grammar = get_grammar(iter)
+    # add grammar nonterminals to combine operators.
+    combine_operators = get_combine_operators(iter)
+    for rule_idx in eachindex(grammar.isterminal)
+        grammar.isterminal[rule_idx] && continue # skip terminals
+        child_types = HerbGrammar.child_types(grammar, rule_idx)
+        children = [UniformHole(grammar.types .== cht) for cht in child_types]
+        push!(combine_operators, (RuleNode(rule_idx, children), children))
+    end
+
+    # make a dictionary {children_shapes : combine operators}
+    combinators = get_combinators(iter)
+    for (rule, children) in combine_operators
+        push!(get!(combinators, Tuple(HerbGrammar.return_type(grammar, ch) for ch in children), RuleNode[]), rule)
+    end
+end
+
+"""
+        $(TYPEDSIGNATURES)
+
+Initial call of the bottom-up iterator.
+
+Populate the bank with initial programs and populate combinators with nonterminal rules.
+
+Return the first program and a state-tracking [`GenericBUState`](@ref) containing the
+remaining initial programs and the initialstate for the `combine` function
+"""
+function Base.iterate(iter::AbstractCostBasedBottomUpIterator)
+    solver = get_solver(iter)
+    starting_node = deepcopy(get_tree(solver))
+
+    populate_combinators!(iter)
+    # Populate bank with terminals and get their AccessAddresses
+    addrs = populate_bank!(iter)
+
+
+    # Priority queue keyed by address, prioritized by its measure
+    pq = PriorityQueue{AbstractAddress, Number}(DataStructures.FasterForward())
+    for acc in addrs
+        push!(pq, acc => get_measure(acc))
+    end
+
+    return Base.iterate(
+        iter,
+        GenericBUState(
+            pq,
+            init_combine_structure(iter),
+            nothing,
+            starting_node,
+            -Inf, # last_horizon
+            0 # new_horizon
+        )
+    )
+end
+
 """
     $(TYPEDSIGNATURES)
 
@@ -146,6 +220,17 @@ end
 """
     $(TYPEDSIGNATURES)
 
+Calculates the cost of a RuleCombineAddress. Here cost of a combinator is cost of its root. 
+"""
+function calc_measure(iter::AbstractCostBasedBottomUpIterator,
+                      a::RuleCombineAddress)
+    rule_c = get_rule_cost(iter, get_operator(a))
+    return rule_c + _calc_measure(iter, get_children(a))
+end
+
+"""
+    $(TYPEDSIGNATURES)
+
 Calculates the cost of a CombineAddress given a concrete program in form of a `RuleNode`.
 """
 calc_measure(iter::AbstractCostBasedBottomUpIterator, rn::AbstractRuleNode) = abs(HerbGrammar.rulenode_log_probability(rn, HerbConstraints.get_grammar(iter)))
@@ -156,11 +241,71 @@ calc_measure(iter::AbstractCostBasedBottomUpIterator, rn::AbstractRuleNode) = ab
 Retrieve a program using a CombineAddress. Overwrites the parent function, as AbstractCostBasedBottomUpIterator operates over concrete trees, not uniform trees.
 """
 function retrieve(iter::AbstractCostBasedBottomUpIterator, a::CombineAddress)
-    grammar = get_grammar(iter)
     kids = [retrieve(iter, ch) for ch in get_children(a)]
     return RuleNode(get_operator(a), kids)
 end
 
+"""
+    $(TYPEDSIGNATURES)
+
+Retrieve a program using a CombineAddress. Overwrites the parent function, as AbstractCostBasedBottomUpIterator operates over concrete trees, not uniform trees.
+"""
+function retrieve(iter::AbstractCostBasedBottomUpIterator, a::RuleCombineAddress)
+
+    function  retrieve_helper(combine_rule::AbstractRuleNode, kids::Vector{RuleNode})
+        children = HerbCore.get_children(combine_rule)
+        for i in eachindex(children)
+            @match children[i] begin
+                ::RuleNode => retrieve_helper(children[i], kids)
+                ::UniformHole => begin
+                    cur_child = kids[cur[]]
+                    children[i] = cur_child
+                    cur[] += 1
+                end
+            end
+        end
+    end
+    
+    combine_rule = get_combine_rule(a)
+    combine_rule = deepcopy(combine_rule)
+    kids = [retrieve(iter, ch) for ch in get_children(a)]
+    n = length(kids)
+    cur = Ref(1)
+    retrieve_helper(combine_rule, kids)
+
+    return combine_rule
+end
+
+
+"""
+        $(TYPEDSIGNATURES)
+
+Add the `program` (the result of combining `program_combination`) to the bank of
+the `iter`.
+
+Return `true` if the `program` is added to the bank, and `false` otherwise.
+
+This `add_to_bank!` checks for observational equivalence.  
+"""
+function add_to_bank!(iter::AbstractCostBasedBottomUpIterator, addr::RuleCombineAddress, prog::AbstractRuleNode)
+    total_cost = calc_measure(iter, addr)
+    if total_cost > get_measure_limit(iter) || 
+        depth(prog) >= get_max_depth(iter) || 
+        length(prog) >= get_max_size(iter)
+        return false
+    end 
+    bank    = get_bank(iter)
+    grammar = get_grammar(iter)
+    ret_T   = grammar.types[get_operator(addr)]
+
+    # observational equivalence per return type
+    if is_observationally_equivalent(iter, prog, ret_T)
+        return false
+    end
+
+    push!(get_entries(bank, ret_T, total_cost), BankEntry{RuleNode}(prog, true))
+    return true
+end
 
 """
         $(TYPEDSIGNATURES)
@@ -240,18 +385,12 @@ function compute_new_horizon(iter::AbstractCostBasedBottomUpIterator)
 
     best = Inf
 
-    # 2) for every nonterminal rule, try “one new child, the rest old”
-    # All “shapes”, i.e., rule schemas we can combine children with
-    terminals_mask     = grammar.isterminal
-    nonterminals_mask  = .~terminals_mask
-    nonterminal_shapes = UniformHole.(partition(Hole(nonterminals_mask), grammar), ([],))
-
     # for rule_idx in eachindex(grammar.isterminal)
     # for rule_idx in eachindex(grammar.isterminal)
-    for shape in nonterminal_shapes
+    combinators = get_combinators(iter)
+    for (child_types, combinator_rules) in combinators
 
-        child_types = Tuple(grammar.childtypes[findfirst(shape.domain)])
-        ret_T = grammar.types[findfirst(shape.domain)]
+        ret_T = grammar.types[[cr.ind for cr in combinator_rules]]
 
         # we need *some* program for every child type
         all(t -> haskey(min_cost_by_type, t), child_types) || continue
@@ -262,7 +401,8 @@ function compute_new_horizon(iter::AbstractCostBasedBottomUpIterator)
             t_new = child_types[new_pos]
             haskey(min_new_cost_by_type, t_new) || continue
             
-            for rule_idx in findall(shape.domain)
+            for rule in combinator_rules
+                rule_idx = rule.ind
                 rule_cost  = get_rule_cost(iter, rule_idx)
 
                 # cost of this particular choice “child i is new”
@@ -342,15 +482,10 @@ function combine(iter::AbstractCostBasedBottomUpIterator, state::GenericBUState)
     # must use at least one *new* program to progress the horizon
     any_new = child_tuple -> any(a -> a.new_shape, child_tuple)
 
-    # All “shapes”, i.e., rule schemas we can combine children with
-    terminals_mask     = grammar.isterminal
-    nonterminals_mask  = .~terminals_mask
-    nonterminal_shapes = UniformHole.(partition(Hole(nonterminals_mask), grammar), ([],))
+    combinators = get_combinators(iter)
 
-    # Iterate over shapes
-    for shape in nonterminal_shapes
-        child_types  = Tuple(grammar.childtypes[findfirst(shape.domain)])
-        arity     = length(child_types)
+    # Iterate over combinators grouped by shapes
+    for (child_types, combinator_rules) in combinators
 
         typed_filter = is_well_typed(child_types) 
 
@@ -365,13 +500,14 @@ function combine(iter::AbstractCostBasedBottomUpIterator, state::GenericBUState)
         # cartesian product over the child lists
         for child_tuple in candidate_combinations
             # Iterate over concrete rules within that shape
-            for rule_idx in findall(shape.domain)
+            for rule in combinator_rules
+                rule_idx = rule.ind
                 rule_cost = get_rule_cost(iter, rule_idx)
 
                 total_cost = rule_cost + sum(a -> get_measure(a), child_tuple)
                 total_cost > get_measure_limit(iter) && continue
 
-                push!(state.combinations, CombineAddress(rule_idx, child_tuple) => total_cost)
+                push!(state.combinations, RuleCombineAddress(rule, child_tuple) => total_cost)
 
                 for ch in child_tuple
                     if ch.new_shape
