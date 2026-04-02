@@ -27,7 +27,7 @@ get_combine_rule(c::RuleCombineAddress) = c.rule
     max_cost::Float64=Inf,
     current_costs::Vector{Float64}=Float64[],
     program_to_outputs::Union{Nothing,Function} = nothing, # Must return Float64
-    combine_operators::Vector{Tuple{RuleNode, Vector{UniformHole}}} = Tuple{RuleNode, Vector{UniformHole}}[], # TODO: remove, this is used for initializaiton and because I will add custom combine rules
+    combine_operators::Set{Tuple{RuleNode, Vector{UniformHole}}} = Set{Tuple{RuleNode, Vector{UniformHole}}}(), # TODO: remove, this is used for initializaiton and because I will add custom combine rules
     combinators::Dict{Tuple{Vararg{Symbol}}, Vector{RuleNode}} = Dict{Tuple{Vararg{Symbol}}, Vector{RuleNode}}()  # A vector of (combine_tree, shapes_of_children)
     ) <: AbstractCostBasedBottomUpIterator
 
@@ -69,6 +69,13 @@ get_combinators(iter::AbstractCostBasedBottomUpIterator) = iter.combinators
 
 get_combine_operators(iter::AbstractCostBasedBottomUpIterator) = iter.combine_operators
 
+function add_combinators!(
+    iter::AbstractCostBasedBottomUpIterator, 
+    new_combinators::AbstractVector{Tuple{RuleNode, Vector{UniformHole}}}
+    )
+    comb_ops = get_combine_operators(iter)
+    union!(comb_ops, new_combinators)
+end
 
 """
     $(TYPEDSIGNATURES)
@@ -143,7 +150,7 @@ function populate_bank!(iter::AbstractCostBasedBottomUpIterator)
     return out
 end
 
-function populate_combinators!(iter::AbstractCostBasedBottomUpIterator, additinonal_combinators=[])
+function populate_combinators!(iter::AbstractCostBasedBottomUpIterator)
     grammar = get_grammar(iter)
     # add grammar nonterminals to combine operators.
     combine_operators = get_combine_operators(iter)
