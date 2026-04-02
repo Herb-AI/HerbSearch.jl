@@ -1,7 +1,11 @@
 @testitem "ContainsSubtree" begin
     using HerbCore, HerbGrammar, HerbConstraints
+    using HerbSearch: BFSASPIterator, DFSASPIterator
+    include("test_helpers.jl")
 
-    @testset verbose = true "ContainsSubtree" begin
+    const TOPDOWNITERATORS = [BFSASPIterator, DFSASPIterator, BFSIterator, DFSASPIterator]
+
+    @testset "ContainsSubtree: $it" for it in TOPDOWNITERATORS
         @testset "Minimal Example" begin
             grammar = @csgrammar begin
                 Int = x
@@ -20,7 +24,7 @@
                 ])
             )
 
-            test_constraint!(grammar, constraint, max_size=6)
+            test_constraint!(grammar, constraint, max_size=6, iterator=it)
         end
 
         @testset "1 VarNode" begin
@@ -38,7 +42,7 @@
                 ])
             )
 
-            test_constraint!(grammar, constraint, max_size=6)
+            test_constraint!(grammar, constraint, max_size=6, iterator=it)
         end
 
         @testset "2 VarNodes" begin
@@ -56,7 +60,7 @@
                 ])
             )
 
-            test_constraint!(grammar, constraint, max_size=6)
+            test_constraint!(grammar, constraint, max_size=6, iterator=it)
         end
 
 
@@ -76,7 +80,7 @@
                 ])
             )
 
-            test_constraint!(grammar, constraint, max_size=6)
+            test_constraint!(grammar, constraint, max_size=6, iterator=it)
         end
 
         @testset "Permutations" begin
@@ -92,7 +96,7 @@
             addconstraint!(grammar, ContainsSubtree(RuleNode(5)))
 
             # There are 5! = 120 permutations of 5 distinct elements
-            iter = BFSIterator(grammar, :Permutation)
+            iter = it(grammar, :Permutation)
             @test length(iter) == 120
         end
     end

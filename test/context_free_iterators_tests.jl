@@ -1,120 +1,98 @@
 @testitem "Context-free iterators" begin
     using HerbGrammar, HerbConstraints, HerbCore
+    using HerbSearch: BFSASPIterator, DFSASPIterator
+    using Clingo_jll
 
-    @testset "getters for ProgramIterators" begin
+    const TOPDOWNITERATORS = [BFSIterator, DFSIterator, BFSASPIterator, DFSASPIterator]
+
+    @testset "getters for $it" for it in TOPDOWNITERATORS
         g1 = @csgrammar begin
             Real = |(1:9)
         end
 
-        bfs = BFSIterator(g1, :Real, max_depth=1, max_size=1)
+        bfs = it(g1, :Real, max_depth=1, max_size=1)
         @test get_grammar(bfs) == g1
         @test get_solver(bfs) isa HerbConstraints.Solver
         @test get_max_depth(bfs) == 1
         @test get_max_size(bfs) == 1
         @test get_starting_symbol(bfs) == :Real
     end
-    @testset "length on single Real grammar" begin
+    @testset "length on single Real grammar: $it" for it in TOPDOWNITERATORS
         g1 = @csgrammar begin
             Real = |(1:9)
         end
 
-        @test length(BFSIterator(g1, :Real, max_depth=1)) == 9
-        @test length(DFSIterator(g1, :Real, max_depth=1)) == 9
+        @test length(it(g1, :Real, max_depth=1)) == 9
 
         # Tree depth is equal to 1, so the max depth of 3 does not change the expression count
-        @test length(BFSIterator(g1, :Real, max_depth=3)) == 9
-        @test length(DFSIterator(g1, :Real, max_depth=3)) == 9
+        @test length(it(g1, :Real, max_depth=3)) == 9
     end
 
-    @testset "length on grammar with multiplication" begin
+    @testset "length on grammar with multiplication" for it in TOPDOWNITERATORS
         g1 = @csgrammar begin
             Real = 1 | 2
             Real = Real * Real
         end
         # Expressions: [1, 2]  
-        @test length(BFSIterator(g1, :Real, max_depth=1)) == 2
-        @test length(DFSIterator(g1, :Real, max_depth=1)) == 2
+        @test length(it(g1, :Real, max_depth=1)) == 2
 
         # Expressions: [1, 2, 1 * 1, 1 * 2, 2 * 1, 2 * 2] 
-        @test length(BFSIterator(g1, :Real, max_depth=2)) == 6
-        @test length(DFSIterator(g1, :Real, max_depth=2)) == 6
+        @test length(it(g1, :Real, max_depth=2)) == 6
     end
 
-    @testset "length on different arithmetic operators" begin
-        g1 = @csgrammar begin
+    grammars = [
+        (@csgrammar begin
             Real = 1
             Real = Real * Real
-        end
-
-        g2 = @csgrammar begin
+        end),
+        (@csgrammar begin
             Real = 1
             Real = Real / Real
-        end
-
-        g3 = @csgrammar begin
+        end),
+        (@csgrammar begin
             Real = 1
             Real = Real + Real
-        end
-
-        g4 = @csgrammar begin
+        end),
+        (@csgrammar begin
             Real = 1
             Real = Real - Real
-        end
-
-        g5 = @csgrammar begin
+        end),
+        (@csgrammar begin
             Real = 1
             Real = Real % Real
-        end
-
-        g6 = @csgrammar begin
+        end),
+        (@csgrammar begin
             Real = 1
             Real = Real \ Real
-        end
-
-        g7 = @csgrammar begin
+        end),
+        (@csgrammar begin
             Real = 1
             Real = Real^Real
-        end
-
-        g8 = @csgrammar begin
+        end),
+        (@csgrammar begin
             Real = 1
             Real = -Real * Real
+        end)
+    ]
+
+    @testset "length on different arithmetic operators: $it" for it in TOPDOWNITERATORS, g in grammars
+        # E.g for multiplication: [1, 1 * 1, 1 * (1 * 1), (1 * 1) * 1, (1 * 1) * (1 * 1)] 
+        @testset let g = g
+            @test length(it(g, :Real, max_depth=3)) == 5
         end
-
-        # E.q for multiplication: [1, 1 * 1, 1 * (1 * 1), (1 * 1) * 1, (1 * 1) * (1 * 1)] 
-        @test length(BFSIterator(g1, :Real, max_depth=3)) == 5
-        @test length(BFSIterator(g2, :Real, max_depth=3)) == 5
-        @test length(BFSIterator(g3, :Real, max_depth=3)) == 5
-        @test length(BFSIterator(g4, :Real, max_depth=3)) == 5
-        @test length(BFSIterator(g5, :Real, max_depth=3)) == 5
-        @test length(BFSIterator(g6, :Real, max_depth=3)) == 5
-        @test length(BFSIterator(g7, :Real, max_depth=3)) == 5
-        @test length(BFSIterator(g8, :Real, max_depth=3)) == 5
-
-        @test length(DFSIterator(g1, :Real, max_depth=3)) == 5
-        @test length(DFSIterator(g2, :Real, max_depth=3)) == 5
-        @test length(DFSIterator(g3, :Real, max_depth=3)) == 5
-        @test length(DFSIterator(g4, :Real, max_depth=3)) == 5
-        @test length(DFSIterator(g5, :Real, max_depth=3)) == 5
-        @test length(DFSIterator(g6, :Real, max_depth=3)) == 5
-        @test length(DFSIterator(g7, :Real, max_depth=3)) == 5
-        @test length(DFSIterator(g8, :Real, max_depth=3)) == 5
-
     end
 
-    @testset "length on grammar with functions" begin
+    @testset "length on grammar with functions: $it" for it in TOPDOWNITERATORS
         g1 = @csgrammar begin
             Real = 1 | 2
             Real = f(Real)                # function call
         end
 
         # Expressions: [1, 2, f(1), f(2)]
-        @test length(BFSIterator(g1, :Real, max_depth=2)) == 4
-        @test length(DFSIterator(g1, :Real, max_depth=2)) == 4
+        @test length(it(g1, :Real, max_depth=2)) == 4
 
         # Expressions: [1, 2, f(1), f(2), f(f(1)), f(f(2))]
-        @test length(BFSIterator(g1, :Real, max_depth=3)) == 6
-        @test length(DFSIterator(g1, :Real, max_depth=3)) == 6
+        @test length(it(g1, :Real, max_depth=3)) == 6
     end
 
     answer_programs = [
@@ -126,12 +104,12 @@
         RuleNode(3, [RuleNode(2), RuleNode(2)])
     ]
 
-    @testset "BFSIterator test" begin
+    @testset "BFS increasing depth test: $it" for it in [BFSIterator, BFSASPIterator]
         g1 = @csgrammar begin
             Real = 1 | 2
             Real = Real * Real
         end
-        bfs_programs = [freeze_state(p) for p ∈ BFSIterator(g1, :Real, max_depth=2)]
+        bfs_programs = [freeze_state(p) for p ∈ it(g1, :Real, max_depth=2)]
         # Test for increasing program depth
         @test all(map(t -> depth(t[1]) ≤ depth(t[2]), zip(bfs_programs[begin:end-1], bfs_programs[begin+1:end])))
 
@@ -139,19 +117,31 @@
         @test all(p ∈ bfs_programs for p ∈ answer_programs)
     end
 
-    @testset "DFSIterator test" begin
+    @testset "BFS matching order, g$i, d=$d" for (i, g) in enumerate(grammars), d in 1:4
+        normal_it = BFSIterator(g, :Real; max_depth=d)
+        normal_programs = [freeze_state(p) for p in normal_it]
+        asp_it = BFSASPIterator(g, :Real; max_depth=d)
+        asp_programs = [freeze_state(p) for p in normal_it]
+        @testset let g = g, normal_programs = normal_programs, asp_programs = asp_programs
+            @test all(herb == asp for (herb, asp) in zip(normal_programs, asp_programs))
+        end
+    end
+
+    @testset "DFS test: $it" for it in [DFSIterator, DFSASPIterator]
         g1 = @csgrammar begin
             Real = 1 | 2
             Real = Real * Real
         end
 
-        dfs_programs = [freeze_state(p) for p ∈ DFSIterator(g1, :Real, max_depth=2)]
+        dfs_programs = [freeze_state(p) for p ∈ it(g1, :Real, max_depth=2)]
 
-        @test length(dfs_programs) == 6
-        @test all(p ∈ dfs_programs for p ∈ answer_programs)
+        @testset let grammar = g1, expected = answer_programs, actual = dfs_programs
+            @test length(actual) == 6
+            @test all(p ∈ actual for p ∈ expected)
+        end
     end
 
-    @testset verbose = true "MLFSIterator tests" begin
+    @testset "MLFSIterator tests" begin
         g = @pcsgrammar begin
             0.2:Real = 1
             0.3:Real = 2
