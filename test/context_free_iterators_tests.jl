@@ -5,42 +5,7 @@
 
     const TOPDOWNITERATORS = [BFSIterator, DFSIterator, BFSASPIterator, DFSASPIterator]
 
-    @testset "getters for $it" for it in TOPDOWNITERATORS
-        g1 = @csgrammar begin
-            Real = |(1:9)
-        end
-
-        bfs = it(g1, :Real, max_depth=1, max_size=1)
-        @test get_grammar(bfs) == g1
-        @test get_solver(bfs) isa HerbConstraints.Solver
-        @test get_max_depth(bfs) == 1
-        @test get_max_size(bfs) == 1
-        @test get_starting_symbol(bfs) == :Real
-    end
-    @testset "length on single Real grammar: $it" for it in TOPDOWNITERATORS
-        g1 = @csgrammar begin
-            Real = |(1:9)
-        end
-
-        @test length(it(g1, :Real, max_depth=1)) == 9
-
-        # Tree depth is equal to 1, so the max depth of 3 does not change the expression count
-        @test length(it(g1, :Real, max_depth=3)) == 9
-    end
-
-    @testset "length on grammar with multiplication" for it in TOPDOWNITERATORS
-        g1 = @csgrammar begin
-            Real = 1 | 2
-            Real = Real * Real
-        end
-        # Expressions: [1, 2]  
-        @test length(it(g1, :Real, max_depth=1)) == 2
-
-        # Expressions: [1, 2, 1 * 1, 1 * 2, 2 * 1, 2 * 2] 
-        @test length(it(g1, :Real, max_depth=2)) == 6
-    end
-
-    grammars = [
+    const GRAMMARS = [
         (@csgrammar begin
             Real = 1
             Real = Real * Real
@@ -75,7 +40,52 @@
         end)
     ]
 
-    @testset "length on different arithmetic operators: $it" for it in TOPDOWNITERATORS, g in grammars
+    const ANSWER_PROGRAMS = [
+        RuleNode(1),
+        RuleNode(2),
+        @rulenode(3{1,1}),
+        @rulenode(3{1,2}),
+        @rulenode(3{2,1}),
+        @rulenode(3{2,2}),
+    ]
+
+    @testset "getters for $it" for it in TOPDOWNITERATORS
+        g1 = @csgrammar begin
+            Real = |(1:9)
+        end
+
+        bfs = it(g1, :Real, max_depth=1, max_size=1)
+        @test get_grammar(bfs) == g1
+        @test get_solver(bfs) isa HerbConstraints.Solver
+        @test get_max_depth(bfs) == 1
+        @test get_max_size(bfs) == 1
+        @test get_starting_symbol(bfs) == :Real
+    end
+
+    @testset "length on single Real grammar: $it" for it in TOPDOWNITERATORS
+        g1 = @csgrammar begin
+            Real = |(1:9)
+        end
+
+        @test length(it(g1, :Real, max_depth=1)) == 9
+
+        # Tree depth is equal to 1, so the max depth of 3 does not change the expression count
+        @test length(it(g1, :Real, max_depth=3)) == 9
+    end
+
+    @testset "length on grammar with multiplication" for it in TOPDOWNITERATORS
+        g1 = @csgrammar begin
+            Real = 1 | 2
+            Real = Real * Real
+        end
+        # Expressions: [1, 2]  
+        @test length(it(g1, :Real, max_depth=1)) == 2
+
+        # Expressions: [1, 2, 1 * 1, 1 * 2, 2 * 1, 2 * 2] 
+        @test length(it(g1, :Real, max_depth=2)) == 6
+    end
+
+    @testset "length on different arithmetic operators: $it" for it in TOPDOWNITERATORS, g in GRAMMARS
         # E.g for multiplication: [1, 1 * 1, 1 * (1 * 1), (1 * 1) * 1, (1 * 1) * (1 * 1)] 
         @testset let g = g
             @test length(it(g, :Real, max_depth=3)) == 5
@@ -95,14 +105,6 @@
         @test length(it(g1, :Real, max_depth=3)) == 6
     end
 
-    answer_programs = [
-        RuleNode(1),
-        RuleNode(2),
-        RuleNode(3, [RuleNode(1), RuleNode(1)]),
-        RuleNode(3, [RuleNode(1), RuleNode(2)]),
-        RuleNode(3, [RuleNode(2), RuleNode(1)]),
-        RuleNode(3, [RuleNode(2), RuleNode(2)])
-    ]
 
     @testset "BFS increasing depth test: $it" for it in [BFSIterator, BFSASPIterator]
         g1 = @csgrammar begin
@@ -114,16 +116,26 @@
         @test all(map(t -> depth(t[1]) ≤ depth(t[2]), zip(bfs_programs[begin:end-1], bfs_programs[begin+1:end])))
 
         @test length(bfs_programs) == 6
-        @test all(p ∈ bfs_programs for p ∈ answer_programs)
+        @test all(p ∈ bfs_programs for p ∈ ANSWER_PROGRAMS)
     end
 
-    @testset "BFS matching order, g$i, d=$d" for (i, g) in enumerate(grammars), d in 1:4
+    @testset "BFS matching order, g$i, d=$d" for (i, g) in enumerate(GRAMMARS), d in 1:4
         normal_it = BFSIterator(g, :Real; max_depth=d)
         normal_programs = [freeze_state(p) for p in normal_it]
         asp_it = BFSASPIterator(g, :Real; max_depth=d)
-        asp_programs = [freeze_state(p) for p in normal_it]
-        @testset let g = g, normal_programs = normal_programs, asp_programs = asp_programs
-            @test all(herb == asp for (herb, asp) in zip(normal_programs, asp_programs))
+        asp_programs = [freeze_state(p) for p in asp_it]
+        @testset let g = g, d = d
+            @test normal_programs == asp_programs
+        end
+    end
+
+    @testset "DFS matching order, g$i, d=$d" for (i, g) in enumerate(GRAMMARS), d in 1:4
+        normal_it = DFSIterator(g, :Real; max_depth=d)
+        normal_programs = [freeze_state(p) for p in normal_it]
+        asp_it = DFSASPIterator(g, :Real; max_depth=d)
+        asp_programs = [freeze_state(p) for p in asp_it]
+        @testset let g = g
+            @test normal_programs == asp_programs
         end
     end
 
@@ -135,7 +147,7 @@
 
         dfs_programs = [freeze_state(p) for p ∈ it(g1, :Real, max_depth=2)]
 
-        @testset let grammar = g1, expected = answer_programs, actual = dfs_programs
+        @testset let grammar = g1, expected = ANSWER_PROGRAMS, actual = dfs_programs
             @test length(actual) == 6
             @test all(p ∈ actual for p ∈ expected)
         end
@@ -157,6 +169,6 @@
         # Test for drecreasing program probability
         @test all(map(t -> log_p(t[1]) >= log_p(t[2]), zip(mlfs_programs[begin:end-1], mlfs_programs[begin+1:end])))
         @test length(mlfs_programs) == 6
-        @test all(p ∈ mlfs_programs for p ∈ answer_programs)
+        @test all(p ∈ mlfs_programs for p ∈ ANSWER_PROGRAMS)
     end
 end

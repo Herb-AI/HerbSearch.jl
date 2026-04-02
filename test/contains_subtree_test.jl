@@ -1,6 +1,8 @@
 @testitem "ContainsSubtree" begin
     using HerbCore, HerbGrammar, HerbConstraints
     using HerbSearch: BFSASPIterator, DFSASPIterator
+    using Clingo_jll
+
     include("test_helpers.jl")
 
     const TOPDOWNITERATORS = [BFSASPIterator, DFSASPIterator, BFSIterator, DFSASPIterator]
