@@ -1,9 +1,12 @@
 @testitem "Ordered" begin
     using HerbCore, HerbGrammar, HerbConstraints
+    using HerbSearch: BFSASPIterator, DFSASPIterator
+    using Clingo_jll
     include("test_helpers.jl")
 
-    @testset verbose = true "Ordered" begin
+    const ITERATORS = [BFSASPIterator, DFSASPIterator, BFSIterator, DFSIterator]
 
+    @testset "Ordered: $it" for it in ITERATORS
         @testset "Number of candidate programs" begin
             grammar = @csgrammar begin
                 Number = 1
@@ -14,7 +17,7 @@
                     VarNode(:a),
                     VarNode(:b)
                 ]), [:a, :b])
-            test_constraint!(grammar, constraint, max_size=6)
+            test_constraint!(grammar, constraint, max_size=6, iterator=it)
 
             grammar = @csgrammar begin
                 Number = Number + Number
@@ -26,7 +29,7 @@
                     RuleNode(3, [VarNode(:a)]),
                     RuleNode(3, [VarNode(:b)])
                 ]), [:a, :b])
-            test_constraint!(grammar, constraint, max_size=6)
+            test_constraint!(grammar, constraint, max_size=6, iterator=it)
         end
 
         @testset "DomainRuleNode" begin
@@ -62,8 +65,8 @@
             addconstraint!(grammar_domainrulenode, constraint_domainrulenode)
 
             #The number of solutions should be equal in both approaches
-            iter = BFSIterator(grammar, :Number, max_size=6)
-            iter_domainrulenode = BFSIterator(grammar_domainrulenode, :Number, max_size=6)
+            iter = it(grammar, :Number, max_size=6)
+            iter_domainrulenode = it(grammar_domainrulenode, :Number, max_size=6)
             @test length(iter) == length(iter_domainrulenode)
         end
 
@@ -85,8 +88,7 @@
 
             addconstraint!(grammar, constraint)
 
-            solver = GenericSolver(grammar, :S)
-            iter = BFSIterator(solver)
+            iter = it(grammar, :S)
 
             # (1, 1, 1, 1)
             # (1, 1, 1, 2)
@@ -120,7 +122,7 @@
 
             addconstraint!(grammar, constraint1)
             addconstraint!(grammar, constraint2)
-            iter = BFSIterator(grammar, :S, max_depth=5)
+            iter = it(grammar, :S, max_depth=5)
 
             # 2x a
             # 2x (a, a)

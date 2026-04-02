@@ -1,8 +1,12 @@
 @testitem "Forbidden" begin
     using HerbCore, HerbGrammar, HerbConstraints
+    using HerbSearch: BFSASPIterator, DFSASPIterator
+    using Clingo_jll
+    include("test_helpers.jl")
 
-    @testset verbose = true "Forbidden" begin
+    const ITERATORS = [BFSASPIterator, DFSASPIterator, BFSIterator, DFSIterator]
 
+    @testset "Forbidden: $it" for it in ITERATORS
         @testset "Number of candidate programs" begin
             #with constraints
             grammar = @csgrammar begin
@@ -12,14 +16,14 @@
             end
 
             #without constraints
-            iter = BFSIterator(grammar, :Number, max_depth=3)
+            iter = it(grammar, :Number, max_depth=3)
             @test length(iter) == 202
 
             constraint = Forbidden(RuleNode(4, [RuleNode(1), RuleNode(1)]))
             addconstraint!(grammar, constraint)
 
             #with constraints
-            iter = BFSIterator(grammar, :Number, max_depth=3)
+            iter = it(grammar, :Number, max_depth=3)
             @test length(iter) == 163
         end
 
@@ -35,7 +39,7 @@
             solver = GenericSolver(grammar, :Number, max_depth=3)
             #jump start with new_state!
             new_state!(solver, RuleNode(3, [Hole(get_domain(grammar, :Number)), Hole(get_domain(grammar, :Number))]))
-            iter = BFSIterator(solver)
+            iter = it(solver)
 
             @test length(iter) == 12
             # 3{2,1}
@@ -80,7 +84,7 @@
             ])
 
             solver = GenericSolver(grammar, :Number)
-            iter = BFSIterator(solver)
+            iter = it(solver)
             new_state!(solver, partial_tree)
             @test length(iter) == 3 # 3 out of the 4 combinations to fill the UniformHole are valid
         end
@@ -118,10 +122,10 @@
                 return grammar
             end
 
-            iter1 = BFSIterator(get_grammar1(), :Int, max_depth=4, max_size=100)
+            iter1 = it(get_grammar1(), :Int, max_depth=4, max_size=100)
             number_of_programs1 = length(iter1)
 
-            iter2 = BFSIterator(get_grammar2(), :Int, max_depth=4, max_size=100)
+            iter2 = it(get_grammar2(), :Int, max_depth=4, max_size=100)
             number_of_programs2 = length(iter2)
 
             @test number_of_programs1 == 26
