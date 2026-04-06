@@ -69,12 +69,40 @@ get_combinators(iter::AbstractCostBasedBottomUpIterator) = iter.combinators
 
 get_combine_operators(iter::AbstractCostBasedBottomUpIterator) = iter.combine_operators
 
+function add_new_terminals!(iter::AbstractCostBasedBottomUpIterator, new_terminals::Vector{RuleNode}, costs::Vector{Float64})
+    grammar = get_grammar(iter)
+    for i in eachindex(new_terminals)
+        rn = new_terminals[i]
+        cost = costs[i]
+        ret_T = return_type(grammar, rn)
+        if !is_observationally_equivalent(iter, rn, ret_T)
+            be = BankEntry(rn, true)
+            push!(get_entries(iter.bank, ret_T, cost), be)
+        end
+    end    
+end
+
 function add_combinators!(
     iter::AbstractCostBasedBottomUpIterator, 
-    new_combinators::AbstractVector{Tuple{RuleNode, Vector{UniformHole}}}
+    new_combinators::AbstractVector{RuleNode}
     )
+
+    function _get_holes(rn::AbstractRuleNode, res::Vector{UniformHole})
+        @match rn begin
+            ::UniformHole => push!(res, deepcopy(rn))
+            ::RuleNode => for ch in HerbCore.get_children(rn) 
+                _get_holes(ch, res)
+            end
+        end
+    end
+
     comb_ops = get_combine_operators(iter)
-    union!(comb_ops, new_combinators)
+    for rn in new_combinators
+        holes = Vector{UniformHole}()
+        _get_holes(rn, holes)
+        push!(comb_ops, (rn, holes))
+    end
+    populate_combinators!(iter)
 end
 
 """
@@ -124,6 +152,8 @@ function populate_bank!(iter::AbstractCostBasedBottomUpIterator)
         grammar.isterminal[rule_idx] || continue # skip non-terminals
 
         prog = RuleNode(rule_idx)
+        # checking it here too because we may have refactored some of the terminals already
+        # is_observationally_equivalent(iter, prog, HerbGrammar.return_type(grammar, rule_idx)) && continue
         addr = CombineAddress{0}(rule_idx, ())  # terminal: no child addresses
 
         add_to_bank!(iter, addr, prog)
@@ -151,9 +181,11 @@ function populate_bank!(iter::AbstractCostBasedBottomUpIterator)
 end
 
 function populate_combinators!(iter::AbstractCostBasedBottomUpIterator)
+    
     grammar = get_grammar(iter)
     # add grammar nonterminals to combine operators.
     combine_operators = get_combine_operators(iter)
+
     for rule_idx in eachindex(grammar.isterminal)
         grammar.isterminal[rule_idx] && continue # skip terminals
         child_types = HerbGrammar.child_types(grammar, rule_idx)
@@ -163,6 +195,8 @@ function populate_combinators!(iter::AbstractCostBasedBottomUpIterator)
 
     # make a dictionary {children_shapes : combine operators}
     combinators = get_combinators(iter)
+    # empty combinators in case they are being redefined.
+    empty!(combinators)
     for (rule, children) in combine_operators
         push!(get!(combinators, Tuple(HerbGrammar.return_type(grammar, ch) for ch in children), RuleNode[]), rule)
     end
@@ -259,15 +293,15 @@ Retrieve a program using a CombineAddress. Overwrites the parent function, as Ab
 """
 function retrieve(iter::AbstractCostBasedBottomUpIterator, a::RuleCombineAddress)
 
-    function  retrieve_helper(combine_rule::AbstractRuleNode, kids::Vector{RuleNode})
+    function retrieve_helper!(combine_rule::AbstractRuleNode, kids::Vector{RuleNode})
         children = HerbCore.get_children(combine_rule)
         for i in eachindex(children)
             @match children[i] begin
-                ::RuleNode => retrieve_helper(children[i], kids)
+                ::RuleNode => retrieve_helper!(children[i], kids)
                 ::UniformHole => begin
+                    cur[] += 1
                     cur_child = kids[cur[]]
                     children[i] = cur_child
-                    cur[] += 1
                 end
             end
         end
@@ -276,10 +310,8 @@ function retrieve(iter::AbstractCostBasedBottomUpIterator, a::RuleCombineAddress
     combine_rule = get_combine_rule(a)
     combine_rule = deepcopy(combine_rule)
     kids = [retrieve(iter, ch) for ch in get_children(a)]
-    n = length(kids)
-    cur = Ref(1)
-    retrieve_helper(combine_rule, kids)
-
+    cur = Ref(0)
+    retrieve_helper!(combine_rule, kids)
     return combine_rule
 end
 
