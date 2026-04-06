@@ -1,5 +1,4 @@
 using Logging
-disable_logging(LogLevel(1))
 
 function parametrized_test(argument_list, test_function::Function)
     method = methods(test_function)[begin]
