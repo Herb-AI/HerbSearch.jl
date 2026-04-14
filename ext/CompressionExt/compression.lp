@@ -205,7 +205,7 @@ comp_occ(ROOT, OCC) :- comp_root(ROOT, _), OCC = #count { NODE : assign(ROOT, NO
 gain(ROOT, GAIN) :- comp_size(ROOT, SIZE), comp_occ(ROOT, OCC), GAIN = OCC * (SIZE - 1).
 
 % Primary objective: maximize component gain.
-:~ gain(ROOT, GAIN). [-GAIN*2@2, ROOT]
+:~ gain(ROOT, GAIN). [-GAIN@2, ROOT]
 
 % Secondary objective: maximize assignment count to break ties.
 :~ assign(_, Y). [-1@1, Y]

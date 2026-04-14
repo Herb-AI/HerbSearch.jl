@@ -69,40 +69,87 @@ get_combinators(iter::AbstractCostBasedBottomUpIterator) = iter.combinators
 
 get_combine_operators(iter::AbstractCostBasedBottomUpIterator) = iter.combine_operators
 
-function add_new_terminals!(iter::AbstractCostBasedBottomUpIterator, new_terminals::Vector{RuleNode}, costs::Vector{Float64})
+function add_new_terminals!(iter::AbstractCostBasedBottomUpIterator, new_terminals::Vector{<:AbstractRuleNode}, costs::Vector{Float64})
     grammar = get_grammar(iter)
     for i in eachindex(new_terminals)
         rn = new_terminals[i]
         cost = costs[i]
         ret_T = return_type(grammar, rn)
-        if !is_observationally_equivalent(iter, rn, ret_T)
-            be = BankEntry(rn, true)
-            push!(get_entries(iter.bank, ret_T, cost), be)
+        # some terminals may have holes. Split them to turn terminals into specific trees of the grammar
+        split_terminals = HerbSearch.split_hole(rn, grammar)
+        for new_term in split_terminals
+            if !is_observationally_equivalent(iter, new_term, ret_T)
+                be = BankEntry(new_term, true)
+                push!(get_entries(iter.bank, ret_T, cost), be)
+            end
         end
     end    
 end
 
+"""
+$(TYPEDSIGNATURES)
+"""
 function add_combinators!(
     iter::AbstractCostBasedBottomUpIterator, 
-    new_combinators::AbstractVector{RuleNode}
+    new_combinators::Vector{<:AbstractRuleNode}
     )
-
+    """
+    gets holes on leaves to establish types of children of the new combinator
+    """
     function _get_holes(rn::AbstractRuleNode, res::Vector{UniformHole})
         @match rn begin
-            ::UniformHole => push!(res, deepcopy(rn))
+            ::UniformHole && if isempty(HerbCore.get_children(rn)) end => push!(res, deepcopy(rn)) #leaf hole
+            ::UniformHole => for ch in HerbCore.get_children(rn) 
+                _get_holes(ch, res)
+            end
             ::RuleNode => for ch in HerbCore.get_children(rn) 
                 _get_holes(ch, res)
             end
         end
     end
-
+    grammar = get_grammar(iter)
     comb_ops = get_combine_operators(iter)
     for rn in new_combinators
         holes = Vector{UniformHole}()
         _get_holes(rn, holes)
-        push!(comb_ops, (rn, holes))
+        # combinators may contain holes at any level, not only leaf.
+        # if that is the case, split them into combinators for each possible configuration of those holes.
+        split_combs = _split_hole(rn, grammar)
+        foreach(new_comb -> push!(comb_ops, (new_comb, holes)), split_combs)
     end
     populate_combinators!(iter)
+end
+
+"""
+copied from compression_ext, but does not split terminal holes.
+"""
+function _split_hole(rule::RuleNode, g)
+    isempty(rule.children) && return [rule]
+    splits = []
+    children_res = [_split_hole(ch, g) for ch in rule.children]
+    for children in Iterators.product(children_res...)
+        new_rule = RuleNode(get_rule(rule), collect(deepcopy(children)))
+        push!(splits, new_rule)
+    end
+    return splits
+end
+
+"""
+copied from compression_ext, but does not split terminal holes.
+"""
+function _split_hole(hole::UniformHole, g)
+    isempty(HerbCore.get_children(hole)) && return [hole]
+    splits = []
+    isfilled(hole) && return [hole]
+    children_res = [_split_hole(ch, g) for ch in hole.children]
+    for (i, d) in enumerate(hole.domain)
+        d || continue
+        for children in Iterators.product(children_res...)
+            new_rule = RuleNode(i, collect(deepcopy(children)))
+            push!(splits, new_rule)
+        end
+    end
+    return splits
 end
 
 """
