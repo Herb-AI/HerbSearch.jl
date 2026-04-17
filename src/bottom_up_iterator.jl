@@ -712,8 +712,8 @@ function get_next_program(iter::BottomUpIterator, state::GenericBUState)
     # OR dequeue if within horizon bounds.
     if !isempty(state.combinations)
         top = first(state.combinations).second
-       if state.last_horizon == top == state.new_horizon ||
-           state.last_horizon <= top < state.new_horizon
+        if top == state.new_horizon ||
+           top < state.new_horizon
            return popfirst!(state.combinations).first, state
         end
     end 
@@ -729,6 +729,7 @@ function get_next_program(iter::BottomUpIterator, state::GenericBUState)
     # Construct new solutions using combine once. If there are still no feasible solutions present, then exhaust the rest of the PQ by setting the horizon to get_measure_limit.
     if !isnothing(state_tracker(state)) 
         old_window = (state.last_horizon, state.new_horizon)
+        @show old_window
         new_program_combinations, state = combine(iter, state)
 
         if isnothing(new_program_combinations) 
@@ -736,14 +737,15 @@ function get_next_program(iter::BottomUpIterator, state::GenericBUState)
         end
 
         window_changed = old_window != (state.last_horizon, state.new_horizon)
+
         # Recurse and call combine again to find concrete programs
         if window_changed
             return get_next_program(iter, state) 
         elseif !isempty(new_program_combinations)
             # If the window didn't change, exhaust the next element from the queue
             top = first(state.combinations).second
-            if state.last_horizon == top == state.new_horizon ||
-               state.last_horizon <= top < state.new_horizon
+            if top == state.new_horizon ||
+               top < state.new_horizon
                 return popfirst!(state.combinations).first, state
             elseif state.new_horizon != get_measure_limit(iter) 
                 # set measure limit to max. Thus return all solutions in state.combinations.

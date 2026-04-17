@@ -183,6 +183,10 @@ function add_to_bank!(iter::AbstractCostBasedBottomUpIterator, addr::CombineAddr
     grammar = get_grammar(iter)
     ret_T   = grammar.types[get_operator(addr)]
 
+    if isnothing(ret_T)
+        return false
+    end
+
     # observational equivalence per return type
     if is_observationally_equivalent(iter, prog, ret_T)
         return false
@@ -368,7 +372,8 @@ function combine(iter::AbstractCostBasedBottomUpIterator, state::GenericBUState)
             for rule_idx in findall(shape.domain)
                 rule_cost = get_rule_cost(iter, rule_idx)
 
-                total_cost = rule_cost + sum(a -> get_measure(a), child_tuple)
+                # total_cost = rule_cost + sum(a -> get_measure(a), child_tuple)
+                total_cost = rule_cost + _calc_measure(child_tuple)
                 total_cost > get_measure_limit(iter) && continue
 
                 push!(state.combinations, CombineAddress(rule_idx, child_tuple) => total_cost)
