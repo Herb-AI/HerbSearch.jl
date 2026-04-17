@@ -73,7 +73,7 @@ function conquer(
 		predicates,
 		grammar,
 		symboltable,
-		false,
+		true,
 	)
 	features = float.(features)
 	# Take labels and features to make DecisionTree

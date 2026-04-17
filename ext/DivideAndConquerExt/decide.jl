@@ -25,7 +25,6 @@ function decide(
                 y = interp(program, ex)
                 ok = eq(y, ex.out)
             catch err
-				@show err
                 ok = false
             end
         else

@@ -93,9 +93,6 @@ function HerbSearch.divide_and_conquer(
 
         if all(!isempty, values(problems_to_solutions)) || i > max_enumerations ||
            time() - start_time > max_time
-		   @show all(!isempty, values(problems_to_solutions)) 
-		   @show i > max_enumerations 
-           @show time() - start_time > max_time
             break
         end
     end
