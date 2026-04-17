@@ -1,0 +1,181 @@
+[
+    {
+        "problem": {
+            "name": "problem_11440431",
+            "spec": [
+                {
+                    "in": {
+                        "_arg_1": "Mining US",
+                        "_arg_out": "Mining  "
+                    },
+                    "out": "Mining"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Soybean Farming CAN",
+                        "_arg_out": "Soybean Farming CAN"
+                    },
+                    "out": "Soybean Farming"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Soybean Farming",
+                        "_arg_out": "Soybean Farming"
+                    },
+                    "out": "Soybean Farming"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Oil Extraction US",
+                        "_arg_out": "Oil Extraction  "
+                    },
+                    "out": "Oil Extraction"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Fishing",
+                        "_arg_out": "Fishing"
+                    },
+                    "out": "Fishing"
+                }
+            ]
+        },
+        "solved": true,
+        "program": "replace_cvc(replace_cvc(_arg_1, \"CAN\", \"US\"), concat_cvc(\" \", \"US\"), \"\")",
+        "properties": [
+            "suffixof_cvc(at_cvc(_arg_out, 6), _arg_out)",
+            "suffixof_cvc(at_cvc(_arg_1, len_cvc(_arg_out)), _arg_1)"
+        ]
+    },
+    {
+        "problem": {
+            "name": "problem_11604909",
+            "spec": [
+                {
+                    "in": {
+                        "_arg_1": "AIX 5.1",
+                        "_arg_out": "2.4"
+                    },
+                    "out": "5.1"
+                },
+                {
+                    "in": {
+                        "_arg_1": "VMware ESX Server 3.5.0 build-110268",
+                        "_arg_out": "2.7"
+                    },
+                    "out": "3.5"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Linux Linux 2.6 Linux",
+                        "_arg_out": "2.6"
+                    },
+                    "out": "2.6"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Red Hat Enterprise AS 4 <2.6-78.0.13.ELl_arg_esmp>",
+                        "_arg_out": "2.4"
+                    },
+                    "out": "2.6"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Microsoft <R> Windows <R> 2000 Advanced Server 1.0",
+                        "_arg_out": "2.10"
+                    },
+                    "out": "1.0"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Microsoft Windows XP Win2008R2 6.1.7601",
+                        "_arg_out": "2.10"
+                    },
+                    "out": "6.1"
+                }
+            ]
+        },
+        "solved": false,
+        "program": "nothing",
+        "properties": [
+            "3 == len_cvc(_arg_out)",
+            "prefixof_cvc(at_cvc(_arg_out, 3), _arg_out)",
+            "1 == str_to_int_cvc(at_cvc(_arg_out, 1))",
+            "contains_cvc(_arg_1, _arg_out)",
+            "prefixof_cvc(int_to_str_cvc(0), _arg_out)",
+            "contains_cvc(_arg_out, \".\")",
+            "contains_cvc(concat_cvc(_arg_1, _arg_1), _arg_out)",
+            "prefixof_cvc(_arg_1, _arg_out)",
+            "contains_cvc(concat_cvc(_arg_1, \"\"), _arg_out)",
+            "len_cvc(_arg_out) == 3",
+            "contains_cvc(concat_cvc(_arg_1, \" \"), _arg_out)",
+            "prefixof_cvc(\".\", at_cvc(_arg_out, 2))",
+            "contains_cvc(concat_cvc(_arg_1, \".\"), _arg_out)",
+            "suffixof_cvc(\".\", at_cvc(_arg_out, 2))",
+            "contains_cvc(_arg_out, int_to_str_cvc(0))",
+            "contains_cvc(concat_cvc(\"\", _arg_1), _arg_out)",
+            "prefixof_cvc(\".\", _arg_out)",
+            "prefixof_cvc(_arg_out, _arg_1)",
+            "contains_cvc(concat_cvc(\" \", _arg_1), _arg_out)",
+            "1 == len_cvc(_arg_out)",
+            "suffixof_cvc(_arg_1, _arg_out)",
+            "2 <= len_cvc(_arg_out)",
+            "contains_cvc(concat_cvc(\".\", _arg_1), _arg_out)",
+            "contains_cvc(_arg_out, _arg_1)",
+            "contains_cvc(_arg_1, concat_cvc(\"\", _arg_out))",
+            "3 <= len_cvc(_arg_out)",
+            "contains_cvc(_arg_out, \" \")",
+            "prefixof_cvc(_arg_out, \".\")",
+            "0 == str_to_int_cvc(at_cvc(_arg_out, 3))",
+            "contains_cvc(_arg_1, concat_cvc(_arg_out, \"\"))"
+        ]
+    },
+    {
+        "problem": {
+            "name": "problem_11440431",
+            "spec": [
+                {
+                    "in": {
+                        "_arg_1": "Mining US",
+                        "_arg_out": "Mining  "
+                    },
+                    "out": "Mining"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Soybean Farming CAN",
+                        "_arg_out": "Soybean Farming CAN"
+                    },
+                    "out": "Soybean Farming"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Soybean Farming",
+                        "_arg_out": "Soybean Farming"
+                    },
+                    "out": "Soybean Farming"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Oil Extraction US",
+                        "_arg_out": "Oil Extraction  "
+                    },
+                    "out": "Oil Extraction"
+                },
+                {
+                    "in": {
+                        "_arg_1": "Fishing",
+                        "_arg_out": "Fishing"
+                    },
+                    "out": "Fishing"
+                }
+            ]
+        },
+        "solved": true,
+        "program": "replace_cvc(replace_cvc(_arg_1, \"CAN\", \"US\"), concat_cvc(\" \", \"US\"), \"\")",
+        "properties": [
+            "suffixof_cvc(at_cvc(_arg_out, 6), _arg_out)",
+            "suffixof_cvc(at_cvc(_arg_1, len_cvc(_arg_out)), _arg_1)"
+        ]
+    }
+]

@@ -12,10 +12,14 @@ inputs = [e.in for e in problem.spec]
 
 grammar_tags = get_relevant_tags(grammar)
     
-program_iterator = SizeBasedBottomUpIterator(grammar, :ntString, max_size = 4)
+program_iterator = SizeBasedBottomUpIterator(grammar, :ntString, max_size = 3)
+
+@show grammar
 
 for program in program_iterator
-    for input in inputs
-        output = interpret_sygus(program, grammar_tags, input)
-    end
+    expr = rulenode2expr(program, grammar)
+    @show expr
+    # for input in inputs
+    #     output = interpret_sygus(program, grammar_tags, input)
+    # end
 end

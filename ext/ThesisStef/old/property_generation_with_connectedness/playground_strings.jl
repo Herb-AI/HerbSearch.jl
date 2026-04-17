@@ -13,6 +13,17 @@ problem = benchmark.problem_phone_9_short
 grammar = benchmark.grammar_phone_9_short
 output_type = :ntString
 
+# ("Trucking Inc.") -> "Trucking Inc."
+# ("ABV Trucking Inc, LLC"), "ABV Trucking"
+# problem = benchmark.problem_stackoverflow1
+# grammar = benchmark.grammar_stackoverflow1
+# output_type = :ntString
+
+# Count occurrences of _arg_2 in _arg_1
+# problem = benchmark.problem_12948338
+# grammar = benchmark.grammar_12948338
+# output_type = :ntInt
+
 
 target_outputs = [e.out for e in problem.spec]
 inputs = [e.in for e in problem.spec]

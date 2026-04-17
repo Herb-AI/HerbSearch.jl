@@ -1,4 +1,4 @@
-function sign_ternary(inputs::Vector{String}, intermediates::Vector{String}, outputs::Vector{String})::Vector{Number}
+function sign_ternary(inputs::Vector{String}, intermediates::Vector{String}, outputs::Vector{String})::Vector{Int8}
     vcat(
         sign_unary(inputs),
         sign_unary(intermediates),
@@ -8,7 +8,7 @@ function sign_ternary(inputs::Vector{String}, intermediates::Vector{String}, out
     )
 end
 
-function aggregate(values::Vector{Bool})::Number
+function aggregate(values::Vector{Bool})::Int8
     if all(values)
         return 1
     elseif !any(values)
@@ -18,7 +18,7 @@ function aggregate(values::Vector{Bool})::Number
     end
 end
 
-function aggregate(values::Vector{Vector{Bool}})::Vector{Number} #[aggregate(values[:][i]) for i in 1:length(values)]
+function aggregate(values::Vector{Vector{Bool}})::Vector{Int8} #[aggregate(values[:][i]) for i in 1:length(values)]
     ncols = length(values[1])
     res = []
 
@@ -49,7 +49,7 @@ function sign_unary(str::String)::Vector{Bool}
     ]
 end
 
-sign_unary(strs::Vector{String})::Vector{Number} = aggregate([sign_unary(s) for s in strs])
+sign_unary(strs::Vector{String})::Vector{Int8} = aggregate([sign_unary(s) for s in strs])
 
 function sign_binary(input_string::String, output_string::String)::Vector{Bool}
     input_lower = lowercase(input_string)
@@ -76,4 +76,4 @@ function sign_binary(input_string::String, output_string::String)::Vector{Bool}
     ]
 end
 
-sign_binary(input_strings::Vector{String}, output_strings::Vector{String})::Vector{Number} = aggregate([sign_binary(i, o) for (i, o) in zip(input_strings, output_strings)])
+sign_binary(input_strings::Vector{String}, output_strings::Vector{String})::Vector{Int8} = aggregate([sign_binary(i, o) for (i, o) in zip(input_strings, output_strings)])
