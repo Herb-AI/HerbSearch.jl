@@ -45,9 +45,9 @@ end
 Return the set of costs for which `bank` holds at least one program of return
 type `type`. Returns an empty set if the type is absent.
 """
-function get_costs(bank::BUBank, type::Symbol)
+function get_costs(bank::BUBank{P}, type::Symbol) where {P}
     by_cost = get(bank.data, type, nothing)
-    isnothing(by_cost) && return keys(Dict{Int,Nothing}())
+    isnothing(by_cost) && return keys(Dict{Int, Vector{P}}())
     return keys(by_cost)
 end
 
@@ -101,13 +101,15 @@ function compositions(n::Int, k::Int)
     )
 end
 
-function _compositions(n::Int, k::Int)
-    k == 1 && return (n >= 1 ? [[n]] : Vector{Int}[])
-    return (
-        [first; rest]
-        for first in 1:(n - k + 1)
-        for rest  in _compositions(n - first, k - 1)
-    )
+function _compositions(n::Int, k::Int)::Vector{Vector{Int}}
+    k == 1 && return n >= 1 ? [[n]] : Vector{Vector{Int}}()
+    result = Vector{Vector{Int}}()
+    for first in 1:(n - k + 1)
+        for rest in _compositions(n - first, k - 1)
+            push!(result, [first; rest])
+        end
+    end
+    return result
 end
 
 
@@ -200,8 +202,9 @@ function assemble(prog::RuleNode, children)
 end
 
 function _fill_holes(node::RuleNode, iter)
-    new_children = map(node.children) do child
-        child isa AbstractHole ? popfirst!(iter) : _fill_holes(child, iter)
+    new_children = Vector{AbstractRuleNode}(undef, length(node.children))
+    for (i, child) in enumerate(node.children)
+        new_children[i] = child isa AbstractHole ? popfirst!(iter) : _fill_holes(child, iter)
     end
     return RuleNode(node.ind, new_children)
 end
@@ -226,7 +229,6 @@ end
 
 function _grow_op(iter, level, grammar, bank, op)
     budget = level - node_cost(iter, op)
-    budget <= 0 && return ()
     return (
         (assemble(op, children), grammar.types[op])
         for children in program_combinations(bank, grammar.childtypes[op], budget)
@@ -280,12 +282,12 @@ pruning: programs with identical output signatures are discarded.
 - `program_to_outputs` — optional `RuleNode → Vector` used for OE pruning
   (`nothing` disables OE)
 """
-struct CostBUSIterator <: AbstractBUSIterator
+struct CostBUSIterator{F} <: AbstractBUSIterator
     grammar::AbstractGrammar
     start_symbol::Symbol
     max_cost::Int
     rule_costs::Vector{Int}
-    program_to_outputs::Union{Nothing, Function}
+    program_to_outputs::F
 end
 
 CostBUSIterator(grammar, start_symbol, max_cost, rule_costs) =
@@ -294,7 +296,7 @@ CostBUSIterator(grammar, start_symbol, max_cost, rule_costs) =
 node_cost(iter::CostBUSIterator, op::Int) = iter.rule_costs[op]
 node_cost(iter::CostBUSIterator, prog::RuleNode) = iter.rule_costs[prog.ind]
 
-Base.IteratorSize(::Type{CostBUSIterator}) = Base.SizeUnknown()
+Base.IteratorSize(::Type{<:CostBUSIterator}) = Base.SizeUnknown()
 
 
 """
