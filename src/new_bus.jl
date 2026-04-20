@@ -141,17 +141,24 @@ end
 """
     _slots_product(bank, types, costs)
 
-Fetch the program vectors for each slot in a single Dict lookup per slot via
-[`get_programs`](@ref). Returns an empty iterator if any slot is empty; otherwise
-returns `Iterators.product` over the slot vectors.
+Fetch the program vectors for each slot via [`get_programs`](@ref), short-circuiting
+as soon as any slot is empty. Returns `()` on the first empty slot without fetching
+the remaining ones; otherwise returns `Iterators.product` over all slot vectors.
 
-Using `ntuple` rather than a comprehension keeps `slots` as a `Tuple` (concretely
-typed as `NTuple{k, Vector{P}}`), so the `any(isempty, ...)` check and the splat
-into `Iterators.product` remain type-stable and avoid an intermediate heap `Vector`.
+The `slots` vector is only allocated once all prior slots have been confirmed
+non-empty, so invalid compositions (the common case for a sparse bank) incur no
+allocation beyond the failing `get_programs` call itself.
 """
-function _slots_product(bank, types, costs)
-    slots = ntuple(i -> get_programs(bank, types[i], costs[i]), length(types))
-    any(isempty, slots) && return ()
+function _slots_product(bank::BUBank{P}, types, costs) where {P}
+    s1 = get_programs(bank, types[1], costs[1])
+    isempty(s1) && return ()
+    slots = Vector{Vector{P}}(undef, length(types))
+    slots[1] = s1
+    for i in 2:length(types)
+        s = get_programs(bank, types[i], costs[i])
+        isempty(s) && return ()
+        slots[i] = s
+    end
     return Iterators.product(slots...)
 end
 
@@ -384,6 +391,7 @@ function Base.iterate(iter::AbstractBUSIterator, state::BUSState)
 end
 
 function _satisfies_constraints(grammar, prog)
+    isempty(grammar.constraints) && return true
     all(HerbConstraints.check_tree(c, prog) for c in grammar.constraints)
 end
 
