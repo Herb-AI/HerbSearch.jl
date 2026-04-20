@@ -39,6 +39,7 @@ function get_programs(bank::BUBank{P}, type::Symbol, cost::Int)::Vector{P} where
     return get(by_cost, cost, P[])
 end
 
+
 """
     get_costs(bank::BUBank, type::Symbol) :: AbstractSet{Int}
 
@@ -123,17 +124,35 @@ Return an iterator over all tuples `(p1, …, pk)` such that:
 Internally enumerates cost distributions via [`compositions`](@ref) and then
 takes the cartesian product of the matching programs in the bank. Distributions
 where any slot has no programs in the bank are skipped.
+
+Each cost distribution is handled by [`_slots_product`](@ref), which performs a
+single Dict lookup per slot (via [`get_programs_or_nothing`](@ref)) and builds the
+slot collection as a `Tuple` rather than a `Vector`, avoiding two allocations per
+valid distribution: the existence check and the intermediate array for the splat.
 """
 function program_combinations(bank::BUBank, types, budget::Int)
     k = length(types)
-    valid_costs = (
-        costs for costs in compositions(budget, k)
-        if all(i -> has_programs(bank, types[i], costs[i]), 1:k)
-    )
     return Iterators.flatten(
-        Iterators.product([get_programs(bank, types[i], costs[i]) for i in 1:k]...)
-        for costs in valid_costs
+        _slots_product(bank, types, costs)
+        for costs in compositions(budget, k)
     )
+end
+
+"""
+    _slots_product(bank, types, costs)
+
+Fetch the program vectors for each slot in a single Dict lookup per slot via
+[`get_programs`](@ref). Returns an empty iterator if any slot is empty; otherwise
+returns `Iterators.product` over the slot vectors.
+
+Using `ntuple` rather than a comprehension keeps `slots` as a `Tuple` (concretely
+typed as `NTuple{k, Vector{P}}`), so the `any(isempty, ...)` check and the splat
+into `Iterators.product` remain type-stable and avoid an intermediate heap `Vector`.
+"""
+function _slots_product(bank, types, costs)
+    slots = ntuple(i -> get_programs(bank, types[i], costs[i]), length(types))
+    any(isempty, slots) && return ()
+    return Iterators.product(slots...)
 end
 
 
@@ -175,13 +194,6 @@ Override to use a different bank structure.
 make_bank(::AbstractBUSIterator) = BUBank{RuleNode}()
 
 """
-    nonterminals(grammar::AbstractGrammar) :: Vector{Int}
-
-Return the rule indices of all non-terminal rules in `grammar`.
-"""
-nonterminals(grammar::AbstractGrammar) = findall(.!grammar.isterminal)
-
-"""
     assemble(op::Int, children) :: RuleNode
 
 Construct a `RuleNode` for rule `op` with the given `children`.
@@ -210,20 +222,24 @@ function _fill_holes(node::RuleNode, iter)
 end
 
 """
-    grow(iter::AbstractBUSIterator, level::Int, grammar::AbstractGrammar, bank::BUBank)
+    grow(iter::AbstractBUSIterator, level::Int, grammar::AbstractGrammar, bank::BUBank, ops::Vector{Int})
 
 Return an iterator of `(program, type)` pairs — all programs of cost `level`
 constructable from programs already in `bank` by applying a single non-terminal
 rule.
 
+`ops` is the pre-computed list of non-terminal rule indices (see [`nonterminals`](@ref)).
+Callers should compute this once and reuse it across levels; `grow` itself does not
+call `nonterminals` so that the allocation is not repeated on every level.
+
 For each non-terminal operator `op`, the child budget is `level - node_cost(iter, op)`.
 [`program_combinations`](@ref) enumerates all child tuples whose costs sum to
 that budget, and [`assemble`](@ref) constructs the resulting program.
 """
-function grow(iter::AbstractBUSIterator, level::Int, grammar::AbstractGrammar, bank::BUBank)
+function grow(iter::AbstractBUSIterator, level::Int, grammar::AbstractGrammar, bank::BUBank, ops::Vector{Int})
     return Iterators.flatten(
         _grow_op(iter, level, grammar, bank, op)
-        for op in nonterminals(grammar)
+        for op in ops
     )
 end
 
@@ -239,6 +255,25 @@ end
 # ──── CostBUSIterator ────────────────────────────────────────────────────────
 
 """
+    _hash_outputs(outputs) → UInt64
+
+Fold all per-example outputs into a single `UInt64` signature by chaining
+Julia's built-in `hash` function over each output value.
+
+Using a single scalar instead of a `Vector{UInt64}` makes `Set` membership
+checks O(1) rather than O(n) in the number of examples, and avoids allocating
+a signature vector on every OE probe. The 64-bit hash space makes collisions
+negligible in practice (probability ≈ n²/2⁶⁵ for n programs).
+"""
+function _hash_outputs(outputs)::UInt64
+    h = HASH_SEED
+    for o in outputs
+        h = hash(o, h)
+    end
+    return h
+end
+
+"""
     is_observationally_equivalent!(seen, type, prog, eval_fn) → Bool
 
 Return `true` if `prog` produces the same outputs as some already-seen program
@@ -249,15 +284,14 @@ When `eval_fn` is `nothing`, OE pruning is disabled and the function always
 returns `false`.
 """
 function is_observationally_equivalent!(
-    seen::Dict{Symbol, Set{Vector{UInt64}}},
+    seen::Dict{Symbol, Set{UInt64}},
     type::Symbol,
     prog::RuleNode,
     eval_fn
 )
     isnothing(eval_fn) && return false
-    outputs = eval_fn(prog)
-    sig = _hash_outputs_to_u64vec(outputs)
-    type_seen = get!(seen, type, Set{Vector{UInt64}}())
+    sig = _hash_outputs(eval_fn(prog))
+    type_seen = get!(seen, type, Set{UInt64}())
     sig ∈ type_seen && return true
     push!(type_seen, sig)
     return false
@@ -306,6 +340,8 @@ Iteration state for any [`AbstractBUSIterator`](@ref).
 
 - `bank`        — programs accumulated so far, grouped by type and cost
 - `seen`        — OE output signatures seen so far, grouped by type
+- `ops`         — rule indices of all non-terminal rules (constant; cached here to
+                  avoid recomputing on every `iterate` call)
 - `level`       — cost level currently being yielded
 - `yield_index` — index of the next program to yield within `bank[start_symbol][level]`
 
@@ -313,7 +349,8 @@ The bank type `B` is determined by [`make_bank`](@ref).
 """
 struct BUSState{B}
     bank::B
-    seen::Dict{Symbol, Set{Vector{UInt64}}}
+    seen::Dict{Symbol, Set{UInt64}}
+    ops::Vector{Int}
     level::Int
     yield_index::Int
 end
@@ -322,9 +359,10 @@ end
 const CostBUSState = BUSState{BUBank{RuleNode}}
 
 function Base.iterate(iter::AbstractBUSIterator)
-    bank = make_bank(iter)
-    seen = Dict{Symbol, Set{Vector{UInt64}}}()
+    bank    = make_bank(iter)
+    seen    = Dict{Symbol, Set{UInt64}}()
     grammar = iter.grammar
+    ops     = findall(.!grammar.isterminal)   # computed once for the lifetime of the iterator
 
     # Seed the bank with all terminal programs.
     for rule_idx in eachindex(grammar.isterminal)
@@ -338,7 +376,7 @@ function Base.iterate(iter::AbstractBUSIterator)
     end
 
     # Start at level 0; _next_bus will immediately advance to level 1.
-    return _next_bus(iter, BUSState(bank, seen, 0, 1))
+    return _next_bus(iter, BUSState(bank, seen, ops, 0, 1))
 end
 
 function Base.iterate(iter::AbstractBUSIterator, state::BUSState)
@@ -350,18 +388,20 @@ function _satisfies_constraints(grammar, prog)
 end
 
 function _next_bus(iter::AbstractBUSIterator, state::BUSState)
-    bank  = state.bank
-    seen  = state.seen
-    level = state.level
-    yi    = state.yield_index
+    bank    = state.bank
+    seen    = state.seen
+    ops     = state.ops
+    level   = state.level
+    yi      = state.yield_index
+    grammar = iter.grammar
 
     while true
         progs = get_programs(bank, iter.start_symbol, level)
         while yi <= length(progs)
             prog = progs[yi]
             yi += 1
-            if _satisfies_constraints(iter.grammar, prog)
-                return prog, BUSState(bank, seen, level, yi)
+            if _satisfies_constraints(grammar, prog)
+                return prog, BUSState(bank, seen, ops, level, yi)
             end
         end
 
@@ -375,7 +415,7 @@ function _next_bus(iter::AbstractBUSIterator, state::BUSState)
         # is complete for all needed children before we start growing.
         # Constraint-violating programs are still banked — they can be
         # used as sub-expressions in larger programs.
-        for (prog, type) in grow(iter, level, iter.grammar, bank)
+        for (prog, type) in grow(iter, level, grammar, bank, ops)
             if !is_observationally_equivalent!(seen, type, prog, iter.program_to_outputs)
                 add!(bank, type, level, prog)
             end

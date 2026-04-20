@@ -77,17 +77,18 @@ end
     add!(b, :Int, 1, RuleNode(2))
 
     iter = TestSizeIter()
+    ops  = findall(.!g.isterminal)
 
     @testset "level below first non-terminal" begin
         # node_cost=1, budget=level-1; for level=2, budget=1
         # compositions(1, 2) is empty → no programs
-        @test isempty(collect(grow(iter, 2, g, b)))
+        @test isempty(collect(grow(iter, 2, g, b, ops)))
     end
 
     @testset "level 3: first non-terminal programs" begin
         # node_cost=1, budget=2; compositions(2,2) = [(1,1)]
         # product of two cost-1 Int children: 4 combinations
-        result = Set((prog, t) for (prog, t) in grow(iter, 3, g, b))
+        result = Set((prog, t) for (prog, t) in grow(iter, 3, g, b, ops))
         expected = Set([
             (RuleNode(3, [RuleNode(1), RuleNode(1)]), :Int),
             (RuleNode(3, [RuleNode(1), RuleNode(2)]), :Int),
@@ -103,7 +104,7 @@ end
         add!(b, :Int, 2, RuleNode(3, [RuleNode(1), RuleNode(2)]))
 
         # budget=3; compositions(3,2) = [(1,2), (2,1)]
-        result = Set(prog for (prog, _) in grow(iter, 4, g, b))
+        result = Set(prog for (prog, _) in grow(iter, 4, g, b, ops))
 
         # (1,2): cost-1 × cost-2
         @test RuleNode(3, [RuleNode(1), RuleNode(3, [RuleNode(1), RuleNode(1)])]) ∈ result
@@ -116,14 +117,14 @@ end
     @testset "cost-based: node_cost from rule costs" begin
         # Same grammar but with costs: rule 1→2, rule 2→2, rule 3→1
         cost_iter = TestCostIter([2, 2, 1])
-        bc = BUBank{RuleNode}()
+        bc   = BUBank{RuleNode}()
         add!(bc, :Int, 2, RuleNode(1))
         add!(bc, :Int, 2, RuleNode(2))
 
         # grow at level 5: node_cost(op=3)=1, budget=4
         # compositions(4,2) = [(1,3),(2,2),(3,1)] — but bank only has cost-2 entries
         # so only (2,2) applies
-        result = Set(prog for (prog, _) in grow(cost_iter, 5, g, bc))
+        result = Set(prog for (prog, _) in grow(cost_iter, 5, g, bc, ops))
         @test result == Set([
             RuleNode(3, [RuleNode(1), RuleNode(1)]),
             RuleNode(3, [RuleNode(1), RuleNode(2)]),
