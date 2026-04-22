@@ -633,6 +633,63 @@ end
         @test length(sigs) == length(unique(sigs))
     end
 
+    @testset "type_cost_bounds: per-type cap respected" begin
+        # Grammar (all costs = 1):
+        #   rule 1: Int = 1          (terminal)
+        #   rule 2: Int = 2          (terminal)
+        #   rule 3: Int = Int + Int  (non-terminal)
+        #
+        # Bounding :Int to max cost 1 means only the two terminals enter the
+        # bank.  The non-terminal at cost 3 (1 op + 1 + 1) is never added, so
+        # the iterator yields exactly the two terminals regardless of max_cost.
+        g = @csgrammar begin
+            Int = 1
+            Int = 2
+            Int = Int + Int
+        end
+        unit_costs = ones(Int, length(g.rules))
+        bounds = Dict(:Int => 1)
+
+        iter_bounded   = CostBUSIterator(g, :Int, 10, unit_costs, nothing, Dict{Symbol,Int}(bounds))
+        iter_unbounded = CostBUSIterator(g, :Int, 10, unit_costs)
+
+        result_bounded = collect(iter_bounded)
+        @test Set(result_bounded) == Set([RuleNode(1), RuleNode(2)])
+        @test length(collect(iter_unbounded)) > length(result_bounded)
+    end
+
+    @testset "type_cost_bounds: bounds on child type, not start_symbol" begin
+        # Grammar (all costs = 1):
+        #   rule 1: Int  = 1
+        #   rule 2: Int  = 2
+        #   rule 3: Bool = true
+        #   rule 4: Bool = Int == Int
+        #
+        # Bounding :Int to max cost 1 still allows Bool = Int == Int to be
+        # formed at cost 3 (using cost-1 Int terminals as children).
+        g2 = @csgrammar begin
+            Int  = 1
+            Int  = 2
+            Bool = true
+            Bool = Int == Int
+        end
+        unit_costs2 = ones(Int, length(g2.rules))
+        bounds2 = Dict(:Int => 1)
+
+        iter = CostBUSIterator(g2, :Bool, 5, unit_costs2, nothing, Dict{Symbol,Int}(bounds2))
+        result = collect(iter)
+
+        # The terminal Bool=true must be present
+        @test RuleNode(3) ∈ result
+        # Bool = (1 == 1), (1 == 2), (2 == 1), (2 == 2) must all be present
+        @test RuleNode(4, [RuleNode(1), RuleNode(1)]) ∈ result
+        @test RuleNode(4, [RuleNode(1), RuleNode(2)]) ∈ result
+        @test RuleNode(4, [RuleNode(2), RuleNode(1)]) ∈ result
+        @test RuleNode(4, [RuleNode(2), RuleNode(2)]) ∈ result
+        # No Int programs should be yielded (start_symbol is :Bool)
+        @test all(p -> g2.types[p.ind] == :Bool, result)
+    end
+
     @testset "constraint checking: Forbidden pattern not yielded" begin
         # Grammar (all costs = 1):
         #   rule 1: Int = 1

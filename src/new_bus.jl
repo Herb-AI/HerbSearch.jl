@@ -339,6 +339,15 @@ end
 
 
 """
+    _within_type_bound(iter::AbstractBUSIterator, type::Symbol, cost::Int) :: Bool
+
+Return `true` iff a program of the given `type` and `cost` is permitted by
+the iterator's per-type cost bounds.  The default always returns `true`.
+Override for iterators that carry a `type_cost_bounds` dictionary.
+"""
+_within_type_bound(::AbstractBUSIterator, ::Symbol, ::Int) = true
+
+"""
     CostBUSIterator
 
 A bottom-up iterator that enumerates `RuleNode` programs in order of increasing
@@ -355,20 +364,42 @@ pruning: programs with identical output signatures are discarded.
 - `rule_costs`         — integer cost for each rule index
 - `program_to_outputs` — optional `RuleNode → Vector` used for OE pruning
   (`nothing` disables OE)
+- `type_cost_bounds`   — optional per-type cost caps; programs whose return type
+  appears here are never added to the bank above the specified cost
+  (default: empty — no per-type restriction)
 """
-struct CostBUSIterator{G<:AbstractGrammar, F} <: AbstractBUSIterator
+struct CostBUSIterator{G<:AbstractGrammar, F, B} <: AbstractBUSIterator
     grammar::G
     start_symbol::Symbol
     max_cost::Int
     rule_costs::Vector{Int}
     program_to_outputs::F
+    type_cost_bounds::B  # Nothing or Dict{Symbol,Int}
 end
 
 CostBUSIterator(grammar, start_symbol, max_cost, rule_costs) =
-    CostBUSIterator(grammar, start_symbol, max_cost, rule_costs, nothing)
+    CostBUSIterator(grammar, start_symbol, max_cost, rule_costs, nothing, nothing)
+
+CostBUSIterator(grammar, start_symbol, max_cost, rule_costs, program_to_outputs) =
+    CostBUSIterator(grammar, start_symbol, max_cost, rule_costs, program_to_outputs, nothing)
 
 node_cost(iter::CostBUSIterator, op::Int) = iter.rule_costs[op]
 node_cost(iter::CostBUSIterator, prog::RuleNode) = iter.rule_costs[prog.ind]
+
+# No bounds: compiler specialises this to a constant true and eliminates the Filter.
+_within_type_bound(::CostBUSIterator{G,F,Nothing}, ::Symbol, ::Int) where {G,F} = true
+_within_type_bound(iter::CostBUSIterator{G,F,Dict{Symbol,Int}}, type::Symbol, cost::Int) where {G,F} =
+    cost <= get(iter.type_cost_bounds, type, typemax(Int))
+
+# Specialised grow for bounded iterators: skips ops whose result type already
+# exceeds the per-type cap before doing any composition work.
+function grow(iter::CostBUSIterator{G,F,Dict{Symbol,Int}}, level::Int, grammar::AbstractGrammar, bank::BUBank, ops::Vector{Int}) where {G,F}
+    return Iterators.flatten(
+        _grow_op(iter, level, grammar, bank, op)
+        for op in ops
+        if _within_type_bound(iter, grammar.types[op], level)
+    )
+end
 
 Base.IteratorSize(::Type{<:CostBUSIterator}) = Base.SizeUnknown()
 
