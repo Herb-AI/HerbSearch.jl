@@ -323,8 +323,8 @@ pruning: programs with identical output signatures are discarded.
 - `program_to_outputs` — optional `RuleNode → Vector` used for OE pruning
   (`nothing` disables OE)
 """
-struct CostBUSIterator{F} <: AbstractBUSIterator
-    grammar::AbstractGrammar
+struct CostBUSIterator{G<:AbstractGrammar, F} <: AbstractBUSIterator
+    grammar::G
     start_symbol::Symbol
     max_cost::Int
     rule_costs::Vector{Int}
