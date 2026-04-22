@@ -175,24 +175,23 @@ function program_combinations(bank::BUBank, types, budget::Int, ::Val{K}) where 
 end
 
 """
-    _slots_product(bank, types, costs)
+    _slots_product(bank, types, costs::NTuple{K,Int})
 
-Fetch the program vectors for each slot via [`get_programs`](@ref), short-circuiting
-as soon as any slot is empty. Returns an empty `Iterators.product` on the first
-empty slot without fetching the remaining ones.
+Fetch the program vectors for each slot via [`get_programs`](@ref) and return
+`Iterators.product` over all slot vectors.
 
-`slots` is pre-filled with `P[]` so that every return path — including early exits
-— calls `Iterators.product(slots...)` on a fully-initialised vector. This keeps
-the return type a single concrete `ProductIterator` (no union with `Tuple{}`),
-making the caller's `Iterators.flatten` type-stable.
+`costs` is a `NTuple{K, Int}` (produced by [`Compositions{K}`](@ref)), so `K`
+is a compile-time constant. `slots` is built with `ntuple(..., Val(K))`, making
+it a stack-allocated `NTuple{K, Vector{P}}`. The subsequent splat into
+`Iterators.product` therefore sees a compile-time arity and produces a fully
+concrete `ProductIterator{Tuple{Vector{P}, …, Vector{P}}}` rather than the
+Vararg version, allowing Julia to specialise and unroll the product iteration
+per arity.
+
+When any slot vector is empty the product naturally yields zero elements.
 """
-function _slots_product(bank::BUBank{P}, types, costs) where {P}
-    slots = fill(P[], length(types))
-    for i in eachindex(types)
-        s = get_programs(bank, types[i], costs[i])
-        isempty(s) && return Iterators.product(slots...)
-        slots[i] = s
-    end
+function _slots_product(bank::BUBank{P}, types, costs::NTuple{K, Int}) where {P, K}
+    slots = ntuple(i -> get_programs(bank, types[i], costs[i]), Val(K))
     return Iterators.product(slots...)
 end
 
