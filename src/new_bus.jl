@@ -77,6 +77,57 @@ end
 
 
 """
+    Compositions{K}
+
+Lazy iterator over all ordered `K`-tuples of positive integers summing to `n`.
+Parameterised on the arity `K` so that Julia specialises `iterate` for each
+concrete child count, enabling the inner loop to be fully unrolled at compile time.
+
+Elements are `NTuple{K, Int}` (concrete per arity, not `Tuple{Vararg{Int}}`).
+The iterator yields compositions in lexicographic order.
+
+Returns an empty iterator when `n < K`.
+
+See also [`compositions`](@ref) for the public `(n, k)` interface.
+
+# Examples
+```julia
+collect(Compositions{2}(3))  # [(1,2), (2,1)]
+collect(Compositions{1}(4))  # [(4,)]
+collect(Compositions{3}(2))  # []  (impossible: 3 parts ≥ 1 need sum ≥ 3)
+```
+"""
+struct Compositions{K}
+    n::Int
+end
+
+Base.eltype(::Type{Compositions{K}}) where {K} = NTuple{K, Int}
+Base.IteratorSize(::Type{<:Compositions}) = Base.SizeUnknown()
+
+function Base.iterate(c::Compositions{K}) where {K}
+    c.n < K && return nothing
+    state = ntuple(i -> i < K ? 1 : c.n - K + 1, Val(K))
+    return state, state
+end
+
+function Base.iterate(c::Compositions{K}, state::NTuple{K, Int}) where {K}
+    # Walk right-to-left accumulating the suffix sum.
+    # At position i, if the suffix sum of state[i+1..K] exceeds K-i (meaning at
+    # least one element to the right is > 1), we can advance here: increment
+    # state[i], reset state[i+1..K-1] to 1, and assign the remainder to state[K].
+    suffix = state[K]
+    for i in K-1:-1:1
+        if suffix > K - i
+            tail = suffix - (K - i)
+            next = ntuple(j -> j < i ? state[j] : j == i ? state[i] + 1 : j < K ? 1 : tail, Val(K))
+            return next, next
+        end
+        suffix += state[i]
+    end
+    return nothing
+end
+
+"""
     compositions(n::Int, k::Int)
 
 Return an iterator over all ordered k-tuples of positive integers summing to `n`.
@@ -88,6 +139,9 @@ Each choice of `k-1` gaps out of `n-1` available gives a unique composition.
 
 Returns an empty iterator when `n < k` (impossible to have `k` parts each ≥ 1).
 
+Delegates to [`Compositions{k}`](@ref) for a type-stable per-arity specialisation
+when `k` is known at compile time (e.g. inside [`program_combinations`](@ref)).
+
 # Examples
 ```julia
 collect(compositions(3, 2))  # [(1,2), (2,1)]
@@ -95,23 +149,7 @@ collect(compositions(3, 1))  # [(3,)]
 collect(compositions(2, 3))  # [] (impossible: 3 parts each ≥ 1 need sum ≥ 3)
 ```
 """
-function compositions(n::Int, k::Int)
-    return (
-        tuple(v...)
-        for v in _compositions(n, k)
-    )
-end
-
-function _compositions(n::Int, k::Int)::Vector{Vector{Int}}
-    k == 1 && return n >= 1 ? [[n]] : Vector{Vector{Int}}()
-    result = Vector{Vector{Int}}()
-    for first in 1:(n - k + 1)
-        for rest in _compositions(n - first, k - 1)
-            push!(result, [first; rest])
-        end
-    end
-    return result
-end
+compositions(n::Int, k::Int) = Compositions{k}(n)
 
 
 """
@@ -121,19 +159,18 @@ Return an iterator over all tuples `(p1, …, pk)` such that:
 - `pi` is a program in `bank` with return type `types[i]`
 - the costs `(c1, …, ck)` of the chosen programs sum to `budget`
 
-Internally enumerates cost distributions via [`compositions`](@ref) and then
-takes the cartesian product of the matching programs in the bank. Distributions
-where any slot has no programs in the bank are skipped.
-
-Each cost distribution is handled by [`_slots_product`](@ref), which performs one
-Dict lookup per slot and returns a single concrete `ProductIterator` type regardless
-of whether any slot is empty. This keeps the enclosing `Iterators.flatten` type-stable.
+Internally dispatches to the `Val{K}` overload so that [`Compositions{K}`](@ref)
+is instantiated with a compile-time arity, enabling Julia to specialise and unroll
+the composition iterator for each concrete child count.
 """
 function program_combinations(bank::BUBank, types, budget::Int)
-    k = length(types)
+    return program_combinations(bank, types, budget, Val(length(types)))
+end
+
+function program_combinations(bank::BUBank, types, budget::Int, ::Val{K}) where {K}
     return Iterators.flatten(
         _slots_product(bank, types, costs)
-        for costs in compositions(budget, k)
+        for costs in Compositions{K}(budget)
     )
 end
 
