@@ -125,10 +125,9 @@ Internally enumerates cost distributions via [`compositions`](@ref) and then
 takes the cartesian product of the matching programs in the bank. Distributions
 where any slot has no programs in the bank are skipped.
 
-Each cost distribution is handled by [`_slots_product`](@ref), which performs a
-single Dict lookup per slot (via [`get_programs_or_nothing`](@ref)) and builds the
-slot collection as a `Tuple` rather than a `Vector`, avoiding two allocations per
-valid distribution: the existence check and the intermediate array for the splat.
+Each cost distribution is handled by [`_slots_product`](@ref), which performs one
+Dict lookup per slot and returns a single concrete `ProductIterator` type regardless
+of whether any slot is empty. This keeps the enclosing `Iterators.flatten` type-stable.
 """
 function program_combinations(bank::BUBank, types, budget::Int)
     k = length(types)
@@ -142,21 +141,19 @@ end
     _slots_product(bank, types, costs)
 
 Fetch the program vectors for each slot via [`get_programs`](@ref), short-circuiting
-as soon as any slot is empty. Returns `()` on the first empty slot without fetching
-the remaining ones; otherwise returns `Iterators.product` over all slot vectors.
+as soon as any slot is empty. Returns an empty `Iterators.product` on the first
+empty slot without fetching the remaining ones.
 
-The `slots` vector is only allocated once all prior slots have been confirmed
-non-empty, so invalid compositions (the common case for a sparse bank) incur no
-allocation beyond the failing `get_programs` call itself.
+`slots` is pre-filled with `P[]` so that every return path — including early exits
+— calls `Iterators.product(slots...)` on a fully-initialised vector. This keeps
+the return type a single concrete `ProductIterator` (no union with `Tuple{}`),
+making the caller's `Iterators.flatten` type-stable.
 """
 function _slots_product(bank::BUBank{P}, types, costs) where {P}
-    s1 = get_programs(bank, types[1], costs[1])
-    isempty(s1) && return ()
-    slots = Vector{Vector{P}}(undef, length(types))
-    slots[1] = s1
-    for i in 2:length(types)
+    slots = fill(P[], length(types))
+    for i in eachindex(types)
         s = get_programs(bank, types[i], costs[i])
-        isempty(s) && return ()
+        isempty(s) && return Iterators.product(slots...)
         slots[i] = s
     end
     return Iterators.product(slots...)
