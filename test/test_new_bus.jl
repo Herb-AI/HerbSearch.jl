@@ -723,6 +723,169 @@ end
     end
 end
 
+@testset "MaxCombinations / max_combinations" begin
+    # K=1: only the single-element tuple (n,)
+    @test collect(MaxCombinations{1}(1)) == [(1,)]
+    @test collect(MaxCombinations{1}(3)) == [(3,)]
+
+    # K=2, n=1: only (1,1)
+    @test Set(collect(MaxCombinations{2}(1))) == Set([(1,1)])
+
+    # K=2, n=2: exactly the three pairs with max=2
+    @test Set(collect(MaxCombinations{2}(2))) == Set([(1,2), (2,1), (2,2)])
+
+    # Exhaustive check against brute-force reference for several (n,k)
+    for (n, k) in [(3,2), (4,2), (3,3), (5,2)]
+        result   = Set(collect(max_combinations(n, k)))
+        expected = Set(Tuple(t) for t in Iterators.product(ntuple(_ -> 1:n, k)...)
+                       if maximum(t) == n)
+        @test result == expected
+    end
+
+    # Count matches n^k − (n−1)^k
+    for (n, k) in [(3,2), (4,2), (3,3), (5,2)]
+        @test length(collect(max_combinations(n, k))) == n^k - (n-1)^k
+    end
+
+    # All elements satisfy max == n and all parts ≥ 1
+    for t in collect(max_combinations(4, 3))
+        @test maximum(t) == 4
+        @test all(x -> x >= 1, t)
+    end
+
+    # Edge cases: empty when n < 1 or K = 0
+    @test isempty(collect(MaxCombinations{2}(0)))
+    @test isempty(collect(MaxCombinations{0}(3)))
+end
+
+@testset "max_program_combinations" begin
+    leaf1 = RuleNode(1)
+    leaf2 = RuleNode(2)
+    plus_1_1 = RuleNode(3, [RuleNode(1), RuleNode(1)])
+    plus_1_2 = RuleNode(3, [RuleNode(1), RuleNode(2)])
+
+    b = BUBank{RuleNode}()
+    add!(b, :Int, 1, leaf1)
+    add!(b, :Int, 1, leaf2)
+    add!(b, :Int, 2, plus_1_1)
+    add!(b, :Int, 2, plus_1_2)
+
+    @testset "max_depth=1, two Int children: only (1,1)" begin
+        result = Set(collect(max_program_combinations(b, [:Int, :Int], 1)))
+        @test result == Set([(leaf1, leaf1), (leaf1, leaf2),
+                             (leaf2, leaf1), (leaf2, leaf2)])
+    end
+
+    @testset "max_depth=2, two Int children: max of child costs == 2" begin
+        result = Set(collect(max_program_combinations(b, [:Int, :Int], 2)))
+        # MaxCombinations{2}(2) = (1,2), (2,1), (2,2)
+        expected = Set([
+            (leaf1,    plus_1_1), (leaf1,    plus_1_2),
+            (leaf2,    plus_1_1), (leaf2,    plus_1_2),
+            (plus_1_1, leaf1),    (plus_1_1, leaf2),
+            (plus_1_2, leaf1),    (plus_1_2, leaf2),
+            (plus_1_1, plus_1_1), (plus_1_1, plus_1_2),
+            (plus_1_2, plus_1_1), (plus_1_2, plus_1_2),
+        ])
+        @test result == expected
+    end
+
+    @testset "single child: programs of exactly max_depth" begin
+        result = Set(collect(max_program_combinations(b, [:Int], 2)))
+        @test result == Set([(plus_1_1,), (plus_1_2,)])
+    end
+
+    @testset "no programs at max_depth: empty result" begin
+        @test isempty(collect(max_program_combinations(b, [:Int, :Int], 9)))
+    end
+end
+
+@testset "DepthBUSIterator" verbose = true begin
+    g = @csgrammar begin
+        Int = 1
+        Int = 2
+        Int = Int + Int
+    end
+
+    # Depth of a RuleNode: 1 for leaves, 1 + max(child depths) for internal nodes.
+    tree_depth(p::RuleNode) =
+        isempty(p.children) ? 1 : 1 + maximum(tree_depth(c) for c in p.children)
+
+    @testset "terminals only (max_cost = 1)" begin
+        result = collect(DepthBUSIterator(g, :Int, 1))
+        @test Set(result) == Set([RuleNode(1), RuleNode(2)])
+    end
+
+    @testset "depth-2 programs all present" begin
+        result = collect(DepthBUSIterator(g, :Int, 2))
+        # 2 terminals + 4 depth-2 composites = 6 total
+        @test length(result) == 6
+        for a in [RuleNode(1), RuleNode(2)], b in [RuleNode(1), RuleNode(2)]
+            @test RuleNode(3, [a, b]) ∈ result
+        end
+    end
+
+    @testset "enumeration order: depth is non-decreasing" begin
+        result = collect(DepthBUSIterator(g, :Int, 3))
+        @test issorted(tree_depth.(result))
+    end
+
+    @testset "max_cost respected: no program exceeds max depth" begin
+        for max_d in 1:3
+            for prog in DepthBUSIterator(g, :Int, max_d)
+                @test tree_depth(prog) <= max_d
+            end
+        end
+    end
+
+    @testset "completeness at depth 3" begin
+        result = Set(collect(DepthBUSIterator(g, :Int, 3)))
+
+        # All depth-3 programs have at least one child of depth 2.
+        d2 = [RuleNode(3, [a, b]) for a in [RuleNode(1), RuleNode(2)]
+                                   for b in [RuleNode(1), RuleNode(2)]]
+        d1 = [RuleNode(1), RuleNode(2)]
+
+        for p in d2, q in d1
+            @test RuleNode(3, [p, q]) ∈ result   # (2,1) slot
+            @test RuleNode(3, [q, p]) ∈ result   # (1,2) slot
+        end
+        for p in d2, q in d2
+            @test RuleNode(3, [p, q]) ∈ result   # (2,2) slot
+        end
+
+        # Count: 2 (depth-1) + 4 (depth-2) + 32 (depth-3) = 38
+        # depth-3: (1,2)→2×4=8, (2,1)→4×2=8, (2,2)→4×4=16 → 32
+        @test length(result) == 2 + 4 + 32
+    end
+
+    @testset "depth vs size: more programs at same level" begin
+        # With a binary operator (3 nodes per non-terminal), the smallest
+        # non-terminal program has size 3 but depth 2.  So at max_cost=2,
+        # depth-based yields 6 programs while size-based yields only 2.
+        unit_costs = ones(Int, length(g.rules))
+        size_result  = collect(CostBUSIterator(g, :Int, 2, unit_costs))
+        depth_result = collect(DepthBUSIterator(g, :Int, 2))
+        @test length(size_result) == 2    # only terminals
+        @test length(depth_result) == 6   # terminals + 4 composites
+    end
+
+    @testset "observational equivalence" begin
+        eval_fn = function(prog::RuleNode)
+            ev(p) = p.ind == 1 ? 1 : p.ind == 2 ? 2 : ev(p.children[1]) + ev(p.children[2])
+            [ev(prog)]
+        end
+
+        result_no_oe = collect(DepthBUSIterator(g, :Int, 3, nothing))
+        result_oe    = collect(DepthBUSIterator(g, :Int, 3, eval_fn))
+
+        # OE prunes programs with duplicate output signatures.
+        @test length(result_oe) < length(result_no_oe)
+        sigs = [eval_fn(p)[1] for p in result_oe]
+        @test length(sigs) == length(unique(sigs))
+    end
+end
+
 
 
 # julia --project=. -e '

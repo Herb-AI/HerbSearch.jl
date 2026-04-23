@@ -153,6 +153,90 @@ compositions(n::Int, k::Int) = Compositions{k}(n)
 
 
 """
+    MaxCombinations{K}
+
+Lazy iterator over all ordered `K`-tuples of positive integers whose **maximum** equals `n`.
+Elements are `NTuple{K, Int}`.  Returns an empty iterator when `n < 1` or `K == 0`.
+
+Analogous to [`Compositions{K}`](@ref) (which constrains the *sum*), but constrains the
+*maximum* instead.  Used by [`max_program_combinations`](@ref) for depth-based enumeration:
+programs of depth `d` require children whose depths have maximum exactly `d-1`.
+
+# Examples
+```julia
+collect(MaxCombinations{2}(2))  # [(1,2), (2,1), (2,2)]
+collect(MaxCombinations{1}(3))  # [(3,)]
+collect(MaxCombinations{2}(1))  # [(1,1)]
+```
+"""
+struct MaxCombinations{K}
+    n::Int
+end
+
+Base.eltype(::Type{MaxCombinations{K}}) where {K} = NTuple{K, Int}
+Base.IteratorSize(::Type{<:MaxCombinations}) = Base.SizeUnknown()
+
+function Base.iterate(c::MaxCombinations{K}) where {K}
+    (K == 0 || c.n < 1) && return nothing
+    # Lexicographically smallest K-tuple with max = n: (1, 1, …, 1, n)
+    state = ntuple(i -> i == K ? c.n : 1, Val(K))
+    return state, state
+end
+
+function Base.iterate(c::MaxCombinations{K}, state::NTuple{K, Int}) where {K}
+    n = c.n
+    next = _mc_increment(state, n, Val(K))
+    # Skip tuples whose max is below n.
+    while next !== nothing && maximum(next) < n
+        next = _mc_increment(next, n, Val(K))
+    end
+    next === nothing && return nothing
+    return next, next
+end
+
+# Increment a K-digit counter with digits in 1..n in lexicographic (right-to-left carry) order.
+function _mc_increment(state::NTuple{K, Int}, n::Int, ::Val{K}) where {K}
+    for i in K:-1:1
+        if state[i] < n
+            return ntuple(j -> j < i ? state[j] : j == i ? state[i] + 1 : 1, Val(K))
+        end
+    end
+    return nothing  # all digits are n → overflow
+end
+
+"""
+    max_combinations(n::Int, k::Int)
+
+Return an iterator over all ordered k-tuples of positive integers with maximum equal to `n`.
+Delegates to [`MaxCombinations{k}`](@ref) for a compile-time arity specialisation.
+"""
+max_combinations(n::Int, k::Int) = MaxCombinations{k}(n)
+
+
+"""
+    max_program_combinations(bank::BUBank, types, max_depth::Int)
+
+Return an iterator over all tuples `(p1, …, pk)` such that:
+- `pi` is a program in `bank` with return type `types[i]`
+- the costs `(c1, …, ck)` satisfy `maximum(ci) == max_depth`
+
+Used for depth-based enumeration: programs of depth `d` require children whose depth
+maximum equals `d-1`.  Analogous to [`program_combinations`](@ref) (which constrains the
+*sum* of costs) but constrains the *maximum* instead.
+"""
+function max_program_combinations(bank::BUBank, types, max_depth::Int)
+    return max_program_combinations(bank, types, max_depth, Val(length(types)))
+end
+
+function max_program_combinations(bank::BUBank, types, max_depth::Int, ::Val{K}) where {K}
+    return Iterators.flatten(
+        _slots_product(bank, types, costs)
+        for costs in MaxCombinations{K}(max_depth)
+    )
+end
+
+
+"""
     program_combinations(bank::BUBank, types, budget::Int)
 
 Return an iterator over all tuples `(p1, …, pk)` such that:
@@ -207,10 +291,12 @@ Concrete subtypes must have the fields:
 - `max_cost::Int`
 - `program_to_outputs::Union{Nothing,Function}` — `nothing` disables OE
 
-Behaviour can be customised by overriding any of the three extension methods:
-- [`node_cost`](@ref) — cost of a single operator node (default: `1`)
-- [`make_bank`](@ref) — bank structure (default: `BUBank{RuleNode}()`)
-- [`grow`](@ref)      — how new programs are constructed (default: compositions + cartesian product)
+Behaviour can be customised by overriding any of the extension methods:
+- [`node_cost`](@ref)      — cost of a single operator node (default: `1`)
+- [`child_programs`](@ref) — iterator over child program tuples for a given level and operator
+                             (default: additive/sum-based via [`program_combinations`](@ref))
+- [`make_bank`](@ref)      — bank structure (default: `BUBank{RuleNode}()`)
+- [`grow`](@ref)           — how new programs are constructed (default: calls `child_programs`)
 """
 abstract type AbstractBUSIterator end
 
@@ -272,9 +358,9 @@ rule.
 Callers should compute this once and reuse it across levels; `grow` itself does not
 call `nonterminals` so that the allocation is not repeated on every level.
 
-For each non-terminal operator `op`, the child budget is `level - node_cost(iter, op)`.
-[`program_combinations`](@ref) enumerates all child tuples whose costs sum to
-that budget, and [`assemble`](@ref) constructs the resulting program.
+For each non-terminal operator `op`, [`child_programs`](@ref) determines which child
+tuples are valid at this level (by default: costs summing to `level - node_cost(iter, op)`),
+and [`assemble`](@ref) constructs the resulting program.
 """
 function grow(iter::AbstractBUSIterator, level::Int, grammar::AbstractGrammar, bank::BUBank, ops::Vector{Int})
     return Iterators.flatten(
@@ -283,11 +369,31 @@ function grow(iter::AbstractBUSIterator, level::Int, grammar::AbstractGrammar, b
     )
 end
 
+"""
+    child_programs(iter::AbstractBUSIterator, bank::BUBank, types, level::Int, op::Int)
+
+Return an iterator over all child-program tuples `(p1, …, pk)` compatible with building
+a program of cost `level` using operator `op`, where `types = grammar.childtypes[op]`.
+
+This is the primary extension point for defining a cost model:
+
+- **Default (additive)**: children's costs must *sum* to `level - node_cost(iter, op)`.
+  Covers size-based (`node_cost = 1`) and arbitrary weighted costs.
+- **Depth-based** ([`DepthBUSIterator`](@ref)): children's costs must have *maximum*
+  equal to `level - 1`, reflecting `depth(tree) = 1 + max(depth(children))`.
+
+Override this method on a concrete subtype of [`AbstractBUSIterator`](@ref) to implement
+a custom cost model without touching [`grow`](@ref) or [`_grow_op`](@ref).
+"""
+function child_programs(iter::AbstractBUSIterator, bank::BUBank, types, level::Int, op::Int)
+    return program_combinations(bank, types, level - node_cost(iter, op))
+end
+
 function _grow_op(iter, level, grammar, bank, op)
-    budget = level - node_cost(iter, op)
+    types = grammar.childtypes[op]
     return (
         (assemble(op, children), grammar.types[op])
-        for children in program_combinations(bank, grammar.childtypes[op], budget)
+        for children in child_programs(iter, bank, types, level, op)
     )
 end
 
@@ -404,6 +510,43 @@ end
 Base.IteratorSize(::Type{<:CostBUSIterator}) = Base.SizeUnknown()
 
 
+# ──── DepthBUSIterator ───────────────────────────────────────────────────────
+
+"""
+    DepthBUSIterator
+
+A bottom-up iterator that enumerates `RuleNode` programs in order of increasing depth,
+where `depth(leaf) = 1` and `depth(tree) = 1 + max(depth(children))`.
+
+The cost model differs from additive iterators: children do not *split* a budget;
+instead, each child may independently have any depth up to `level - 1`, with at least
+one child required to reach exactly `level - 1`.  This is implemented by overriding
+[`child_programs`](@ref) to use [`max_program_combinations`](@ref).
+
+# Fields
+- `grammar`            — the grammar to search over
+- `start_symbol`       — the return type of programs to yield
+- `max_cost`           — upper bound on program depth (inclusive)
+- `program_to_outputs` — optional `RuleNode → Vector` used for OE pruning
+  (`nothing` disables OE)
+"""
+struct DepthBUSIterator{G<:AbstractGrammar, F} <: AbstractBUSIterator
+    grammar::G
+    start_symbol::Symbol
+    max_cost::Int
+    program_to_outputs::F
+end
+
+DepthBUSIterator(grammar, start_symbol, max_cost) =
+    DepthBUSIterator(grammar, start_symbol, max_cost, nothing)
+
+Base.IteratorSize(::Type{<:DepthBUSIterator}) = Base.SizeUnknown()
+
+function child_programs(iter::DepthBUSIterator, bank::BUBank, types, level::Int, ::Int)
+    return max_program_combinations(bank, types, level - 1)
+end
+
+
 """
     BUSState{B}
 
@@ -483,8 +626,8 @@ function _next_bus(iter::AbstractBUSIterator, state::BUSState)
         yi = 1
 
         # Grow all programs of cost `level` and add them to the bank.
-        # Children always have cost < level (node_cost ≥ 1), so the bank
-        # is complete for all needed children before we start growing.
+        # `child_programs` only draws from costs < level, so the bank is
+        # complete for all needed children before we start growing.
         # Constraint-violating programs are still banked — they can be
         # used as sub-expressions in larger programs.
         for (prog, type) in grow(iter, level, grammar, bank, ops)
