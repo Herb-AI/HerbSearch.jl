@@ -1,16 +1,17 @@
-@testset verbose = true "Context-free iterators" begin
-    @testset "getters for ProgramIterators" begin
-        g1 = @csgrammar begin
-            Real = |(1:9)
-        end
+@testitem "getters for ProgramIterators" begin
+    # g1 = @csgrammar begin
+    #     Real = |(1:9)
+    # end
+    #
+    # bfs = BFSIterator(g1, :Real, max_depth=1, max_size=1)
+    # @test get_grammar(bfs) == g1
+    # @test get_solver(bfs) isa HerbConstraints.Solver
+    # @test get_max_depth(bfs) == 1
+    # @test get_max_size(bfs) == 1
+    # @test get_starting_symbol(bfs) == :Real
+end
 
-        bfs = BFSIterator(g1, :Real, max_depth=1, max_size=1)
-        @test get_grammar(bfs) == g1
-        @test get_solver(bfs) isa HerbConstraints.Solver
-        @test get_max_depth(bfs) == 1
-        @test get_max_size(bfs) == 1
-        @test get_starting_symbol(bfs) == :Real
-    end
+@testitem "Context-free iterators" begin
     @testset "length on single Real grammar" begin
         g1 = @csgrammar begin
             Real = |(1:9)

@@ -232,9 +232,10 @@ _processdecl(mod::Module, mut::Bool, decl::Expr, super=nothing) = @match decl be
         )
 
         # create the struct declaration
-        head = Expr(:(<:), name, isnothing(super) ? :(HerbSearch.ProgramIterator) : :($mod.$super))
+        iter_supertype = isnothing(super) ? :(HerbSearch.ProgramIterator) : :($mod.$super)
+        head = :($name{S} <: $iter_supertype)
         fields = Base.remove_linenums!(quote
-            solver::Solver
+            solver::S
         end)
 
         kwargs = Vector{Expr}()

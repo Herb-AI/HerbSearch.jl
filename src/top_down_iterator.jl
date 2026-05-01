@@ -278,14 +278,14 @@ end
 function _init_pq(::HerbStyle)
     return PriorityQueue{
         Union{SolverState,UniformIterator},
-        Union{Real,Tuple{Vararg{Real}}}
+        Real
     }()
 end
 
 function _init_pq(::ASPStyle)
     return PriorityQueue{
         Union{SolverState,UniformASPIterator},
-        Union{Real,Tuple{Vararg{Real}}}
+        Real
     }()
 end
 
@@ -310,6 +310,8 @@ function Base.iterate(iter::TopDownIterator, pq::DataStructures.PriorityQueue)
     return _find_next_complete_tree(get_solver(iter), pq, iter)
 end
 
+domains_of_pq_items(pq) = get_domain.(get_tree.(keys(pq)))
+
 """
     _find_next_complete_tree(solver::Solver, pq::PriorityQueue, iter::TopDownIterator)::Union{Tuple{RuleNode, Tuple{Vector{AbstractRuleNode}, PriorityQueue}}, Nothing}
 
@@ -322,6 +324,8 @@ function _find_next_complete_tree(
     iter::TopDownIterator
 )
     while length(pq) ≠ 0
+        @info "Current length of PQ" length(pq) domains_of_pq_items(pq)
+        # Main.@infiltrate
         (item, priority_value) = popfirst!(pq)
         solution_or_nothing = _find_next_complete_tree(solver, pq, iter, item, priority_value)
         if !isnothing(solution_or_nothing)
@@ -354,11 +358,19 @@ function _find_next_complete_tree(
     item::SolverState,
     priority_value
 )
-    #the item is a solver state, we should find a variable shaped hole to branch on
+    @info "the item is a solver state, we should find a variable shaped hole to branch on"
     state = item
     load_state!(solver, state)
 
     hole_res = hole_heuristic(iter, get_tree(solver), get_max_depth(solver))
+    if hole_res isa HoleReference
+        @info "Choosing to branch on" hole_res.path
+    else
+        @info "AlreadyComplete"
+    end
+    print_tree(get_tree(solver))
+    # Main.@infiltrate
+
     return _decide_hole(solver, pq, iter, item, priority_value, hole_res)
 end
 
@@ -374,6 +386,8 @@ function _decide_hole(
     # Always use the Uniform Solver
     uniform_iterator = _make_uniform_iterator(solver, iter)
     solution = next_solution!(uniform_iterator)
+    @info "solver state with complete uniform tree dequeued" string(get_tree(solver).domain) get_tree(solver).children
+    # Main.@infiltrate
     if !isnothing(solution)
         push!(pq, uniform_iterator => priority_function(iter, get_grammar(solver), solution, priority_value, true))
         return (solution, pq)
@@ -403,6 +417,8 @@ function _decide_hole(
     ::LimitReached
 )
     # The maximum depth is reached
+    @info "limit reached"
+    # Main.@infiltrate
     return nothing
 end
 
@@ -418,13 +434,18 @@ function _decide_hole(
     (; hole, path) = hole_res
 
     partitioned_domains = partition(hole, get_grammar(solver))
+    @info "solver state dequeued, branching on" string(hole.domain) hole.children path
+    # Main.@infiltrate
     number_of_domains = length(partitioned_domains)
     for (i, domain) ∈ enumerate(partitioned_domains)
         if i < number_of_domains
             state = save_state!(solver)
         end
-        @assert isfeasible(solver) "Attempting to expand an infeasible tree: $(get_tree(solver))"
+
+        isfeasible(solver) || error(lazy"Attempting to expand an infeasible tree: $(get_tree(solver))")
+
         remove_all_but!(solver, path, domain)
+        @info "Enqueueing $domain at" path print_tree(get_tree(solver))
         if isfeasible(solver)
             push!(pq, get_state(solver) => priority_function(iter, get_grammar(solver), get_tree(solver), priority_value, false))
         end
@@ -432,4 +453,6 @@ function _decide_hole(
             load_state!(solver, state)
         end
     end
+    @info "Enqueued all partitions, ready for next iteration" length(pq) domains_of_pq_items(pq)
+    # Main.@infiltrate
 end
