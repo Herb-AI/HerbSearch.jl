@@ -1,4 +1,5 @@
-@testset verbose = true "UniformASPIterator" begin
+@testitem "UniformASPIterator" setup = [TestSetup] begin
+
     using Clingo_jll
 
     @testset "ASP_solution_conversion" begin

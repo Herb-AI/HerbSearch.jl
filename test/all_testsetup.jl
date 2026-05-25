@@ -1,3 +1,19 @@
+@testsetup module TestSetup
+export parametrized_test, create_problem, test_constraints!, test_constraint!
+
+using Reexport
+@reexport using HerbConstraints
+@reexport using HerbCore
+@reexport using HerbGrammar
+@reexport using HerbInterpret
+@reexport using HerbSearch
+@reexport using HerbSpecification
+@reexport using Random
+
+
+Random.seed!(1234)
+using Test
+
 using Logging
 disable_logging(LogLevel(1))
 
@@ -78,4 +94,6 @@ If `allow_trivial = false`, it is tested that:
 """
 function test_constraint!(grammar::AbstractGrammar, constraint::AbstractGrammarConstraint; max_size=typemax(Int), max_depth=typemax(Int), allow_trivial=false)
     test_constraints!(grammar, [constraint], max_size = max_size, max_depth = max_depth, allow_trivial=allow_trivial)
+end
+
 end

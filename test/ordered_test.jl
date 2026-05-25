@@ -1,6 +1,4 @@
-using HerbCore, HerbGrammar, HerbConstraints
-
-@testset verbose=true "Ordered" begin
+@testitem "Ordered" setup = [TestSetup] begin
 
     @testset "Number of candidate programs" begin
         grammar = @csgrammar begin

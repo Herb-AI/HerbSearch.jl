@@ -1,4 +1,4 @@
-using Test
+@testitem "Bottom Up test" setup = [TestSetup] begin
 using DataStructures: DefaultDict, PriorityQueue, FasterForward, enqueue!
 import HerbSearch: init_combine_structure
 import HerbSearch: _hash_outputs_to_u64vec
@@ -293,4 +293,6 @@ end
         end
     end
 end
+end
+ 
 end
