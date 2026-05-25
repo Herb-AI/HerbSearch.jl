@@ -1,4 +1,4 @@
-using HerbCore, HerbGrammar, HerbConstraints
+@testitem "Constraints" setup = [TestSetup] begin
 
 @testset verbose=true "Constraints" begin
 
@@ -120,4 +120,5 @@ using HerbCore, HerbGrammar, HerbConstraints
         iter = BFSIterator(grammar, :Int, max_size=10)
         @test length(iter) == 0
     end
+end
 end

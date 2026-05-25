@@ -1,4 +1,4 @@
-using HerbCore, HerbGrammar, HerbConstraints
+@testitem "Contains" setup = [TestSetup] begin
 
 @testset verbose=true "Contains" begin
 
@@ -18,4 +18,5 @@ using HerbCore, HerbGrammar, HerbConstraints
         iter = BFSIterator(grammar, :Permutation)
         @test length(iter) == 120
     end
+end
 end

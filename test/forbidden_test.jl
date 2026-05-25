@@ -1,6 +1,5 @@
-using HerbCore, HerbGrammar, HerbConstraints
+@testitem "Forbidden" setup = [TestSetup] begin
 
-@testset verbose=true "Forbidden" begin
 
     @testset "Number of candidate programs" begin
         #with constraints
