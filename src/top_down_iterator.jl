@@ -382,6 +382,9 @@ function _find_next_complete_tree(
     #the item is a solver state, we should find a variable shaped hole to branch on
     state = item
     load_state!(solver, state)
+    if !isfeasible(solver)
+        return nothing
+    end
 
     hole_res = hole_heuristic(iter, get_tree(solver), get_max_depth(solver))
     return _decide_hole(solver, pq, iter, item, priority_value, hole_res)
