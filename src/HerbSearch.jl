@@ -43,8 +43,6 @@ include("random_iterator.jl")
 
 include("bottom_up_iterator.jl")
 include("bottom_up_iterators/costbased_bus.jl")
-include("bottom_up_iterators/beam_iterator.jl")
-include("bottom_up_iterators/beam_iterator_alt.jl")
 include("bottom_up_iterators/shapebased_bus.jl")
 
 
@@ -86,9 +84,6 @@ export
     SizeBasedBottomUpIterator,
     DepthBasedBottomUpIterator,
     CostBasedBottomUpIterator,
-    BeamIterator,
-    BeamIteratorAlt,
-    BeamEntry,
     AccessAddress,
     CombineAddress,
     remaining_combinations,
