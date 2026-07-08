@@ -373,7 +373,7 @@ function combine(iter::AbstractCostBasedBottomUpIterator, state::GenericBUState)
                 rule_cost = get_rule_cost(iter, rule_idx)
 
                 # total_cost = rule_cost + sum(a -> get_measure(a), child_tuple)
-                total_cost = rule_cost + _calc_measure(child_tuple)
+                total_cost = rule_cost + _calc_measure(iter, child_tuple)
                 total_cost > get_measure_limit(iter) && continue
 
                 push!(state.combinations, CombineAddress(rule_idx, child_tuple) => total_cost)

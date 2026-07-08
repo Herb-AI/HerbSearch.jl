@@ -729,7 +729,6 @@ function get_next_program(iter::BottomUpIterator, state::GenericBUState)
     # Construct new solutions using combine once. If there are still no feasible solutions present, then exhaust the rest of the PQ by setting the horizon to get_measure_limit.
     if !isnothing(state_tracker(state)) 
         old_window = (state.last_horizon, state.new_horizon)
-        @show old_window
         new_program_combinations, state = combine(iter, state)
 
         if isnothing(new_program_combinations) 
