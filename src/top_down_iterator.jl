@@ -129,10 +129,7 @@ Base.@doc """
 
 Creates a breadth-first search iterator for traversing given a grammar, starting from the given symbol. The iterator returns trees in the grammar in increasing order of size.
 """ BFSIterator
-@programiterator mutable BFSIterator(
-    uniform_solver_ref::Ref{Union{UniformSolver,Nothing}}=Ref(nothing),
-    insertion_counter::Int=0
-) <: AbstractBFSIterator
+@programiterator mutable BFSIterator() <: AbstractBFSIterator
 
 Base.@doc """
     @programiterator BFSASPIterator() <: AbstractBFSIterator
@@ -187,10 +184,7 @@ Base.@doc """
 
 Creates a depth-first search iterator for traversing a given a grammar, starting from a given symbol. The iterator returns trees in the grammar in decreasing order of size. 
 """ DFSIterator
-@programiterator mutable DFSIterator(
-    uniform_solver_ref::Ref{Union{UniformSolver,Nothing}}=Ref(nothing),
-    insertion_counter::Int=0
-) <: AbstractDFSIterator
+@programiterator mutable DFSIterator() <: AbstractDFSIterator
 
 Base.@doc """
     @programiterator DFSASPIterator() <: AbstractDFSIterator
@@ -362,9 +356,6 @@ function _find_next_complete_tree(
 )
     #the item is a fixed shaped solver, we should get the next solution and re-enqueue it with a new priority value
     uniform_iterator = item
-    if hasproperty(iter, :uniform_solver_ref) && iter.uniform_solver_ref !== nothing
-        iter.uniform_solver_ref[] = uniform_iterator.solver
-    end
     solution = next_solution!(uniform_iterator)
     if !isnothing(solution)
         push!(pq, uniform_iterator => priority_function(iter, get_grammar(solver), solution, priority_value, true))
@@ -401,9 +392,6 @@ function _decide_hole(
     @timeit_debug get_solver(iter).statistics "#FixedShapedTrees" begin end
     # Always use the Uniform Solver
     uniform_iterator = _make_uniform_iterator(solver, iter)
-    if hasproperty(iter, :uniform_solver_ref) && iter.uniform_solver_ref !== nothing
-        iter.uniform_solver_ref[] = uniform_iterator.solver
-    end
     solution = next_solution!(uniform_iterator)
     if !isnothing(solution)
         push!(pq, uniform_iterator => priority_function(iter, get_grammar(solver), solution, priority_value, true))
@@ -467,9 +455,6 @@ end
 
 function add_constraints!(iter::TopDownIterator, constraints::Vector{AbstractGrammarConstraint})
     HerbConstraints.add_constraints!(iter.solver, constraints)
-    if hasproperty(iter, :uniform_solver_ref) && iter.uniform_solver_ref !== nothing
-        HerbConstraints.add_constraints!(iter.uniform_solver_ref[], constraints)
-    end
 end
 
 # Prints a compact overview of the amount of entries for every priority_value in the pq
