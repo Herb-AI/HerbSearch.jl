@@ -453,8 +453,21 @@ function _decide_hole(
     end
 end
 
-function add_constraints!(iter::TopDownIterator, constraints::Vector{AbstractGrammarConstraint})
+function _add_constraints_no_save!(solver::GenericSolver, state::SolverState, constraints::Vector{<:AbstractGrammarConstraint})
+    load_state!(solver, state) 
+    HerbConstraints.add_constraints!(solver, constraints)
+end
+function _add_constraints_no_save!(::GenericSolver, iter::UniformIterator, constraints::Vector{<:AbstractGrammarConstraint})
     HerbConstraints.add_constraints!(iter.solver, constraints)
+end
+
+function add_constraints!(iter::TopDownIterator, pq::PriorityQueue, constraints::Vector{<:AbstractGrammarConstraint})
+    solver = iter.solver
+    old_state = save_state!(solver)
+    for state_or_uniform in keys(pq)
+        _add_constraints_no_save!(solver, state_or_uniform, constraints)
+    end
+    load_state!(solver, old_state)
 end
 
 # Prints a compact overview of the amount of entries for every priority_value in the pq
