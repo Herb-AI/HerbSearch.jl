@@ -1,5 +1,5 @@
 
-using .DecisionTree: DecisionTreeClassifier, fit!, Leaf, Node, is_leaf
+using .DecisionTree: DecisionTreeClassifier, fit!, predict, Leaf, Node, is_leaf
 struct ConditionalIfElseError <: Exception
 	msg::String
 end
@@ -14,7 +14,7 @@ end
 """
 	$(TYPEDSIGNATURES)
 
-Takes in the problems with the found solutions and combines them into a global solution program 
+Takes in the problems with the found solutions and combines them into a global solution program
 by combining them into a decision tree.
 
  # Arguments
@@ -25,19 +25,31 @@ by combining them into a decision tree.
 - `sym_bool`: The symbol representing boolean conditions in the grammar.
 - `sym_start`: The starting symbol of the grammar.
 - `sym_constraint`: The symbol used to constrain grammar when generating predicates.
-- `symboltable`: The symbol table used for evaluating expressions.
+- `interp`: Compiled interpreter (see `HerbInterpret.make_interpreter`) used to evaluate predicates and,
+  transitively, the assembled program.
+- `max_predicate_attempts`: Number of times to retry with a larger predicate budget if the current one
+  cannot separate the examples.
+- `predicate_growth_factor`: Factor by which the predicate budget grows on each retry.
 
 # Description
 Combines the progams that solve the sub-problems into a decision tree. To learn the decision tree, labels and features are required.
-The solutions to the problems are used as labels. Predicates from the grammar serve as coniditional statements to combine the programs 
-in the decision tree. For this, features are obtained by evaluating the inputs of the examples on the predicates. 
+The solutions to the problems are used as labels. Predicates from the grammar serve as coniditional statements to combine the programs
+in the decision tree. For this, features are obtained by evaluating the inputs of the examples on the predicates.
+
+A decision tree fit on `n_predicates` predicates can only combine the per-example solutions correctly if some
+predicate actually separates every pair of examples that need a different solution program. If two examples get
+identical predicate evaluations but need different programs, the tree cannot split them apart. Both land in the
+same leaf, and that leaf can only point to one program: whichever is in the majority, wrong for the other example.
+Whether that happened is visible directly on the fitted tree, by checking if it reproduces every label exactly, so
+`conquer` checks that before turning the tree into a program, and retries with more predicates instead of returning
+something unverified.
 
 # Returns
 
-A `RuleNode` representing the final program constructed from the solutions to the subproblems.
+A `RuleNode` representing the final program constructed from the solutions to the subproblems, or `nothing` if
+no predicate budget (up to `max_predicate_attempts` retries) could separate the examples.
 """
 function conquer(
-	# problems_to_solutions::Dict{Problem{AbstractVector{T}}, AbstractVector{Int}},
 	problems_to_solutions::AbstractDict{
 		<:Problem{<:AbstractVector{<:IOExample}},
 		<:AbstractVector{Int},
@@ -48,8 +60,10 @@ function conquer(
 	sym_bool::Symbol,
 	sym_start::Symbol,
 	sym_constraint::Symbol,
-	symboltable::SymbolTable,
-)::RuleNode
+	interp;
+	max_predicate_attempts::Int = 5,
+	predicate_growth_factor::Int = 4,
+)::Union{RuleNode, Nothing}
 	# make sure grammar has if-else rulenode
 	idx_ifelse = findfirst(r -> r == :($sym_bool ? $sym_start : $sym_start), grammar.rules)
 	if isnothing(idx_ifelse)
@@ -64,25 +78,30 @@ function conquer(
 	problems = collect(keys(problems_to_solutions))
 	ioexamples = [first(prob.spec) for prob in problems]
 	solutions_idx = collect(values(problems_to_solutions))
-
 	labels = get_labels(solutions_idx)
-	predicates = get_predicates(grammar, sym_bool, sym_constraint, n_predicates)
-	# Matrix of feature vectors. Feature vectors are created by evaluating an input from the IO examples on predicatess.
-	features = get_features(
-		ioexamples,
-		predicates,
-		grammar,
-		symboltable,
-		false,
-	)
-	features = float.(features)
-	# Take labels and features to make DecisionTree
-	# See decision tree example: https://github.com/Herb-AI/HerbSearch.jl/blob/subset-search/src/subset_iterator.jl
-	model = DecisionTreeClassifier()
-	fit!(model, features, labels)
-	final_program = construct_final_program(model.root.node, idx_ifelse, solutions, predicates)
-	return final_program
+
+	attempt_n_predicates = n_predicates
+	for _ in 1:max_predicate_attempts
+		predicates = get_predicates(grammar, sym_bool, sym_constraint, attempt_n_predicates)
+		# Matrix of feature vectors. Feature vectors are created by evaluating an input from the IO examples on predicates.
+		features = float.(get_features(ioexamples, predicates, grammar, interp, true))
+
+		# Take labels and features to make DecisionTree
+		# See decision tree example: https://github.com/Herb-AI/HerbSearch.jl/blob/subset-search/src/subset_iterator.jl
+		model = DecisionTreeClassifier()
+		fit!(model, features, labels)
+
+		if predict(model, features) == labels
+			return construct_final_program(model.root.node, idx_ifelse, solutions, predicates)
+		end
+
+		attempt_n_predicates *= predicate_growth_factor
+	end
+
+	return nothing
 end
+
+input_rules(grammar::AbstractGrammar) = findall(rule -> occursin("_arg_", string(rule)), grammar.rules)
 
 """
 	Returns predicates that can serve as conditional statements for combining programs in a decision tree.
@@ -102,7 +121,7 @@ function get_predicates(grammar::AbstractGrammar,
 	grammar_constraints = deepcopy(grammar)
 	clearconstraints!(grammar_constraints)
 	# Create DomainRuleNode that contains all rules of type sym_constraint and add constraint to grammar
-	rules = grammar_constraints.bytype[sym_constraint]
+	rules = input_rules(grammar)
 	domain = HerbConstraints.DomainRuleNode(grammar_constraints, rules)
 	addconstraint!(grammar_constraints, ContainsSubtree(domain))
 	predicates = _iterate_predicates(grammar_constraints, sym_bool, n_predicates)
@@ -128,6 +147,7 @@ function get_predicates(grammar::AbstractGrammar,
 	domain = HerbConstraints.DomainRuleNode(grammar_constraints, rules)
 	addconstraint!(grammar_constraints, ContainsSubtree(domain))
 	predicates = _iterate_predicates(grammar_constraints, sym_bool, n_predicates)
+
 	return predicates
 end
 
@@ -148,15 +168,15 @@ function _iterate_predicates(grammar::AbstractGrammar, sym_bool::Symbol, n_predi
 end
 
 """
-	Returns a matrix containing the feature vectors for all problem/predicate combinations. 
-	A feature vector is obtained by evaluating a `IOExample` in `ioexamples_solutions` on each
-	predicate.
+	Returns a matrix containing the feature vectors for all problem/predicate combinations.
+	A feature vector is obtained by evaluating a `IOExample` in `ioexamples_solutions` on each predicate,
+	via the compiled `interp` (see `HerbInterpret.make_interpreter`).
 """
 function get_features(
 	ioexamples::AbstractVector{<:IOExample},
 	predicates::AbstractVector{RuleNode},
 	grammar::AbstractGrammar,
-	symboltable::SymbolTable,  # or symboltable::AbstractSymbolTable if that exists
+	interp,
 	allow_evaluation_errors::Bool = true,
 )
 	# features matrix with dimension n_ioexamples x n_predicates
@@ -165,13 +185,12 @@ function get_features(
 	for (i, ex) in enumerate(ioexamples)
 		output = Vector()
 		for pred in predicates
-			expr = rulenode2expr(pred, grammar)
 			try
-				o = execute_on_input(symboltable, expr, ex.in) # will return Bool since we execute on predicates
+				o = interp(pred, ex.in) # will return Bool since we execute on predicates
 				push!(output, o)
 			catch err
 				# Throw the error if `allow_evaluation_errors` is false
-				eval_error = EvaluationError(expr, ex.in, err)
+				eval_error = EvaluationError(rulenode2expr(pred, grammar), ex.in, err)
 				allow_evaluation_errors || throw(eval_error)
 				push!(output, false)
 			end

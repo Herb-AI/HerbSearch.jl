@@ -43,9 +43,10 @@ bvashr_cvc(n1::UInt, n2::Int) = n1 >> n2
 bvnand_cvc(n1::UInt, n2::UInt) = n1 ⊼ n2 #nand
 bvnor_cvc(n1::UInt, n2::UInt) = n1 ⊽ n2 #nor
 
-# additional bitoperations for modified grammar
-bvugt_cvc(n1::UInt, n2::UInt) = n1 > n2 ? UInt(1) : UInt(0) # returns whether n1 > n2
-bveq1_cvc(n::UInt) = n == UInt(1) ? UInt(1) : UInt(0)
+# additional bitoperations for modified grammar; these feed the grammar's `Bool`
+# nonterminal, so they must return an actual Bool, not a bit-as-UInt encoding of one
+bvugt_cvc(n1::UInt, n2::UInt) = n1 > n2
+bveq1_cvc(n::UInt) = n == UInt(1)
 
 problem = Problem(
 	"problem_PRE_100_10",
@@ -77,7 +78,8 @@ if0_cvc(x::UInt, y::UInt, z::UInt) = x == UInt(0) ? y : z
 	sym_bool = :Bool
 	sym_start = :Start
 	sym_constraint = :Input
-	max_enumerations = 10
+	max_time = 30
+	max_enumerations = 5000
 
 	iterator = BFSIterator(grammar, :Start)
 	idx_ifelse = findfirst(r -> r == :($sym_bool ? $sym_start : $sym_start), grammar.rules)
@@ -88,6 +90,7 @@ if0_cvc(x::UInt, y::UInt, z::UInt) = x == UInt(0) ? y : z
 		sym_start,
 		sym_constraint,
 		n_predicates,
+		max_time,
 		max_enumerations,
 	)
 
@@ -95,14 +98,22 @@ if0_cvc(x::UInt, y::UInt, z::UInt) = x == UInt(0) ? y : z
 	add_rule!(grammar, :($sym_start = $sym_bool ? $sym_start : $sym_start))
 	iterator = BFSIterator(grammar, :Start)
 
-	final_program = divide_and_conquer(
+	final_program, _ = divide_and_conquer(
 		problem,
 		iterator,
 		sym_bool,
 		sym_start,
 		sym_constraint,
 		n_predicates,
+		max_time,
 		max_enumerations,
 	)
+
+	# divide_and_conquer must never hand back a program it hasn't verified against
+	# the full spec: either every example checks out, or it reports failure (`nothing`).
+	if !isnothing(final_program)
+		interp = HerbInterpret.make_interpreter(grammar; target_module = Main, cache_module = Main)
+		@test all(interp(final_program, ex) == ex.out for ex in problem.spec)
+	end
 end
 
