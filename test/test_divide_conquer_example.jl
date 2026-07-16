@@ -98,22 +98,23 @@ if0_cvc(x::UInt, y::UInt, z::UInt) = x == UInt(0) ? y : z
 	add_rule!(grammar, :($sym_start = $sym_bool ? $sym_start : $sym_start))
 	iterator = BFSIterator(grammar, :Start)
 
+	# This grammar's `Bool` rules are just two atomic comparisons (no &&/||), so telling
+	# 10 examples apart takes a real predicate budget; 400 is enough, 5 is not.
 	final_program, _ = divide_and_conquer(
 		problem,
 		iterator,
 		sym_bool,
 		sym_start,
 		sym_constraint,
-		n_predicates,
+		400,
 		max_time,
 		max_enumerations,
 	)
 
-	# divide_and_conquer must never hand back a program it hasn't verified against
-	# the full spec: either every example checks out, or it reports failure (`nothing`).
-	if !isnothing(final_program)
-		interp = HerbInterpret.make_interpreter(grammar; target_module = Main, cache_module = Main)
-		@test all(interp(final_program, ex) == ex.out for ex in problem.spec)
-	end
+	# divide_and_conquer must never hand back a program it hasn't verified against the
+	# full spec, so check both that it found one and that the one it found is correct.
+	@test !isnothing(final_program)
+	interp = HerbInterpret.make_interpreter(grammar; target_module = Main, cache_module = Main)
+	@test all(interp(final_program, ex) == ex.out for ex in problem.spec)
 end
 

@@ -37,9 +37,6 @@ LA, USA, May 6-9, 2019.
 - `max_time::Int` : Maximum time that the iterator will run
 - `max_enumerations::Int` : Maximum number of iterations that the iterator will run
 - `mod::Module` : A module containing definitions for the functions in the grammar. Defaults to `Main`.
-- `max_predicate_attempts::Int` : Number of times `conquer` retries with a larger predicate budget if the
-  current one cannot separate the per-example solutions into a single combined program.
-- `predicate_growth_factor::Int` : Factor by which the predicate budget grows on each retry.
 
 Returns a tuple `(final_program, programs_iterated)`. `final_program` is the assembled `RuleNode`, or `nothing`
 if either some example has no solution at all, or the decision tree could not be built into a program that is
@@ -96,8 +93,6 @@ function HerbSearch.divide_and_conquer(
     cache_module::Module = mod,
     allow_errors::Bool = true,
     print_errors::Bool = false,
-    max_predicate_attempts::Int = 5,
-    predicate_growth_factor::Int = 4,
 )
     start_time = time()
     grammar = get_grammar(iterator)
@@ -160,9 +155,7 @@ function HerbSearch.divide_and_conquer(
         sym_bool,
         sym_start,
         sym_constraint,
-        interp;
-        max_predicate_attempts,
-        predicate_growth_factor,
+        interp,
     )
 
     return final_program, programs_iterated

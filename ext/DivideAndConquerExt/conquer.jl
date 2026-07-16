@@ -27,9 +27,6 @@ by combining them into a decision tree.
 - `sym_constraint`: The symbol used to constrain grammar when generating predicates.
 - `interp`: Compiled interpreter (see `HerbInterpret.make_interpreter`) used to evaluate predicates and,
   transitively, the assembled program.
-- `max_predicate_attempts`: Number of times to retry with a larger predicate budget if the current one
-  cannot separate the examples.
-- `predicate_growth_factor`: Factor by which the predicate budget grows on each retry.
 
 # Description
 Combines the progams that solve the sub-problems into a decision tree. To learn the decision tree, labels and features are required.
@@ -41,13 +38,13 @@ predicate actually separates every pair of examples that need a different soluti
 identical predicate evaluations but need different programs, the tree cannot split them apart. Both land in the
 same leaf, and that leaf can only point to one program: whichever is in the majority, wrong for the other example.
 Whether that happened is visible directly on the fitted tree, by checking if it reproduces every label exactly, so
-`conquer` checks that before turning the tree into a program, and retries with more predicates instead of returning
-something unverified.
+`conquer` checks that before turning the tree into a program, and returns `nothing` instead of something unverified
+if it did happen. Passing a larger `n_predicates` gives the tree more to split on and makes this less likely.
 
 # Returns
 
 A `RuleNode` representing the final program constructed from the solutions to the subproblems, or `nothing` if
-no predicate budget (up to `max_predicate_attempts` retries) could separate the examples.
+`n_predicates` predicates could not separate the examples.
 """
 function conquer(
 	problems_to_solutions::AbstractDict{
@@ -60,9 +57,7 @@ function conquer(
 	sym_bool::Symbol,
 	sym_start::Symbol,
 	sym_constraint::Symbol,
-	interp;
-	max_predicate_attempts::Int = 5,
-	predicate_growth_factor::Int = 4,
+	interp,
 )::Union{RuleNode, Nothing}
 	# make sure grammar has if-else rulenode
 	idx_ifelse = findfirst(r -> r == :($sym_bool ? $sym_start : $sym_start), grammar.rules)
@@ -80,25 +75,17 @@ function conquer(
 	solutions_idx = collect(values(problems_to_solutions))
 	labels = get_labels(solutions_idx)
 
-	attempt_n_predicates = n_predicates
-	for _ in 1:max_predicate_attempts
-		predicates = get_predicates(grammar, sym_bool, sym_constraint, attempt_n_predicates)
-		# Matrix of feature vectors. Feature vectors are created by evaluating an input from the IO examples on predicates.
-		features = float.(get_features(ioexamples, predicates, grammar, interp, true))
+	predicates = get_predicates(grammar, sym_bool, sym_constraint, n_predicates)
+	# Matrix of feature vectors. Feature vectors are created by evaluating an input from the IO examples on predicates.
+	features = float.(get_features(ioexamples, predicates, grammar, interp, true))
 
-		# Take labels and features to make DecisionTree
-		# See decision tree example: https://github.com/Herb-AI/HerbSearch.jl/blob/subset-search/src/subset_iterator.jl
-		model = DecisionTreeClassifier()
-		fit!(model, features, labels)
+	# Take labels and features to make DecisionTree
+	# See decision tree example: https://github.com/Herb-AI/HerbSearch.jl/blob/subset-search/src/subset_iterator.jl
+	model = DecisionTreeClassifier()
+	fit!(model, features, labels)
 
-		if predict(model, features) == labels
-			return construct_final_program(model.root.node, idx_ifelse, solutions, predicates)
-		end
-
-		attempt_n_predicates *= predicate_growth_factor
-	end
-
-	return nothing
+	predict(model, features) == labels || return nothing
+	return construct_final_program(model.root.node, idx_ifelse, solutions, predicates)
 end
 
 input_rules(grammar::AbstractGrammar) = findall(rule -> occursin("_arg_", string(rule)), grammar.rules)

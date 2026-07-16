@@ -45,21 +45,18 @@ using .DivideAndConquerExt: conquer
 	]
 	problems_to_solutions = Dict(p => [label] for (p, label) in examples)
 
-	@testset "insufficient predicates and no retry: reports failure, not a wrong program" begin
+	@testset "1 predicate: reports failure, not a wrong program" begin
 		final_program = conquer(
 			problems_to_solutions, solutions, grammar, 1,
-			sym_bool, sym_start, sym_constraint, interp;
-			max_predicate_attempts = 1,
+			sym_bool, sym_start, sym_constraint, interp,
 		)
 		@test isnothing(final_program)
 	end
 
-	@testset "insufficient predicates with retry: grows the budget until it separates" begin
+	@testset "enough predicates: separates the groups correctly" begin
 		final_program = conquer(
-			problems_to_solutions, solutions, grammar, 1,
-			sym_bool, sym_start, sym_constraint, interp;
-			max_predicate_attempts = 5,
-			predicate_growth_factor = 4,
+			problems_to_solutions, solutions, grammar, 100,
+			sym_bool, sym_start, sym_constraint, interp,
 		)
 		@test !isnothing(final_program)
 		for (problem, _) in examples
