@@ -38,13 +38,15 @@ using .DivideAndConquerExt:
 			Number = Number + Number
 			Number = Number * Number
 		end
-		symboltable = grammar2symboltable(grammar)
+		interp = HerbInterpret.make_interpreter(grammar; input_symbols = [:x], target_module = Main, cache_module = Main)
 		problem1 = Problem([IOExample(Dict(:x => 1), 3)])
 		problem2 = Problem([IOExample(Dict(:x => 1), 4)])
-		program = RuleNode(4, [RuleNode(3), RuleNode(2)])
-		expr = rulenode2expr(program, grammar)
-		@test decide(problem1, expr, symboltable) == true
-		@test decide(problem2, expr, symboltable) == false
+		program = RuleNode(4, [RuleNode(3), RuleNode(2)]) # x + 2
+
+		# A concretely-typed input dict (`Dict(:x => 1)` infers as `Dict{Symbol,Int64}`,
+		# not `Dict{Symbol,Any}`) must dispatch correctly through the compiled interpreter.
+		@test decide(problem1, program, interp) == true
+		@test decide(problem2, program, interp) == false
 	end
 	@testset verbose = true "conquer" begin
 		grammar = @csgrammar begin
@@ -61,7 +63,7 @@ using .DivideAndConquerExt:
 			Condition = !Condition
 		end
 
-		symboltable::SymbolTable = grammar2symboltable(grammar)
+		interp = HerbInterpret.make_interpreter(grammar; target_module = Main, cache_module = Main)
 
 		subproblems = [
 			Problem([IOExample(Dict(:_arg_1 => 1, :_arg_2 => 2), 2)]),
@@ -116,13 +118,12 @@ using .DivideAndConquerExt:
 				sym_bool,
 				sym_start,
 				sym_constraint,
-				symboltable,
+				interp,
 			)
 			@test typeof(final_program) == RuleNode
-			expr = rulenode2expr(final_program, grammar)
 			input_example = ioexamples[1].in
 			expected_output = ioexamples[1].out
-			output = execute_on_input(symboltable, expr, input_example)
+			output = interp(final_program, input_example)
 			@test typeof(output) == typeof(expected_output)
 			@test output == expected_output
 		end
@@ -173,14 +174,14 @@ using .DivideAndConquerExt:
 					BitArray([true false true; false true false; true false false; true true true])
 				features = get_features(
 					ioexamples,
-					predicates, grammar, symboltable,
+					predicates, grammar, interp,
 				)
 				@test features == expected_features
 				@test_throws HerbSearch.EvaluationError get_features(
 					ioexamples,
-					[RuleNode(11, [RuleNode(4)])], # ehad_cvc(_arg_1)
+					[RuleNode(11, [RuleNode(4)])], # !1, a Condition-typed rule fed an Integer child
 					grammar,
-					symboltable,
+					interp,
 					false,
 				)
 			end
