@@ -14,6 +14,8 @@ using TimerOutputs
 
 include("sampling_grammar.jl")
 
+include("program_estimator.jl")
+
 include("program_iterator.jl")
 include("uniform_iterator.jl")
 include("uniform_asp_iterator.jl")
@@ -101,6 +103,8 @@ export
     get_bank,
 
     divide_and_conquer,
+    count_programs,
+    count_programs_by_size,
     EvaluationError,
     get_solver
 end # module HerbSearch
