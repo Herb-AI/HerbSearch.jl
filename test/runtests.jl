@@ -38,6 +38,7 @@ Random.seed!(1234)
     include("test_uniform_asp_iterator.jl")
     include("test_asp_iterator.jl")
     include("test_program_estimator.jl")
+    include("test_inspect.jl")
 
     # Excluded because it contains long tests
     # include("test_realistic_searches.jl")

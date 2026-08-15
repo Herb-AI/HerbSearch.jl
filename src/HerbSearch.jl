@@ -47,6 +47,13 @@ include("bottom_up_iterator.jl")
 include("bottom_up_iterators/costbased_bus.jl")
 include("bottom_up_iterators/shapebased_bus.jl")
 
+# interactive inspector (`@inspect`)
+include("inspect/snapshot.jl")
+include("inspect/tracing_solver.jl")
+include("inspect/record.jl")
+include("inspect/json.jl")
+include("inspect/html.jl")
+
 
 # include("divide_conquer_functions/divide.jl")
 # include("divide_conquer_functions/decide.jl")
@@ -101,6 +108,14 @@ export
     retrieve,
     init_combine_structure,
     get_bank,
+
+    # Inspector
+    @inspect,
+    inspect,
+    record_inspection,
+    write_html,
+    Inspection,
+    TracingSolver,
 
     divide_and_conquer,
     count_programs,

@@ -16,7 +16,9 @@ Inner iterator that enumerates all candidate programs of a uniform tree.
 - `nsolutions`: number of solutions found so far.
 """
 mutable struct UniformIterator <: AbstractUniformIterator
-    solver::UniformSolver
+    # `Solver` rather than `UniformSolver`, so that a uniform solver can be wrapped
+    # (e.g. by the inspector's `TracingSolver`). Any wrapper must behave like a `UniformSolver`.
+    solver::Solver
     outeriter::Union{ProgramIterator, Nothing}
     unvisited_branches::Stack{Vector{Branch}}
     stateholes::Vector{StateHole}
@@ -30,7 +32,7 @@ get_solver(iter::UniformIterator) = iter.solver
 
 Constructs a new UniformIterator that traverses solutions of the [`UniformSolver`](@ref) and is an inner iterator of an outer [`ProgramIterator`](@ref).
 """
-function UniformIterator(solver::UniformSolver, outeriter::Union{ProgramIterator, Nothing})
+function UniformIterator(solver::Solver, outeriter::Union{ProgramIterator, Nothing})
     iter = UniformIterator(solver, outeriter, Stack{Vector{Branch}}(), Vector{StateHole}(), 0)
     if isfeasible(solver)
         # create search-branches for the root search-node
