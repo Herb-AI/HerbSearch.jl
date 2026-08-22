@@ -13,8 +13,7 @@ For a quick tutorial on how to get started with using `HerbSearch.jl` have a loo
 
 ## Inspecting a search (`@inspect`)
 
-`@inspect` wraps an iterator's solver in a recorder, runs the search and writes a
-self-contained interactive HTML page:
+`@inspect` wraps an iterator's solver in a recorder and opens an interactive page on it:
 
 ```julia
 using HerbGrammar, HerbConstraints, HerbSearch
@@ -27,8 +26,12 @@ g = @csgrammar begin
 end
 addconstraint!(g, Forbidden(RuleNode(3, [RuleNode(1), VarNode(:a)])))
 
-@inspect BFSIterator(g, :Int; max_depth=3) max_programs=25
+insp = @inspect BFSIterator(g, :Int; max_depth=3)
 ```
+
+**Nothing is enumerated up front.** The search runs on its own task and is suspended
+between requests; the page pulls it forward one propagation or one program at a time, so
+inspecting an unbounded search is fine. `close(insp)` shuts the search and the server down.
 
 The page has four tabs:
 
@@ -44,10 +47,82 @@ The page has four tabs:
   the propagation.
 - **Grammar** — the rules and constraints, for reference.
 
-Options are given after the constructor call: `max_programs`, `max_events`, `output` (where
-to write the page), `open_browser` and `title`. Every other keyword goes to the iterator.
-`@inspect` returns the `Inspection`, so the recording can also be inspected from Julia
-(`insp.steps`, `insp.trace.events`).
+The header has three buttons that resume the suspended search: one propagation, one
+program, or ten programs. `▶` in the propagation tab and the right arrow key do the same,
+so you can walk into a fix point that has not happened yet.
+
+Options are given after the constructor call: `live`, `prefetch`, `max_events`, `output`,
+`open_browser`, `logging`, `title`, `buffer` and `spawn`. Every other keyword goes to the
+iterator.
+
+There is **no cap on how far a live inspection can be pulled** — `prefetch` only decides how
+much is computed before the page opens. `max_programs` applies to `live=false` only, which
+enumerates that many programs up front and writes a static, self-contained page:
+
+```julia
+@inspect BFSIterator(g, :Int; max_depth=3) live=false max_programs=200 output="search.html"
+```
+
+The one ceiling that does bite is `max_events` (default `100_000`): past that the solver
+stops *recording* — the search itself is unaffected, but the trace stops growing. Raise it
+if you are inspecting a long run.
+
+### Driving it from Julia
+
+`@inspect` returns an `Inspection`, which is the same thing the page talks to:
+
+```julia
+insp = @inspect BFSIterator(g, :Int; max_depth=3) open_browser=false prefetch=0
+
+advance!(insp; events = 1)     # exactly one propagation, then suspend again
+advance!(insp; programs = 5)   # ... until five more programs have been emitted
+insp.steps                     # the programs pulled so far, with their queue state
+chronological(insp)            # the solver events, in the order they started
+run_to_end!(insp)              # or just enumerate everything
+close(insp)
+```
+
+### Reactive front ends (Observables, Makie, Pluto)
+
+Load `Observables` and `observe(insp)` gives you observables that are updated on every
+`advance!`, which is what a Makie app or a Pluto notebook needs to render a search that is
+still running:
+
+```julia
+using Observables
+
+obs = observe(insp)            # (; steps, events, latest, finished)
+on(obs.latest) do event
+    isnothing(event) || println(event.name, " → ", length(event.changes), " deduction(s)")
+end
+advance!(insp; events = 20)
+```
+
+`Observables` is a weak dependency: `HerbSearch` itself stays dependency free, and the
+`InspectObservablesExt` extension loads only if you have it.
+
+### Logging instead of a UI
+
+`logging=true` also emits every solver event as a `@debug` message tagged with
+`_group = :herb_inspect`, so the trace can be routed with the normal logging stack (e.g.
+`LoggingExtras.EarlyFilteredLogger`) instead of a page:
+
+```julia
+using LoggingExtras
+
+logger = EarlyFilteredLogger(log -> log.group === :herb_inspect, global_logger())
+with_logger(logger) do
+    insp = @inspect BFSIterator(g, :Int; max_depth=3) live=false max_programs=10 logging=true
+end
+```
+
+### Threads
+
+The search always runs on its own task. `spawn=true` puts that task on another thread and
+`buffer=n` lets it compute up to `n` items ahead of the consumer, so the search and the
+front end really run in parallel. This is safe — the solver is only ever touched by the
+search task and consumers only ever see immutable snapshots — but it makes the recording
+non-deterministic in time, so it is off by default.
 
 If you want to help developing this project, initialize the project with 
 ```shell

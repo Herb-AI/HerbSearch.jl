@@ -8,10 +8,13 @@ One recorded action of the constraint solver.
 - `name`: the function/constraint name, e.g. `"LocalForbidden"` or `"remove_all_but!"`
 - `detail`: a human readable description of the arguments
 - `path`: the location in the tree the event applies to (constraint path / manipulated path)
+- `index`: chronological position of the event (events are *completed* out of order,
+   because an enclosing event finishes after the events it contains)
 - `parent`: index of the enclosing event, or `0` for a top level event
 - `before`/`after`: tree snapshots taken just before and just after the event
 """
 mutable struct TraceEvent
+    index::Int
     kind::Symbol
     solver::Symbol
     name::String
@@ -33,15 +36,26 @@ end
 Collects [`TraceEvent`](@ref)s. A single `Trace` is shared by the generic solver of an
 iterator and by every uniform solver that is spawned during the search, so the events of
 the whole search end up in one chronologically ordered list.
+
+- `sink`: called with every event as soon as it is complete. This is the hook the lazy
+  [`Inspection`](@ref) uses: its sink blocks until a consumer asks for the next event, which
+  is what suspends the search half way through a fix point.
+- `step`: the number of the program the search is currently working towards; stamped onto
+  every event so a front end can group them.
+- `logging`: also emit every event as a `@debug` message in the `:herb_inspect` group.
 """
 mutable struct Trace
     events::Vector{TraceEvent}
     stack::Vector{Int}
     enabled::Bool
     max_events::Int
+    sink::Any
+    step::Int
+    logging::Bool
 end
 
-Trace(; max_events::Int=100_000) = Trace(TraceEvent[], Int[], true, max_events)
+Trace(; max_events::Int=100_000, sink=nothing, logging::Bool=false) =
+    Trace(TraceEvent[], Int[], true, max_events, sink, 0, logging)
 
 Base.length(trace::Trace) = length(trace.events)
 
@@ -104,11 +118,11 @@ _feasible(t::TracingSolver) = HerbConstraints.isfeasible(_inner(t))
 function _open_event!(t::TracingSolver, kind::Symbol, name, detail, path::Vector{Int})
     trace = _trace(t)
     parent = isempty(trace.stack) ? 0 : last(trace.stack)
-    event = TraceEvent(kind, solver_kind(t), string(name), string(detail), path, parent,
-        length(trace.stack), 0, take_snapshot(current_tree(t)), nothing,
+    idx = length(trace.events) + 1
+    event = TraceEvent(idx, kind, solver_kind(t), string(name), string(detail), path, parent,
+        length(trace.stack), trace.step, take_snapshot(current_tree(t)), nothing,
         _feasible(t), true, NodeChange[])
     push!(trace.events, event)
-    idx = length(trace.events)
     push!(trace.stack, idx)
     return idx
 end
@@ -121,7 +135,22 @@ function _close_event!(t::TracingSolver, idx::Int)
     event.after = take_snapshot(current_tree(t))
     event.feasible_after = _feasible(t)
     event.changes = diff_snapshots(event.before, event.after)
+    trace.logging && _log_event(event)
+    # Handing the finished event to the sink is what makes the search lazy: the sink of a
+    # live `Inspection` blocks until someone asks for the next event.
+    isnothing(trace.sink) || trace.sink(event)
     return event
+end
+
+"""
+    _log_event(event)
+
+Emit `event` as a `@debug` message tagged with `_group = :herb_inspect`, so that it can be
+filtered out of the log stream (with `LoggingExtras.EarlyFilteredLogger`, for example).
+"""
+function _log_event(event::TraceEvent)
+    @debug "$(event.kind) $(event.name)" _group = :herb_inspect index = event.index step = event.step kind = event.kind name = event.name detail = event.detail path = event.path solver = event.solver changes = event.changes feasible = event.feasible_after
+    return nothing
 end
 
 """

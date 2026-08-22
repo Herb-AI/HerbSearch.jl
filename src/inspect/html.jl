@@ -62,14 +62,12 @@ function _payload(step::SearchStep)
         "expr" => step.expr,
         "program" => _payload(step.program),
         "queue" => Any[_payload(q) for q ∈ step.queue],
-        "firstEvent" => step.first_event,
-        "lastEvent" => step.last_event,
     )
 end
 
-function _payload(event::TraceEvent, index::Int)
+function _payload(event::TraceEvent)
     return Dict{String,Any}(
-        "i" => index,
+        "i" => event.index,
         "kind" => string(event.kind),
         "solver" => string(event.solver),
         "name" => event.name,
@@ -90,24 +88,41 @@ function _payload(insp::Inspection)
     grammar = insp.grammar
     return Dict{String,Any}(
         "title" => insp.title,
-        "exhausted" => insp.exhausted,
+        "finished" => insp.finished,
+        "open" => length(insp.trace.stack),
         "rules" => _grammar_payload(grammar),
         "constraints" => Any[string(c) for c ∈ grammar.constraints],
         "steps" => Any[_payload(s) for s ∈ insp.steps],
-        "events" => Any[_payload(e, i) for (i, e) ∈ enumerate(insp.trace.events)],
+        "events" => Any[_payload(e) for e ∈ insp.events],
     )
+end
+
+"""
+    render_html(insp::Inspection; live=nothing) -> String
+
+Render the inspector page for `insp`. Whatever has been pulled so far is embedded in the
+page. With `live` set to an [`InspectServer`](@ref), the page also gets the endpoint it can
+use to pull the search further.
+"""
+function render_html(insp::Inspection; live=nothing)
+    data = lock(insp.lock) do
+        to_json(_payload(insp))
+    end
+    config = isnothing(live) ? "null" : to_json(Dict{String,Any}("base" => "/" * live.token * "/"))
+    return replace(_HTML_TEMPLATE, "/*__DATA__*/" => data, "/*__LIVE__*/" => config)
 end
 
 """
     write_html(insp::Inspection, file::AbstractString) -> String
 
-Write the interactive inspector for `insp` to `file` and return the path.
-The page is completely self-contained (no network access, no dependencies).
+Write a static snapshot of the inspector to `file` and return the path. The page is
+completely self-contained (no network access, no dependencies) and contains everything that
+has been pulled so far — use [`run_to_end!`](@ref) or `live=false` first if you want a
+complete recording.
 """
 function write_html(insp::Inspection, file::AbstractString)
-    html = replace(_HTML_TEMPLATE, "/*__DATA__*/" => to_json(_payload(insp)))
     Base.open(file, "w") do io
-        write(io, html)
+        write(io, render_html(insp))
     end
     insp.file = String(file)
     return insp.file
@@ -136,6 +151,9 @@ h1 { font-size: 15px; margin: 0; font-weight: 600; }
        background: var(--panel2); color: var(--muted); user-select: none; }
 .tab.active { background: var(--accent); color: #10131a; border-color: var(--accent); font-weight: 600; }
 label.chk { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; color: var(--muted); }
+.live { display: flex; align-items: center; gap: 6px; padding-left: 6px;
+        border-left: 1px solid var(--line); }
+.live button { padding: 4px 9px; font-size: 12px; }
 main { display: none; }
 main.active { display: grid; grid-template-columns: 320px 1fr; height: calc(100vh - 47px); }
 .side { border-right: 1px solid var(--line); overflow: auto; background: var(--panel); }
@@ -205,6 +223,7 @@ th { color: var(--muted); font-weight: 600; }
   <h1 id="title">Herb inspector</h1>
   <div class="sub" id="subtitle"></div>
   <label class="chk"><input type="checkbox" id="primitives" checked> show grammar primitives</label>
+  <div id="live" class="live"></div>
   <div class="tabs">
     <div class="tab active" data-tab="programs">Programs</div>
     <div class="tab" data-tab="search">Search queue</div>
@@ -235,12 +254,17 @@ th { color: var(--muted); font-weight: 600; }
 
 <script>
 const DATA = /*__DATA__*/;
+const LIVE = /*__LIVE__*/;      // null in a static snapshot
 const RULES = DATA.rules;
 const EVENTS = DATA.events;
 const STEPS = DATA.steps;
+let FINISHED = DATA.finished;
+let OPEN = DATA.open;
+let BUSY = false;
+let ERROR = null;
 
 const state = { primitives: true, program: 0, step: 0, queueItem: 0, event: 0,
-                onlyProps: true, hideNoop: false, showBefore: false };
+                onlyProps: true, hideNoop: false, showBefore: false, follow: true };
 
 const $ = (id) => document.getElementById(id);
 function el(tag, cls, text) {
@@ -317,6 +341,68 @@ function legend() {
   return d;
 }
 
+/* ---------------- lazy pulling ----------------
+   The search is suspended in Julia until we ask for more. Every request returns only what
+   this page does not have yet. In a static snapshot LIVE is null and nothing is fetched. */
+async function pull(opts) {
+  if (!LIVE || BUSY || FINISHED) return false;
+  BUSY = true; drawLive();
+  try {
+    const q = new URLSearchParams({
+      programs: opts.programs || 0, events: opts.events || 0,
+      haveEvents: EVENTS.length, haveSteps: STEPS.length
+    });
+    const res = await fetch(LIVE.base + 'pull?' + q.toString());
+    if (!res.ok) throw new Error('pull failed: ' + res.status);
+    const d = await res.json();
+    ERROR = null;
+    d.events.forEach(e => EVENTS.push(e));
+    d.steps.forEach(s => STEPS.push(s));
+    EVENTS.sort((a, b) => a.i - b.i);   // events complete out of order
+    FINISHED = d.finished; OPEN = d.open;
+    if (d.events.length && state.follow) {
+      const vis = visibleEvents();
+      if (vis.length) { state.event = vis[vis.length - 1].i; state.showBefore = false; }
+    }
+    if (d.steps.length) {
+      state.program = STEPS.length - 1; state.step = STEPS.length - 1; state.queueItem = 0;
+    }
+    BUSY = false;
+    drawAll();
+    return d.events.length + d.steps.length > 0;
+  } catch (err) {
+    // the Julia session may just have been busy or gone away — stay usable either way
+    console.error(err);
+    ERROR = err.message || String(err);
+    BUSY = false;
+    drawAll();
+    return false;
+  }
+}
+function canPull() { return LIVE && !FINISHED && !BUSY; }
+function drawLive() {
+  const box = $('live'); box.innerHTML = '';
+  if (!LIVE) { box.appendChild(el('span', 'sub', 'static snapshot')); return; }
+  const mk = (label, opts, title) => {
+    const b = el('button', '', label);
+    if (title) b.title = title;
+    b.disabled = !canPull();
+    b.onclick = () => pull(opts);
+    return b;
+  };
+  box.appendChild(mk('▶ propagation', { events: 1 }, 'resume the search until the next solver event'));
+  box.appendChild(mk('▶ program', { programs: 1 }, 'resume the search until the next program'));
+  box.appendChild(mk('▶▶ 10', { programs: 10 }, 'ten more programs'));
+  box.appendChild(el('span', 'sub', FINISHED ? 'search exhausted'
+    : BUSY ? 'running…'
+    : ERROR ? 'unreachable (' + ERROR + ') — retry'
+    : 'suspended' + (OPEN ? ' · ' + OPEN + ' event(s) in progress' : '')));
+}
+function drawStatus() {
+  $('subtitle').textContent = STEPS.length + ' program(s) · ' + EVENTS.length +
+    ' solver event(s) · ' + RULES.length + ' rules · ' + DATA.constraints.length + ' constraint(s)';
+}
+
 /* ---------------- tab: programs ---------------- */
 function drawPrograms() {
   const side = $('programList'); side.innerHTML = '';
@@ -343,11 +429,13 @@ function drawPrograms() {
 /* ---------------- tab: search queue ---------------- */
 function drawSearch() {
   const side = $('queueList'); side.innerHTML = '';
+  const perStep = new Map();   // one pass, not one scan of EVENTS per step
+  EVENTS.forEach(e => perStep.set(e.step, (perStep.get(e.step) || 0) + 1));
   STEPS.forEach((s, i) => {
     const item = el('div', 'list-item' + (i === state.step ? ' sel' : ''));
     item.appendChild(el('div', 'mono', 'step ' + s.index + ' · ' + s.expr));
-    const n = s.lastEvent - s.firstEvent + 1;
-    item.appendChild(el('div', 'sub', s.queue.length + ' in queue · ' + (n > 0 ? n : 0) + ' solver events'));
+    const n = perStep.get(s.index) || 0;
+    item.appendChild(el('div', 'sub', s.queue.length + ' in queue · ' + n + ' solver events'));
     item.onclick = () => { state.step = i; state.queueItem = 0; drawSearch(); };
     side.appendChild(item);
   });
@@ -359,9 +447,13 @@ function drawSearch() {
   const prev = el('button', '', '◀ previous step');
   prev.disabled = state.step === 0;
   prev.onclick = () => { state.step--; state.queueItem = 0; drawSearch(); };
-  const next = el('button', '', 'next step ▶');
-  next.disabled = state.step >= STEPS.length - 1;
-  next.onclick = () => { state.step++; state.queueItem = 0; drawSearch(); };
+  const atEnd = state.step >= STEPS.length - 1;
+  const next = el('button', '', atEnd ? 'compute next step ▶' : 'next step ▶');
+  next.disabled = atEnd && !canPull();
+  next.onclick = () => {
+    if (atEnd) { pull({ programs: 1 }); return; }
+    state.step++; state.queueItem = 0; drawSearch();
+  };
   bar.appendChild(prev); bar.appendChild(next);
   bar.appendChild(el('div', 'sub', 'step ' + s.index + ' of ' + STEPS.length +
     ' — queue state right after this program was emitted'));
@@ -473,9 +565,11 @@ function drawPropagation() {
   back.title = 'go back to the previous propagation';
   back.disabled = pos <= 0;
   back.onclick = () => selectEvent(list[pos - 1].i);
-  const fwd = el('button', '', 'apply next ▶');
-  fwd.disabled = pos < 0 || pos >= list.length - 1;
-  fwd.onclick = () => selectEvent(list[pos + 1].i);
+  const last = pos < 0 || pos >= list.length - 1;
+  const fwd = el('button', '', last ? 'propagate next ▶' : 'apply next ▶');
+  fwd.title = last ? 'resume the suspended search until the next event' : '';
+  fwd.disabled = last && !canPull();
+  fwd.onclick = () => last ? pull({ events: 1 }) : selectEvent(list[pos + 1].i);
   bar.appendChild(back); bar.appendChild(fwd);
   const tgl = el('button', '', state.showBefore ? 'showing: before' : 'showing: after');
   tgl.onclick = () => { state.showBefore = !state.showBefore; drawPropagation(); };
@@ -550,7 +644,7 @@ function drawGrammar() {
 }
 
 /* ---------------- wiring ---------------- */
-function drawAll() { drawPrograms(); drawSearch(); drawPropagation(); drawGrammar(); }
+function drawAll() { drawLive(); drawStatus(); drawPrograms(); drawSearch(); drawPropagation(); drawGrammar(); }
 function showTab(name) {
   document.querySelectorAll('main').forEach(m => m.classList.toggle('active', m.id === name));
   document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === name));
@@ -562,13 +656,13 @@ document.addEventListener('keydown', (ev) => {
   const list = visibleEvents();
   const pos = list.findIndex(x => x.i === state.event);
   if (ev.key === 'ArrowLeft' && pos > 0) selectEvent(list[pos - 1].i);
-  if (ev.key === 'ArrowRight' && pos >= 0 && pos < list.length - 1) selectEvent(list[pos + 1].i);
+  if (ev.key === 'ArrowRight') {
+    if (pos >= 0 && pos < list.length - 1) selectEvent(list[pos + 1].i);
+    else pull({ events: 1 });
+  }
 });
 
 $('title').textContent = DATA.title;
-$('subtitle').textContent = STEPS.length + ' program(s)' + (DATA.exhausted ? ' (iterator exhausted)' : '') +
-  ' · ' + EVENTS.length + ' solver event(s) · ' + RULES.length + ' rules · ' +
-  DATA.constraints.length + ' constraint(s)';
 const firstProp = EVENTS.find(e => e.kind === 'propagate' || e.kind === 'post');
 state.event = firstProp ? firstProp.i : (EVENTS.length ? 1 : 0);
 drawAll();

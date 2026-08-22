@@ -12,6 +12,11 @@ using MLStyle
 using DocStringExtensions
 using TimerOutputs
 
+# `import`, not `using`: `Sockets` exports `accept`, which HerbSearch defines itself for
+# stochastic search. The inspector's server qualifies every socket call instead.
+import Random
+import Sockets
+
 include("sampling_grammar.jl")
 
 include("program_estimator.jl")
@@ -50,9 +55,10 @@ include("bottom_up_iterators/shapebased_bus.jl")
 # interactive inspector (`@inspect`)
 include("inspect/snapshot.jl")
 include("inspect/tracing_solver.jl")
-include("inspect/record.jl")
+include("inspect/session.jl")
 include("inspect/json.jl")
 include("inspect/html.jl")
+include("inspect/server.jl")
 
 
 # include("divide_conquer_functions/divide.jl")
@@ -112,8 +118,15 @@ export
     # Inspector
     @inspect,
     inspect,
+    advance!,
+    run_to_end!,
+    on_update!,
+    observe,
+    chronological,
     record_inspection,
+    render_html,
     write_html,
+    serve!,
     Inspection,
     TracingSolver,
 
