@@ -101,7 +101,7 @@ struct Compositions{K}
     n::Int
 end
 
-Base.eltype(::Type{Compositions{K}}) where {K} = NTuple{K, Int}
+Base.eltype(::Type{Compositions{K}}) where {K} = NTuple{K, Int} #TODO not true?
 Base.IteratorSize(::Type{<:Compositions}) = Base.SizeUnknown()
 
 function Base.iterate(c::Compositions{K}) where {K}
@@ -110,21 +110,46 @@ function Base.iterate(c::Compositions{K}) where {K}
     return state, state
 end
 
-function Base.iterate(c::Compositions{K}, state::NTuple{K, Int}) where {K}
+function _fill_ntuple(i, state, K, tail)
+    return j -> _fill_ntuple(i, j, K, state, tail)
+end
+
+function _fill_ntuple(i, j, K, state, tail)
+    if j < i
+        return state[j]
+    elseif j == i
+        return state[i] + 1
+    elseif j < K
+        return 1
+    else
+        return tail
+    end
+end
+
+@generated function Base.iterate(c::Compositions{K}, state::NTuple{K, Int}) where {K}
     # Walk right-to-left accumulating the suffix sum.
     # At position i, if the suffix sum of state[i+1..K] exceeds K-i (meaning at
     # least one element to the right is > 1), we can advance here: increment
     # state[i], reset state[i+1..K-1] to 1, and assign the remainder to state[K].
-    suffix = state[K]
-    for i in K-1:-1:1
-        if suffix > K - i
-            tail = suffix - (K - i)
-            next = ntuple(j -> j < i ? state[j] : j == i ? state[i] + 1 : j < K ? 1 : tail, Val(K))
-            return next, next
+    init_suffix = :(suffix = state[K])
+    loop_bodies = []
+    for i in K-1:-1:1 #TODO does this actually unroll?
+        ex = quote
+            if suffix > K - $i
+                tail = suffix - (K - $i)
+                next = ntuple(_fill_ntuple($i, state, K, tail), Val(K))
+                return next, next
+            end
+            suffix += state[$i]
         end
-        suffix += state[i]
+        push!(loop_bodies, ex) 
     end
-    return nothing
+    final_return = :(return nothing)
+    return quote
+        $init_suffix
+        $(loop_bodies...)
+        $final_return
+    end
 end
 
 """
