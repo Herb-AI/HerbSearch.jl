@@ -45,6 +45,8 @@ include("bottom_up_iterator.jl")
 include("bottom_up_iterators/costbased_bus.jl")
 include("bottom_up_iterators/shapebased_bus.jl")
 
+include("new_bus.jl")
+
 
 # include("divide_conquer_functions/divide.jl")
 # include("divide_conquer_functions/decide.jl")
@@ -76,6 +78,31 @@ export
     validate_iterator,
     sample,
     rand,
+
+    # New bottom-up bank
+    BUBank,
+    add!,
+    get_programs,
+    get_costs,
+    get_types,
+    has_programs,
+    compositions,
+    program_combinations,
+    MaxCombinations,
+    max_combinations,
+    max_program_combinations,
+    AbstractBUSIterator,
+    node_cost,
+    child_programs,
+    make_bank,
+    nonterminals,
+    assemble,
+    grow,
+    is_observationally_equivalent!,
+    CostBUSIterator,
+    DepthBUSIterator,
+    BUSState,
+    CostBUSState,
 
     # Bottom-up Searches
     BottomUpState,
