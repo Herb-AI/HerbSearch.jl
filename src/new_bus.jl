@@ -437,6 +437,7 @@ a signature vector on every OE probe. The 64-bit hash space makes collisions
 negligible in practice (probability ≈ n²/2⁶⁵ for n programs).
 """
 function _hash_outputs(outputs)::UInt64
+    #TODO isn't this just a hash on the set of outputs?
     h = HASH_SEED
     for o in outputs
         h = hash(o, h)
@@ -463,7 +464,9 @@ function is_observationally_equivalent!(
     isnothing(eval_fn) && return false
     sig = _hash_outputs(eval_fn(prog))
     type_seen = get!(seen, type, Set{UInt64}())
-    sig ∈ type_seen && return true
+    sig ∈ type_seen && begin
+        return true
+    end
     push!(type_seen, sig)
     return false
 end
@@ -624,6 +627,7 @@ end
 
 function _satisfies_constraints(grammar, prog)
     isempty(grammar.constraints) && return true
+    # Main.@infiltrate
     all(HerbConstraints.check_tree(c, prog) for c in grammar.constraints)
 end
 
@@ -647,6 +651,7 @@ function _next_bus(iter::AbstractBUSIterator, state::BUSState)
 
         # Nothing left to yield at this level — advance.
         level += 1
+        @debug "Increasing level" level
         level > iter.max_cost && return nothing
         yi = 1
 
@@ -660,5 +665,6 @@ function _next_bus(iter::AbstractBUSIterator, state::BUSState)
                 add!(bank, type, level, prog)
             end
         end
+        # Main.@infiltrate
     end
 end
