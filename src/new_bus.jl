@@ -627,7 +627,6 @@ end
 
 function _satisfies_constraints(grammar, prog)
     isempty(grammar.constraints) && return true
-    # Main.@infiltrate
     all(HerbConstraints.check_tree(c, prog) for c in grammar.constraints)
 end
 
