@@ -42,6 +42,7 @@ Random.seed!(1234)
     # include("test_realistic_searches.jl")
     @testset verbose = true "Divide and conquer extension" begin
         include("test_divide_conquer.jl")
+        include("test_divide_conquer_soundness.jl")
         include("test_divide_conquer_example.jl")
     end
     doctest(HerbSearch; manual=false)

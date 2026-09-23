@@ -6,15 +6,28 @@ Returns `True` if the program solves the given problem.
 
 # Arguments
 - `problem`: specification of the (sub)problem
-- `expr`: Corresponding Julia expression of the program under decision
-- `symboltable`: The symbol table used for evaluating expressions.
+- `program`: the candidate program under decision
+- `interp`: compiled interpreter (see `HerbInterpret.make_interpreter`) used to run `program`
 """
 function decide(
-	problem::Problem,
-	expr::Any,
-	symboltable::SymbolTable,
-)::Bool
-	score = HerbSearch.evaluate(problem, expr, symboltable, allow_evaluation_errors = true)
-	return score == 1
+    problem::Problem,
+    program::AbstractRuleNode,
+    interp::F;
+    eq::Function = (==),
+    allow_errors::Bool = true,
+) where {F}
+    for ex in problem.spec
+        if allow_errors
+            try
+                y = interp(program, ex)
+                eq(y, ex.out) || return false
+            catch err
+                return false
+            end
+        else
+            y = interp(program, ex)
+            eq(y, ex.out) || return false
+        end
+    end
+    return true
 end
-
