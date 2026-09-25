@@ -109,7 +109,7 @@ struct Compositions{K}
     n::Int
 end
 
-Base.eltype(::Type{Compositions{K}}) where {K} = NTuple{K, Int} #TODO not true?
+Base.eltype(::Type{Compositions{K}}) where {K} = NTuple{K, Int}
 Base.IteratorSize(::Type{<:Compositions}) = Base.SizeUnknown()
 
 function Base.iterate(c::Compositions{K}) where {K}
@@ -624,7 +624,6 @@ function Base.iterate(iter::AbstractBUSIterator)
         if (
             !is_observationally_equivalent!(seen, type, prog, iter.program_to_outputs) &&
             _satisfies_constraints(isantimonotone, grammar, prog)
-            # true
         )
             add!(bank, type, cost, prog)
         end
