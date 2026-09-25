@@ -624,6 +624,7 @@ function Base.iterate(iter::AbstractBUSIterator)
         if (
             !is_observationally_equivalent!(seen, type, prog, iter.program_to_outputs) &&
             _satisfies_constraints(isantimonotone, grammar, prog)
+            # true
         )
             add!(bank, type, cost, prog)
         end
@@ -676,7 +677,10 @@ function _next_bus(iter::AbstractBUSIterator, state::BUSState)
         # used as sub-expressions in larger programs.
         for (prog, type) in grow(iter, level, grammar, bank, ops)
             total += 1
-            if !is_observationally_equivalent!(seen, type, prog, iter.program_to_outputs)
+            if (
+                !is_observationally_equivalent!(seen, type, prog, iter.program_to_outputs) &&
+                _satisfies_constraints(isantimonotone, grammar, prog)
+            )
                 add!(bank, type, level, prog)
             end
         end

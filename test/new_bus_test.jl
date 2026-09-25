@@ -1,14 +1,23 @@
-import HerbSearch: freeze_state
-using HerbConstraints
-
-struct TestSizeIter <: AbstractBUSIterator end  # uses default node_cost = 1
-
-struct TestCostIter <: AbstractBUSIterator
-    costs::Vector{Int}
+@testsetup module TestSize
+    using HerbSearch: AbstractBUSIterator
+    export TestSizeIter
+    struct TestSizeIter <: AbstractBUSIterator end  # uses default node_cost = 1
 end
-HerbSearch.node_cost(iter::TestCostIter, op::Int) = iter.costs[op]
+@testsetup module TestCost
+    using HerbSearch: HerbSearch, AbstractBUSIterator
+    export TestCostIter
+    struct TestCostIter <: AbstractBUSIterator
+        costs::Vector{Int}
+    end
+    HerbSearch.node_cost(iter::TestCostIter, op::Int) = iter.costs[op]
+end
 
-@testset "assemble(prog::RuleNode, children)" begin
+@testitem "assemble(prog::RuleNode, children)" setup = [TestSize, TestCost] begin
+    using HerbGrammar: @csgrammar
+    using HerbSearch: freeze_state
+    using HerbConstraints
+    using HerbCore: RuleNode, Hole
+
     # Grammar (implicit, 3 rules):
     #   rule 1: Int = 1
     #   rule 2: Int = 2
@@ -61,7 +70,10 @@ HerbSearch.node_cost(iter::TestCostIter, op::Int) = iter.costs[op]
     end
 end
 
-@testset "grow" begin
+@testitem "grow" setup = [TestSize, TestCost] begin
+    using HerbGrammar: @csgrammar
+    using HerbCore: RuleNode
+
     # Grammar:
     #   rule 1: Int = 1          (terminal)
     #   rule 2: Int = 2          (terminal)
@@ -134,7 +146,7 @@ end
     end
 end
 
-@testset "compositions" begin
+@testitem "compositions" setup = [TestSize, TestCost] begin
     # basic cases
     @test Set(collect(compositions(1, 1))) == Set([(1,)])
     @test Set(collect(compositions(3, 1))) == Set([(3,)])
@@ -161,7 +173,9 @@ end
     @test length(collect(compositions(6, 4))) == binomial(5, 3)
 end
 
-@testset "program_combinations" begin
+@testitem "program_combinations" setup = [TestSize, TestCost] begin
+    using HerbCore: RuleNode
+
     # Grammar (implicit):
     #   rule 1: Int  = 1          (terminal)
     #   rule 2: Int  = 2          (terminal)
@@ -255,7 +269,8 @@ end
     end
 end
 
-@testset "BUBank" verbose = true begin
+@testitem "BUBank" setup = [TestSize, TestCost] begin
+    using HerbCore: RuleNode
 
     @testset "add! and get_programs" begin
         b = BUBank{RuleNode}()
@@ -305,7 +320,12 @@ end
 
 end
 
-@testset "CostBUSIterator" verbose = true begin
+@testitem "CostBUSIterator" setup = [TestCost, TestSize] begin
+    using HerbCore: RuleNode
+    using HerbGrammar: @csgrammar
+    using HerbConstraints: HerbConstraints, Forbidden, VarNode
+    using HerbSearch: freeze_state
+
     # Grammar:
     #   rule 1: Int = 1          (terminal,     cost 2)
     #   rule 2: Int = 2          (terminal,     cost 2)
@@ -723,7 +743,7 @@ end
     end
 end
 
-@testset "MaxCombinations / max_combinations" begin
+@testitem "MaxCombinations / max_combinations" setup = [TestCost, TestSize] begin
     # K=1: only the single-element tuple (n,)
     @test collect(MaxCombinations{1}(1)) == [(1,)]
     @test collect(MaxCombinations{1}(3)) == [(3,)]
@@ -758,7 +778,8 @@ end
     @test isempty(collect(MaxCombinations{0}(3)))
 end
 
-@testset "max_program_combinations" begin
+@testitem "max_program_combinations" begin
+    using HerbCore: RuleNode
     leaf1 = RuleNode(1)
     leaf2 = RuleNode(2)
     plus_1_1 = RuleNode(3, [RuleNode(1), RuleNode(1)])
@@ -800,7 +821,9 @@ end
     end
 end
 
-@testset "DepthBUSIterator" verbose = true begin
+@testitem "DepthBUSIterator" setup = [TestCost, TestSize] begin
+    using HerbCore: RuleNode
+    using HerbGrammar: @csgrammar
     g = @csgrammar begin
         Int = 1
         Int = 2
