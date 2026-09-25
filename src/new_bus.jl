@@ -510,13 +510,14 @@ pruning: programs with identical output signatures are discarded.
   appears here are never added to the bank above the specified cost
   (default: empty — no per-type restriction)
 """
-struct CostBUSIterator{G<:AbstractGrammar, F, B} <: AbstractBUSIterator
+@kwdef struct CostBUSIterator{G<:AbstractGrammar, F, B, R} <: AbstractBUSIterator
     grammar::G
     start_symbol::Symbol
     max_cost::Int
     rule_costs::Vector{Int}
-    program_to_outputs::F
-    type_cost_bounds::B  # Nothing or Dict{Symbol,Int}
+    program_to_outputs::F = nothing
+    type_cost_bounds::B = nothing  # Nothing or Dict{Symbol,Int}
+    node_type::Type{R} = RuleNode
 end
 
 CostBUSIterator(grammar, start_symbol, max_cost, rule_costs) =

@@ -16,12 +16,14 @@ end
 
 function bench_cost_bus()
     suite = BenchmarkGroup(["bottom-up", "cost-based"])
-    g_oe = @csgrammar begin
+    grammar = @csgrammar begin
         Int = x
         Int = 0
         Int = Int + Int
     end
-    costs_oe = [1, 1, 1]
+    start_symbol = :Int
+    max_cost = 10
+    rule_costs = [1, 1, 1]
     inputs = [1, 2, 3]
 
     function ev(p, x)
@@ -30,16 +32,16 @@ function bench_cost_bus()
         return ev(p.children[1], x) + ev(p.children[2], x)
     end
 
-    function eval_prog(prog::RuleNode, inputs)
+    function program_to_outputs(prog::RuleNode, inputs)
         return ev.((prog,), inputs)
     end
-    eval_prog(i) = Base.Fix2(eval_prog, i)
+    program_to_outputs(i) = Base.Fix2(program_to_outputs, i)
 
-    it = CostBUSIterator(g_oe, :Int, 20, costs_oe, nothing)
+    it = CostBUSIterator(; grammar, start_symbol, max_cost, rule_costs, program_to_outputs = nothing)
 
     suite["No OE"] = @benchmarkable foreach(identity, $it)
 
-    it_oe = CostBUSIterator(g_oe, :Int, 20, costs_oe, eval_prog(inputs))
+    it_oe = CostBUSIterator(; grammar, start_symbol, max_cost, rule_costs, program_to_outputs = program_to_outputs(inputs))
 
     suite["With OE"] = @benchmarkable foreach(identity, $it_oe)
 
