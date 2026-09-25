@@ -1,6 +1,3 @@
-
-
-
 """
     BUBank{P}
 
@@ -60,6 +57,17 @@ Return all return types present in `bank`.
 function get_types(bank::BUBank)
     return keys(bank.data)
 end
+
+function Base.length(bank::BUBank)
+    return sum(length, values.(values(bank.data)))
+end
+function Base.getindex(bank::BUBank, type::Symbol)
+    return getindex(bank.data, type)
+end
+function Base.getindex(bank::BUBank, type::Symbol, cost)
+    return getindex(getindex(bank.data, type), cost)
+end
+
 
 """
     has_programs(bank::BUBank, type::Symbol, cost::Int) :: Bool
@@ -595,6 +603,7 @@ struct BUSState{B}
     ops::Vector{Int}
     level::Int
     yield_index::Int
+    total::Int
 end
 
 # Keep the old name as an alias so existing code continues to work.
@@ -612,22 +621,27 @@ function Base.iterate(iter::AbstractBUSIterator)
         prog = RuleNode(rule_idx)
         type = grammar.types[rule_idx]
         cost = node_cost(iter, rule_idx)
-        if !is_observationally_equivalent!(seen, type, prog, iter.program_to_outputs)
+        if (
+            !is_observationally_equivalent!(seen, type, prog, iter.program_to_outputs) &&
+            _satisfies_constraints(isantimonotone, grammar, prog)
+        )
             add!(bank, type, cost, prog)
         end
     end
 
     # Start at level 0; _next_bus will immediately advance to level 1.
-    return _next_bus(iter, BUSState(bank, seen, ops, 0, 1))
+    return _next_bus(iter, BUSState(bank, seen, ops, 0, 1, 0))
 end
 
 function Base.iterate(iter::AbstractBUSIterator, state::BUSState)
     return _next_bus(iter, state)
 end
 
+function _satisfies_constraints(f, grammar, prog)
+    return all(HerbConstraints.check_tree(c, prog) for c in grammar.constraints if f(c))
+end
 function _satisfies_constraints(grammar, prog)
-    isempty(grammar.constraints) && return true
-    all(HerbConstraints.check_tree(c, prog) for c in grammar.constraints)
+    return _satisfies_constraints(Returns(true), grammar, prog)
 end
 
 function _next_bus(iter::AbstractBUSIterator, state::BUSState)
@@ -637,20 +651,21 @@ function _next_bus(iter::AbstractBUSIterator, state::BUSState)
     level   = state.level
     yi      = state.yield_index
     grammar = iter.grammar
+    total   = state.total
 
     while true
         progs = get_programs(bank, iter.start_symbol, level)
         while yi <= length(progs)
             prog = progs[yi]
             yi += 1
-            if _satisfies_constraints(grammar, prog)
-                return prog, BUSState(bank, seen, ops, level, yi)
+            if _satisfies_constraints(!isantimonotone, grammar, prog)
+                return prog, BUSState(bank, seen, ops, level, yi, total)
             end
         end
 
         # Nothing left to yield at this level — advance.
         level += 1
-        @debug "Increasing level" level
+        @debug "Increasing level" level length(bank) total
         level > iter.max_cost && return nothing
         yi = 1
 
@@ -660,10 +675,10 @@ function _next_bus(iter::AbstractBUSIterator, state::BUSState)
         # Constraint-violating programs are still banked — they can be
         # used as sub-expressions in larger programs.
         for (prog, type) in grow(iter, level, grammar, bank, ops)
+            total += 1
             if !is_observationally_equivalent!(seen, type, prog, iter.program_to_outputs)
                 add!(bank, type, level, prog)
             end
         end
-        # Main.@infiltrate
     end
 end
