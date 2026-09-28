@@ -11,6 +11,10 @@ defining new strategies.
 """
 abstract type ProgramIterator end
 
+# When an iterator is used multiple times we want each traversal to start
+# from a fresh solver instance.  The solver field in the iterator serves as
+# the prototype copy.
+
 """
     get_solver(pi::ProgramIterator)
 
@@ -92,10 +96,8 @@ Base.eltype(::ProgramIterator) = Union{RuleNode,StateHole}
 """
     Base.length(iter::ProgramIterator)    
 
-Counts and returns the number of possible programs without storing all the programs.
-
-!!! warning
-    Modifies and exhausts the iterator
+Counts and returns the number of possible programs without storing all of the
+programs.
 """
 function Base.length(iter::ProgramIterator)
     l = 0
