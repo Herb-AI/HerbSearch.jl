@@ -1,11 +1,4 @@
-using Test
-using HerbSearch 
-using HerbGrammar
-using HerbCore
-using HerbConstraints
-using Random
-
-@testset "Sampling grammar" verbose=true begin 
+@testitem "Sampling grammar" setup = [TestSetup] begin
 
     @testset "Sampling with rand() returns programs in the given max_depth" begin
         arithmetic_grammar = @csgrammar begin

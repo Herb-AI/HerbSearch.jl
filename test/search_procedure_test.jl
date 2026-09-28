@@ -1,5 +1,6 @@
+@testitem "Search procedure synth" setup = [TestSetup] begin
 
-@testset verbose=true "Search procedure synth" begin
+
     g₁ = @csgrammar begin
         Number = |(1:2)
         Number = x

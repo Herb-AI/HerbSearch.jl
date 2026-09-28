@@ -1,4 +1,5 @@
-@testset verbose=true "UniformIterator" begin
+@testitem "UniformIterator" setup = [TestSetup] begin
+
 
     function create_dummy_grammar_and_tree_128programs()
         grammar = @csgrammar begin

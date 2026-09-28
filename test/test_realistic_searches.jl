@@ -1,4 +1,8 @@
-@testset verbose=true "Somewhat larger domains" begin
+# 
+# This is a long test, it will not run by default. 
+# To let ReTestItems pick this up, append "_test" at the end of the file name.
+
+@testitem "Somewhat larger domains" setup = [TestSetup] begin
     @testset "Small domain, small operators" begin
         """Expects to return a program equivalent to 1 + (1 - x) = 2 - x"""
 
