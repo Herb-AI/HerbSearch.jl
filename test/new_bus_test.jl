@@ -1,15 +1,23 @@
 @testsetup module TestSize
-    using HerbSearch: AbstractBUSIterator
+    using HerbSearch: HerbSearch, AbstractBUSIterator
+    using HerbCore: RuleNode
+
     export TestSizeIter
+
     struct TestSizeIter <: AbstractBUSIterator end  # uses default node_cost = 1
+    HerbSearch.node_type(::Type{<:TestSizeIter}) = RuleNode
 end
 @testsetup module TestCost
     using HerbSearch: HerbSearch, AbstractBUSIterator
+    using HerbCore: RuleNode
+
     export TestCostIter
+
     struct TestCostIter <: AbstractBUSIterator
         costs::Vector{Int}
     end
     HerbSearch.node_cost(iter::TestCostIter, op::Int) = iter.costs[op]
+    HerbSearch.node_type(::Type{<:TestCostIter}) = RuleNode
 end
 
 @testitem "assemble(prog::RuleNode, children)" setup = [TestSize, TestCost] begin

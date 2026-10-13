@@ -1,6 +1,8 @@
 module HerbSearch
 
 using DataStructures
+import AbstractTrees as AT
+using LRUCache: LRU
 
 using HerbCore
 using HerbGrammar

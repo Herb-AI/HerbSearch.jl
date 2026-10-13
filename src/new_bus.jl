@@ -141,7 +141,7 @@ end
     # state[i], reset state[i+1..K-1] to 1, and assign the remainder to state[K].
     init_suffix = :(suffix = state[K])
     loop_bodies = []
-    for i in K-1:-1:1 #TODO does this actually unroll?
+    for i in K-1:-1:1
         ex = quote
             if suffix > K - $i
                 tail = suffix - (K - $i)
@@ -341,7 +341,7 @@ The default returns `1` (size-based enumeration).
 Override to implement cost-based enumeration.
 """
 node_cost(::AbstractBUSIterator, ::Int) = 1
-node_cost(::AbstractBUSIterator, ::RuleNode) = 1
+node_cost(::AbstractBUSIterator, ::AbstractRuleNode) = 1
 
 """
     make_bank(iter::AbstractBUSIterator)
@@ -350,7 +350,9 @@ Return a fresh empty bank for `iter`.
 The default returns `BUBank{RuleNode}()`.
 Override to use a different bank structure.
 """
-make_bank(::AbstractBUSIterator) = BUBank{RuleNode}()
+function make_bank(iter::AbstractBUSIterator)
+    return BUBank{node_type(iter)}()
+end
 
 """
     assemble(op::Int, children) :: RuleNode
@@ -358,6 +360,7 @@ make_bank(::AbstractBUSIterator) = BUBank{RuleNode}()
 Construct a `RuleNode` for rule `op` with the given `children`.
 """
 assemble(op::Int, children) = RuleNode(op, collect(children))
+assemble(::Type{R}, op::Int, children) where R<:AbstractRuleNode = R(op, collect(children))
 
 """
     assemble(prog::RuleNode, children) :: RuleNode
@@ -367,12 +370,13 @@ the resulting complete program. Holes (any `AbstractHole` subtype) are
 replaced one by one as they are encountered during a left-to-right
 depth-first traversal.
 """
-function assemble(prog::RuleNode, children)
+function assemble(prog::AbstractRuleNode, children)
     iter = Iterators.Stateful(children)
     return _fill_holes(prog, iter)
 end
 
-function _fill_holes(node::RuleNode, iter)
+
+function _fill_holes(node::AbstractRuleNode, iter)
     new_children = Vector{AbstractRuleNode}(undef, length(node.children))
     for (i, child) in enumerate(node.children)
         new_children[i] = child isa AbstractHole ? popfirst!(iter) : _fill_holes(child, iter)
@@ -395,9 +399,9 @@ For each non-terminal operator `op`, [`child_programs`](@ref) determines which c
 tuples are valid at this level (by default: costs summing to `level - node_cost(iter, op)`),
 and [`assemble`](@ref) constructs the resulting program.
 """
-function grow(iter::AbstractBUSIterator, level::Int, grammar::AbstractGrammar, bank::BUBank, ops::Vector{Int})
+function grow(iter::AbstractBUSIterator, level::Int, grammar::AbstractGrammar, bank::BUBank, ops::Vector{Int}, cache)
     return Iterators.flatten(
-        _grow_op(iter, level, grammar, bank, op)
+        _grow_op(iter, level, grammar, bank, op, cache)
         for op in ops
     )
 end
@@ -422,36 +426,42 @@ function child_programs(iter::AbstractBUSIterator, bank::BUBank, types, level::I
     return program_combinations(bank, types, level - node_cost(iter, op))
 end
 
-function _grow_op(iter, level, grammar, bank, op)
+function _grow_op(iter, level, grammar, bank, op, cache)
     types = grammar.childtypes[op]
+    nt = node_type(iter)
+    ch_progs = child_programs(iter, bank, types, level, op)
+    types_for_op = grammar.types[op]
+    assembled = (assemble(nt, op, children) for children in ch_progs)
+
     return (
-        (assemble(op, children), grammar.types[op])
-        for children in child_programs(iter, bank, types, level, op)
+        (prog, types_for_op)
+        for prog in assembled
+        if _satisfies_constraints(isantimonotone, grammar, prog, cache)
     )
 end
 
 
 # ──── CostBUSIterator ────────────────────────────────────────────────────────
 
-"""
-    _hash_outputs(outputs) → UInt64
-
-Fold all per-example outputs into a single `UInt64` signature by chaining
-Julia's built-in `hash` function over each output value.
-
-Using a single scalar instead of a `Vector{UInt64}` makes `Set` membership
-checks O(1) rather than O(n) in the number of examples, and avoids allocating
-a signature vector on every OE probe. The 64-bit hash space makes collisions
-negligible in practice (probability ≈ n²/2⁶⁵ for n programs).
-"""
-function _hash_outputs(outputs)::UInt64
-    #TODO isn't this just a hash on the set of outputs?
-    h = HASH_SEED
-    for o in outputs
-        h = hash(o, h)
-    end
-    return h
-end
+# """
+#     _hash_outputs(outputs) → UInt64
+#
+# Fold all per-example outputs into a single `UInt64` signature by chaining
+# Julia's built-in `hash` function over each output value.
+#
+# Using a single scalar instead of a `Vector{UInt64}` makes `Set` membership
+# checks O(1) rather than O(n) in the number of examples, and avoids allocating
+# a signature vector on every OE probe. The 64-bit hash space makes collisions
+# negligible in practice (probability ≈ n²/2⁶⁵ for n programs).
+# """
+# function _hash_outputs(outputs)::UInt64
+#     #TODO isn't this just a hash on the set of outputs?
+#     h = HASH_SEED
+#     for o in outputs
+#         h = hash(o, h)
+#     end
+#     return h
+# end
 
 """
     is_observationally_equivalent!(seen, type, prog, eval_fn) → Bool
@@ -466,11 +476,12 @@ returns `false`.
 function is_observationally_equivalent!(
     seen::Dict{Symbol, Set{UInt64}},
     type::Symbol,
-    prog::RuleNode,
-    eval_fn
+    prog,
+    eval_fn,
+    cache
 )
     isnothing(eval_fn) && return false
-    sig = _hash_outputs(eval_fn(prog))
+    sig = hash(eval_fn(prog, cache))
     type_seen = get!(seen, type, Set{UInt64}())
     sig ∈ type_seen && begin
         return true
@@ -510,7 +521,7 @@ pruning: programs with identical output signatures are discarded.
   appears here are never added to the bank above the specified cost
   (default: empty — no per-type restriction)
 """
-@kwdef struct CostBUSIterator{G<:AbstractGrammar, F, B, R} <: AbstractBUSIterator
+@kwdef struct CostBUSIterator{R, G<:AbstractGrammar, F, B} <: AbstractBUSIterator
     grammar::G
     start_symbol::Symbol
     max_cost::Int
@@ -519,15 +530,24 @@ pruning: programs with identical output signatures are discarded.
     type_cost_bounds::B = nothing  # Nothing or Dict{Symbol,Int}
     node_type::Type{R} = RuleNode
 end
+function CostBUSIterator{R}(grammar, start_symbol, max_cost, rule_costs, program_to_outputs=nothing, type_cost_bounds=nothing) where R
+    return CostBUSIterator(; grammar, start_symbol, max_cost, rule_costs, program_to_outputs, type_cost_bounds, node_type = R)
+end
 
 CostBUSIterator(grammar, start_symbol, max_cost, rule_costs) =
-    CostBUSIterator(grammar, start_symbol, max_cost, rule_costs, nothing, nothing)
+    CostBUSIterator(; grammar, start_symbol, max_cost, rule_costs)
 
 CostBUSIterator(grammar, start_symbol, max_cost, rule_costs, program_to_outputs) =
-    CostBUSIterator(grammar, start_symbol, max_cost, rule_costs, program_to_outputs, nothing)
+    CostBUSIterator(; grammar, start_symbol, max_cost, rule_costs, program_to_outputs)
+
+CostBUSIterator(grammar, start_symbol, max_cost, rule_costs, program_to_outputs, type_cost_bounds) =
+    CostBUSIterator(; grammar, start_symbol, max_cost, rule_costs, program_to_outputs, type_cost_bounds)
 
 node_cost(iter::CostBUSIterator, op::Int) = iter.rule_costs[op]
-node_cost(iter::CostBUSIterator, prog::RuleNode) = iter.rule_costs[prog.ind]
+node_cost(iter::CostBUSIterator, prog::AbstractRuleNode) = iter.rule_costs[get_rule(prog)]
+
+node_type(::Type{<:CostBUSIterator{R}}) where R = R
+node_type(::T) where T = node_type(T)
 
 # No bounds: compiler specialises this to a constant true and eliminates the Filter.
 _within_type_bound(::CostBUSIterator{G,F,Nothing}, ::Symbol, ::Int) where {G,F} = true
@@ -536,9 +556,9 @@ _within_type_bound(iter::CostBUSIterator{G,F,Dict{Symbol,Int}}, type::Symbol, co
 
 # Specialised grow for bounded iterators: skips ops whose result type already
 # exceeds the per-type cap before doing any composition work.
-function grow(iter::CostBUSIterator{G,F,Dict{Symbol,Int}}, level::Int, grammar::AbstractGrammar, bank::BUBank, ops::Vector{Int}) where {G,F}
+function grow(iter::CostBUSIterator{G,F,Dict{Symbol,Int}}, level::Int, grammar::AbstractGrammar, bank::BUBank, ops::Vector{Int}, cache) where {G,F}
     return Iterators.flatten(
-        _grow_op(iter, level, grammar, bank, op)
+        _grow_op(iter, level, grammar, bank, op, cache)
         for op in ops
         if _within_type_bound(iter, grammar.types[op], level)
     )
@@ -598,13 +618,19 @@ Iteration state for any [`AbstractBUSIterator`](@ref).
 
 The bank type `B` is determined by [`make_bank`](@ref).
 """
-struct BUSState{B}
+struct BUSState{B,C,O}
     bank::B
     seen::Dict{Symbol, Set{UInt64}}
     ops::Vector{Int}
     level::Int
     yield_index::Int
-    total::Int
+    constraint_cache::C
+    observe_cache::O
+end
+
+function add_constraints!(iter, bus::BUSState, constraints)
+    push!.((iter.grammar.constraints,), unique(constraints))
+    #TODO maybe prune bank?
 end
 
 # Keep the old name as an alias so existing code continues to work.
@@ -615,34 +641,59 @@ function Base.iterate(iter::AbstractBUSIterator)
     seen    = Dict{Symbol, Set{UInt64}}()
     grammar = iter.grammar
     ops     = findall(.!grammar.isterminal)   # computed once for the lifetime of the iterator
+    Nodes = node_type(iter)
+    constraint_cache = LRU{UInt64,Bool}(; maxsize=1_000_000)
+    #TODO parameterize
+    observe_cache = Base.Dict{Tuple{UInt64,UnitRange{Int},Dict{Nodes,Int}},Any}() #TODO narrow?
 
     # Seed the bank with all terminal programs.
     for rule_idx in eachindex(grammar.isterminal)
         grammar.isterminal[rule_idx] || continue
-        prog = RuleNode(rule_idx)
+        prog = (node_type(iter))(rule_idx)
         type = grammar.types[rule_idx]
         cost = node_cost(iter, rule_idx)
         if (
-            !is_observationally_equivalent!(seen, type, prog, iter.program_to_outputs) &&
-            _satisfies_constraints(isantimonotone, grammar, prog)
+            _satisfies_constraints(isantimonotone, grammar, prog, constraint_cache) &&
+            !is_observationally_equivalent!(seen, type, prog, iter.program_to_outputs, observe_cache)
+            
         )
             add!(bank, type, cost, prog)
         end
     end
+    # Main.@infiltrate
+
 
     # Start at level 0; _next_bus will immediately advance to level 1.
-    return _next_bus(iter, BUSState(bank, seen, ops, 0, 1, 0))
+    return _next_bus(iter, BUSState(bank, seen, ops, 0, 1, constraint_cache, observe_cache))
 end
 
 function Base.iterate(iter::AbstractBUSIterator, state::BUSState)
     return _next_bus(iter, state)
 end
 
-function _satisfies_constraints(f, grammar, prog)
-    return all(HerbConstraints.check_tree(c, prog) for c in grammar.constraints if f(c))
+function _satisfies_constraints(f::Function, grammar, prog, cache)
+    for c in Iterators.filter(f, grammar.constraints)
+        # if ismonotone(c) && !isnothing(cache)
+        #     ch = AT.children(prog)
+        #     if any(x -> haskey(cache, (c, x)), ch)
+        #         push!(cache, (c, prog))
+        #     else
+        #         if HerbConstraints.check_tree(c, prog, cache)
+        #             push!(cache, prog)
+        #         else
+        #             return false
+        #         end
+        #     end
+        # else # not monotone or no cache
+        check_result = HerbConstraints.check_tree(c, prog, cache)
+        # cache[objectid.((c, prog))] = check_result
+        !check_result && return false
+        # end
+    end
+    return true
 end
-function _satisfies_constraints(grammar, prog)
-    return _satisfies_constraints(Returns(true), grammar, prog)
+function _satisfies_constraints(grammar, prog, cache)
+    return _satisfies_constraints(Returns(true), grammar, prog, cache)
 end
 
 function _next_bus(iter::AbstractBUSIterator, state::BUSState)
@@ -652,35 +703,33 @@ function _next_bus(iter::AbstractBUSIterator, state::BUSState)
     level   = state.level
     yi      = state.yield_index
     grammar = iter.grammar
-    total   = state.total
+    constraint_cache = state.constraint_cache
+    observe_cache = state.observe_cache
 
     while true
         progs = get_programs(bank, iter.start_symbol, level)
         while yi <= length(progs)
             prog = progs[yi]
             yi += 1
-            if _satisfies_constraints(!isantimonotone, grammar, prog)
-                return prog, BUSState(bank, seen, ops, level, yi, total)
+            if _satisfies_constraints(!isantimonotone, grammar, prog, constraint_cache)
+                return prog, BUSState(bank, seen, ops, level, yi)
             end
         end
 
         # Nothing left to yield at this level — advance.
         level += 1
-        @debug "Increasing level" level length(bank) total
+        @debug "Increasing level" level length(bank)
         level > iter.max_cost && return nothing
         yi = 1
+        # Main.@infiltrate level > 6
 
         # Grow all programs of cost `level` and add them to the bank.
         # `child_programs` only draws from costs < level, so the bank is
         # complete for all needed children before we start growing.
         # Constraint-violating programs are still banked — they can be
         # used as sub-expressions in larger programs.
-        for (prog, type) in grow(iter, level, grammar, bank, ops)
-            total += 1
-            if (
-                !is_observationally_equivalent!(seen, type, prog, iter.program_to_outputs) &&
-                _satisfies_constraints(isantimonotone, grammar, prog)
-            )
+        for (prog, type) in grow(iter, level, grammar, bank, ops, constraint_cache)
+            if !is_observationally_equivalent!(seen, type, prog, iter.program_to_outputs, observe_cache)
                 add!(bank, type, level, prog)
             end
         end
