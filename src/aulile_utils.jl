@@ -84,7 +84,7 @@ end
 """
 struct AuxFunction
     func::Function
-    initial_score::Function
+    initial_score::HerbInterpret.GeneratedStatefulInterpreter
     best_value::Number # NOTE: Aulile tries to *minimize* to this value
 end
 
