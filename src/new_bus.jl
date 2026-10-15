@@ -351,7 +351,7 @@ The default returns `BUBank{RuleNode}()`.
 Override to use a different bank structure.
 """
 function make_bank(iter::AbstractBUSIterator)
-    return BUBank{node_type(iter)}()
+    return BUBank{node_type(iter){Int}}()
 end
 
 """
@@ -436,7 +436,6 @@ function _grow_op(iter, level, grammar, bank, op, cache)
     return (
         (prog, types_for_op)
         for prog in assembled
-        if _satisfies_constraints(isantimonotone, grammar, prog, cache)
     )
 end
 
@@ -642,9 +641,9 @@ function Base.iterate(iter::AbstractBUSIterator)
     grammar = iter.grammar
     ops     = findall(.!grammar.isterminal)   # computed once for the lifetime of the iterator
     Nodes = node_type(iter)
-    constraint_cache = LRU{UInt64,Bool}(; maxsize=1_000_000)
+    constraint_cache = LRU{UInt64,Bool}(; maxsize=1)# _000_000)
     #TODO parameterize
-    observe_cache = Base.Dict{Tuple{UInt64,UnitRange{Int},Dict{Nodes,Int}},Any}() #TODO narrow?
+    observe_cache = LRU{Tuple{UInt64,UnitRange{Int},Dict{Nodes{Int},Int}},Any}(; maxsize=1) #00_000) #TODO narrow?
 
     # Seed the bank with all terminal programs.
     for rule_idx in eachindex(grammar.isterminal)
@@ -660,7 +659,6 @@ function Base.iterate(iter::AbstractBUSIterator)
             add!(bank, type, cost, prog)
         end
     end
-    # Main.@infiltrate
 
 
     # Start at level 0; _next_bus will immediately advance to level 1.
@@ -673,22 +671,8 @@ end
 
 function _satisfies_constraints(f::Function, grammar, prog, cache)
     for c in Iterators.filter(f, grammar.constraints)
-        # if ismonotone(c) && !isnothing(cache)
-        #     ch = AT.children(prog)
-        #     if any(x -> haskey(cache, (c, x)), ch)
-        #         push!(cache, (c, prog))
-        #     else
-        #         if HerbConstraints.check_tree(c, prog, cache)
-        #             push!(cache, prog)
-        #         else
-        #             return false
-        #         end
-        #     end
-        # else # not monotone or no cache
         check_result = HerbConstraints.check_tree(c, prog, cache)
-        # cache[objectid.((c, prog))] = check_result
         !check_result && return false
-        # end
     end
     return true
 end
@@ -721,7 +705,6 @@ function _next_bus(iter::AbstractBUSIterator, state::BUSState)
         @debug "Increasing level" level length(bank)
         level > iter.max_cost && return nothing
         yi = 1
-        # Main.@infiltrate level > 6
 
         # Grow all programs of cost `level` and add them to the bank.
         # `child_programs` only draws from costs < level, so the bank is
@@ -729,7 +712,10 @@ function _next_bus(iter::AbstractBUSIterator, state::BUSState)
         # Constraint-violating programs are still banked — they can be
         # used as sub-expressions in larger programs.
         for (prog, type) in grow(iter, level, grammar, bank, ops, constraint_cache)
-            if !is_observationally_equivalent!(seen, type, prog, iter.program_to_outputs, observe_cache)
+            if (
+                !is_observationally_equivalent!(seen, type, prog, iter.program_to_outputs, observe_cache) &&
+                _satisfies_constraints(isantimonotone, grammar, prog, constraint_cache)
+            )
                 add!(bank, type, level, prog)
             end
         end
