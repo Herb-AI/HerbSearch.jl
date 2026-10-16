@@ -59,7 +59,13 @@ function get_types(bank::BUBank)
 end
 
 function Base.length(bank::BUBank)
-    return sum(length, values.(values(bank.data)))
+    l = 0
+    for t in get_types(bank)
+        for c in get_costs(bank, t)
+            l += length(get_programs(bank, t, c))
+        end
+    end
+    return l
 end
 function Base.getindex(bank::BUBank, type::Symbol)
     return getindex(bank.data, type)
@@ -354,6 +360,23 @@ function make_bank(iter::AbstractBUSIterator)
     return BUBank{node_type(iter){Int}}()
 end
 
+function seed_bank!(bank, iter, grammar, constraint_cache, observe_cache, seen)
+    # Seed the bank with all terminal programs.
+    for rule_idx in eachindex(grammar.isterminal)
+        grammar.isterminal[rule_idx] || continue
+        prog = (node_type(iter))(rule_idx)
+        type = grammar.types[rule_idx]
+        cost = node_cost(iter, rule_idx)
+        if (
+            _satisfies_constraints(isantimonotone, grammar, prog, constraint_cache, vars) &&
+            !is_observationally_equivalent!(seen, type, prog, iter.program_to_outputs, observe_cache)
+            
+        )
+            add!(bank, type, cost, prog)
+        end
+    end
+end
+
 """
     assemble(op::Int, children) :: RuleNode
 
@@ -617,7 +640,7 @@ Iteration state for any [`AbstractBUSIterator`](@ref).
 
 The bank type `B` is determined by [`make_bank`](@ref).
 """
-struct BUSState{B,C,O}
+struct BUSState{B,C,O,Q,V}
     bank::B
     seen::Dict{Symbol, Set{UInt64}}
     ops::Vector{Int}
@@ -625,6 +648,8 @@ struct BUSState{B,C,O}
     yield_index::Int
     constraint_cache::C
     observe_cache::O
+    pattern_match_queue::Q
+    pattern_match_vars::V
 end
 
 function add_constraints!(iter, bus::BUSState, constraints)
@@ -643,41 +668,29 @@ function Base.iterate(iter::AbstractBUSIterator)
     Nodes = node_type(iter)
     constraint_cache = LRU{UInt64,Bool}(; maxsize=1)# _000_000)
     #TODO parameterize
-    observe_cache = LRU{Tuple{UInt64,UnitRange{Int},Dict{Nodes{Int},Int}},Any}(; maxsize=1) #00_000) #TODO narrow?
+    observe_cache = LRU{Tuple{UInt64,UnitRange{Int},Dict{Int,Int}},Any}(; maxsize=1) #00_000) #TODO narrow?
+    pattern_match_queue = Vector{Tuple{Int,Int,Bool}}()
+    pattern_match_vars = Dict{Symbol,Int}()
 
-    # Seed the bank with all terminal programs.
-    for rule_idx in eachindex(grammar.isterminal)
-        grammar.isterminal[rule_idx] || continue
-        prog = (node_type(iter))(rule_idx)
-        type = grammar.types[rule_idx]
-        cost = node_cost(iter, rule_idx)
-        if (
-            _satisfies_constraints(isantimonotone, grammar, prog, constraint_cache) &&
-            !is_observationally_equivalent!(seen, type, prog, iter.program_to_outputs, observe_cache)
-            
-        )
-            add!(bank, type, cost, prog)
-        end
-    end
-
+    seed_bank!(bank, iter, grammar, constraint_cache, observe_cache, seen, pattern_match_queue, pattern_match_vars)
 
     # Start at level 0; _next_bus will immediately advance to level 1.
-    return _next_bus(iter, BUSState(bank, seen, ops, 0, 1, constraint_cache, observe_cache))
+    return _next_bus(iter, BUSState(bank, seen, ops, 0, 1, constraint_cache, observe_cache, pattern_match_queue, pattern_match_vars))
 end
 
 function Base.iterate(iter::AbstractBUSIterator, state::BUSState)
     return _next_bus(iter, state)
 end
 
-function _satisfies_constraints(f::Function, grammar, prog, cache)
+function _satisfies_constraints(f::Function, grammar, prog, cache, pattern_match_queue, vars)
     for c in Iterators.filter(f, grammar.constraints)
-        check_result = HerbConstraints.check_tree(c, prog, cache)
+        check_result = HerbConstraints.check_tree(c, prog, cache, pattern_match_queue, vars)
         !check_result && return false
     end
     return true
 end
-function _satisfies_constraints(grammar, prog, cache)
-    return _satisfies_constraints(Returns(true), grammar, prog, cache)
+function _satisfies_constraints(grammar, prog, cache, pattern_match_queue, vars)
+    return _satisfies_constraints(Returns(true), grammar, prog, cache, pattern_match_queue, vars)
 end
 
 function _next_bus(iter::AbstractBUSIterator, state::BUSState)
@@ -689,13 +702,15 @@ function _next_bus(iter::AbstractBUSIterator, state::BUSState)
     grammar = iter.grammar
     constraint_cache = state.constraint_cache
     observe_cache = state.observe_cache
+    pattern_match_queue = state.pattern_match_queue
+    vars = state.pattern_match_vars
 
     while true
         progs = get_programs(bank, iter.start_symbol, level)
         while yi <= length(progs)
             prog = progs[yi]
             yi += 1
-            if _satisfies_constraints(!isantimonotone, grammar, prog, constraint_cache)
+            if _satisfies_constraints(!isantimonotone, grammar, prog, constraint_cache, pattern_match_queue, vars)
                 return prog, BUSState(bank, seen, ops, level, yi)
             end
         end
@@ -711,13 +726,19 @@ function _next_bus(iter::AbstractBUSIterator, state::BUSState)
         # complete for all needed children before we start growing.
         # Constraint-violating programs are still banked — they can be
         # used as sub-expressions in larger programs.
+        n_total = 0
+        n_passed_obs = 0
+        n_passed = 0
         for (prog, type) in grow(iter, level, grammar, bank, ops, constraint_cache)
-            if (
-                !is_observationally_equivalent!(seen, type, prog, iter.program_to_outputs, observe_cache) &&
-                _satisfies_constraints(isantimonotone, grammar, prog, constraint_cache)
-            )
-                add!(bank, type, level, prog)
+            n_total += 1
+            if !is_observationally_equivalent!(seen, type, prog, iter.program_to_outputs, observe_cache)
+                n_passed_obs += 1
+                if _satisfies_constraints(isantimonotone, grammar, prog, constraint_cache, pattern_match_queue, vars)
+                    n_passed += 1
+                    add!(bank, type, level, prog)
+                end
             end
         end
+        @debug "pruning" n_total n_passed_obs n_passed
     end
 end
