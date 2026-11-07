@@ -360,7 +360,7 @@ function make_bank(iter::AbstractBUSIterator)
     return BUBank{node_type(iter){Int}}()
 end
 
-function seed_bank!(bank, iter, grammar, constraint_cache, observe_cache, seen)
+function seed_bank!(bank, iter, grammar, seen)
     # Seed the bank with all terminal programs.
     for rule_idx in eachindex(grammar.isterminal)
         grammar.isterminal[rule_idx] || continue
@@ -368,8 +368,8 @@ function seed_bank!(bank, iter, grammar, constraint_cache, observe_cache, seen)
         type = grammar.types[rule_idx]
         cost = node_cost(iter, rule_idx)
         if (
-            _satisfies_constraints(isantimonotone, grammar, prog, constraint_cache, vars) &&
-            !is_observationally_equivalent!(seen, type, prog, iter.program_to_outputs, observe_cache)
+            _satisfies_constraints(isantimonotone, grammar, prog, vars) &&
+            !is_observationally_equivalent!(seen, type, prog, iter.program_to_outputs)
             
         )
             add!(bank, type, cost, prog)
@@ -422,9 +422,9 @@ For each non-terminal operator `op`, [`child_programs`](@ref) determines which c
 tuples are valid at this level (by default: costs summing to `level - node_cost(iter, op)`),
 and [`assemble`](@ref) constructs the resulting program.
 """
-function grow(iter::AbstractBUSIterator, level::Int, grammar::AbstractGrammar, bank::BUBank, ops::Vector{Int}, cache)
+function grow(iter::AbstractBUSIterator, level::Int, grammar::AbstractGrammar, bank::BUBank, ops::Vector{Int})
     return Iterators.flatten(
-        _grow_op(iter, level, grammar, bank, op, cache)
+        _grow_op(iter, level, grammar, bank, op)
         for op in ops
     )
 end
@@ -449,7 +449,7 @@ function child_programs(iter::AbstractBUSIterator, bank::BUBank, types, level::I
     return program_combinations(bank, types, level - node_cost(iter, op))
 end
 
-function _grow_op(iter, level, grammar, bank, op, cache)
+function _grow_op(iter, level, grammar, bank, op)
     types = grammar.childtypes[op]
     nt = node_type(iter)
     ch_progs = child_programs(iter, bank, types, level, op)
@@ -496,14 +496,13 @@ When `eval_fn` is `nothing`, OE pruning is disabled and the function always
 returns `false`.
 """
 function is_observationally_equivalent!(
-    seen::Dict{Symbol, Set{UInt64}},
+    seen::AbstractDict{Symbol, Set{UInt64}},
     type::Symbol,
     prog,
     eval_fn,
-    cache
 )
     isnothing(eval_fn) && return false
-    sig = hash(eval_fn(prog, cache))
+    sig = hash(eval_fn(prog))
     type_seen = get!(seen, type, Set{UInt64}())
     sig ∈ type_seen && begin
         return true
@@ -578,9 +577,9 @@ _within_type_bound(iter::CostBUSIterator{G,F,Dict{Symbol,Int}}, type::Symbol, co
 
 # Specialised grow for bounded iterators: skips ops whose result type already
 # exceeds the per-type cap before doing any composition work.
-function grow(iter::CostBUSIterator{G,F,Dict{Symbol,Int}}, level::Int, grammar::AbstractGrammar, bank::BUBank, ops::Vector{Int}, cache) where {G,F}
+function grow(iter::CostBUSIterator{G,F,Dict{Symbol,Int}}, level::Int, grammar::AbstractGrammar, bank::BUBank, ops::Vector{Int}) where {G,F}
     return Iterators.flatten(
-        _grow_op(iter, level, grammar, bank, op, cache)
+        _grow_op(iter, level, grammar, bank, op)
         for op in ops
         if _within_type_bound(iter, grammar.types[op], level)
     )
@@ -609,11 +608,15 @@ one child required to reach exactly `level - 1`.  This is implemented by overrid
 - `program_to_outputs` — optional `RuleNode → Vector` used for OE pruning
   (`nothing` disables OE)
 """
-struct DepthBUSIterator{G<:AbstractGrammar, F} <: AbstractBUSIterator
+@kwdef struct DepthBUSIterator{R, G<:AbstractGrammar, F} <: AbstractBUSIterator
     grammar::G
     start_symbol::Symbol
     max_cost::Int
     program_to_outputs::F
+    node_type::Type{R}
+end
+function DepthBUSIterator{R}(grammar, start_symbol, max_cost, program_to_outputs=nothing) where R
+    return DepthBUSIterator(; grammar, start_symbol, max_cost, program_to_outputs, node_type = R)
 end
 
 DepthBUSIterator(grammar, start_symbol, max_cost) =
@@ -624,6 +627,8 @@ Base.IteratorSize(::Type{<:DepthBUSIterator}) = Base.SizeUnknown()
 function child_programs(iter::DepthBUSIterator, bank::BUBank, types, level::Int, ::Int)
     return max_program_combinations(bank, types, level - 1)
 end
+
+node_type(::Type{<:DepthBUSIterator{R}}) where R = R
 
 
 """
@@ -640,14 +645,12 @@ Iteration state for any [`AbstractBUSIterator`](@ref).
 
 The bank type `B` is determined by [`make_bank`](@ref).
 """
-struct BUSState{B,C,O,Q,V}
+struct BUSState{B,S,C,O,Q,V}
     bank::B
-    seen::Dict{Symbol, Set{UInt64}}
+    seen::S
     ops::Vector{Int}
     level::Int
     yield_index::Int
-    constraint_cache::C
-    observe_cache::O
     pattern_match_queue::Q
     pattern_match_vars::V
 end
@@ -666,31 +669,29 @@ function Base.iterate(iter::AbstractBUSIterator)
     grammar = iter.grammar
     ops     = findall(.!grammar.isterminal)   # computed once for the lifetime of the iterator
     Nodes = node_type(iter)
-    constraint_cache = LRU{UInt64,Bool}(; maxsize=1)# _000_000)
     #TODO parameterize
-    observe_cache = LRU{Tuple{UInt64,UnitRange{Int},Dict{Int,Int}},Any}(; maxsize=1) #00_000) #TODO narrow?
     pattern_match_queue = Vector{Tuple{Int,Int,Bool}}()
     pattern_match_vars = Dict{Symbol,Int}()
 
-    seed_bank!(bank, iter, grammar, constraint_cache, observe_cache, seen, pattern_match_queue, pattern_match_vars)
+    seed_bank!(bank, iter, grammar, seen, pattern_match_queue, pattern_match_vars)
 
     # Start at level 0; _next_bus will immediately advance to level 1.
-    return _next_bus(iter, BUSState(bank, seen, ops, 0, 1, constraint_cache, observe_cache, pattern_match_queue, pattern_match_vars))
+    return _next_bus(iter, BUSState(bank, seen, ops, 0, 1, pattern_match_queue, pattern_match_vars))
 end
 
 function Base.iterate(iter::AbstractBUSIterator, state::BUSState)
     return _next_bus(iter, state)
 end
 
-function _satisfies_constraints(f::Function, grammar, prog, cache, pattern_match_queue, vars)
+function _satisfies_constraints(f::Function, grammar, prog, pattern_match_queue, vars)
     for c in Iterators.filter(f, grammar.constraints)
-        check_result = HerbConstraints.check_tree(c, prog, cache, pattern_match_queue, vars)
+        check_result = HerbConstraints.check_tree(c, prog, pattern_match_queue, vars)
         !check_result && return false
     end
     return true
 end
-function _satisfies_constraints(grammar, prog, cache, pattern_match_queue, vars)
-    return _satisfies_constraints(Returns(true), grammar, prog, cache, pattern_match_queue, vars)
+function _satisfies_constraints(grammar, prog, pattern_match_queue, vars)
+    return _satisfies_constraints(Returns(true), grammar, prog, pattern_match_queue, vars)
 end
 
 function _next_bus(iter::AbstractBUSIterator, state::BUSState)
@@ -700,8 +701,6 @@ function _next_bus(iter::AbstractBUSIterator, state::BUSState)
     level   = state.level
     yi      = state.yield_index
     grammar = iter.grammar
-    constraint_cache = state.constraint_cache
-    observe_cache = state.observe_cache
     pattern_match_queue = state.pattern_match_queue
     vars = state.pattern_match_vars
 
@@ -710,7 +709,7 @@ function _next_bus(iter::AbstractBUSIterator, state::BUSState)
         while yi <= length(progs)
             prog = progs[yi]
             yi += 1
-            if _satisfies_constraints(!isantimonotone, grammar, prog, constraint_cache, pattern_match_queue, vars)
+            if _satisfies_constraints(!isantimonotone, grammar, prog, pattern_match_queue, vars)
                 return prog, BUSState(bank, seen, ops, level, yi)
             end
         end
@@ -729,11 +728,11 @@ function _next_bus(iter::AbstractBUSIterator, state::BUSState)
         n_total = 0
         n_passed_obs = 0
         n_passed = 0
-        for (prog, type) in grow(iter, level, grammar, bank, ops, constraint_cache)
+        for (prog, type) in grow(iter, level, grammar, bank, ops)
             n_total += 1
-            if !is_observationally_equivalent!(seen, type, prog, iter.program_to_outputs, observe_cache)
+            if !is_observationally_equivalent!(seen, type, prog, iter.program_to_outputs)
                 n_passed_obs += 1
-                if _satisfies_constraints(isantimonotone, grammar, prog, constraint_cache, pattern_match_queue, vars)
+                if _satisfies_constraints(isantimonotone, grammar, prog, pattern_match_queue, vars)
                     n_passed += 1
                     add!(bank, type, level, prog)
                 end
