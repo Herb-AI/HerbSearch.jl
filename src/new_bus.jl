@@ -12,6 +12,84 @@ struct BUBank{P}
     BUBank{P}() where {P} = new{P}(Dict{Symbol, Dict{Int, Vector{P}}}())
 end
 
+function Base.summary(io::IO, bub::B) where B <: BUBank
+    print(
+        io, B, " with ",
+        length(keys(bub.data)), " types of programs, which have ",
+        [sum(length.(values(each_type))) for each_type in values(bub.data)],
+        " programs of each type, respectively." 
+    )
+end
+function Base.show(io::IO, ::MIME"text/plain", bank::BUBank{P}) where {P}
+    K = Symbol
+    V = Dict{Int, Vector{P}}
+    t = bank.data
+    (isempty(t) || !Base.haslength(t)) && return show(io, t)
+    # show more descriptively, with one line per key/value pair
+    recur_io = IOContext(io, :SHOWN_SET => t)
+    limit = get(io, :limit, false)::Bool
+    if !haskey(io, :compact)
+        recur_io = IOContext(recur_io, :compact => true)
+    end
+    recur_io_k = IOContext(recur_io, :typeinfo=>keytype(t))
+    recur_io_v = IOContext(recur_io, :typeinfo=>valtype(t))
+
+    summary(io, bank)
+    isempty(t) && return
+    print(io, ":")
+    Base.show_circular(io, t) && return
+    if limit
+        sz = Base.displaysize(io)
+        rows, cols = sz[1] - 3, sz[2]
+        rows < 2   && (print(io, " …"); return)
+        cols < 12  && (cols = 12) # Minimum widths of 2 for key, 4 for value
+        cols -= 6 # Subtract the widths of prefix "  " separator " => "
+        rows -= 1 # Subtract the summary
+
+        # determine max key width to align the output, caching the strings
+        hascolor = get(recur_io, :color, false)
+        ks = Vector{String}(undef, min(rows, length(t)))
+        vs = Vector{String}(undef, min(rows, length(t)))
+        keywidth = 0
+        valwidth = 0
+        for (i, (k, v)) in enumerate(t)
+            i > rows && break
+            ks[i] = sprint(show, k, context=recur_io_k, sizehint=0)
+            vs[i] = sprint(show, v, context=recur_io_v, sizehint=0)
+            keywidth = clamp(hascolor ? textwidth(Base.ANSIIterator(ks[i])) : textwidth(ks[i]), keywidth, cols)
+            valwidth = clamp(hascolor ? textwidth(Base.ANSIIterator(vs[i])) : textwidth(vs[i]), valwidth, cols)
+        end
+        if keywidth > max(div(cols, 2), cols - valwidth)
+            keywidth = max(cld(cols, 3), cols - valwidth)
+        end
+    else
+        rows = cols = typemax(Int)
+    end
+
+    for (i, (k, v)) in enumerate(t)
+        print(io, "\n  ")
+        if i == rows < length(t)
+            print(io, rpad("⋮", keywidth), " => ⋮")
+            break
+        end
+
+        if limit
+            key = Base._truncate_at_width_or_chars(hascolor, ks[i], keywidth, true)
+        else
+            key = sprint(show, k, context=recur_io_k, sizehint=0)
+        end
+        print(recur_io, key)
+        print(io, " => ")
+
+        if limit
+            val = Base._truncate_at_width_or_chars(hascolor, vs[i], cols - keywidth)
+            print(io, val)
+        else
+            show(recur_io_v, v)
+        end
+    end
+end
+
 """
     add!(bank::BUBank{P}, type::Symbol, cost::Int, prog::P)
 
