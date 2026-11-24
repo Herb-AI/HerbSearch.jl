@@ -116,7 +116,7 @@ function get_best_program(population::Array{RuleNode}, iter::GeneticSearchIterat
     grammar = get_grammar(iter)
     for index ∈ eachindex(population)
         chromosome = population[index]
-        zipped_outputs = zip([example.out for example in iter.spec], execute_on_input(grammar, chromosome, [example.in for example in iter.spec]))
+        zipped_outputs = zip([example.out for example in iter.spec], iter.evaluation_function(grammar, chromosome, [example.in for example in iter.spec]))
         fitness_value = fitness(iter, chromosome, collect(zipped_outputs))
         if isnothing(best_program) 
             best_fitness = fitness_value
@@ -162,7 +162,7 @@ function Base.iterate(iter::GeneticSearchIterator, current_state::GeneticIterato
     current_population = current_state.population
 
     # Calculate fitness
-    zipped_outputs(chromosome) = zip([example.out for example in iter.spec], execute_on_input(get_grammar(iter), chromosome, [example.in for example in iter.spec]))
+    zipped_outputs(chromosome) = zip([example.out for example in iter.spec], iter.evaluation_function(get_grammar(iter), chromosome, [example.in for example in iter.spec]))
     fitness_array = [fitness(iter, chromosome, collect(zipped_outputs(chromosome))) for chromosome in current_population]
     
     new_population = Vector{RuleNode}(undef,iter.population_size)
