@@ -1,4 +1,5 @@
-@testset verbose = true "@iterator macro" begin
+@testitem "Iterator macro" setup = [TestSetup] begin
+
     g = @csgrammar begin
         R = x
     end

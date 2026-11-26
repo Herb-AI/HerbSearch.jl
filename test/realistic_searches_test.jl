@@ -1,4 +1,11 @@
-@testset verbose=true "Somewhat larger domains" begin
+# to run this test, use TestEnv with
+# withenv("RUN_REALISTIC_SEARCHES_TESTS" => "true") do
+#     runtests(HerbSearch; name = "Somewhat larger domains")
+# end
+# 
+# or remove the `skip = :(...)` section.
+
+@testitem "Somewhat larger domains" skip = :(get(ENV, "RUN_REALISTIC_SEARCHES_TESTS", "false") != "true") setup = [TestSetup] begin
     @testset "Small domain, small operators" begin
         """Expects to return a program equivalent to 1 + (1 - x) = 2 - x"""
 

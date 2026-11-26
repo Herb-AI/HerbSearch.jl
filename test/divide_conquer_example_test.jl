@@ -1,31 +1,8 @@
+@testitem "Divide and conquer example" setup = [TestSetup] begin
+	
+using DecisionTree
 DivideAndConquerExt = Base.get_extension(HerbSearch, :DivideAndConquerExt)
 using .DivideAndConquerExt: divide_and_conquer
-
-# Example problem, grammar bit functions taken from HerbBenchmarks: src/data/SyGuS/PBE_BV_Track_2018
-# 
-# HerbBenchmarks.jl is not a released package yet and can't be included as dependency
-# in test/Project.toml.
-# Hence, relevant definitions and functionality is hardcoded.
-# 
-grammar = @cfgrammar begin
-	Start = 0x0000000000000000
-	Start = 0x0000000000000001
-	Start = Input
-	Input = _arg_1
-	Start = Bool
-	Bool = bvugt_cvc(Start, Start) # n1 > n2
-	Bool = bveq1_cvc(Start) # n == 1
-	Start = bvnot_cvc(Start)
-	Start = smol_cvc(Start)
-	Start = ehad_cvc(Start)
-	Start = arba_cvc(Start)
-	Start = shesh_cvc(Start)
-	Start = bvand_cvc(Start, Start)
-	Start = bvor_cvc(Start, Start)
-	Start = bvxor_cvc(Start, Start)
-	Start = bvadd_cvc(Start, Start)
-	Start = im_cvc(Start, Start, Start) # if-else statement
-end
 
 # from HerbBenchmarks: src/data/SyGuS/PBE_BV_Track_2018/bit_functions.jl
 # Defined in SMT-LIB
@@ -71,13 +48,39 @@ smol_cvc(n::UInt) = bvshl_cvc(n, 1)
 im_cvc(x::UInt, y::UInt, z::UInt) = x == UInt(1) ? y : z
 if0_cvc(x::UInt, y::UInt, z::UInt) = x == UInt(0) ? y : z
 
+# Example problem, grammar bit functions taken from HerbBenchmarks: src/data/SyGuS/PBE_BV_Track_2018
+# 
+# HerbBenchmarks.jl is not a released package yet and can't be included as dependency
+# in test/Project.toml.
+# Hence, relevant definitions and functionality is hardcoded.
+# 
+grammar = @cfgrammar begin
+	Start = 0x0000000000000000
+	Start = 0x0000000000000001
+	Start = Input
+	Input = _arg_1
+	Start = Bool
+	Bool = bvugt_cvc(Start, Start) # n1 > n2
+	Bool = bveq1_cvc(Start) # n == 1
+	Start = bvnot_cvc(Start)
+	Start = smol_cvc(Start)
+	Start = ehad_cvc(Start)
+	Start = arba_cvc(Start)
+	Start = shesh_cvc(Start)
+	Start = bvand_cvc(Start, Start)
+	Start = bvor_cvc(Start, Start)
+	Start = bvxor_cvc(Start, Start)
+	Start = bvadd_cvc(Start, Start)
+	Start = im_cvc(Start, Start, Start) # if-else statement
+end
+
 @testset verbose = true "Benchmark BV example for divide and conquer" begin
 	# input arguments
 	n_predicates = 5
 	sym_bool = :Bool
 	sym_start = :Start
 	sym_constraint = :Input
-	max_enumerations = 10
+	max_enumerations = 10_000
 
 	iterator = BFSIterator(grammar, :Start)
 	idx_ifelse = findfirst(r -> r == :($sym_bool ? $sym_start : $sym_start), grammar.rules)
@@ -88,7 +91,9 @@ if0_cvc(x::UInt, y::UInt, z::UInt) = x == UInt(0) ? y : z
 		sym_start,
 		sym_constraint,
 		n_predicates,
+		typemax(Int),
 		max_enumerations,
+		@__MODULE__,
 	)
 
 	# add if-else rule to grammar
@@ -102,7 +107,10 @@ if0_cvc(x::UInt, y::UInt, z::UInt) = x == UInt(0) ? y : z
 		sym_start,
 		sym_constraint,
 		n_predicates,
+		typemax(Int),
 		max_enumerations,
+		@__MODULE__,
 	)
 end
 
+end

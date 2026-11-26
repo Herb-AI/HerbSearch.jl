@@ -1,4 +1,5 @@
-@testset verbose=true "Unique" begin
+@testitem "Unique" setup = [TestSetup] begin
+
     @testset "Number of candidate programs" begin
         grammar = @csgrammar begin
             Int = 1
