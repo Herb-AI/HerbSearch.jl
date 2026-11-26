@@ -42,22 +42,39 @@ Assigns a priority value to a `tree` that needs to be considered later in the se
 - ``: The first argument is a dispatch argument and is only used to dispatch to the correct priority function
 - `g`: The grammar used for enumeration
 - `tree`: The tree that is about to be stored in the priority queue
-- `parent_value`: The priority value of the parent [`SolverState`](@ref)
+- `parent_value`: The priority value of the parent [`SolverState`](@ref) (`0` for the root)
 - `isrequeued`: The same tree shape will be requeued. The next time this tree shape is considered, the `UniformSolver` will produce the next complete program deriving from this shape.
+
+Entries with equal priority values are considered in the order they were added to the queue (first in, first out).
+The returned value must be of the iterator's [`priority_type`](@ref).
+
+The default (for a `TopDownIterator` that doesn't define its own) counts the branching steps: `parent_value + 1`,
+and a requeued shape keeps `parent_value`. [`AbstractBFSIterator`](@ref)s use [`bfs_priority`](@ref) instead.
 """
 function priority_function(
     ::TopDownIterator,
     g::AbstractGrammar,
     tree::AbstractRuleNode,
-    parent_value::Union{Real,Tuple{Vararg{Real}}},
+    parent_value,
     isrequeued::Bool
 )
-    #the default priority function is the bfs priority function
     if isrequeued
         return parent_value
     end
     return parent_value + 1
 end
+
+"""
+    priority_type(iter::TopDownIterator)
+
+The type of the priority values that [`priority_function`](@ref) returns for `iter`; the priority queue of the
+iteration is typed with it. The default is `Union{Real, Tuple{Vararg{Real}}}`. [`BFSIterator`](@ref) and
+[`BFSASPIterator`](@ref) use [`BFSPriority`](@ref). Other [`AbstractBFSIterator`](@ref)s use the union of both, so
+that a subtype may override `priority_function` with numbers.
+
+An iterator whose `priority_function` returns another type must define `priority_type` too.
+"""
+priority_type(::TopDownIterator) = Union{Real,Tuple{Vararg{Real}}}
 
 """
     function derivation_heuristic(::TopDownIterator, indices::Vector{Int})
@@ -113,29 +130,133 @@ end
     AbstractBFSIterator <: TopDownIterator
 
 This is the supertype for all breadth-first search iterators. It inherits all stop-criteria and traversal mechanisms from [`TopDownIterator`](@ref).
+Its priority is [`bfs_priority`](@ref): programs come out in non-decreasing size, in an order that doesn't depend on the constraints.
 """
 abstract type AbstractBFSIterator <: TopDownIterator end
 
+"""
+    BFSPriority
+
+The priority of a partial program in an [`AbstractBFSIterator`](@ref) (see [`bfs_priority`](@ref)): the pre-order
+sequence `ids` of the shape ids of the tree's nodes. Priorities are ordered by the tree's size (`length(ids)`)
+first, then lexicographically by `ids`.
+"""
+struct BFSPriority
+    ids::Vector{Int}
+end
+
+function Base.isless(a::BFSPriority, b::BFSPriority)
+    la, lb = length(a.ids), length(b.ids)
+    la == lb || return la < lb
+    return isless(a.ids, b.ids)
+end
+Base.:(==)(a::BFSPriority, b::BFSPriority) = a.ids == b.ids
+Base.hash(a::BFSPriority, h::UInt) = hash(a.ids, hash(:BFSPriority, h))
+
+"""
+    shape_id(grammar::AbstractGrammar, rule::Int)::Int
+
+The shape id of `rule`: the smallest index of a rule in `grammar` with the same type and the same child types.
+Two rules have the same shape id if and only if a hole can hold both as one fixed shape (see
+`HerbConstraints.partition`). It depends on the grammar only, not on the domain of any hole.
+"""
+function shape_id(grammar::AbstractGrammar, rule::Int)::Int
+    same_childtypes = grammar.bychildtypes[rule]
+    smallest = rule
+    for r ∈ grammar.bytype[grammar.types[rule]]
+        if r < smallest && same_childtypes[r]
+            smallest = r
+        end
+    end
+    return smallest
+end
+
+function _push_shape_ids!(ids::Vector{Int}, grammar::AbstractGrammar, node::AbstractRuleNode)
+    if node isa AbstractHole && !(node isa AbstractUniformHole)
+        # a variable-shaped hole: no shape yet, and no children
+        push!(ids, 0)
+        return ids
+    end
+    rule = node isa AbstractUniformHole ? findfirst(node.domain) : get_rule(node)
+    push!(ids, shape_id(grammar, rule))
+    for child ∈ node.children
+        _push_shape_ids!(ids, grammar, child)
+    end
+    return ids
+end
+
+"""
+    bfs_priority(grammar::AbstractGrammar, tree::AbstractRuleNode)::BFSPriority
+
+The priority of the partial program `tree` in an [`AbstractBFSIterator`](@ref): the pair `(size, ids)`, ordered by
+`size` first and then lexicographically by `ids` (a [`BFSPriority`](@ref)).
+
+- `size` is the number of nodes, counting every variable-shaped [`Hole`](@ref) as 1 (a lower bound on the size of
+  any program the tree can become). `size == length(ids)`.
+- `ids` is the pre-order sequence of the [`shape_id`](@ref)s of the nodes: the rule's for a `RuleNode`, the one of
+  the domain's rules for a [`UniformHole`](@ref) (a single shape), and 0 for a variable-shaped `Hole` (which has no
+  children).
+
+The priority depends on the tree and the grammar only, so the same partial program gets the same priority under any
+constraints. The `ids` determine the shape of the tree, so different shapes never tie. Filling a hole adds nodes, or
+replaces a 0 by a positive id at the same size, so a tree's priority is always greater than its parent's. Hence the
+programs come out in non-decreasing size, shape by shape, and the programs of a shape in the lexicographic order of
+its [`UniformIterator`](@ref).
+
+The whole tree is scanned on every call: propagation can change holes anywhere in the tree, so the priority can't be
+derived from the parent's.
+"""
+function bfs_priority(grammar::AbstractGrammar, tree::AbstractRuleNode)::BFSPriority
+    return BFSPriority(_push_shape_ids!(Int[], grammar, tree))
+end
+
+"""
+    priority_function(::AbstractBFSIterator, g::AbstractGrammar, tree::AbstractRuleNode, parent_value, isrequeued::Bool)
+
+The [`bfs_priority`](@ref) of `tree`. A requeued shape keeps its priority (`parent_value`). That priority is below
+every other entry's, so a shape is enumerated completely before the next one.
+"""
+function priority_function(
+    ::AbstractBFSIterator,
+    g::AbstractGrammar,
+    tree::AbstractRuleNode,
+    parent_value,
+    isrequeued::Bool
+)
+    if isrequeued
+        return parent_value
+    end
+    return bfs_priority(g, tree)
+end
+
+priority_type(::AbstractBFSIterator) = Union{Real,Tuple{Vararg{Real}},BFSPriority}
 
 Base.@doc """
-    @programiterator BFSIterator() <: TopDownIterator
+    @programiterator BFSIterator() <: AbstractBFSIterator
 
-Creates a breadth-first search iterator for traversing given a grammar, starting from the given symbol. The iterator returns trees in the grammar in increasing order of size.
+Creates a breadth-first search iterator for traversing given a grammar, starting from the given symbol.
+The iterator returns trees in the grammar in non-decreasing order of size: shape by shape in the order of
+[`bfs_priority`](@ref), and the programs of one shape in lexicographic order (holes in pre-order, rules ascending).
+
+The order doesn't depend on the constraints: with constraints, the iterator returns the programs it returns without
+them, in the same order, minus the programs that the constraints remove.
 """ BFSIterator
 @programiterator BFSIterator() <: AbstractBFSIterator
+priority_type(::BFSIterator) = BFSPriority
 
 Base.@doc """
     @programiterator BFSASPIterator() <: AbstractBFSIterator
 
 Creates a breadth-first search iterator for traversing given a grammar,
 starting from the given symbol. The iterator returns trees in the grammar in
-increasing order of size.
+non-decreasing order of size, in the same order as [`BFSIterator`](@ref).
 
 Constraints on uniform trees are enforced in ASP, making use of Clingo.
 Behavior should otherwise match that of [`AbstractBFSIterator`](@ref)s.
 """ BFSASPIterator
 @programiterator BFSASPIterator() <: AbstractBFSIterator
 constraint_style(::BFSASPIterator) = ASPStyle()
+priority_type(::BFSASPIterator) = BFSPriority
 
 """
     AbstractDFSIterator <: TopDownIterator
@@ -149,7 +270,9 @@ abstract type AbstractDFSIterator <: TopDownIterator end
 """
     priority_function(::AbstractDFSIterator, g::AbstractGrammar, tree::AbstractRuleNode, parent_value::Union{Real, Tuple{Vararg{Real}}}, isrequeued::Bool)
 
-Assigns priority such that the search tree is traversed like in a DFS manner. 
+Assigns priority such that the search tree is traversed like in a DFS manner: a tree's priority is its depth in the
+search tree, negated (`parent_value - 1`). A requeued shape gets `parent_value - 1` too, so a shape is enumerated
+completely before its siblings (from HerbSearch PR #146).
 """
 function priority_function(
     ::AbstractDFSIterator,
@@ -158,16 +281,19 @@ function priority_function(
     parent_value::Union{Real,Tuple{Vararg{Real}}},
     isrequeued::Bool
 )
-    if isrequeued
-        return parent_value
-    end
     return parent_value - 1
 end
 
 Base.@doc """
     @programiterator DFSIterator() <: AbstractDFSIterator
 
-Creates a depth-first search iterator for traversing a given a grammar, starting from a given symbol. The iterator returns trees in the grammar in decreasing order of size. 
+Creates a depth-first search iterator for traversing a given a grammar, starting from a given symbol.
+The iterator returns the trees in the pre-order of the search tree: at each variable-shaped hole, the shapes are
+tried in the order of `HerbConstraints.partition` (by their smallest rule in the grammar), and the programs of one
+shape come out consecutively, in lexicographic order (holes in pre-order, rules ascending).
+
+The order doesn't depend on the constraints: with constraints, the iterator returns the programs it returns without
+them, in the same order, minus the programs that the constraints remove.
 """ DFSIterator
 @programiterator DFSIterator() <: AbstractDFSIterator
 
@@ -175,8 +301,8 @@ Base.@doc """
     @programiterator DFSASPIterator() <: AbstractDFSIterator
 
 Creates a depth-first search iterator for traversing given a grammar,
-starting from the given symbol. The iterator returns trees in the grammar in
-decreasing order of size.
+starting from the given symbol. The iterator returns trees in the same order as
+[`DFSIterator`](@ref).
 
 Constraints on uniform trees are enforced in ASP, making use of Clingo.
 Behavior should otherwise match that of [`AbstractDFSIterator`](@ref)s.
@@ -255,75 +381,135 @@ function Base.collect(iter::TopDownIterator)
 end
 
 """
+    QueueKey{P}
+
+The key of an entry in the priority queue of a [`TopDownIterator`](@ref): the entry's `priority` (of the
+iterator's [`priority_type`](@ref)) and its insertion `order`. Keys are ordered by `priority`, and entries with equal
+priorities by `order`, so ties are broken first in, first out (`DataStructures.PriorityQueue` is a binary heap,
+which doesn't break ties in insertion order by itself).
+"""
+struct QueueKey{P}
+    priority::P
+    order::Int
+end
+
+function Base.isless(a::QueueKey, b::QueueKey)
+    isless(a.priority, b.priority) && return true
+    isless(b.priority, a.priority) && return false
+    return a.order < b.order
+end
+
+"""
+    mutable struct TopDownState{Q, U, P}
+
+The iteration state of a [`TopDownIterator`](@ref).
+
+- `pq`: the priority queue of `SolverState`s (variable-shaped trees) and uniform iterators (of type `U`, fixed-shaped trees), keyed by [`QueueKey`](@ref)`{P}`.
+- `counter`: the number of entries pushed so far (the insertion order of the next entry).
+- `current`: the uniform iterator being enumerated outside the queue, or `nothing` (see [`requeue_fast_path`](@ref)).
+- `current_priority`: the priority of `current`.
+"""
+mutable struct TopDownState{Q<:PriorityQueue,U<:AbstractUniformIterator,P}
+    pq::Q
+    counter::Int
+    current::Union{U,Nothing}
+    current_priority::Union{P,Nothing}
+end
+
+function _new_state(::Type{U}, ::Type{P}) where {U,P}
+    pq = PriorityQueue{Union{SolverState,U},QueueKey{P}}()
+    return TopDownState{typeof(pq),U,P}(pq, 0, nothing, nothing)
+end
+
+_uniform_iterator_type(::HerbStyle) = UniformIterator
+_uniform_iterator_type(::ASPStyle) = UniformASPIterator
+
+function _init_state(iter::TopDownIterator)
+    return _new_state(_uniform_iterator_type(constraint_style(iter)), priority_type(iter))
+end
+
+"""
+    requeue_fast_path(iter::TopDownIterator)::Bool
+
+Whether the iteration may keep a requeued uniform iterator out of the priority queue (default: `true`).
+
+After each program, the uniform iterator of its shape is requeued with the priority that [`priority_function`](@ref)
+gives it (`isrequeued = true`). If that priority is strictly below the priority of every entry in the queue, the
+shape would be popped straight back. With the fast path, it is kept as the state's current shape instead, which saves
+a push and a pop per program and doesn't change the order. The priorities of [`AbstractBFSIterator`](@ref) and
+[`AbstractDFSIterator`](@ref) always take the fast path.
+"""
+requeue_fast_path(::TopDownIterator) = true
+
+function _enqueue!(st::TopDownState{Q,U,P}, item, priority) where {Q,U,P}
+    st.counter += 1
+    push!(st.pq, item => QueueKey{P}(priority, st.counter))
+    return st
+end
+
+function _requeue!(st::TopDownState, iter::TopDownIterator, uniform_iterator::AbstractUniformIterator, priority)
+    if requeue_fast_path(iter) && (isempty(st.pq) || isless(priority, first(st.pq)[2].priority))
+        # `uniform_iterator` is the queue's strict minimum: it would be popped next, so keep it out of the queue
+        st.current = uniform_iterator
+        st.current_priority = priority
+    else
+        _enqueue!(st, uniform_iterator, priority)
+    end
+    return st
+end
+
+"""
     Base.iterate(iter::TopDownIterator)
 
 Describes the iteration for a given [`TopDownIterator`](@ref) over the grammar. The iteration constructs a [`PriorityQueue`](@ref) first and then prunes it propagating the active constraints. Recursively returns the result for the priority queue.
 """
 function Base.iterate(iter::TopDownIterator)
     # Priority queue with `SolverState`s (for variable shaped trees) and `UniformIterator`s (for fixed shaped trees)
-    pq = _init_pq(iter)
+    st = _init_state(iter)
 
     solver = get_solver(iter)
 
     if isfeasible(solver)
-        push!(pq, get_state(solver) => priority_function(iter, get_grammar(solver), get_tree(solver), 0, false))
+        _enqueue!(st, get_state(solver), priority_function(iter, get_grammar(solver), get_tree(solver), 0, false))
     end
-    return _find_next_complete_tree(get_solver(iter), pq, iter)
-end
-
-function _init_pq(iter::TopDownIterator)
-    _init_pq(constraint_style(iter))
-end
-
-function _init_pq(::HerbStyle)
-    return PriorityQueue{
-        Union{SolverState,UniformIterator},
-        Union{Real,Tuple{Vararg{Real}}}
-    }()
-end
-
-function _init_pq(::ASPStyle)
-    return PriorityQueue{
-        Union{SolverState,UniformASPIterator},
-        Union{Real,Tuple{Vararg{Real}}}
-    }()
+    return _find_next_complete_tree(get_solver(iter), st, iter)
 end
 
 """
-    Base.iterate(iter::TopDownIterator, pq::DataStructures.PriorityQueue)
+    Base.iterate(iter::TopDownIterator, st::TopDownState)
 
-Describes the iteration for a given [`TopDownIterator`](@ref) and a [`PriorityQueue`](@ref) over the grammar without enqueueing new items to the priority queue. Recursively returns the result for the priority queue.
+Describes the iteration for a given [`TopDownIterator`](@ref) and its [`TopDownState`](@ref): the next program of the
+current shape, if any, or else the next program obtained from the priority queue.
 """
-function Base.iterate(iter::TopDownIterator, tup::Tuple{Vector{<:AbstractRuleNode},DataStructures.PriorityQueue})
-    @timeit_debug get_solver(iter).statistics "#CompleteTrees (by FixedShapedIterator)" begin end
-    # iterating over fixed shaped trees using the FixedShapedIterator
-    if !isempty(tup[1])
-        return (pop!(tup[1]), tup)
-    end
-
-    return _find_next_complete_tree(get_solver(iter), tup[2], iter)
-end
-
-
-function Base.iterate(iter::TopDownIterator, pq::DataStructures.PriorityQueue)
+function Base.iterate(iter::TopDownIterator, st::TopDownState)
     @timeit_debug get_solver(iter).statistics "#CompleteTrees (by UniformSolver)" begin end
-    return _find_next_complete_tree(get_solver(iter), pq, iter)
+    solver = get_solver(iter)
+    if !isnothing(st.current)
+        uniform_iterator, priority_value = st.current, st.current_priority
+        st.current = nothing
+        st.current_priority = nothing
+        solution_or_nothing = _find_next_complete_tree(solver, st, iter, uniform_iterator, priority_value)
+        if !isnothing(solution_or_nothing)
+            return solution_or_nothing
+        end
+    end
+    return _find_next_complete_tree(solver, st, iter)
 end
 
 """
-    _find_next_complete_tree(solver::Solver, pq::PriorityQueue, iter::TopDownIterator)::Union{Tuple{RuleNode, Tuple{Vector{AbstractRuleNode}, PriorityQueue}}, Nothing}
+    _find_next_complete_tree(solver::Solver, st::TopDownState, iter::TopDownIterator)::Union{Tuple{AbstractRuleNode, TopDownState}, Nothing}
 
-Takes a priority queue and returns the smallest AST from the grammar it can obtain from the queue or by (repeatedly) expanding trees that are in the queue.
+Takes the iteration state and returns the smallest AST from the grammar it can obtain from the queue or by (repeatedly) expanding trees that are in the queue.
 Returns `nothing` if there are no trees left within the depth limit.
 """
 function _find_next_complete_tree(
     solver::Solver,
-    pq::PriorityQueue,
+    st::TopDownState,
     iter::TopDownIterator
 )
-    while length(pq) ≠ 0
-        (item, priority_value) = popfirst!(pq)
-        solution_or_nothing = _find_next_complete_tree(solver, pq, iter, item, priority_value)
+    while length(st.pq) ≠ 0
+        (item, key) = popfirst!(st.pq)
+        solution_or_nothing = _find_next_complete_tree(solver, st, iter, item, key.priority)
         if !isnothing(solution_or_nothing)
             return solution_or_nothing
         end
@@ -333,7 +519,7 @@ end
 
 function _find_next_complete_tree(
     solver::Solver,
-    pq::PriorityQueue,
+    st::TopDownState,
     iter::TopDownIterator,
     item::AbstractUniformIterator,
     priority_value
@@ -342,14 +528,14 @@ function _find_next_complete_tree(
     uniform_iterator = item
     solution = next_solution!(uniform_iterator)
     if !isnothing(solution)
-        push!(pq, uniform_iterator => priority_function(iter, get_grammar(solver), solution, priority_value, true))
-        return (solution, pq)
+        _requeue!(st, iter, uniform_iterator, priority_function(iter, get_grammar(solver), solution, priority_value, true))
+        return (solution, st)
     end
 end
 
 function _find_next_complete_tree(
     solver::Solver,
-    pq::PriorityQueue,
+    st::TopDownState,
     iter::TopDownIterator,
     item::SolverState,
     priority_value
@@ -359,12 +545,12 @@ function _find_next_complete_tree(
     load_state!(solver, state)
 
     hole_res = hole_heuristic(iter, get_tree(solver), get_max_depth(solver))
-    return _decide_hole(solver, pq, iter, item, priority_value, hole_res)
+    return _decide_hole(solver, st, iter, item, priority_value, hole_res)
 end
 
 function _decide_hole(
     solver::Solver,
-    pq::PriorityQueue,
+    st::TopDownState,
     iter::TopDownIterator,
     ::SolverState,
     priority_value,
@@ -375,8 +561,8 @@ function _decide_hole(
     uniform_iterator = _make_uniform_iterator(solver, iter)
     solution = next_solution!(uniform_iterator)
     if !isnothing(solution)
-        push!(pq, uniform_iterator => priority_function(iter, get_grammar(solver), solution, priority_value, true))
-        return (solution, pq)
+        _requeue!(st, iter, uniform_iterator, priority_function(iter, get_grammar(solver), solution, priority_value, true))
+        return (solution, st)
     end
 end
 
@@ -396,7 +582,7 @@ end
 
 function _decide_hole(
     ::Solver,
-    ::PriorityQueue,
+    ::TopDownState,
     ::TopDownIterator,
     ::SolverState,
     ::Any,
@@ -408,7 +594,7 @@ end
 
 function _decide_hole(
     solver::Solver,
-    pq::PriorityQueue,
+    st::TopDownState,
     iter::TopDownIterator,
     ::SolverState,
     priority_value,
@@ -426,7 +612,7 @@ function _decide_hole(
         @assert isfeasible(solver) "Attempting to expand an infeasible tree: $(get_tree(solver))"
         remove_all_but!(solver, path, domain)
         if isfeasible(solver)
-            push!(pq, get_state(solver) => priority_function(iter, get_grammar(solver), get_tree(solver), priority_value, false))
+            _enqueue!(st, get_state(solver), priority_function(iter, get_grammar(solver), get_tree(solver), priority_value, false))
         end
         if i < number_of_domains
             load_state!(solver, state)
