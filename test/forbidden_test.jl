@@ -1,4 +1,4 @@
-@testitem "Forbidden" tags = [:fast] setup = [TestSetup] begin
+@testitem "Forbidden" setup = [TestSetup] begin
 
 
     @testset "Number of candidate programs" begin

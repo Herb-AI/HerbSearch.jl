@@ -1,4 +1,4 @@
-@testitem "Contains" tags = [:fast] setup = [TestSetup] begin
+@testitem "Contains" setup = [TestSetup] begin
 
 @testset verbose=true "Contains" begin
 

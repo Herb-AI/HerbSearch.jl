@@ -1,4 +1,4 @@
-@testitem "Divide and conquer example" tags = [:fast] setup = [TestSetup] begin
+@testitem "Divide and conquer example" setup = [TestSetup] begin
 	
 using DecisionTree
 DivideAndConquerExt = Base.get_extension(HerbSearch, :DivideAndConquerExt)

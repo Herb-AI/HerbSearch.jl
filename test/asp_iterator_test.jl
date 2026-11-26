@@ -1,4 +1,4 @@
-@testitem "ASP_Iterators" tags = [:fast] setup = [TestSetup] begin
+@testitem "ASP_Iterators" setup = [TestSetup] begin
     using HerbSearch: BFSASPIterator, DFSASPIterator
     using Clingo_jll
 

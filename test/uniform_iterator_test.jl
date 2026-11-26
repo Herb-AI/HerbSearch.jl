@@ -1,4 +1,4 @@
-@testitem "UniformIterator" tags = [:fast] setup = [TestSetup] begin
+@testitem "UniformIterator" setup = [TestSetup] begin
 
 
     function create_dummy_grammar_and_tree_128programs()

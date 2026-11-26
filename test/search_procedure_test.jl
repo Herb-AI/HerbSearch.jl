@@ -1,4 +1,4 @@
-@testitem "Search procedure synth" tags = [:fast] setup = [TestSetup] begin
+@testitem "Search procedure synth" setup = [TestSetup] begin
 
 
     g₁ = @csgrammar begin

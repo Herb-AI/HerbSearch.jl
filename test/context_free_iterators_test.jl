@@ -1,4 +1,4 @@
-@testitem "Context-free iterators" tags = [:fast] setup = [TestSetup] begin
+@testitem "Context-free iterators" setup = [TestSetup] begin
 
     @testset "getters for ProgramIterators" begin
         g1 = @csgrammar begin

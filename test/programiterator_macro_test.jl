@@ -1,4 +1,4 @@
-@testitem "Iterator macro" tags = [:fast] setup = [TestSetup] begin
+@testitem "Iterator macro" setup = [TestSetup] begin
 
     g = @csgrammar begin
         R = x

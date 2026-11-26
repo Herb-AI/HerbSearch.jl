@@ -1,4 +1,4 @@
-@testitem "Constraints" tags = [:fast] setup = [TestSetup] begin
+@testitem "Constraints" setup = [TestSetup] begin
 
 @testset verbose=true "Constraints" begin
 

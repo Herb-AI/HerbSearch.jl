@@ -1,4 +1,4 @@
 using ReTestItems
 using HerbSearch
-runtests(HerbSearch; tags=:fast)
-# `realistic_searches_test` is slow (tags=:slow) and is not run by default.
+runtests(HerbSearch;)
+# `realistic_searches_test` is slow and is not run by default.
