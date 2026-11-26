@@ -1,4 +1,4 @@
-@testitem "ForbiddenSequence" setup = [TestSetup] begin
+@testitem "ForbiddenSequence" tags = [:fast] setup = [TestSetup] begin
 
     @testset "Number of candidate programs (without ignore_if)" begin
 

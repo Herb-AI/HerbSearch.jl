@@ -1,4 +1,4 @@
-@testitem "Sampling grammar" setup = [TestSetup] begin
+@testitem "Sampling grammar" tags = [:fast] setup = [TestSetup] begin
 
     @testset "Sampling with rand() returns programs in the given max_depth" begin
         arithmetic_grammar = @csgrammar begin

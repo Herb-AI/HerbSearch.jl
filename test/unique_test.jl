@@ -1,4 +1,4 @@
-@testitem "Unique" setup = [TestSetup] begin
+@testitem "Unique" tags = [:fast] setup = [TestSetup] begin
 
     @testset "Number of candidate programs" begin
         grammar = @csgrammar begin

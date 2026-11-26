@@ -1,4 +1,4 @@
-@testitem "Genetic search algorithm" setup = [TestSetup] begin
+@testitem "Genetic search algorithm" tags = [:fast] setup = [TestSetup] begin
 
 
 using Logging

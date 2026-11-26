@@ -1,4 +1,4 @@
-@testitem "UniformASPIterator" setup = [TestSetup] begin
+@testitem "UniformASPIterator" tags = [:fast] setup = [TestSetup] begin
 
     using Clingo_jll
 

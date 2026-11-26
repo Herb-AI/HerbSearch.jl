@@ -1,4 +1,4 @@
-@testitem "Aqua" setup = [TestSetup] begin
+@testitem "Aqua" tags = [:fast] setup = [TestSetup]  begin
     using Aqua
 
     @testset "Aqua" begin
@@ -9,7 +9,7 @@
     end
 end
 
-@testitem "Doctest" setup = [TestSetup] begin
+@testitem "Doctest" tags = [:fast] setup = [TestSetup] begin
     using Documenter: DocMeta, doctest
 
     DocMeta.setdocmeta!(

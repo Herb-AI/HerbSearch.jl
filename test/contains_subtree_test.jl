@@ -1,4 +1,4 @@
-@testitem "contains_subtree" setup = [TestSetup] begin
+@testitem "contains_subtree" tags = [:fast] setup = [TestSetup] begin
 
 @testset verbose=true "ContainsSubtree" begin
     @testset "Minimal Example" begin
