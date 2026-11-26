@@ -153,24 +153,6 @@ end
 Base.:(==)(a::BFSPriority, b::BFSPriority) = a.ids == b.ids
 Base.hash(a::BFSPriority, h::UInt) = hash(a.ids, hash(:BFSPriority, h))
 
-"""
-    shape_id(grammar::AbstractGrammar, rule::Int)::Int
-
-The shape id of `rule`: the smallest index of a rule in `grammar` with the same type and the same child types.
-Two rules have the same shape id if and only if a hole can hold both as one fixed shape (see
-`HerbConstraints.partition`). It depends on the grammar only, not on the domain of any hole.
-"""
-function shape_id(grammar::AbstractGrammar, rule::Int)::Int
-    same_childtypes = grammar.bychildtypes[rule]
-    smallest = rule
-    for r ∈ grammar.bytype[grammar.types[rule]]
-        if r < smallest && same_childtypes[r]
-            smallest = r
-        end
-    end
-    return smallest
-end
-
 function _push_shape_ids!(ids::Vector{Int}, grammar::AbstractGrammar, node::AbstractRuleNode)
     if node isa AbstractHole && !(node isa AbstractUniformHole)
         # a variable-shaped hole: no shape yet, and no children
@@ -193,7 +175,7 @@ The priority of the partial program `tree` in an [`AbstractBFSIterator`](@ref): 
 
 - `size` is the number of nodes, counting every variable-shaped [`Hole`](@ref) as 1 (a lower bound on the size of
   any program the tree can become). `size == length(ids)`.
-- `ids` is the pre-order sequence of the [`shape_id`](@ref)s of the nodes: the rule's for a `RuleNode`, the one of
+- `ids` is the pre-order sequence of the `HerbConstraints.shape_id`s of the nodes: the rule's for a `RuleNode`, the one of
   the domain's rules for a [`UniformHole`](@ref) (a single shape), and 0 for a variable-shaped `Hole` (which has no
   children).
 

@@ -1,5 +1,5 @@
 using HerbCore, HerbGrammar, HerbConstraints, HerbSearch
-using HerbSearch: bfs_priority, BFSPriority, shape_id, TopDownState, requeue_fast_path, priority_function,
+using HerbSearch: bfs_priority, BFSPriority, TopDownState, requeue_fast_path, priority_function,
     AbstractBFSIterator, AbstractUniformIterator
 using Test
 
